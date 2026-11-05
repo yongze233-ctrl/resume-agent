@@ -131,13 +131,17 @@ export async function createModelTransport(
     autoSelectFamilyAttemptTimeout: 250,
     connect: {
       lookup(requested, options, callback) {
-        if (requested.toLowerCase() !== hostname) {
-          callback(new Error('Model connection host changed'), '', 0);
-        } else if (options.all) {
-          callback(null, addresses);
-        } else {
-          callback(null, selected.address, selected.family);
-        }
+        // Match dns.lookup's async contract. A synchronous failed TLS connect
+        // can otherwise emit a second socket error before listeners attach.
+        queueMicrotask(() => {
+          if (requested.toLowerCase() !== hostname) {
+            callback(new Error('Model connection host changed'), '', 0);
+          } else if (options.all) {
+            callback(null, addresses);
+          } else {
+            callback(null, selected.address, selected.family);
+          }
+        });
       },
     },
   });
