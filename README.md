@@ -2,11 +2,18 @@
 
 一款可以自己部署的中文 AI 求职工作台。上传现有简历，在左边告诉 AI 想投什么岗位，右边就能打开可编辑的设计稿、招聘原文、课程或评估批注。一份简历可以在同一个对话里反复打磨。
 
-[![Resume Agent 工作台，点击查看 2 分 07 秒的操作实录](docs/media/cover.png)](https://github.com/yongze233-ctrl/resume-agent/releases/download/demo/resume-agent-demo.mp4)
+[![Resume Agent 工作台，点击播放 2 分 07 秒的操作实录](docs/media/cover.png)](https://cdn.jsdelivr.net/gh/yongze233-ctrl/resume-agent@demo/docs/media/resume-agent-demo.mp4)
 
-**[观看或下载完整演示（MP4，约 6 MB）](https://github.com/yongze233-ctrl/resume-agent/releases/download/demo/resume-agent-demo.mp4)** · [仓库内的视频文件](docs/media/resume-agent-demo.mp4) · [本地启动](#本地启动) · [第三方内容及许可](THIRD_PARTY_NOTICES.md)
+**[在线播放](https://cdn.jsdelivr.net/gh/yongze233-ctrl/resume-agent@demo/docs/media/resume-agent-demo.mp4)** · [下载完整演示（MP4，约 6 MB）](https://github.com/yongze233-ctrl/resume-agent/releases/download/demo/resume-agent-demo.mp4) · [本地启动](#本地启动) · [第三方内容及许可](THIRD_PARTY_NOTICES.md)
 
 录屏使用示例简历。可以从 **00:20** 看设计画布，**01:29** 看原文批注，**01:45** 看学习路径与内置课程。
+
+<details>
+<summary>预览在工作台里打开课程、切换练习的 10 秒动图</summary>
+
+![从学习路径进入课件和练习的实际操作](docs/media/inline-demo.gif)
+
+</details>
 
 ## 简历设计
 
