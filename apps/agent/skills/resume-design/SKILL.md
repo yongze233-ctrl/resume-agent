@@ -1,10 +1,18 @@
 ---
 name: resume-design
-description: Design a distinctive resume layout from an existing resume and job description, with real rendering, visual checks and an editable canvas.
-allowed-tools: read_resume design_resume openpencil_edit openpencil_inspect openpencil_review write_todos
+description: Create or redesign an editable resume canvas from existing documents, attachments or facts supplied in conversation, with real rendering and visual checks. Includes designing a new resume from scratch.
+allowed-tools: read_resume design_resume openpencil_edit openpencil_inspect openpencil_review write_todos request_form ask_choice
 ---
 
 # Resume design
+
+## Starting from conversation facts
+
+“给我设计一份简历，我叫小明，大三，找 AI 产品实习” is a design request even when the current resume is empty. The deliverable is a native editable canvas, not just a JSON proposal. Read the current source once; reuse facts from conversation, attachments and submitted forms. Do not browse other creation/optimization/parsing workflows to replace this deliverable.
+
+When source content is empty, compose a conservative draft from the supplied facts. Ask one concise optional question or form only when it materially improves the draft; do not re-ask the known name, stage or target role. A skipped field remains unknown. Omit unknown optional entries or label necessary gaps “待补充”; never invent an employer, project, skill, achievement, contact detail or date. An empty date range such as “ - 至今” is missing information, not a verified date. Facts may be organized into readable blocks without adding new claims.
+
+After collection or a skipped form, continue with design_resume → native composition → openpencil_review. Plans must include composition and checking, not just collection. Only mark all design steps completed after ready:true; even then, call an incomplete-content result a “可编辑草稿” and name the outstanding factual gaps. Do not describe it as ready to submit or stop at writing /workspace/resume.json.
 
 ## Installed visual skills
 

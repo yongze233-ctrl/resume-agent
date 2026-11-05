@@ -31,6 +31,7 @@ import { Sessions } from './sessions.js';
 import { prepareResumeReview } from './review.js';
 import { EventMapper, type GraphEvent } from './event-mapper.js';
 import { ResumeAccumulator } from './resume-accumulator.js';
+import { contentText } from '../harness/middleware/common.js';
 import { AttachmentStore } from '../attachments/store.js';
 import { RunDiagnostics, type RunDiagnostic } from './run-diagnostics.js';
 import {
@@ -166,13 +167,16 @@ export class RunEngine {
           : undefined;
       let mode = request.mode ?? restoredMode;
       let activeSkill: string | undefined;
-      const latestText = request.messages.at(-1)?.content.slice(0, 1200) ?? '';
+      // Form answers resume the same user task. Re-read that task's original
+      // request instead of treating the last reference skill as a new intent.
+      const latestText = approving
+        ? contentText([...previousMessages].reverse().find((message) => message.getType() === 'human')?.content).slice(0, 1200)
+        : ([...request.messages].reverse().find((message) => message.role === 'user')?.content ?? '').slice(0, 1200);
       const wantsDesign =
         /有设计感|版式设计|视觉设计|设计.{0,16}简历|简历.{0,16}(?:设计|排版)|design.{0,25}resum[eé]|(?:开|创建|生成).{0,8}画布|(?:open|create).{0,20}canvas/i.test(
           latestText,
         );
       if (
-        !approving &&
         (mode === undefined || mode === 'general' || mode === 'create') &&
         wantsDesign
       ) {
@@ -180,7 +184,7 @@ export class RunEngine {
         if (mode === 'create') mode = 'general';
       }
       if (
-        approving &&
+        approving && activeSkill !== 'resume-design' &&
         Array.isArray(head?.checkpoint.channel_values.messages)
       ) {
         const history = head.checkpoint.channel_values.messages as Array<{

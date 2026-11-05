@@ -152,8 +152,11 @@ export function createHarness(options: HarnessOptions) {
   const systemPrompt = [
     instructions(options.mode, agentMode, hasCheckpoint),
     `Current date: ${new Date().toISOString().slice(0, 10)}. Use this date when checking whether supplied dates are in the future.`,
-    researchSkill
-      ? `For this turn use skill ${researchSkill}. Read /skills/${researchSkill}/SKILL.md before acting.`
+    skill
+      ? `For this turn use skill ${skill}. Read /skills/${skill}/SKILL.md before acting.`
+      : undefined,
+    skill === 'resume-design'
+      ? 'The requested deliverable is an editable resume on the native canvas, including when the user starts with only conversation facts. Gathering missing facts is a supporting step, not a replacement for design. Reading another skill as reference does not change this task. Use design_resume, openpencil_edit and openpencil_review. A JSON proposal or finished questionnaire is not a completed design. Keep design/checking steps pending until the actual canvas review returns ready:true. Clearly distinguish a layout-checked draft with missing facts from an application-ready resume.'
       : undefined,
     options.attachments?.prompt,
     'For learning or job recommendations, use find_learning_courses and find_matching_jobs to retrieve real resources before answering. Include direct Markdown hyperlinks with informative titles. Explain why each course or job relates to the user request. Read resume evidence only in a resume-aware mode. Topic overlap alone does not establish personal fit. Never invent URLs, availability, salaries or personal experience. Preserve each job location and source check time; state source failures and uncertainty.',
