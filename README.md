@@ -89,6 +89,8 @@ AI_BACKEND_URL=http://127.0.0.1:4000
 
 **给测试用户部署。** 管理员可在 Web 服务端配置 `DEFAULT_MODEL_BASE_URL`、`DEFAULT_MODEL_NAME` 和 `DEFAULT_MODEL_API_KEY`。生产模式默认从同源的 `/pencil` 加载画布。仓库根目录的 Compose 文件启动 Web 和 Agent，画布需要另行构建和提供服务。简历和对话保存在浏览器中；使用 AI 时，任务所需的材料会发送到配置的 Agent 和模型服务。[Web 配置样例](apps/web/.env.example) · [Agent 配置样例](apps/agent/.env.example)
 
+**共享模型切换。** 在 Web 服务端设置 `SITE_OPENCODE_GO_API_KEY` 和 `SITE_AGNES_API_KEY`，即可同时提供 DeepSeek V4.1 Flash 和 Agnes 3.0 Flash。用户点击聊天输入框下方的模型名称即可切换，选择会保存在当前浏览器中，也可以继续使用自己的 API Key。`DEFAULT_MODEL_*` 仍决定初始默认模型；未配置默认时，优先使用已配置的 DeepSeek，其次是 Agnes。共享 Key 只保留在服务端，不会下发给浏览器。
+
 ## 源码导航
 
 | 目录 | 可以从这里看什么 |

@@ -209,6 +209,7 @@ export type ReasoningEffort = "low" | "medium" | "high";
 /** User-provided model config carried in request bodies. */
 export interface AgentLlmConfig {
   source?: "internal" | "byok" | "server";
+  serverModelId?: string;
   apiKey?: string;
   baseUrl?: string;
   modelName?: string;

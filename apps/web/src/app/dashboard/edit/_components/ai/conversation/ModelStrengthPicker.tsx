@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronUp } from '@magic-resume-kit/icons';
+import { Check, ChevronRight, ChevronUp } from '@magic-resume-kit/icons';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useSettingStore, type Strength } from '@/store/useSettingStore';
@@ -10,12 +10,16 @@ import { useSettingsUiStore } from '@/store/useSettingsUiStore';
 import { EASE_ENTER } from '@magic-resume-kit/utils';
 import ModelMark from './ModelMark';
 import { effectiveEffort } from '../lib/reasoningEffort';
+import { selectedSiteModel } from '@/lib/ai/siteModel';
+import { toast } from 'sonner';
 
 const STRENGTHS: Strength[] = ['low', 'medium', 'high'];
 
 export default function ModelStrengthPicker({ disabled }: { disabled?: boolean }) {
   const { t } = useTranslation();
-  const model = useSettingStore((s) => s.siteModel && (s.preferSiteModel || !s.apiKey.trim()) ? s.siteModel.model : s.model);
+  const model = useSettingStore((s) => s.siteModel && (s.preferSiteModel || !s.apiKey.trim()) ? selectedSiteModel(s)?.model ?? '' : s.model);
+  const sharedModel = useSettingStore(selectedSiteModel);
+  const siteModels = useSettingStore((s) => s.siteModels);
   const usingSiteModel = useSettingStore((s) => !!s.siteModel && (s.preferSiteModel || !s.apiKey.trim()));
   const strength = useSettingStore((s) => s.strength);
   const setStrength = useSettingStore((s) => s.setStrength);
@@ -24,6 +28,15 @@ export default function ModelStrengthPicker({ disabled }: { disabled?: boolean }
   const rootRef = useRef<HTMLDivElement>(null);
   const modelLabel = model || t('settings.llm.statusNotConfigured');
   const strengthLabel = t(`aiLab.picker.strength.${strength}`);
+  const chooseSiteModel = async (id: string) => {
+    useSettingStore.getState().setSelectedSiteModelId(id);
+    setOpen(false);
+    try {
+      await useSettingStore.getState().saveSettings();
+    } catch {
+      toast.error(t('settings.notifications.saveFailed'));
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -57,10 +70,24 @@ export default function ModelStrengthPicker({ disabled }: { disabled?: boolean }
           initial={{ opacity: 0, y: 6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.98 }}
           transition={{ duration: 0.16, ease: EASE_ENTER }}
           className="absolute bottom-[calc(100%+8px)] left-0 z-30 w-64 max-w-[calc(100vw-48px)] origin-bottom rounded-2xl border border-mr-line bg-[var(--mr-overlay)] p-2 shadow-[var(--elev-3)] backdrop-blur-xl">
+          {siteModels.length > 0 && <div role="group" aria-label="可用模型">
+            <p className="px-2 pb-1 text-mr-label text-text-secondary">可用模型</p>
+            {siteModels.map((option) => {
+              const selected = usingSiteModel && sharedModel && 'id' in sharedModel && sharedModel.id === option.id;
+              return <button key={option.id} type="button" aria-pressed={!!selected}
+                onClick={() => { void chooseSiteModel(option.id); }}
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-mr-body transition-colors hover:bg-mr-surface-subtle">
+                <ModelMark model={option.model} size={23} />
+                <span className="min-w-0 flex-1 truncate">{option.model}</span>
+                {selected && <Check size={15} className="shrink-0 text-[var(--ink-sky)]" />}
+              </button>;
+            })}
+            <div className="my-2 h-px bg-mr-line" />
+          </div>}
           <button type="button" onClick={() => { setOpen(false); openSettings('model'); }}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-mr-surface-subtle">
-            <span className="min-w-0"><span className="block text-mr-label text-text-secondary">{usingSiteModel ? '站点默认模型' : t('aiLab.picker.byokModel')}</span>
-              <span className="mt-0.5 block truncate text-mr-body text-text-primary">{modelLabel}</span></span>
+            <span className="min-w-0"><span className="block text-mr-label text-text-secondary">{usingSiteModel ? '模型设置' : t('aiLab.picker.byokModel')}</span>
+              <span className="mt-0.5 block truncate text-mr-body text-text-primary">{usingSiteModel ? '使用自己的 API Key' : modelLabel}</span></span>
             <ChevronRight size={16} className="shrink-0 text-text-secondary" />
           </button>
           <div className="my-2 h-px bg-mr-line" />

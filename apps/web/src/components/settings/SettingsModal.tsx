@@ -23,6 +23,7 @@ import { useSettingStore } from '@/store/useSettingStore';
 import { ModelConfigFields } from '@/components/llm/ModelConfigFields';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { selectedSiteModel } from '@/lib/ai/siteModel';
 
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -38,6 +39,8 @@ export function SettingsModal() {
   const { settingsOpen, closeSettings, section, setSection } = useSettingsUiStore();
   const { isDirty, saveSettings, resetSettings } = useSettingStore();
   const siteModel = useSettingStore((state) => state.siteModel);
+  const siteModels = useSettingStore((state) => state.siteModels);
+  const sharedModel = useSettingStore(selectedSiteModel);
   const usingSiteModel = useSettingStore((state) => !!state.siteModel && (state.preferSiteModel || !state.apiKey.trim()));
   const [saving, setSaving] = useState(false);
   const handleSave = async () => {
@@ -83,8 +86,22 @@ export function SettingsModal() {
           transition={{ duration: 0.15, ease: EASE }}
         >
           {section === 'model' ? (
-            <Pane title={t('settings.llm.title')} description={siteModel ? '可直接使用站点默认模型，也可以填写自己的模型配置。' : t('settings.llm.description')}>
-              {siteModel && <div className="mt-5 rounded-lg border border-mr-line bg-mr-surface-soft p-4 text-sm"><p className="font-medium">站点默认模型 · {siteModel.model}</p><p className="mt-1 text-text-secondary">{usingSiteModel ? '当前正在使用站点默认模型。' : '可切换到站点默认模型，个人配置会保留。'}</p><Button className="mt-3" variant="outline" disabled={usingSiteModel || saving} onClick={async () => { useSettingStore.getState().setPreferSiteModel(true); await handleSave(); }}>{usingSiteModel ? '正在使用' : '使用站点默认模型'}</Button></div>}
+            <Pane title={t('settings.llm.title')} description={siteModel ? '选择站点提供的模型即可使用，也可以填写自己的 API Key。' : t('settings.llm.description')}>
+              {siteModel && <div className="mt-5 rounded-lg border border-mr-line bg-mr-surface-soft p-4 text-sm">
+                <p className="mb-3 font-medium">可用模型</p>
+                {(siteModels.length ? siteModels : [siteModel]).map((option) => {
+                  const id = 'id' in option ? String(option.id) : '';
+                  const selected = usingSiteModel && sharedModel?.model === option.model && sharedModel?.provider === option.provider;
+                  return <div key={id || option.model} className="flex items-center justify-between gap-3 py-2">
+                    <span>{option.model}</span>
+                    <Button variant="outline" disabled={selected || saving} onClick={async () => {
+                      if (id) useSettingStore.getState().setSelectedSiteModelId(id);
+                      else useSettingStore.getState().setPreferSiteModel(true);
+                      await handleSave();
+                    }}>{selected ? '正在使用' : '使用'}</Button>
+                  </div>;
+                })}
+              </div>}
               <div className="mt-5"><ModelConfigFields /></div>
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="outline" disabled={!isDirty || saving} onClick={resetSettings}>{t('settings.buttons.reset')}</Button>

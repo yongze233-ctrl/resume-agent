@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
-import { publicSiteModel, resolveSiteModelBody, resolveSiteModelConfig } from './siteModelServer';
+import { publicSiteModel, publicSiteModels, resolveSiteModelBody, resolveSiteModelConfig } from './siteModelServer';
 
 function provision(t: TestContext) {
-  const names = ['DEFAULT_MODEL_API_KEY', 'DEFAULT_MODEL_BASE_URL', 'DEFAULT_MODEL_NAME', 'DEFAULT_MODEL_MAX_TOKENS', 'LOCAL_DEFAULT_MODEL_SETUP_ID'];
+  const names = ['DEFAULT_MODEL_API_KEY', 'DEFAULT_MODEL_BASE_URL', 'DEFAULT_MODEL_NAME', 'DEFAULT_MODEL_MAX_TOKENS', 'LOCAL_DEFAULT_MODEL_SETUP_ID', 'SITE_OPENCODE_GO_API_KEY', 'SITE_AGNES_API_KEY'];
   const previous = names.map((name) => process.env[name]);
   names.forEach((name) => delete process.env[name]);
   process.env.DEFAULT_MODEL_API_KEY = 'test-server-credential';
@@ -59,4 +59,43 @@ test('JSON chat, binary proxy JSON and multipart imports resolve only their mode
   assert.equal(await (form.get('file') as File).text(), 'Example resume');
   const invalid = new FormData(); invalid.set('config', 'invalid JSON');
   assert.equal(resolveSiteModelBody(invalid, ''), invalid);
+});
+
+test('both shared models route to their own credential and ignore client URLs or model names', (t) => {
+  provision(t);
+  process.env.DEFAULT_MODEL_BASE_URL = 'https://apihub.agnes-ai.com/v1';
+  process.env.DEFAULT_MODEL_NAME = 'agnes-3.0-flash';
+  process.env.SITE_OPENCODE_GO_API_KEY = 'test-opencode-credential';
+  process.env.SITE_AGNES_API_KEY = 'duplicate-agnes-credential';
+  const models = publicSiteModels();
+  assert.deepEqual(models.map((model) => model.model), ['agnes-3.0-flash', 'deepseek-v4.1-flash']);
+  assert.doesNotMatch(JSON.stringify(models), /credential|apiKey/);
+  const deepseek = resolveSiteModelConfig({
+    source: 'server', serverModelId: models[1].id,
+    baseUrl: 'https://attacker.invalid', modelName: 'other-model', apiKey: 'ignored', effort: 'medium',
+  }) as Record<string, unknown>;
+  assert.equal(deepseek.apiKey, 'test-opencode-credential');
+  assert.equal(deepseek.baseUrl, 'https://opencode.ai/zen/go/v1');
+  assert.equal(deepseek.modelName, 'deepseek-v4.1-flash');
+  assert.equal(deepseek.effort, 'medium');
+  const agnes = resolveSiteModelConfig({ source: 'server', serverModelId: models[0].id }) as Record<string, unknown>;
+  assert.equal(agnes.apiKey, 'test-server-credential');
+  assert.throws(() => resolveSiteModelConfig({ source: 'server', serverModelId: 'unknown' }), /not configured/);
+  delete process.env.SITE_OPENCODE_GO_API_KEY;
+  assert.throws(() => resolveSiteModelConfig({ source: 'server', serverModelId: models[1].id }), /not configured/);
+});
+
+test('selected model survives JSON and multipart forwarding and additional models work without a legacy default', (t) => {
+  provision(t);
+  delete process.env.DEFAULT_MODEL_API_KEY;
+  process.env.SITE_AGNES_API_KEY = 'test-agnes-credential';
+  const config = { source: 'server', serverModelId: publicSiteModels()[0].id };
+  const json = JSON.parse(resolveSiteModelBody(JSON.stringify({ config }), 'application/json') as string);
+  assert.equal(json.config.modelName, 'agnes-3.0-flash');
+  assert.equal(json.config.apiKey, 'test-agnes-credential');
+  const form = new FormData();
+  form.set('config', JSON.stringify(config));
+  resolveSiteModelBody(form, '');
+  assert.equal(JSON.parse(form.get('config') as string).apiKey, 'test-agnes-credential');
+  assert.equal(publicSiteModel()?.model, 'agnes-3.0-flash');
 });

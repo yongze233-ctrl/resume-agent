@@ -39,3 +39,41 @@ test('an explicit local default switches once, preserves the encrypted personal 
   assert.equal(useSettingStore.getState().preferSiteModel,false);
   const personal=resolveAiAccessConfig();assert.ok(personal.ok);assert.equal(personal.config.source,'byok');assert.equal(personal.config.modelName,'deepseek-v4.1-flash');
 });
+
+test('switching shared models persists the choice, keeps personal settings and routes the selected reference', async (t) => {
+  const original = useSettingStore.getState();
+  t.after(() => useSettingStore.setState(original, true));
+  const db = new MemoryDb();
+  t.mock.method(dbClient, 'getItem', db.getItem.bind(db));
+  t.mock.method(dbClient, 'setItem', db.setItem.bind(db));
+  const agnes = { id: 'agnes-token-plan:agnes-3.0-flash', provider: 'agnes-token-plan', model: 'agnes-3.0-flash', baseUrl: 'https://apihub.agnes-ai.com/v1', maxTokens: 16384 };
+  const deepseek = { id: 'opencode-go:deepseek-v4.1-flash', provider: 'opencode-go', model: 'deepseek-v4.1-flash', baseUrl: 'https://opencode.ai/zen/go/v1', maxTokens: 12000 };
+  let available = [agnes, deepseek];
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ ...agnes, models: available }));
+  useSettingStore.setState({
+    provider: 'personal', model: 'personal-model', apiKey: 'personal-credential',
+    baseUrl: 'https://personal.invalid/v1', siteModel: null, siteModels: [],
+    selectedSiteModelId: '', preferSiteModel: false,
+  });
+  await loadSiteModel();
+  useSettingStore.getState().setSelectedSiteModelId(deepseek.id);
+  await useSettingStore.getState().saveSettings();
+  useSettingStore.setState({ selectedSiteModelId: '', preferSiteModel: false });
+  await useSettingStore.getState().loadSettings();
+  await loadSiteModel();
+  assert.equal(useSettingStore.getState().selectedSiteModelId, deepseek.id);
+  let access = resolveAiAccessConfig();
+  assert.ok(access.ok);
+  assert.equal(access.config.serverModelId, deepseek.id);
+  assert.equal(access.config.modelName, 'deepseek-v4.1-flash');
+  assert.ok(!('apiKey' in access.config));
+  assert.equal(useSettingStore.getState().apiKey, 'personal-credential');
+  available = [agnes];
+  await loadSiteModel();
+  access = resolveAiAccessConfig();
+  assert.ok(access.ok);
+  assert.equal(access.config.serverModelId, agnes.id);
+  const stored = await db.getItem<Record<string, unknown>>('settings');
+  assert.ok(isProtectedApiKey(stored?.apiKey));
+  assert.equal(stored?.selectedSiteModelId, deepseek.id);
+});

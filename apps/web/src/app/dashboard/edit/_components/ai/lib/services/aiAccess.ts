@@ -1,6 +1,7 @@
 import { useSettingStore } from "@/store/useSettingStore";
 import { opensBillingGate } from "@/lib/errors/types";
 import type { AgentLlmConfig } from "./types";
+import { selectedSiteModel } from '@/lib/ai/siteModel';
 
 export type AiAccessResult =
   | { ok: true; config: AgentLlmConfig }
@@ -16,9 +17,16 @@ export function resolveAiAccessConfig(): AiAccessResult {
   const hasOwnConfig = [settings.provider, settings.apiKey, settings.baseUrl, settings.model].every((value) => value.trim())
     && Number.isFinite(Number(settings.maxTokens)) && Number(settings.maxTokens) > 0;
   if (settings.siteModel && (settings.preferSiteModel || !hasOwnConfig)) {
+    const model = selectedSiteModel(settings)!;
     return {
       ok: true,
-      config: { source: 'server', modelName: settings.siteModel.model, maxTokens: settings.siteModel.maxTokens, effort: settings.strength },
+      config: {
+        source: 'server',
+        ...('id' in model ? { serverModelId: model.id } : {}),
+        modelName: model.model,
+        maxTokens: model.maxTokens,
+        effort: settings.strength,
+      },
     };
   }
   if (!settings.hasLlmConfig()) {

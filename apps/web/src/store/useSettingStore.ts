@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { dbClient } from '@/lib/api/IndexDBClient';
-import type { SiteModel } from '@/lib/ai/siteModel';
+import type { SiteModel, SiteModelOption } from '@/lib/ai/siteModel';
 import {
   isProtectedApiKey,
   protectApiKey,
@@ -45,11 +45,13 @@ interface SettingsData {
   strength: Strength;
   /** Select a shared site model without deleting a personal encrypted configuration. */
   preferSiteModel: boolean;
+  selectedSiteModelId: string;
 }
 
 interface SettingsState extends SettingsData {
   /** Runtime public metadata; the site's credential is never stored in IndexedDB. */
   siteModel: SiteModel | null;
+  siteModels: SiteModelOption[];
   initialSettings: SettingsData;
   isDirty: boolean;
   /** Pick a provider; preset providers auto-fill baseUrl/model/maxTokens. */
@@ -61,6 +63,7 @@ interface SettingsState extends SettingsData {
   /** Composer pref — persisted immediately (not part of the Save-form dirty flow). */
   setStrength: (strength: Strength) => void;
   setPreferSiteModel: (preferred: boolean) => void;
+  setSelectedSiteModelId: (id: string) => void;
   /** True when provider + key + baseUrl + model + maxTokens are all set — AI is usable. */
   hasLlmConfig: () => boolean;
   saveSettings: () => Promise<void>;
@@ -79,6 +82,7 @@ const defaultSettings: SettingsData = {
   maxTokens: DEFAULT_MAX_TOKENS,
   strength: 'medium',
   preferSiteModel: false,
+  selectedSiteModelId: '',
 };
 
 const isNonEmpty = (value: unknown) => String(value ?? '').trim().length > 0;
@@ -92,6 +96,7 @@ const pickSettings = (source: Partial<SettingsData>): SettingsData => ({
   maxTokens: source.maxTokens ?? defaultSettings.maxTokens,
   strength: source.strength ?? defaultSettings.strength,
   preferSiteModel: source.preferSiteModel ?? defaultSettings.preferSiteModel,
+  selectedSiteModelId: source.selectedSiteModelId ?? defaultSettings.selectedSiteModelId,
 });
 
 const toStoredSettings = async (settings: SettingsData) => ({
@@ -132,6 +137,7 @@ export const useSettingStore = create<SettingsState>((set, get) => {
     ...defaultSettings,
     initialSettings: { ...defaultSettings },
     siteModel: null,
+    siteModels: [],
     isDirty: false,
 
     setProvider: (provider) => {
@@ -151,6 +157,11 @@ export const useSettingStore = create<SettingsState>((set, get) => {
     setModel: (model) => edit({ model, preferSiteModel: false }),
     setMaxTokens: (maxTokens) => edit({ maxTokens, preferSiteModel: false }),
     setPreferSiteModel: (preferSiteModel) => edit({ preferSiteModel }),
+    setSelectedSiteModelId: (selectedSiteModelId) => {
+      if (get().siteModels.some((model) => model.id === selectedSiteModelId)) {
+        edit({ selectedSiteModelId, preferSiteModel: true });
+      }
+    },
 
     // Saved on the spot, so it moves the saved baseline too: changing it never
     // leaves the settings form looking unsaved.
