@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+const repo = process.cwd(), require = createRequire(resolve(repo, 'apps/agent/package.json'));
+const { chromium } = require('playwright');
+const output = resolve(repo, '../evaluation/agnes-tool-recovery/ui'); await mkdir(output, { recursive: true });
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ locale: 'zh-CN', viewport: { width: 1450, height: 1000 } });
+const page = await context.newPage(); page.setDefaultTimeout(20000);
+const errors = [], checks = []; page.on('pageerror', error => errors.push(error.name));
+const fallback = '模型返回了异常的工具调用格式，这一步未执行，请重试。';
+let native = '<｜DSML｜ calls><｜DSML｜ invoke name="write_todos"><｜DSML｜ parameter name="todos" string="false">[{"content":"不应显示的工具参数","status":"completed"}]</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>';
+await context.route('**/api/local-model-setup', route => route.fulfill({ status: 204 }));
+await context.route('**/api/site-model', route => route.fulfill({ status: 200, json: { provider: 'opencode-go', model: 'deepseek-v4.1-flash', baseUrl: 'https://opencode.ai/zen/go/v1', maxTokens: 12000 } }));
+await context.route('**/api/chat-agent/session?*', route => route.fulfill({ status: 200, json: { data: { state: 'active', checkpointId: 'completed' } } }));
+let protocolError = false;
+await context.route('**/api/chat-agent', route => protocolError ? route.fulfill({ status: 502, json: { errorCode: 'upstream_unavailable', subCode: 'model_tool_protocol_invalid', retryable: true } }) : route.fulfill({ status: 200, contentType: 'text/event-stream', body: [{ type: 'run_started' }, { type: 'message_chunk', content: native }, { type: 'done' }].map(event => 'data: ' + JSON.stringify(event) + '\n\n').join('') }));
+try {
+  await page.goto('http://127.0.0.1:3000/dashboard');
+  await page.locator('textarea').fill('历史工具格式兼容检查'); await page.getByRole('button', { name: '发送', exact: true }).click();
+  await page.waitForURL(/\/dashboard\/chat\//); await page.getByText(fallback, { exact: true }).waitFor();
+  assert.ok(!(await page.locator('body').innerText()).includes('DSML')); assert.ok(!(await page.locator('body').innerText()).includes('不应显示的工具参数'));
+  checks.push('raw native syntax is replaced by an honest failure notice');
+  await page.reload(); await page.getByText(fallback, { exact: true }).waitFor();
+  checks.push('saved historical turns render safely after reload');
+  await page.screenshot({ path: resolve(output, 'historical-format-error.png') });
+  native = '所有节点坐标已修正，现在运行最终审查。\n\n<tool_call>\n<function=openpencil_review>\n<parameter=frameId>780950035:5</parameter>\n</function>\n</tool_call>';
+  await page.getByRole('button', { name: '新对话', exact: true }).click(); await page.waitForURL('http://127.0.0.1:3000/dashboard');
+  await page.locator('textarea').fill('Agnes 历史审查调用'); await page.getByRole('button', {name:'发送',exact:true}).click();
+  await page.getByText(fallback,{exact:true}).waitFor();
+  await page.getByText('所有节点坐标已修正，现在运行最终审查。',{exact:true}).waitFor();
+  assert.ok(!(await page.locator('body').innerText()).includes('<tool_call>'));
+  assert.ok(!(await page.locator('body').innerText()).includes('780950035:5'));
+  await page.reload(); await page.getByText(fallback,{exact:true}).waitFor();
+  await page.getByText('所有节点坐标已修正，现在运行最终审查。',{exact:true}).waitFor();
+  checks.push('historical Agnes review keeps prose, removes raw call and truthfully shows it did not execute after reload');
+  await page.screenshot({path:resolve(output,'agnes-history-fixed.png')});
+  protocolError = true;
+  await page.getByRole('button', { name: '新对话', exact: true }).click(); await page.waitForURL('http://127.0.0.1:3000/dashboard'); await page.locator('textarea').fill('错误码文案检查'); await page.getByRole('button', { name: '发送', exact: true }).click();
+  await page.getByText(fallback, { exact: true }).waitFor();
+  checks.push('invalid protocol errors have localized copy'); assert.deepEqual(errors, []);
+  await writeFile(resolve(output, 'result.json'), JSON.stringify({ passed: true, checks, errors }, null, 2)); console.log(JSON.stringify({ passed: true, checks }));
+} catch (error) { await page.screenshot({ path: resolve(output, 'failure.png') }); await writeFile(resolve(output, 'result.json'), JSON.stringify({ passed: false, error: error.message, checks, errors }, null, 2)); throw error; }
+finally { await browser.close(); }

@@ -100,6 +100,7 @@ AI_BACKEND_URL=http://127.0.0.1:4000
 | [canvas/overlay](canvas/overlay) | 叠加在固定版 OpenPencil 上的原生画布修改与通信接口 |
 | [apps/agent/skills](apps/agent/skills) | 设计、排版、简历评估和岗位匹配的工具使用规则 |
 | [scripts/import-xueai.mjs](scripts/import-xueai.mjs) | 小山学堂课程、习题与配套资源的导入入口 |
+| [docs/testing](docs/testing/README.md) | 浏览器回归脚本运行说明、画布实测与故障排查报告 |
 
 ## 开源与致谢
 
