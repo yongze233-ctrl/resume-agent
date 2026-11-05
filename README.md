@@ -1,55 +1,55 @@
 # Resume Agent
 
-一款可以自己部署的中文 AI 求职工作台。上传现有简历，在左边告诉 AI 想投什么岗位，右边就能打开可编辑的设计稿、招聘原文、课程或评估批注。一份简历可以在同一个对话里反复打磨。
+上传一份旧简历，在对话里告诉 AI 你想投什么岗位。它会在右侧画布上排出一版可编辑的 A4 简历。你可以直接动手改，也可以圈出一句话，让 AI 按你的意见重写。
 
-[![Resume Agent 工作台，点击播放 2 分 07 秒的操作实录](docs/media/cover.png)](https://cdn.jsdelivr.net/gh/yongze233-ctrl/resume-agent@demo/docs/media/resume-agent-demo.mp4)
-
-**[在线播放](https://cdn.jsdelivr.net/gh/yongze233-ctrl/resume-agent@demo/docs/media/resume-agent-demo.mp4)** · [下载完整演示（MP4，约 6 MB）](https://github.com/yongze233-ctrl/resume-agent/releases/download/demo/resume-agent-demo.mp4) · [本地启动](#本地启动) · [第三方内容及许可](THIRD_PARTY_NOTICES.md)
-
-录屏使用示例简历。可以从 **00:20** 看设计画布，**01:29** 看原文批注，**01:45** 看学习路径与内置课程。
+![工作台操作实录：打开简历画布、查看批注和学习课程](docs/media/walkthrough.gif)
 
 <details>
-<summary>预览在工作台里打开课程、切换练习的 10 秒动图</summary>
+<summary>在这里播放完整演示（2 分 07 秒）</summary>
 
-![从学习路径进入课件和练习的实际操作](docs/media/inline-demo.gif)
+https://github.com/user-attachments/assets/21f21f02-0eb0-4a6b-a682-f6fe0b2448a7
+
+[下载 MP4](https://github.com/yongze233-ctrl/resume-agent/releases/download/demo/resume-agent-demo.mp4)
 
 </details>
 
+## 从原简历到投递稿
+
+```mermaid
+flowchart LR
+    resume["上传原简历"] --> canvas["在画布上排版"]
+    resume --> match["核对岗位要求"]
+    job["选岗位或贴入 JD"] --> match
+    match -->|调整经历描述| canvas
+    match -->|补足技能| learn["打开推荐课程"]
+    canvas --> review["查看评分与批注"]
+    review -->|按批注修改| canvas
+    canvas --> pdf["导出 PDF"]
+```
+
 ## 简历设计
 
-> “把这份简历排成一页 A4。项目经历放主栏，教育和联系方式放侧栏，保留原来的照片。”
+“把两段实习放在主栏，把联系方式和教育放在侧栏，尽量排成一页。” AI 会在 OpenPencil 里调整栏目、字距与留白。画布上的文字可以双击修改，图层可以拖动；定稿后可以导出 PDF，也可以保留可编辑的设计源文件。
 
-AI 能在 OpenPencil 上建立画板、排列文字图层、调整字号、行距和留白。你可以双击一行改字，拖动一个栏目，或者直接在需要调整的位置留评论，让 AI 接着改。目标是把简历排成清晰可读的一页；可以保存草稿、导出 PDF，也可以下载可继续编辑的设计源文件。
+![录屏中的简历设计画布，有文字图层、A4 版面和属性面板](docs/media/canvas-editor.png)
 
-![左侧为编辑器实录，右侧为单页 A4 样张的排版细节](docs/media/design.png)
+## 岗位 JD 匹配
 
-## 岗位 JD 检索与定向改稿
+想找 AI 产品经理，可以直接在对话里搜索，也可以贴入已有 JD。目前支持检索腾讯、OpenAI 和 Anthropic 的公开岗位。点开一个结果，右侧能看岗位要求和企业招聘原文。选择 **让 AI 帮我核对经历**，再让它按这份 JD 起草修改，确认后采用。
 
-> “找几个适合我经历的 AI 产品岗位，给我原招聘链接，再按我选的那个岗位改简历。”
+![岗位详情中的能力要求、经历核对按钮和企业招聘原文链接](docs/media/job-detail.png)
 
-在聊天中点开岗位链接，右侧会显示工作地点、要求、核对日期和企业招聘原文。当前接入腾讯招聘，以及 OpenAI 和 Anthropic 的公开职位源。你也可以直接贴入目标 JD。
+## 课程学习
 
-选中岗位后，点 **让 AI 帮我核对经历**，逐项对照要求与简历里的证据。接着可以让 AI 拟一版针对该岗位的改稿，确认后再采用。职位是否仍在招，以企业招聘原文为准。
+“这个岗位要求理解大模型，我有两周，每天能学半小时。” AI 可以从内置的 **454 节课**里选出相关内容，安排学习顺序。点对话中的课名，课件就在右侧打开，可以接着做练习、记笔记。图中点开的是《GPT 的跃进》。
 
-![岗位侧栏中的工作要求、能力标签、经历核对和原招聘链接](docs/media/jobs.png)
+![左侧分周学习路径与右侧已打开的 GPT 课程](docs/media/lesson-workspace.png)
 
-## 课程学习与个人路径
+## 简历评估
 
-> “这个 JD 要求理解大模型评测。我只有两周，每天半小时，先学哪几课？”
+选择要评的那版简历，查看分数，再点批注回到原句。图里的“负责 AI 产品需求分析，协调团队交付功能”交代了团队做什么，却很难看出候选人负责哪项决策。你可以在对话里补充具体交付物，让 AI 据此改写这段经历。
 
-AI 能把岗位要求与已有经历对照，按你的时间选课、排顺序，给出可以直接打开的课程链接。点击其中一节，右侧就能看课件、做练习、写笔记；左侧保留原来的对话，可以接着问这节课怎么用到自己的项目里。
-
-仓库随附的小山学堂内容快照有 **454 节课、22 个能力方向、350 道练习题**。课件来源、导入版本与改动均有记录。[查看课程清单](apps/agent/resources/learning-catalog.json) · [课程署名](apps/web/public/learning/xueai/NOTICE.txt)
-
-![左侧是按周安排的学习计划，右侧是从对话直接打开的课程](docs/media/learning.png)
-
-## 简历评估与原文批注
-
-> “只评估右边这版简历。圈出最难判断我个人贡献的地方，我补充事实后再帮我改。”
-
-选择要评估的那份简历，可查看总分、分项表现，以及具体到原句的改进意见。点击画布上的批注，就能看见哪一句缺少依据、哪段经历没交代贡献。你可以在对话里补充真实情况，让 AI 据此修改，再评估新版本。
-
-![选中原句查看批注，以及另一份示例报告的得分明细](docs/media/review.png)
+![示例简历的 69 分评估报告，左侧定位到实习原句，右侧给出修改建议](docs/media/review-source.png)
 
 ## 本地启动
 
