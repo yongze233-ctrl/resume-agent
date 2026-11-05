@@ -1,0 +1,45 @@
+---
+import type { Copy, Locale } from '@/i18n/ui';
+import { dashboardLink } from '@/consts';
+import Icon from '@/components/Icon.astro';
+import MiraSpectrum from '@/components/landing-ui/MiraSpectrum.astro';
+interface Props { copy: Copy; locale: Locale; }
+const { copy, locale } = Astro.props;
+const h = copy.hero;
+const cta = new URL(dashboardLink('hero', locale), Astro.url);
+// 错峰要跨行连续计数,所以索引在外面走,不能用每行的 map index。
+let index = 0;
+---
+<section id="top" class="be-hero" data-beui="hero-ai-marketplace">
+  <MiraSpectrum />
+  <div class="be-hero-content be-container">
+    <a href="#features" class="be-hero-eyebrow"><span class="be-status-dot"></span>{h.eyebrow}<Icon name="arrow-right" size={13} /></a>
+    <h1 class="be-hero-title">
+      {h.titleLines.map((line) => (
+        <span class="be-hero-line">
+          {line.map((part) => {
+            const i = index;
+            index += 1;
+            return (
+              <span class="be-hero-word" style={`--i:${i}`} class:list={[h.titleMark.includes(i) && 'is-marked']}>
+                {h.titleMark.includes(i) && <i aria-hidden="true"></i>}{part}
+              </span>
+            );
+          })}
+        </span>
+      ))}
+    </h1>
+    <p class="be-hero-copy">{h.subtitle}</p>
+    <resume-composer data-roles={JSON.stringify(h.roles)} data-prefix={h.promptPrefix} data-suffix={h.promptSuffix}>
+      <form data-ref-forward="form" class="be-composer" data-mira-form data-beui="agent-chat-input-studio" data-astro-reload action={`${cta.origin}${cta.pathname}`} method="get">
+        {Array.from(cta.searchParams).map(([name, value]) => <input type="hidden" name={name} value={value} />)}
+        <div class="be-composer-top"><label for="mira-hero-prompt"><Icon name="sparkle" size={16} />{h.composerLabel}</label></div>
+        <div class="be-composer-field">
+          <textarea id="mira-hero-prompt" data-mira-input name="prompt" rows="2" maxlength="8000" placeholder={`${h.promptPrefix}${h.roles[0]}${h.promptSuffix}`}></textarea>
+        </div>
+        <div class="be-composer-bottom"><button type="submit" class="be-primary" aria-label={h.composerSubmit}><span>{h.composerSubmit}</span><Icon name="arrow-up" size={18}/></button></div>
+      </form>
+      <div class="be-prompt-chips">{h.shortcuts.map(s => <button type="button" data-prompt={s}><Icon name="arrow-right" size={12}/>{s}</button>)}</div>
+    </resume-composer>
+  </div>
+</section>

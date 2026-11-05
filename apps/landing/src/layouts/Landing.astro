@@ -1,0 +1,135 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '@/styles/global.css';
+import ThemeScript from '@/components/landing-ui/ThemeScript.astro';
+import '@/styles/beui.css';
+import { DEFAULT_LOCALE, LOCALES, type Copy, type Locale } from '@/i18n/ui';
+import type { PricingResult } from '@/data/pricing';
+import Seo from '@/components/Seo.astro';
+import SiteVerification from '@/components/SiteVerification.astro';
+import RefForward from '@/components/RefForward.astro';
+import UtilityDock from '@/components/landing-ui/UtilityDock.astro';
+import { SHARE_IMAGE_PATH } from '@/consts';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  copy: Copy;
+  pricing: PricingResult;
+}
+const { locale, title, description, copy, pricing } = Astro.props;
+
+// Astro's directory build format makes `Astro.url.pathname` "/zh/", while the
+// hreflang alternates and the sitemap both address "/zh". To a search engine
+// those are two URLs, and a canonical that disagrees with its own hreflang set
+// is a configuration error — so normalise to the slash-less form everywhere.
+const canonicalPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const canonical = new URL(canonicalPath, Astro.site).href;
+const htmlLang = locale === 'zh' ? 'zh-CN' : 'en';
+
+// hreflang is derived from LOCALES / DEFAULT_LOCALE rather than written out, so
+// changing the default language (spec D1) is one constant instead of a hunt
+// through layout, sitemap and vercel.json. A canonical that disagrees with
+// x-default is read as a configuration error, and it fails silently.
+const alternates = LOCALES.map((loc) => ({
+  hreflang: loc === 'zh' ? 'zh-CN' : loc,
+  href: new URL(`/${loc}`, Astro.site).href,
+}));
+const xDefault = new URL(`/${DEFAULT_LOCALE}`, Astro.site).href;
+// Keep the current editor screenshot separate from earlier cached covers.
+const ogImage = new URL(SHARE_IMAGE_PATH, Astro.site).href;
+---
+
+<!doctype html>
+<html lang={htmlLang} class="landing-site scroll-smooth scroll-pt-20">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/magic-resume-mark.png" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <SiteVerification />
+    <link rel="canonical" href={canonical} />
+    {
+      alternates.map((alt) => (
+        <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={xDefault} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={htmlLang === 'zh-CN' ? 'zh_CN' : 'en_US'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+
+    <meta name="theme-color" content="#151515" />
+    <meta name="generator" content={Astro.generator} />
+
+    <Seo
+      copy={copy}
+      pricing={pricing}
+      locale={locale}
+      canonical={canonical}
+      siteUrl={new URL('/', Astro.site).href}
+      ogImage={ogImage}
+    />
+
+    <ClientRouter />
+
+    <ThemeScript />
+  </head>
+  <body class="landing-body min-h-screen antialiased">
+    <a
+      href="#main"
+      class="sr-only rounded-md bg-ink px-4 py-2 text-mr-caption font-w510 text-workbench focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
+    >
+      {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
+    </a>
+    <slot />
+
+    <UtilityDock locale={locale} />
+    <RefForward />
+
+    <script>
+      const win = window as typeof window & { __magicResumeRevealBound?: boolean };
+
+      const initReveal = () => {
+        // Scroll-reveal: add .is-visible when elements enter the viewport once.
+        const els = document.querySelectorAll<HTMLElement>('.reveal:not(.is-visible)');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce || !('IntersectionObserver' in window)) {
+          els.forEach((el) => el.classList.add('is-visible'));
+          return;
+        }
+
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-visible');
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -10% 0px', threshold: 0.08 },
+        );
+        els.forEach((el) => io.observe(el));
+      };
+
+      if (!win.__magicResumeRevealBound) {
+        win.__magicResumeRevealBound = true;
+        document.addEventListener('astro:page-load', initReveal);
+      }
+      initReveal();
+    </script>
+  </body>
+</html>

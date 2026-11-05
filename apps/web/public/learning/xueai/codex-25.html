@@ -1,0 +1,1094 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-25",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-25',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>挂钩点能改什么，由事件合同决定 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson code{overflow-wrap:anywhere;word-break:break-all}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25);overflow-wrap:anywhere;word-break:break-all}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1;min-width:180px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-rail{padding:18px;border-radius:12px;background:var(--bg);border:1px solid var(--border);margin-bottom:20px}
+.dm-rail-tag{font-size:12px;font-weight:700;color:var(--sub);margin-bottom:12px}
+.dm-hooks{position:relative;display:flex;flex-wrap:wrap;gap:8px;padding-bottom:12px}
+.dm-hooks:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-h{min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--faint);font-size:12px;font-weight:700;text-align:center;min-width:88px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-hooks.is-live .dm-h,.dm-sub.is-live .dm-h{opacity:.4;transform:scale(.98)}
+.dm-hooks.is-live .dm-h.now,.dm-sub.is-live .dm-h.now{opacity:1;transform:scale(1)}
+.dm-h.on{border-color:rgba(65,75,90,.5);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-h.skip{border-style:dashed}
+.dm-h.block{border-color:rgba(220,38,38,.4);background:rgba(220,38,38,.06);color:var(--danger)}
+.dm-h.pass{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success)}
+.dm-h.hold{border-color:rgba(65,75,90,.5);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-h.late{text-decoration:line-through}
+.dm-h.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-sub{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.dm-sub .dm-h{min-width:110px;font-weight:600}
+.dm-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-body{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:148px}
+.dm-kv{padding:12px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:13px;line-height:1.8;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-cols.is-live .dm-kv{opacity:.4;transform:scale(.98)}
+.dm-cols.is-live .dm-kv.now{opacity:1;transform:scale(1)}
+.dm-kv b{display:block;color:var(--accent-deep);font-size:13px;margin-bottom:2px}
+.dm-kv [data-val]{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-kv.warn{border-color:rgba(220,38,38,.3);color:var(--danger)}
+.dm-kv.ok{border-color:rgba(22,163,74,.3)}
+.dm-kv.hold{border-color:rgba(65,75,90,.35);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-kv.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-kv.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){
+  .lesson{overflow-x:hidden}
+  .compare{grid-template-columns:1fr}
+  .objective{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .demo{padding:18px}
+  .demo-ctrl{width:100%}
+  .demo-ctrl button{flex:1}
+  .dm-cols{grid-template-columns:1fr}
+  .dm-body{min-height:0}
+  .visual{padding:14px}
+  .dm-trace li{flex-direction:column;gap:4px}
+  .dm-h{flex:1 1 calc(50% - 8px);min-width:0}
+  .dm-summary.on{max-height:520px}
+}
+</style>
+<meta name="description" content="Codex 的 hook 协议认十一个事件和四种处理器，运行表只装命令和 MCP。一次 turn 里每个挂钩点拿到什么、能改什么、什么时候来不及">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="挂钩点能改什么，由事件合同决定"><meta property="og:description" content="Codex 的 hook 协议认十一个事件和四种处理器，运行表只装命令和 MCP。一次 turn 里每个挂钩点拿到什么、能改什么、什么时候来不及"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-25.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · Hooks</div>
+    <h1>挂钩点能改什么，由事件合同决定</h1>
+    <p class="subtitle">一次 turn 会经过十一个挂钩。协议认四种处理器，运行表只装命令和 MCP。超时默认放行，拆卸期丢掉 stdout。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>一次 turn 会经过十一个挂钩。协议认四种处理器，运行表只装命令和 MCP。超时默认放行，拆卸期丢掉 stdout。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事：四个 type 里哪些会进运行表；hook 超时为什么拦不住工具；<code>SessionEnd</code> 为什么不读输出。挂钩点是生命周期上预留的插口，能改下一步的是事件合同，不是配置文件里的名字。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一次 turn 里钩子按什么顺序响</div>
+  <div class="demo reveal" id="demo-hooks">
+    <div class="demo-top">
+      <div class="demo-title">同一条会话时间轴，换一种返回值，看谁还能改下一步</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">这次怎么回</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-mode="timeout" class="on">超时</button>
+        <button type="button" data-mode="deny">退出码 2</button>
+        <button type="button" data-mode="prompt">Prompt 类型</button>
+        <button type="button" data-mode="stop">Stop 续跑</button>
+        <button type="button" data-mode="end">SessionEnd JSON</button>
+      </div>
+      <span class="dm-b-hint">五种返回值挂在同一条轴上。超时和没实现的 type 都改不了下一步，明确拦截和带 prompt 的 block 可以。</span>
+    </div>
+    <div class="dm-rail">
+      <div class="dm-rail-tag">主轴 · 一次 turn 经过的挂钩</div>
+      <div class="dm-hooks" id="dm-hooks"></div>
+      <div class="dm-rail-tag" style="margin-top:16px">平行细轴 · 仅 ThreadSpawn 的子 agent</div>
+      <div class="dm-sub" id="dm-sub"></div>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head">这一步拿到什么、能改什么</div>
+        <div class="dm-body">
+          <div class="dm-kv" id="dm-got"><b>拿到</b>还没起跑。</div>
+          <div class="dm-kv" id="dm-can"><b>能改</b>先选一种返回值再播。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head">工具、审批、上下文</div>
+        <div class="dm-body">
+          <div class="dm-kv" id="dm-tool"><b>工具</b>还没到 PreToolUse。</div>
+          <div class="dm-kv" id="dm-ctx"><b>上下文</b>空着。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>协议枚举列出十一个事件名</span><span class="ln">protocol.rs L1510</span></li>
+        <li><span>配置层认四种 type，后两个是空结构体</span><span class="ln">hook_config.rs L183</span></li>
+        <li><span>发现阶段把 Prompt 和 Agent 写成 not supported yet</span><span class="ln">discovery.rs L626</span></li>
+        <li><span>运行表只收下 Command 和 McpTool</span><span class="ln">engine/mod.rs L107</span></li>
+        <li><span>只有同步 hook 能施加控制效果</span><span class="ln">engine/mod.rs L146</span></li>
+        <li><span>超时写入 error，should_block 保持 false</span><span class="ln">command_runner.rs L317</span></li>
+        <li><span>退出码 2 加 stderr 才标成 Blocked</span><span class="ln">pre_tool_use.rs L261</span></li>
+        <li><span>Allow 映射成一次性 Approved</span><span class="ln">approvals.rs L465</span></li>
+        <li><span>Stop 的 block 带 prompt 才在轮次层 continue</span><span class="ln">turn.rs L509</span></li>
+        <li><span>SessionEnd 退出码 0 即完成，丢掉 stdout</span><span class="ln">session_end.rs L109</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看一次 turn 里每个挂钩拿到什么、能改什么、什么时候来不及了。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>名字不等于能力</b>配置能写下 Prompt 和 Agent，发现阶段会撕掉。能跑的只有命令和 MCP 工具。</div>
+      <div class="dm-s"><b>失败默认放行</b>超时、崩溃、非法 JSON 都把控制位留在 false。要拦，就给明确的 deny 或退出码 2 加理由。</div>
+      <div class="dm-s" id="dm-s-end"><b>位置决定合同</b>工具跑完再拦，拦的是结果。拆卸期写 JSON，stdout 直接丢掉。</div>
+    </div>
+    <div class="demo-caption">教学示意：主轴收成八个点，压缩与子 agent 画在旁路，用于展示触发顺序和合同差异。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 认得出和跑得了拆开</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你刚从 Claude Code 把一份 <code>hooks.json</code> 搬过来。文件里有三条处理器：命令拦危险 shell，提示词让小模型审用户提交，agent 在 Stop 时再起一个子会话跑 linter。Claude 那边三条都能跑。</p>
+  <p class="reveal">贴进 Codex，启动会话。命令那条亮了。后两条日志各写一句 <code>not supported yet</code>。协议枚举明明列着 <code>Prompt</code> 和 <code>Agent</code>，配置解析也认这两个 tag。装进运行表的只有命令和 MCP 工具。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">内核对外有三张表，宽度不一样。</p>
+  <p class="reveal">协议面列出十一个事件名，serde 走 <code>snake_case</code>。旁边四个处理器类型也在：<code>Command</code>、<code>McpTool</code>、<code>Prompt</code>、<code>Agent</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/protocol/src/protocol.rs</code> 第 1508 至 1531 行</p>
+  <p class="reveal">配置面用 <code>type</code> 标签把这四个名字都接住。后两个是空结构体。解析能过，字段里没有可执行内容。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/config/src/hook_config.rs</code> 第 183 至 187 行</p>
+  <p class="reveal">发现阶段看见后两个就 <code>continue</code>，文案是 <code>prompt hooks are not supported yet</code> 和 <code>agent hooks are not supported yet</code>。引擎里真正可执行的种类只有命令和 MCP 工具。普通用户配置里，这两条只进 warning，会话继续。托管必选 hook 配了它们，启动会失败。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/hooks/src/engine/discovery.rs</code> 第 626 至 645 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 280" role="img" aria-label="协议、配置、运行三张表宽度不同">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="36" width="200" height="88" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">协议枚举</text>
+      <text x="140" y="96" fill="#6b7280" text-anchor="middle" font-size="13">11 个事件，4 个 type</text>
+      <path fill="none" d="M248 80H318" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="326" y="36" width="220" height="88" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="436" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">配置解析</text>
+      <text x="436" y="96" fill="#6b7280" text-anchor="middle" font-size="13">Prompt / Agent 是空结构体</text>
+      <path fill="none" d="M554 80H624" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="632" y="20" width="268" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="766" y="54" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">运行表：Command / McpTool</text>
+      <path fill="none" d="M554 110H624" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrA)"></path>
+      <rect x="632" y="90" width="268" height="56" rx="10" fill="#ffffff" stroke="rgba(65,75,90,.35)" stroke-dasharray="7 5"></rect>
+      <text x="766" y="124" fill="#6b7280" text-anchor="middle" font-size="13" font-weight="700">skip：not supported yet</text>
+      <text x="470" y="196" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">引擎类型名就叫 ClaudeHooksEngine</text>
+      <text x="470" y="226" fill="#6b7280" text-anchor="middle" font-size="13">兼容 Claude 的 hooks.json 是产品入口，先接住四个名字，执行器后补</text>
+      <text x="470" y="256" fill="#6b7280" text-anchor="middle" font-size="13">wire 枚举少 SessionEnd，因为拆卸期根本不判别 stdout</text>
+    </svg>
+    <div class="visual-caption">三张表分开写：认得出、解析得过、跑得了，是三件不同的事。</div>
+  </div>
+  <p class="reveal">JSON hook 的运行时类型名直接写成 <code>ClaudeHooksEngine</code>。兼容不是注释里的愿望，是类型名。stdin 喂 JSON，stdout 按 schema 解析。旁边还留着一条旧 notify 路，只在 turn 收工时 fire-and-forget 一条命令。两条路不要混。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/hooks/src/engine/mod.rs</code> 第 107 至 119 行</p>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal paywall-locked xa-peek">配置面可以比执行器宽。先把生态里已有的四个 type 接住，未知 tag 才不会把整份 <code>hooks.json</code> 打爆。代价是搬家的人会按枚举名理解能力。所以发现阶段必须留下稳定文案，必选策略碰到未实现 type 必须拒绝启动。换个语言重写，最小形态仍是两张表加一个 skip。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 失败默认放行</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">有人写了一条 <code>PreToolUse</code> 脚本，超时设成 1 秒，脚本里 sleep 5 秒。他们以为 hook 崩溃等于拦截。工具照样执行。日志里这条 hook 的状态是 <code>failed</code>，文案带 <code>timed out after 1s</code>。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked"><code>run_command</code> 超时把 <code>error</code> 写成 <code>hook timed out after {n}s</code>，<code>exit_code</code> 是空的。解析看见 <code>error</code> 只标 <code>Failed</code>，<code>should_block</code> 保持默认 <code>false</code>。工具注册表于是继续 <code>handle_any_tool</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/hooks/src/engine/command_runner.rs</code> 第 317 至 326 行</p>
+  <p class="reveal paywall-locked">会拦的路只有两条。JSON 里给出 deny 或 <code>block</code>。或者退出码 2 且 stderr 非空。退出码 2 却没有理由，算失败，不拦。异步 hook 即使返回 deny，也加不上控制效果。只有同步、可信、未超时的处理器能改下一步。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/hooks/src/events/pre_tool_use.rs</code> 第 261 至 277 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="超时放行与退出码 2 拦截的分叉">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="40" y="96" width="170" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="125" y="134" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">PreToolUse</text>
+      <path fill="none" d="M218 108H300" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M218 148H300" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <text x="259" y="94" fill="#6b7280" text-anchor="middle" font-size="12">超时 / 崩溃</text>
+      <text x="259" y="176" fill="#6b7280" text-anchor="middle" font-size="12">退出码 2 + 理由</text>
+      <rect x="308" y="70" width="250" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="433" y="104" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Failed，继续执行工具</text>
+      <rect x="308" y="138" width="250" height="56" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="433" y="172" fill="#dc2626" text-anchor="middle" font-size="14" font-weight="700">Blocked，跳过工具</text>
+      <path fill="none" d="M566 98H648" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M566 166H648" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="656" y="70" width="244" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="778" y="104" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">handle_any_tool</text>
+      <rect x="656" y="138" width="244" height="56" rx="12" fill="#ffffff" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="778" y="172" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">RespondToModel</text>
+      <text x="470" y="232" fill="#6b7280" text-anchor="middle" font-size="13">hook 自己崩了，工具还是会跑。这是默认放行。</text>
+    </svg>
+    <div class="visual-caption">同一挂钩点，超时和显式拦截把工具带去两个方向。</div>
+  </div>
+  <p class="reveal paywall-locked">审批路径上的规则反过来。<code>PermissionRequest</code> 跑在 Guardian 和用户审批 UI 之前。它不改工具输入。折叠规则是：任一 deny 立刻赢，否则保留最后一次 allow。Allow 映射成一次性 <code>Approved</code>，不进会话缓存。下次同样的命令还要再问。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/approvals.rs</code> 第 454 至 474 行</p>
+  <p class="reveal paywall-locked">Claude 的 <code>PermissionRequest</code> 输出里有 <code>updatedInput</code>。Codex 把这个字段标成 reserved，看见就 fail closed。从 Claude 原样搬一条带改写的审批 hook，在这里会失败，不会改写。</p>
+
+  <div class="key-line reveal paywall-locked">要拦，就给理由。沉默和超时都放行。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">一条挂掉的 linter hook 不该让所有工具停摆。可用性放在拦截可靠性前面。想改流程，必须同步、必须有明确决策。想发通知，可以异步、最多 8 个并行。审批路径对歧义输出 fail closed，因为那一层不能把看不懂的字段当成允许。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 晚了就改不了已经发生的事</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked"><code>PostToolUse</code> 想拦一次危险写入，文件已经落盘。<code>SessionEnd</code> 想往上下文里塞收尾说明，stdout 被丢掉。wire 枚举里也没有这个事件名。两处翻车的共同点是：挂钩点已经走过它能改的那一段。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">十一个挂钩点按生命周期排开。主轴是 <code>SessionStart</code> → <code>UserPromptSubmit</code> → <code>PreToolUse</code> → <code>PermissionRequest</code> → 工具 → <code>PostToolUse</code> → <code>PreCompact</code> → <code>PostCompact</code> → <code>Stop</code> → <code>SessionEnd</code>。子 agent 另走一条细轴，<code>SubagentStart</code> 和 <code>SubagentStop</code> 只在 ThreadSpawn 上响。</p>
+  <p class="reveal paywall-locked">每个点的合同不一样。</p>
+  <p class="reveal paywall-locked"><code>PreToolUse</code> 能拦工具、能改输入。失败默认放行。<code>PostToolUse</code> 只在工具成功之后跑，block 拒绝的是结果，副作用已经发生。<code>Stop</code> 的 block 带着 continuation prompt，才在轮次层 <code>continue</code>，不重发 <code>TurnStarted</code>。没有 prompt 的 block 被忽略。<code>should_stop</code> 才把控制权交回任务壳。stop 优先于 block。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn.rs</code> 第 509 至 538 行</p>
+  <p class="reveal paywall-locked"><code>UserPromptSubmit</code> 的 block 写成 <code>should_stop</code>，停的是当前这条用户消息，不会拿 stderr 当下一轮 prompt。matcher 在这里被忽略。<code>SessionStart</code> 尊重 <code>continue: false</code>。<code>SubagentStart</code> 只做上下文注入，同样的字段被丢掉。</p>
+  <p class="reveal paywall-locked"><code>SessionEnd</code> 是拆卸期通知。超时默认 1 秒，上限 3 秒，给 app-server 的五秒 shutdown 留余量。退出码 0 就是完成，stdout 整段丢掉。MCP 形态直接 skip。reason 目前写死 <code>other</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/hooks/src/events/session_end.rs</code> 第 20 至 24 行</p>
+  <p class="reveal paywall-locked">hook 文本进模型之前先变成 developer 角色的片段。默认预算 2500 个近似 token。超限时全文写到临时目录，模型看见头尾预览加一行路径。写盘失败就只截断。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/hooks/src/output_spill.rs</code> 第 53 至 91 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">挂钩点的能力跟它在生命周期的位置绑定。工具还没跑，才能改输入或跳过。工具跑完，只能改模型看见的那一截。拆卸期只有几秒，读 JSON、回灌上下文、再等 MCP，都会把关机拖过上限。于是它变成纯通知。换一套运行时，该问的仍是：这个点还来不来得及改已经发生的事。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一份 hooks.json 的三种接法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：二十七个事件，Prompt 和 Agent 真的会跑</h4>
+      <p>还原源码里 <code>HOOK_EVENTS</code> 有 27 项。Codex 的十一点都在，另外还有失败后事件、通知、工作树和文件变更。<code>execPromptHook</code> 用小模型跑一段提示词，构造 user message 时绕开 <code>processUserInput</code>，避免再次触发 <code>UserPromptSubmit</code>。<code>execAgentHook</code> 会起一轮完整 query。</p>
+      <p>Claude 的运行面比配置面宽。Codex 反过来，先把四个 type 接住，执行器后补。事件名高度重合，这是对齐动作。<code>ClaudeHooksEngine</code> 这个类型名把产品判断写进了标识符。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：插件瀑布是原生接口，hook 文件是兼容桥</h4>
+      <p>DSH 的工具管道在 <code>tools/pre-execute</code> 和 <code>tools/post-execute</code> 上各开一道瀑布。原生插件能做桥能做的一切。<code>hooks-codex</code> 只映射五点：<code>PreToolUse</code>、<code>PostToolUse</code>、<code>SessionStart</code>、<code>UserPromptSubmit</code>、<code>Stop</code>。没有 rewrite，没有 <code>PermissionRequest</code>。<code>type: command</code> 以外的、异步的，解析后跳过。</p>
+      <p>DSH 先有插件再补文件兼容。Codex 先有 Claude 文件合同，再让插件往同一引擎里塞声明。Grok 用十五个事件名补观察面，<code>is_blocking()</code> 只对 <code>PreToolUse</code> 返回真，没有审批前 hook。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-12" data-lesson-id="dsh-12">DSH · 插件瀑布</a></span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>同一条 PreToolUse，两种返回值</h3>
+      <p>项目里有一条 <code>PreToolUse</code> 命令 hook，matcher 对着无害的 <code>echo</code>。先把 timeout 设成 1，脚本里 sleep 5 秒。再把脚本改成退出码 2，并向 stderr 写 <code>blocked by test</code>。</p>
+      <p>推演两趟结局：工具会不会执行，模型看见什么，hook 状态分别是 <code>failed</code> 还是 <code>blocked</code>。然后解释，为什么第一种不能靠「hook 挂了」来当拦截。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>协议、配置、运行是三张表，能跑的只有命令和 MCP。失败默认放行，要拦就给理由。每个挂钩点能改的东西跟它在生命周期的位置绑定，拆卸期和工具跑完之后，已经来不及改已经发生的事。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var MAIN = [
+    {id:'SessionStart', name:'SessionStart'},
+    {id:'UserPromptSubmit', name:'UserPromptSubmit'},
+    {id:'PreToolUse', name:'PreToolUse'},
+    {id:'PermissionRequest', name:'PermissionRequest'},
+    {id:'Tool', name:'工具执行'},
+    {id:'PostToolUse', name:'PostToolUse'},
+    {id:'Stop', name:'Stop'},
+    {id:'SessionEnd', name:'SessionEnd'}
+  ];
+  var SUB = [
+    {id:'SubagentStart', name:'SubagentStart'},
+    {id:'SubagentStop', name:'SubagentStop'}
+  ];
+  var mode = 'timeout';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false, prevTrace = null;
+  var hooksEl = document.getElementById('dm-hooks');
+  var subEl = document.getElementById('dm-sub');
+  var colsEl = document.querySelector('.dm-cols');
+  var traceBox = document.querySelector('.dm-trace');
+  var gotEl = document.getElementById('dm-got');
+  var canEl = document.getElementById('dm-can');
+  var toolEl = document.getElementById('dm-tool');
+  var ctxEl = document.getElementById('dm-ctx');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var endSum = document.getElementById('dm-s-end');
+  var IDLE = '点播放，看一次 turn 里每个挂钩拿到什么、能改什么、什么时候来不及了。';
+
+  function chip(item){
+    var d = document.createElement('div');
+    d.className = 'dm-h';
+    d.setAttribute('data-id', item.id);
+    d.textContent = item.name;
+    return d;
+  }
+  function buildChips(){
+    hooksEl.innerHTML = '';
+    subEl.innerHTML = '';
+    MAIN.forEach(function(h){ hooksEl.appendChild(chip(h)); });
+    SUB.forEach(function(h){ subEl.appendChild(chip(h)); });
+  }
+  function allChips(){
+    return Array.prototype.slice.call(document.querySelectorAll('#dm-hooks .dm-h, #dm-sub .dm-h'));
+  }
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+  function setBar(st){
+    var order = MAIN.map(function(x){ return x.id; });
+    var n = 0;
+    if (st && st.on && order.indexOf(st.on) >= 0) n = order.indexOf(st.on) + 1;
+    else if (st && st.done && st.done.length) {
+      st.done.forEach(function(id){
+        var i = order.indexOf(id);
+        if (i + 1 > n) n = i + 1;
+      });
+    }
+    hooksEl.style.setProperty('--bar', String(n / MAIN.length));
+  }
+  function paintHooks(onId, kind, extras, animate){
+    extras = extras || {};
+    var chips = allChips();
+    var oldRects = {};
+    if (animate) {
+      chips.forEach(function(el){
+        oldRects[el.getAttribute('data-id')] = el.getBoundingClientRect();
+      });
+    }
+    hooksEl.classList.add('is-live');
+    subEl.classList.add('is-live');
+    chips.forEach(function(el){
+      var id = el.getAttribute('data-id');
+      var prev = el.className;
+      var cls = 'dm-h';
+      if (extras.late && extras.late.indexOf(id) >= 0) cls += ' late';
+      else if (extras.skip && extras.skip.indexOf(id) >= 0) cls += ' skip';
+      else if (id === onId) cls += ' ' + (kind || 'on');
+      else if (extras.done && extras.done.indexOf(id) >= 0) cls += ' on';
+      if (id === onId) cls += ' now';
+      el.className = cls;
+      if (animate && id === onId && prev !== cls) bump(el, 'firing');
+    });
+    if (animate) {
+      chips.forEach(function(el){
+        var old = oldRects[el.getAttribute('data-id')];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function buildSteps(m){
+    var out = [];
+    if (m === 'prompt') {
+      out.push({
+        cap: '配置文件写了 type: prompt。解析能过，字段是空结构体。',
+        trace: 1, on: null, kind: 'skip', skip: [],
+        got: 'hooks.json 里的 Prompt tag',
+        can: '配置层认这个名字，还没有可执行字段',
+        tool: '还没到工具', ctx: '空着',
+        tk: '', ck: ''
+      });
+      out.push({
+        cap: '发现阶段把卡片撕掉，留下 not supported yet。运行表是空的。',
+        trace: 2, on: null, kind: 'skip', skip: MAIN.map(function(x){return x.id;}).concat(['SubagentStart','SubagentStop']),
+        got: '一条不会进运行表的声明',
+        can: '什么都改不了，会话继续',
+        tool: '没有 hook 盯着它', ctx: '没有 extra context',
+        tk: '', ck: 'hold'
+      });
+      out.push({
+        cap: '时间轴照常往前走。UserPromptSubmit、PreToolUse 都没有处理器可跑。',
+        trace: 3, on: 'UserPromptSubmit', kind: 'skip', skip: ['UserPromptSubmit','PreToolUse'],
+        done: ['SessionStart'],
+        got: '用户那句话',
+        can: '本该能停这条消息，可卡片已经不在了',
+        tool: '将按默认路径执行', ctx: '没有 hook 注入',
+        tk: '', ck: ''
+      });
+      out.push({
+        cap: '工具执行，Stop 放行，SessionEnd 打一声招呼。Prompt 类型从头到尾没有执行器。',
+        trace: 3, on: 'SessionEnd', kind: 'skip', skip: ['SessionEnd'],
+        done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool','PostToolUse','Stop'],
+        got: '拆卸通知',
+        can: '即便挂了命令，这里也不读输出',
+        tool: '已经跑完', ctx: '仍然空白',
+        tk: 'ok', ck: '', fin: true
+      });
+      return out;
+    }
+
+    out.push({
+      cap: '发现阶段先看 type。Command 进运行表，Prompt 和 Agent 会在这里被丢掉。',
+      trace: 3, on: null, kind: 'on',
+      got: '一条 Command 声明',
+      can: '先规范化超时，再检查信任',
+      tool: '还没到 PreToolUse', ctx: '空着',
+      tk: '', ck: ''
+    });
+    out.push({
+      cap: 'SessionStart 先响。matcher 吃 startup / resume / clear / compact。这里可以停启动，也可以注入上下文。',
+      trace: 0, on: 'SessionStart', kind: 'on', done: [],
+      got: '来源字符串 startup',
+      can: '同步时可把 continue: false 变成停',
+      tool: '还没到', ctx: '可以注入 developer 片段',
+      tk: '', ck: ''
+    });
+    out.push({
+      cap: '用户消息进 turn 之前经过 UserPromptSubmit。matcher 被忽略。这里的 block 写成停，不会拿 stderr 当下一轮 prompt。',
+      trace: 0, on: 'UserPromptSubmit', kind: 'on', done: ['SessionStart'],
+      got: '用户提交的原文',
+      can: '停这条消息，或注入上下文',
+      tool: '还没到', ctx: '可附加说明',
+      tk: '', ck: ''
+    });
+
+    if (m === 'timeout') {
+      out.push({
+        cap: 'PreToolUse 拿到工具名和输入。脚本超时，error 被写成 timed out，should_block 仍是 false。',
+        trace: 5, on: 'PreToolUse', kind: 'skip', done: ['SessionStart','UserPromptSubmit'],
+        got: '工具名和 JSON 输入',
+        can: '本可拦或改输入，超时用不上控制位',
+        tool: '将继续执行', ctx: '没有 extra context',
+        tk: 'hold', ck: ''
+      });
+      out.push({
+        cap: '工具灰块往前走。hook 状态是 failed。失败默认放行。',
+        trace: 5, on: 'Tool', kind: 'pass', done: ['SessionStart','UserPromptSubmit','PreToolUse'],
+        got: '已经改不了的 invocation',
+        can: '这一步没有 hook，工具在跑',
+        tool: 'echo ping 已经执行', ctx: '空着',
+        tk: 'ok', ck: ''
+      });
+      out.push({
+        cap: 'PostToolUse 只在成功之后跑。现在再拦，拦的是结果，文件已经写过了。',
+        trace: 5, on: 'PostToolUse', kind: 'on', done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool'],
+        got: '工具已经完成的结果',
+        can: '拒绝结果或附 feedback，改不了副作用',
+        tool: '副作用已经发生', ctx: '可附一段说明',
+        tk: 'hold', ck: ''
+      });
+    } else if (m === 'deny') {
+      out.push({
+        cap: '同一张 Command 卡片改成退出码 2，stderr 写下理由。解析把 should_block 置真。',
+        trace: 6, on: 'PreToolUse', kind: 'block', done: ['SessionStart','UserPromptSubmit'],
+        got: '工具名和 JSON 输入',
+        can: '同步、有理由，这一步来得及跳过工具',
+        tool: '将被跳过', ctx: '模型将收到拦截说明',
+        tk: 'warn', ck: 'hold'
+      });
+      out.push({
+        cap: '工具灰块停住。注册表直接 RespondToModel。PostToolUse 不会跑，因为工具没有成功。',
+        trace: 6, on: 'Tool', kind: 'block', done: ['SessionStart','UserPromptSubmit','PreToolUse'],
+        late: ['PostToolUse'],
+        got: '拦截理由',
+        can: '已经改成跳过，后面的结果钩来不及了',
+        tool: '未执行', ctx: 'Command blocked by PreToolUse hook',
+        tk: 'warn', ck: 'hold'
+      });
+    } else if (m === 'stop') {
+      out.push({
+        cap: 'PreToolUse 放行，工具跑完。轴走到 Stop。',
+        trace: 4, on: 'Tool', kind: 'pass', done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest'],
+        got: '普通工具调用',
+        can: '这一趟没有在工具前拦',
+        tool: '已经跑完', ctx: '空着',
+        tk: 'ok', ck: ''
+      });
+      out.push({
+        cap: 'Stop 返回 block，并且带上 continuation prompt。轮次层写入历史，continue，不重发 TurnStarted。',
+        trace: 8, on: 'Stop', kind: 'hold', done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool','PostToolUse'],
+        got: '本轮即将收工',
+        can: '有 prompt 才能续跑；没有 prompt 的 block 会被忽略',
+        tool: '已经跑完', ctx: '续跑提示写进历史',
+        tk: 'ok', ck: 'hold'
+      });
+      out.push({
+        cap: '时间轴从 Stop 弯回采样。stop_hook_active 会写进下一次 Stop 的 stdin，避免死循环。',
+        trace: 8, on: 'UserPromptSubmit', kind: 'on', done: ['SessionStart'],
+        got: '续跑提示，不是用户新话',
+        can: '还在同一轮里，任务壳没接手',
+        tool: '可能再调一次', ctx: '带上刚才那句 hook prompt',
+        tk: '', ck: 'hold'
+      });
+    } else if (m === 'end') {
+      out.push({
+        cap: '前面的点都放行。轴走到 SessionEnd，脚本往 stdout 打了一大段 JSON。',
+        trace: 9, on: 'SessionEnd', kind: 'on', done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool','PostToolUse','Stop'],
+        got: 'stdin 里有 hook_event_name 和写死的 reason: other',
+        can: '只能当通知。退出码 0 即完成',
+        tool: '已经跑完', ctx: 'stdout 整段丢掉',
+        tk: 'ok', ck: 'warn'
+      });
+      out.push({
+        cap: '卡片亮一下就灭。wire 枚举没有 SessionEnd，也没有对应的 output schema。拆卸期不读输出。',
+        trace: 9, on: 'SessionEnd', kind: 'skip', done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool','PostToolUse','Stop'],
+        late: ['SessionEnd'],
+        got: '拆卸只给 1 到 3 秒',
+        can: '来不及回灌上下文，MCP 也不允许',
+        tool: '已经跑完', ctx: '空白，JSON 被丢掉',
+        tk: 'ok', ck: 'warn'
+      });
+    }
+
+    if (m !== 'stop' && m !== 'end' && m !== 'prompt') {
+      out.push({
+        cap: 'Stop 放行。SessionEnd 打一声招呼就走，reason 写死 other。',
+        trace: 9, on: 'SessionEnd', kind: 'on',
+        done: ['SessionStart','UserPromptSubmit','PreToolUse','PermissionRequest','Tool','PostToolUse','Stop'],
+        got: '拆卸通知',
+        can: '不读 stdout，1 到 3 秒必须结束',
+        tool: m === 'deny' ? '本轮未执行' : '已经跑完',
+        ctx: '没有收尾说明',
+        tk: m === 'deny' ? 'warn' : 'ok', ck: '', fin: true
+      });
+    } else if (m === 'stop' || m === 'end') {
+      out[out.length - 1].fin = true;
+    }
+    return out;
+  }
+
+  function setKv(el, title, text, kind, animate){
+    var span = el.querySelector('[data-val]');
+    if (!span) {
+      el.innerHTML = '<b>' + title + '</b><span data-val></span>';
+      span = el.querySelector('[data-val]');
+    }
+    var prev = span.textContent;
+    var changed = prev !== text;
+    el.className = 'dm-kv' + (kind ? ' ' + kind : '') + (changed ? ' now' : '');
+    if (animate && changed) {
+      span.style.opacity = '0';
+      requestAnimationFrame(function(){
+        span.textContent = text;
+        requestAnimationFrame(function(){ span.style.opacity = '1'; });
+      });
+      bump(el, (kind === 'warn' || kind === 'hold') ? 'firing' : 'pop');
+    } else {
+      span.textContent = text;
+    }
+  }
+
+  function showSummary(){
+    var extra = {
+      timeout: '超时这一趟，工具跑了，hook 只记 failed。',
+      deny: '退出码 2 加理由，工具被跳过，模型收到拦截说明。',
+      prompt: 'Prompt 类型在发现阶段就被撕掉，轴上没有可跑的卡片。',
+      stop: 'block 续跑留在轮次层，TurnStarted 不闪。',
+      end: 'SessionEnd 的 JSON 出不了拆卸期，上下文仍是空白。'
+    };
+    endSum.innerHTML = '<b>这一趟的结局</b>' + extra[mode];
+    summary.classList.add('on');
+  }
+
+  function paint(st, animate){
+    paintHooks(st.on, st.kind, {done: st.done, skip: st.skip, late: st.late}, animate);
+    setBar(st);
+    if (colsEl) colsEl.classList.add('is-live');
+    setKv(gotEl, '拿到', st.got, '', animate);
+    setKv(canEl, '能改', st.can, st.kind === 'block' ? 'warn' : (st.kind === 'hold' ? 'hold' : ''), animate);
+    setKv(toolEl, '工具', st.tool, st.tk || '', animate);
+    setKv(ctxEl, '上下文', st.ctx, st.ck || '', animate);
+    if (st.trace !== null && st.trace !== undefined) {
+      if (traceBox) traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    if (animate) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) showSummary();
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.kind === 'block') return 2200;
+    if (st.on === 'PreToolUse' && st.kind === 'skip') return 2200;
+    if (st.on === 'PostToolUse') return 2000;
+    if (st.on === 'Stop') return 2200;
+    if (st.late && st.late.length) return 2200;
+    if (st.on === 'Tool') return 1800;
+    if (st.skip && st.skip.length > 4) return 1900;
+    if (!st.on) return 1100;
+    if (st.on === 'SessionStart') return 1200;
+    return 1400;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0; prevTrace = null;
+    steps = buildSteps(mode);
+    hooksEl.classList.remove('is-live');
+    subEl.classList.remove('is-live');
+    if (colsEl) colsEl.classList.remove('is-live');
+    if (traceBox) traceBox.classList.remove('is-live');
+    hooksEl.style.setProperty('--bar', '0');
+    buildChips();
+    setKv(gotEl, '拿到', '还没起跑。', '', false);
+    setKv(canEl, '能改', '先选一种返回值再播。', '', false);
+    setKv(toolEl, '工具', '还没到 PreToolUse。', '', false);
+    setKv(ctxEl, '上下文', '空着。', '', false);
+    if (colsEl) colsEl.classList.remove('is-live');
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    mode = b.getAttribute('data-mode');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-hooks'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

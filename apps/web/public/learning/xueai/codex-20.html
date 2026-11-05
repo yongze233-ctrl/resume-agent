@@ -1,0 +1,1160 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-20",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-20',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>网络与凭据代理：模型看不见的那把钥匙 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-req{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:16px 18px;margin-bottom:20px;border-radius:12px;background:var(--card);border:1px solid var(--border);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-req.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-req .dm-req-k{font-size:12px;font-weight:700;color:var(--sub)}
+.dm-req .dm-req-v{font-size:14px;font-weight:800;color:var(--accent-deep);margin-top:4px;word-break:break-all;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-req .dm-req-v.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-stage{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+.dm-gates{position:relative;display:flex;flex-direction:column;gap:10px}
+.dm-gate{position:relative;border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:14px 16px 18px;min-height:72px;overflow:hidden;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-gates.is-live .dm-gate{opacity:.4;transform:scale(.98)}
+.dm-gates.is-live .dm-gate.on,.dm-gates.is-live .dm-gate.ok,.dm-gates.is-live .dm-gate.no{opacity:1;transform:scale(1)}
+.dm-gate.on{background:var(--accent-soft);border-color:rgba(65,75,90,.45)}
+.dm-gate.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4)}
+.dm-gate.no{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-gate.skip,.dm-gates.is-live .dm-gate.skip{opacity:.4;transform:scale(.98)}
+.dm-gate.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-gate:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(.12);transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-gate.on:after{transform:scaleX(.55)}
+.dm-gate.ok:after{transform:scaleX(1);background:var(--success)}
+.dm-gate.no:after{transform:scaleX(1);background:var(--danger)}
+.dm-gate.skip:after{transform:scaleX(0)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-g-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.dm-g-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-g-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--card);color:var(--sub);border:1px solid var(--border);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-g-badge.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-gate.on .dm-g-badge{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dm-gate.ok .dm-g-badge{background:var(--success);color:#fff;border-color:var(--success)}
+.dm-gate.no .dm-g-badge{background:var(--danger);color:#fff;border-color:var(--danger)}
+.dm-g-why{font-size:13px;line-height:1.75;color:var(--sub);max-height:96px;overflow:hidden;transition:max-height .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1)}
+.dm-gate.skip .dm-g-why{max-height:0;opacity:0}
+.dm-g-why.is-enter,.dm-verdict.is-enter,.dm-cell.is-enter{opacity:0;transform:translateY(8px)}
+.dm-g-why.is-enter.in,.dm-verdict.is-enter.in,.dm-cell.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-vault{position:relative;display:flex;flex-direction:column;gap:10px}
+.dm-cell{border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:14px 16px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-vault.is-live .dm-cell{opacity:.4;transform:scale(.98)}
+.dm-vault.is-live .dm-cell.on,.dm-vault.is-live .dm-cell.ok,.dm-vault.is-live .dm-cell.warn{opacity:1;transform:scale(1)}
+.dm-cell b{display:block;font-size:12px;font-weight:800;color:var(--sub);margin-bottom:6px}
+.dm-cell span{display:block;font-size:13.5px;line-height:1.7;color:var(--text);font-weight:700;word-break:break-all;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-cell.on{background:var(--accent-soft);border-color:rgba(65,75,90,.4)}
+.dm-cell.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.35)}
+.dm-cell.warn{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-cell.ok span{color:var(--success)}
+.dm-cell.warn span{color:var(--danger)}
+.dm-cell.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-cell.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-verdict{margin-top:20px;padding:16px 18px;border-radius:10px;border:1px dashed var(--border);background:var(--bg);font-size:13.5px;line-height:1.8;color:var(--sub);min-height:58px;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-verdict.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-verdict.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-verdict.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-verdict.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace.is-live li.on,.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-stage{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px;max-width:100%;min-width:0}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-req{flex-direction:column}.visual{padding:14px;max-width:100%;min-width:0}.dm-trace li{flex-direction:column;gap:4px}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:640px}}
+</style>
+<meta name="description" content="Codex 把出站收成一条漏斗：域名先判、真 token 只在代理里替换，沙箱只放行代理端口">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="网络与凭据代理：模型看不见的那把钥匙"><meta property="og:description" content="Codex 把出站收成一条漏斗：域名先判、真 token 只在代理里替换，沙箱只放行代理端口"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-20.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>网络与凭据代理：模型看不见的那把钥匙</h1>
+    <p class="subtitle">出站要过几道门。真 token 不进子进程。模型看见的是假值和一句 403。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>出站要过几道门。真 token 不进子进程。模型看见的是假值和一句 403。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。域名怎么被判：先 deny，再本地，最后 allowlist。真 token 在 spawn 前换成同形状假值，出站时代理按 host 换回去。不肯走代理的客户端，会被操作系统沙箱按进同一条漏斗。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一个带凭据的请求过代理</div>
+  <div class="demo reveal" id="demo-proxy">
+    <div class="demo-top">
+      <div class="demo-title">换域名、换方法，看请求在哪一关停下，假值在哪一步换成真值</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">域名</span>
+      <div class="dm-seg" id="dm-host">
+        <button type="button" data-host="github" class="on">api.github.com</button>
+        <button type="button" data-host="evil">evil.example</button>
+        <button type="button" data-host="local">localhost</button>
+        <button type="button" data-host="meta">解析到内网</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">方法</span>
+      <div class="dm-seg" id="dm-method">
+        <button type="button" data-method="GET" class="on">GET</button>
+        <button type="button" data-method="POST">POST</button>
+      </div>
+      <span class="dm-b-label">模式</span>
+      <div class="dm-seg" id="dm-mode">
+        <button type="button" data-mode="limited" class="on">Limited</button>
+        <button type="button" data-mode="full">Full</button>
+      </div>
+      <span class="dm-b-hint">先看假值怎么换成真值。再换成 POST，或让 Go 绕过代理。</span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">客户端</span>
+      <div class="dm-seg" id="dm-client">
+        <button type="button" data-client="proxy" class="on">走代理</button>
+        <button type="button" data-client="go">Go 绕过 loopback</button>
+      </div>
+    </div>
+    <div class="dm-req">
+      <div>
+        <div class="dm-req-k">这次请求</div>
+        <div class="dm-req-v" id="dm-req-v">GET https://api.github.com/repos/you/app/issues</div>
+      </div>
+      <div>
+        <div class="dm-req-k">Authorization</div>
+        <div class="dm-req-v" id="dm-auth">Bearer github_pat_dmy8f3a2</div>
+      </div>
+    </div>
+    <div class="dm-stage">
+      <div class="dm-gates">
+        <div class="dm-gate" id="dm-g0">
+          <div class="dm-g-top"><span class="dm-g-name">关卡 1 · 沙箱</span><span class="dm-g-badge">待命</span></div>
+          <div class="dm-g-why" id="dm-g0-why">只放行代理端口。直连 loopback 在这一关停。</div>
+        </div>
+        <div class="dm-gate" id="dm-g1">
+          <div class="dm-g-top"><span class="dm-g-name">关卡 2 · 域名</span><span class="dm-g-badge">待命</span></div>
+          <div class="dm-g-why" id="dm-g1-why">先 deny，再本地或私有，最后 allowlist。</div>
+        </div>
+        <div class="dm-gate" id="dm-g2">
+          <div class="dm-g-top"><span class="dm-g-name">关卡 3 · 方法</span><span class="dm-g-badge">待命</span></div>
+          <div class="dm-g-why" id="dm-g2-why">Limited 只放 GET、HEAD、OPTIONS。</div>
+        </div>
+        <div class="dm-gate" id="dm-g3">
+          <div class="dm-g-top"><span class="dm-g-name">关卡 4 · 凭据</span><span class="dm-g-badge">待命</span></div>
+          <div class="dm-g-why" id="dm-g3-why">请求头带着假值，才换成经纪里的真 token。</div>
+        </div>
+      </div>
+      <div class="dm-vault">
+        <div class="dm-cell" id="dm-c-env"><b>子进程环境</b><span id="dm-c-env-v">GH_TOKEN = github_pat_dmy8f3a2</span></div>
+        <div class="dm-cell" id="dm-c-broker"><b>经纪内存</b><span id="dm-c-broker-v">真 token 锁在这里</span></div>
+        <div class="dm-cell" id="dm-c-model"><b>模型上下文</b><span id="dm-c-model-v">看不见真值</span></div>
+      </div>
+    </div>
+    <div class="dm-verdict" id="dm-verdict">点播放，看这个请求依次走过四道关，假值在哪一步换成真值。</div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>拉起命令前，把真 token 换成同形状假值</span><span class="ln">credential_broker.rs L92</span></li>
+        <li><span>沙箱只放行代理端口，直连 loopback 到此为止</span><span class="ln">seatbelt.rs L325</span></li>
+        <li><span>解析 host，deny 先判且恒胜</span><span class="ln">runtime.rs L553</span></li>
+        <li><span>本地字面量没有精确允许，按私有地址拦</span><span class="ln">runtime.rs L578</span></li>
+        <li><span>域名解析到非公网，即便在名单里也拦</span><span class="ln">runtime.rs L582</span></li>
+        <li><span>allowlist 为空或未命中，回 NotAllowed</span><span class="ln">runtime.rs L598</span></li>
+        <li><span>只有 NotAllowed 才问决策器</span><span class="ln">network_policy.rs L349</span></li>
+        <li><span>Limited 下非 GET、HEAD、OPTIONS 就拦</span><span class="ln">config.rs L311</span></li>
+        <li><span>HTTPS 要看见内层方法，MITM 缺失就拦</span><span class="ln">http_proxy.rs L312</span></li>
+        <li><span>请求头带着假值，才注入对应的真凭据</span><span class="ln">mitm.rs L301</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看这个请求依次走过四道关，假值在哪一步换成真值。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>域名先判</b>deny 恒胜。本地字面量要精确允许。解析到内网的名字，写进名单也过不了。</div>
+      <div class="dm-s"><b>真钥匙不出经纪</b>子进程环境和模型上下文始终是假值。真 token 只在出站那一步被换上去。</div>
+      <div class="dm-s"><b>沙箱是漏斗口</b>Go 绕过代理时，策略函数不会跑。操作系统只放行代理端口，直连在第一关就停。</div>
+    </div>
+    <div class="demo-caption">教学示意：名单、假值形状与解析结果为课程化设定。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 域名怎么被判</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你让模型去 GitHub 提一个 issue。它写出 <code>curl</code>，环境里有真 token。下一秒域名换成 <code>evil.example</code>，或者打到 <code>169.254.169.254</code>。只拦「不在名单里的域名」，deny 条目和内网地址会漏。空名单若默认放行，忘写配置等于全开。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">判定顺序写死。先 deny，再本地或私有，最后 allowlist。空名单和没命中，都拦。决策器只能翻 allowlist 漏掉的案，翻不了 denylist，也翻不了本地网段。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/network-proxy/src/runtime.rs</code> 第 549 至 552 行；<code>codex-rs/network-proxy/src/network_policy.rs</code> 第 346 至 378 行；<code>codex-rs/network-proxy/README.md</code> 第 161 至 162 行</p>
+  <p class="reveal"><code>*.example.com</code> 不含 apex，<code>**.example.com</code> 才含。解析到私有 IP 的域名，精确写进名单也拦。本地字面量要精确写上 <code>localhost</code> 或 <code>127.0.0.1</code>，通配 <code>*</code> 不算。</p>
+  <p class="src-note reveal paywall-locked xa-peek">出处：<code>codex-rs/network-proxy/src/policy.rs</code> 第 321 至 331 行；<code>codex-rs/network-proxy/src/runtime.rs</code> 第 1028 至 1043 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="域名判定先 deny，再本地，最后 allowlist">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="30" y="100" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="105" y="132" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">解析 host</text>
+      <text x="105" y="154" fill="#6b7280" text-anchor="middle" font-size="13">失败也拦</text>
+      <path fill="none" d="M188 135H250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="258" y="100" width="150" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="333" y="132" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">1 deny</text>
+      <text x="333" y="154" fill="#6b7280" text-anchor="middle" font-size="13">命中即停</text>
+      <path fill="none" d="M333 100V52" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="258" y="8" width="150" height="36" rx="8" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="333" y="32" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">403 denylist</text>
+      <path fill="none" d="M416 135H478" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="486" y="100" width="150" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="561" y="132" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">2 本地或私有</text>
+      <text x="561" y="154" fill="#6b7280" text-anchor="middle" font-size="13">字面量要精确</text>
+      <path fill="none" d="M561 170V218" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="486" y="226" width="150" height="36" rx="8" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="561" y="250" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">403 allowlist</text>
+      <path fill="none" d="M644 135H706" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="714" y="100" width="196" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="812" y="132" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">3 allowlist</text>
+      <text x="812" y="154" fill="#6b7280" text-anchor="middle" font-size="13">空名单也拦</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：三步顺序固定。Denied 和 NotAllowedLocal 不会去问决策器。</div>
+  </div>
+  <p class="reveal paywall-locked">被拦时回给命令进程 403，头是 <code>x-proxy-error</code>，正文是一句人话。<code>not_allowed</code> 和 <code>not_allowed_local</code> 对外都叫 <code>blocked-by-allowlist</code>，正文才能分开「不在名单」和「沙箱拦了本地」。这条 403 变成 exec 输出喂回模型，采样循环不会停。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/src/responses.rs</code> 第 52 至 83 行</p>
+  <p class="reveal paywall-locked">同一 pattern 既 allow 又 deny，有效值取大的。枚举序是 <code>None &lt; Allow &lt; Deny</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/src/config.rs</code> 第 19 至 27 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">默认拒绝、deny 恒胜、内网要显式开门，这是 SSRF 防护的通用形状。换语言重写，该问的还是同一组问题：没写名单时怎么办，冲突时谁赢，解析到内网的名字算不算放行。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 真钥匙只在代理里出现</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">token 跟着命令进 rollout。下一轮模型还能看见它，再下一轮可能进日志。凭据一旦进入模型上下文，后面每一层脱敏都是补救。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">拉起命令前，凭据经纪把 <code>GH_TOKEN</code>、<code>OPENAI_API_KEY</code> 换成同长度、同前缀的假值。模型若 <code>printenv</code>，看见的是假的。假值进上下文，对上游无用。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/src/credential_broker.rs</code> 第 92 至 119 行</p>
+  <p class="reveal paywall-locked">出站时 MITM 按 host 过滤。请求头里必须带着假值，才换成真值。hook 的剥头、注头发生在经纪之后，可以剥掉刚注入的 <code>Authorization</code>。用户改过的环境值不还原。标记当不可信输入。经纪只覆盖 GitHub 和 OpenAI。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/src/mitm.rs</code> 第 297 至 302 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="子进程拿假值，出站时代理换真值">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="30" y="70" width="160" height="80" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="110" y="106" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">模型</text>
+      <text x="110" y="128" fill="#6b7280" text-anchor="middle" font-size="13">看不见真 token</text>
+      <path fill="none" d="M198 110H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="276" y="70" width="180" height="80" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="366" y="106" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">子进程环境</text>
+      <text x="366" y="128" fill="#6b7280" text-anchor="middle" font-size="13">同形状假值</text>
+      <path fill="none" d="M464 110H534" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="542" y="70" width="170" height="80" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="627" y="106" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">代理 MITM</text>
+      <text x="627" y="128" fill="#6b7280" text-anchor="middle" font-size="13">按 host 换真值</text>
+      <path fill="none" d="M720 110H790" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="798" y="70" width="112" height="80" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="854" y="106" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">上游</text>
+      <text x="854" y="128" fill="#6b7280" text-anchor="middle" font-size="13">真 token</text>
+      <text x="470" y="200" fill="#6b7280" text-anchor="middle" font-size="13">真值只在代理进程内存里出现，不进 rollout，也不进模型下一轮上下文</text>
+    </svg>
+    <div class="visual-caption">教学化时序：假值走全程可见面，真值只在出站那一跳出现。</div>
+  </div>
+  <div class="key-line reveal paywall-locked">子进程口袋里是假票根，柜台后面锁着真票。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">出网策略写错，模型还能凭 403 改主意。凭据进上下文，撤销成本高。所以真值在 spawn 前拿走，回填发生在代理进程内存里。假值保持形状，是为了让校验格式的客户端还能启动。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 沙箱把流量按进代理</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">Go 的 <code>net/http</code> 对 loopback 绕过 <code>HTTP_PROXY</code>。你以为流量进了代理，其实它直连 <code>127.0.0.1</code>。本地有管理口、docker socket。策略文件写了名单，请求根本没走到那一层。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">沙箱只放行代理端口。macOS 受限 Seatbelt 只写 <code>localhost:{port}</code>。Linux 走 <code>ProxyOnly</code>。<code>allow_local_binding</code> 为假时，<code>NO_PROXY</code> 写成空串，loopback 字面量也必须走代理。打开本地绑定等于承认 loopback 不再经过 allowlist。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 309 至 336 行；<code>codex-rs/network-proxy/src/proxy.rs</code> 第 450 至 460 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">应用层代理挡不住不肯走代理的客户端。下一层必须是操作系统或防火墙，只留一个口。三道门叠在一起才构成托管网络。单独一道都挡不住另一道漏掉的面。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 阀门装在不同的层</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok：阀门在工具入口，loopback 默认放行</h4>
+      <p>Grok 的 <code>web_fetch</code> 在工具内部做域名名单和解析后 IP 检查。空名单拦所有 URL，和 Codex 的 allowlist-first 同方向。path 还可以写成前缀，收窄到某一段文档。</p>
+      <p>SSRF 检查拦 RFC1918、link-local、CGNAT。loopback 明确放行，注释写 local development。bash 里的 <code>curl</code> 不走这张名单。Codex 把阀门放在所有子进程出口，所以要和沙箱绑在一起。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · 出处：<code>web_fetch/domain.rs</code> 第 110 至 144 行；<code>web_fetch/ssrf.rs</code> 第 17 至 19 行</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" fill="none"></path><path d="M5 16l.8 2.2L8 19l-2.2.8L5 22l-.8-2.2L2 19l2.2-.8L5 16z" fill="none"></path></svg>DSH：配置只存变量名，spawn 时按键名擦环境</h4>
+      <p>DSH 把密钥做成引用。设置文件只带环境变量名，provider 在每次操作时 resolve。配置表面从不看见值。</p>
+      <p>子进程另有一层擦除。名字像 <code>KEY</code>、<code>TOKEN</code> 的键和所有 <code>DSH_*</code> 会被丢掉。它挡得住配置文件里出现真值。模型若还能 <code>printenv</code>，除非 spawn 用了这层擦除，环境里仍可能有真 token。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · 出处：<code>packages/credentials/credentials/src/index.ts</code> 第 1 至 7 行；<code>packages/subprocess/subprocess/src/index.ts</code> 第 60 至 66 行 · <a href="/dashboard/learning?lesson=dsh-24" data-lesson-id="dsh-24">DSH · 凭据每次现取</a></span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>星号放行 localhost 吗</h3>
+      <p><code>allow_local_binding = false</code>，allowlist 只有 <code>*</code>。对 <code>127.0.0.1</code> 调一次判定，期望是什么。对公网 IP <code>8.8.8.8</code> 再调一次，期望又是什么。</p>
+      <p>提示：本地字面量拒绝通配。allowlist 编译显式允许全局 <code>*</code>，denylist 编译拒绝它。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>出站默认拒绝，deny 恒胜，内网要精确开门。真密钥不要进模型可见的环境，spawn 前换成假值，出站再换。代理挡不住绕过它的客户端，下一层必须是只放行代理端口的沙箱。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var hostKey = 'github';
+  var method = 'GET';
+  var mode = 'limited';
+  var client = 'proxy';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevG = ['', '', '', ''];
+  var prevCk = ['', '', ''];
+  var prevAuth = '';
+  var prevTrace = null;
+  var HOSTS = {
+    github: { host: 'api.github.com', path: '/repos/you/app/issues', kind: 'allow' },
+    evil: { host: 'evil.example', path: '/x', kind: 'deny' },
+    local: { host: 'localhost', path: '/admin', kind: 'local' },
+    meta: { host: 'metadata.internal', path: '/latest', kind: 'dns' }
+  };
+  var DUMMY = 'github_pat_dmy8f3a2';
+  var REAL = 'github_pat_live****';
+  var IDLE = '点播放，看这个请求依次走过四道关，假值在哪一步换成真值。';
+  var WHY0 = '只放行代理端口。直连 loopback 在这一关停。';
+  var WHY1 = '先 deny，再本地或私有，最后 allowlist。';
+  var WHY2 = 'Limited 只放 GET、HEAD、OPTIONS。';
+  var WHY3 = '请求头带着假值，才换成经纪里的真 token。';
+
+  var gateEls = [0,1,2,3].map(function(i){ return document.getElementById('dm-g' + i); });
+  var whyEls = [0,1,2,3].map(function(i){ return document.getElementById('dm-g' + i + '-why'); });
+  var cellEnv = document.getElementById('dm-c-env');
+  var cellBroker = document.getElementById('dm-c-broker');
+  var cellModel = document.getElementById('dm-c-model');
+  var envV = document.getElementById('dm-c-env-v');
+  var brokerV = document.getElementById('dm-c-broker-v');
+  var modelV = document.getElementById('dm-c-model-v');
+  var reqV = document.getElementById('dm-req-v');
+  var authV = document.getElementById('dm-auth');
+  var reqBox = document.querySelector('.dm-req');
+  var gatesBox = document.querySelector('.dm-gates');
+  var vaultBox = document.querySelector('.dm-vault');
+  var verdict = document.getElementById('dm-verdict');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var traceBox = document.querySelector('.dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var cells = [cellEnv, cellBroker, cellModel];
+  var cellVals = [envV, brokerV, modelV];
+
+  function requestLine(){
+    var h = HOSTS[hostKey];
+    return method + ' https://' + h.host + h.path;
+  }
+
+  function buildSteps(){
+    var h = HOSTS[hostKey];
+    var out = [];
+    var g = ['', '', '', ''];
+    var w = [WHY0, WHY1, WHY2, WHY3];
+
+    function snap(o){
+      out.push({
+        cap: o.cap,
+        trace: o.trace,
+        g: o.g.slice(),
+        w: (o.w || w).slice(),
+        auth: o.auth || DUMMY,
+        env: o.env || ('GH_TOKEN = ' + DUMMY),
+        broker: o.broker || '真 token 锁在这里',
+        model: o.model || '看不见真值',
+        ck: o.ck || ['on', '', ''],
+        vs: o.vs || 'hold',
+        verdict: o.verdict,
+        fin: !!o.fin
+      });
+    }
+
+    snap({
+      cap: '拉起命令前，经纪把 GH_TOKEN 换成同形状假值。模型 printenv 只能看见假的。',
+      trace: 0, g: g,
+      auth: DUMMY,
+      env: 'GH_TOKEN = ' + DUMMY,
+      broker: '真 token 锁在这里',
+      model: '看不见真值',
+      ck: ['on', 'on', ''],
+      vs: 'hold',
+      verdict: '子进程已启动，环境里是假值。请求还没出站。'
+    });
+
+    if (client === 'go') {
+      snap({
+        cap: 'Go 的 net/http 对 loopback 绕过代理，直连 127.0.0.1。沙箱只放行代理端口，这一步就停。',
+        trace: 1, g: ['no', 'skip', 'skip', 'skip'],
+        w: ['直连被沙箱拒绝。策略函数没跑到。', WHY1, WHY2, WHY3],
+        vs: 'warn',
+        verdict: '操作系统拒绝。没有 x-proxy-error，因为请求没进代理。',
+        fin: true
+      });
+      return out;
+    }
+
+    snap({
+      cap: '请求走向 127.0.0.1:3128。沙箱只放行这个端口，直连被挡住。',
+      trace: 1, g: ['ok', '', '', ''],
+      w: ['已放行代理端口 3128。', WHY1, WHY2, WHY3],
+      vs: 'hold',
+      verdict: '流量进了代理，开始判域名。'
+    });
+
+    if (h.kind === 'deny') {
+      snap({
+        cap: 'deny 先判。evil.example 在 denylist 上，决策器没有翻盘机会。',
+        trace: 2, g: ['ok', 'no', 'skip', 'skip'],
+        w: ['已放行代理端口 3128。', 'deny 命中，决策器不会被问到。', WHY2, WHY3],
+        vs: 'warn',
+        verdict: '403  x-proxy-error: blocked-by-denylist。正文：Domain denied by the sandbox policy.',
+        fin: true
+      });
+      return out;
+    }
+
+    snap({
+      cap: 'deny 没命中。接下来查本地字面量和解析后的 IP。',
+      trace: 2, g: ['ok', 'on', '', ''],
+      w: ['已放行代理端口 3128。', 'deny 未命中，进入本地检查。', WHY2, WHY3],
+      vs: 'hold',
+      verdict: '域名还没放行。'
+    });
+
+    if (h.kind === 'local') {
+      snap({
+        cap: 'localhost 是本地字面量。allow_local_binding 为假，又没精确写进 allowlist，拦下。通配不算精确允许。',
+        trace: 3, g: ['ok', 'no', 'skip', 'skip'],
+        w: ['已放行代理端口 3128。', '本地字面量未精确允许。', WHY2, WHY3],
+        vs: 'warn',
+        verdict: '403  x-proxy-error: blocked-by-allowlist。正文：Sandbox policy blocks local/private network addresses.',
+        fin: true
+      });
+      return out;
+    }
+
+
+    if (h.kind === 'dns') {
+      snap({
+        cap: 'metadata.internal 解析到 10.0.0.1。即便名字写进 allowlist，解析到私有 IP 也拦。决策器翻不了这一案。',
+        trace: 4, g: ['ok', 'no', 'skip', 'skip'],
+        w: ['已放行代理端口 3128。', '解析到 10.0.0.1，按私有地址拦。', WHY2, WHY3],
+        vs: 'warn',
+        verdict: '403  x-proxy-error: blocked-by-allowlist。正文：Sandbox policy blocks local/private network addresses.',
+        fin: true
+      });
+      return out;
+    }
+
+    snap({
+      cap: 'api.github.com 在名单里。Denied 和 NotAllowedLocal 不会问决策器，这里已经 Allowed。',
+      trace: 5, g: ['ok', 'ok', '', ''],
+      w: ['已放行代理端口 3128。', 'allowlist 命中。', WHY2, WHY3],
+      vs: 'hold',
+      verdict: '域名放行。接下来看方法。'
+    });
+
+    if (mode === 'limited' && method !== 'GET') {
+      snap({
+        cap: 'Limited 只放 GET、HEAD、OPTIONS。POST 在这一关停。HTTPS 要看见内层方法，所以 limited 必须开 MITM。',
+        trace: 7, g: ['ok', 'ok', 'no', 'skip'],
+        w: ['已放行代理端口 3128。', 'allowlist 命中。', 'POST 不在安全方法里。', WHY3],
+        vs: 'warn',
+        verdict: '403  x-proxy-error: blocked-by-method-policy。正文：Method not allowed in limited mode.',
+        fin: true
+      });
+      return out;
+    }
+
+    snap({
+      cap: mode === 'limited'
+        ? 'Limited 下 GET 放行。隧道里的方法已经被 MITM 看见。'
+        : 'Full 模式不钳方法。凭据经纪对 TLS 仍会截获，才能换 token。',
+      trace: mode === 'limited' ? 7 : 8, g: ['ok', 'ok', 'ok', 'on'],
+      w: ['已放行代理端口 3128。', 'allowlist 命中。', mode === 'limited' ? 'GET 放行。' : 'Full，方法不钳。', '准备按假值换真值。'],
+      vs: 'hold',
+      verdict: '方法过了。进入凭据替换。'
+    });
+
+    snap({
+      cap: 'MITM 看见请求头里的假值，按 host 换成真 token。子进程环境和模型上下文仍然是假的。',
+      trace: 9, g: ['ok', 'ok', 'ok', 'ok'],
+      w: ['已放行代理端口 3128。', 'allowlist 命中。', mode === 'limited' ? 'GET 放行。' : 'Full，方法不钳。', '假值已换成真 token，出站。'],
+      auth: REAL,
+      env: 'GH_TOKEN = ' + DUMMY,
+      broker: '已注入 ' + REAL,
+      model: '仍然看不见真值',
+      ck: ['on', 'ok', ''],
+      vs: 'ok',
+      verdict: '上游收到 Authorization: Bearer ' + REAL + '。模型这边还是假值。',
+      fin: true
+    });
+    return out;
+  }
+
+  function motionOk(){
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function badgeText(state){
+    return state === 'ok' ? '放行' : state === 'no' ? '拦住' : state === 'on' ? '检查中' : state === 'skip' ? '未到' : '待命';
+  }
+  function enterEl(el){
+    el.classList.remove('in');
+    el.classList.add('is-enter');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ el.classList.add('in'); });
+    });
+  }
+  function fadeText(el, text, animate){
+    if (!animate || el.textContent === text) { el.textContent = text; return; }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+  function spawnGhost(host, el){
+    if (!host || !el) return;
+    var box = host.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    host.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function paint(st, animate){
+    if (animate && !motionOk()) animate = false;
+    gatesBox.classList.add('is-live');
+    vaultBox.classList.add('is-live');
+    traceBox.classList.add('is-live');
+    var oldRects = [];
+    if (animate) {
+      gateEls.forEach(function(el){ oldRects.push(el.getBoundingClientRect()); });
+    }
+    var nextReq = requestLine();
+    var reqChanged = reqV.textContent !== nextReq;
+    fadeText(reqV, nextReq, animate);
+    var authLine = 'Bearer ' + st.auth;
+    var authChanged = (prevAuth || '') !== st.auth;
+    fadeText(authV, authLine, animate);
+    if (animate && reqChanged) bump(reqBox, 'firing');
+    if (animate && authChanged) bump(authV, 'pop');
+    if (animate && authChanged && st.auth !== DUMMY) {
+      spawnGhost(vaultBox, cellBroker);
+      bump(reqBox, 'firing');
+    }
+    var cellText = [st.env, st.broker, st.model];
+    for (var c = 0; c < 3; c++) {
+      var nextCk = st.ck[c] || '';
+      var prevC = prevCk[c] || '';
+      cells[c].className = 'dm-cell' + (nextCk ? ' ' + nextCk : '');
+      fadeText(cellVals[c], cellText[c], animate);
+      if (animate && nextCk !== prevC) {
+        if (nextCk === 'ok' || nextCk === 'warn') bump(cells[c], 'pop');
+        if (nextCk === 'on') bump(cells[c], 'firing');
+      }
+    }
+    for (var i = 0; i < 4; i++) {
+      var next = st.g[i] || '';
+      var prev = prevG[i] || '';
+      gateEls[i].className = 'dm-gate' + (next ? ' ' + next : '');
+      var badge = gateEls[i].querySelector('.dm-g-badge');
+      badge.textContent = badgeText(next);
+      if (whyEls[i].textContent !== st.w[i]) {
+        whyEls[i].textContent = st.w[i];
+        if (animate) enterEl(whyEls[i]);
+      }
+      if (animate && next !== prev) {
+        if (next === 'on') bump(gateEls[i], 'firing');
+        if (next === 'ok' || next === 'no') bump(badge, 'pop');
+        if (next === 'no') spawnGhost(gatesBox, gateEls[i]);
+      }
+    }
+    if (animate) {
+      gateEls.forEach(function(el, n){
+        if ((st.g[n] || '') === 'skip') return;
+        var now = el.getBoundingClientRect();
+        var old = oldRects[n];
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+    prevG = st.g.slice();
+    prevCk = st.ck.slice();
+    prevAuth = st.auth;
+    var vChanged = verdict.textContent !== st.verdict;
+    verdict.className = 'dm-verdict' + (st.vs ? ' ' + st.vs : '');
+    verdict.textContent = st.verdict;
+    if (animate && vChanged) {
+      enterEl(verdict);
+      if (st.vs === 'warn' || st.vs === 'ok') bump(verdict, 'pop');
+      if (st.vs === 'ok') bump(verdict, 'firing');
+    }
+    if (st.trace !== null && st.trace !== undefined) {
+      traceRows.forEach(function(el, n){
+        var nextOn = n === st.trace;
+        el.classList.toggle('on', nextOn);
+        if (animate && nextOn && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    if (animate) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function idlePaint(){
+    gatesBox.classList.remove('is-live');
+    vaultBox.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    for (var i = 0; i < 4; i++) {
+      gateEls[i].className = 'dm-gate';
+      gateEls[i].style.transition = '';
+      gateEls[i].style.transform = '';
+      gateEls[i].querySelector('.dm-g-badge').textContent = badgeText('');
+      gateEls[i].querySelector('.dm-g-badge').classList.remove('pop');
+      whyEls[i].classList.remove('is-enter','in');
+      whyEls[i].textContent = [WHY0, WHY1, WHY2, WHY3][i];
+    }
+    cells.forEach(function(el){
+      el.className = 'dm-cell';
+      el.classList.remove('is-enter','in','pop','firing');
+    });
+    envV.style.opacity = '1';
+    brokerV.style.opacity = '1';
+    modelV.style.opacity = '1';
+    envV.textContent = 'GH_TOKEN = ' + DUMMY;
+    brokerV.textContent = '真 token 锁在这里';
+    modelV.textContent = '看不见真值';
+    reqV.style.opacity = '1';
+    authV.style.opacity = '1';
+    authV.classList.remove('pop');
+    authV.textContent = 'Bearer ' + DUMMY;
+    reqV.textContent = requestLine();
+    reqBox.classList.remove('firing');
+    verdict.className = 'dm-verdict';
+    verdict.classList.remove('is-enter','in','pop','firing');
+    verdict.textContent = IDLE;
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    Array.prototype.slice.call(document.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var g = st.g || [];
+    var blocked = false, checking = false;
+    for (var k = 0; k < g.length; k++) {
+      if (g[k] === 'no') blocked = true;
+      if (g[k] === 'on') checking = true;
+    }
+    if (blocked) return 2200;
+    if (st.auth && st.auth !== DUMMY) return 2200;
+    if (st.trace === 3 || st.trace === 4) return 2000;
+    if (st.trace === 2 || st.trace === 5) return 1700;
+    if (st.trace === 7 || st.trace === 8) return 1700;
+    if (st.trace === 0) return 1300;
+    if (checking) return 1500;
+    return 1200;
+  }
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    prevG = ['', '', '', ''];
+    prevCk = ['', '', ''];
+    prevAuth = DUMMY;
+    prevTrace = null;
+    steps = buildSteps();
+    idlePaint();
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function bindSeg(id, attr, apply){
+    document.getElementById(id).addEventListener('click', function(e){
+      var b = e.target.closest('button');
+      if (!b) return;
+      Array.prototype.forEach.call(this.querySelectorAll('button'), function(el){ el.classList.remove('on'); });
+      b.classList.add('on');
+      apply(b.getAttribute(attr));
+      reset();
+    });
+  }
+  bindSeg('dm-host', 'data-host', function(v){ hostKey = v; });
+  bindSeg('dm-method', 'data-method', function(v){ method = v; });
+  bindSeg('dm-mode', 'data-mode', function(v){ mode = v; });
+  bindSeg('dm-client', 'data-client', function(v){ client = v; });
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-proxy'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

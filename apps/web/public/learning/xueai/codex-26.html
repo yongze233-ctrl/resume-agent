@@ -1,0 +1,1193 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-26",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-26',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MCP 接进来：模型看见翻译过的名字 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson code{overflow-wrap:anywhere;word-break:break-all}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25);overflow-wrap:anywhere;word-break:break-all}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-input{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+.dm-input label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-input input{flex:1;min-width:160px;min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+.dm-cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-head{position:relative;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{font-size:11px;font-weight:600;color:var(--sub)}.dm-meter b{color:var(--accent-deep);font-variant-numeric:tabular-nums;transition:opacity .3s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-body{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:196px}
+#dm-left,#dm-right{display:flex;flex-direction:column;gap:10px}
+.dm-chip{padding:12px 14px;border-radius:9px;border:1px solid var(--border);background:var(--card);font-size:13px;line-height:1.7;color:var(--faint);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1);overflow-wrap:anywhere;word-break:break-all}
+.dm-chip b{display:block;font-size:13px;color:var(--text);margin-bottom:2px}
+.dm-host.is-live .dm-chip{opacity:.4;transform:scale(.98)}
+.dm-host.is-live .dm-chip.now{opacity:1;transform:scale(1)}
+.dm-chip.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-chip.on b{color:var(--accent-deep)}
+.dm-chip.hash{border-color:rgba(65,75,90,.5);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-chip.wait{opacity:.42}
+.dm-host.is-live .dm-chip.wait.now{opacity:1;transform:scale(1)}
+.dm-chip.is-enter{opacity:0;transform:translateY(8px)}
+.dm-chip.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-chip.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:58px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-status.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:420px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){
+  .lesson{overflow-x:hidden}
+  .compare{grid-template-columns:1fr}
+  .objective{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .demo{padding:18px}
+  .demo-ctrl{width:100%}
+  .demo-ctrl button{flex:1}
+  .dm-cols{grid-template-columns:1fr}
+  .dm-body{min-height:0}
+  .visual{padding:14px}
+  .dm-trace li{flex-direction:column;gap:4px}
+  .dm-input{width:100%}
+  .dm-input input{min-width:0;width:100%}
+  .demo,.visual,.cmp-card{max-width:100%;min-width:0}
+  .dm-summary.on{max-height:720px}
+}
+</style>
+<meta name="description" content="Codex 接外部 MCP 时，工具要先过一层翻译才进模型眼睛：加前缀、清洗、撞名哈希。skill 目录常在，点名再给正文">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="MCP 接进来：模型看见翻译过的名字"><meta property="og:description" content="Codex 接外部 MCP 时，工具要先过一层翻译才进模型眼睛：加前缀、清洗、撞名哈希。skill 目录常在，点名再给正文"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-26.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · MCP 与 Skills</div>
+    <h1>MCP 接进来：模型看见翻译过的名字</h1>
+    <p class="subtitle">外部 server 的工具要先过一层翻译才进模型眼睛。skill 目录常在，缺 MCP 时另问人。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>外部 server 的工具要先过一层翻译才进模型眼睛。skill 目录常在，缺 MCP 时另问人。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。Codex 当 client 时，外部工具怎么变成模型可见名。两家店清洗后撞名，怎么消歧。skill 目录为什么不看 MCP 活没活着。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一家店接进来，名字怎么变</div>
+  <div class="demo reveal" id="demo-mcp">
+    <div class="demo-top">
+      <div class="demo-title">一个 MCP server 接进来：工具怎么变成模型看得见的能力</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">接入场景</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-mode="clean" class="on">干净两家</button>
+        <button type="button" data-mode="ns">连字符双胞胎</button>
+        <button type="button" data-mode="tool">工具名双胞胎</button>
+      </div>
+      <span class="dm-b-hint">右边两档会撞名。切一下，看清洗之后谁被加上哈希。</span>
+      <div class="dm-input">
+        <label for="dm-name">第二家店</label>
+        <input id="dm-name" type="text" value="docs" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">门外 · 原始 tools/list</span><span class="dm-meter">进门 <b id="dm-l-n">0</b></span></div>
+        <div class="dm-body">
+          <div id="dm-left" class="dm-host"></div>
+          <div class="dm-status" id="dm-left-status">还没接任何人。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">模型眼前 · 翻译后的名字</span><span class="dm-meter">可见 <b id="dm-r-n">0</b></span></div>
+        <div class="dm-body">
+          <div id="dm-right" class="dm-host"></div>
+          <div class="dm-status" id="dm-right-status">清单空着。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>连接集整份发布，已有 binding 继续拿自己那份连接</span><span class="ln">runtime.rs L246</span></li>
+        <li><span>各家 tools/list 汇成一张表，再交给命名翻译</span><span class="ln">tool_catalog.rs L153</span></li>
+        <li><span>给命名空间加上历史前缀 mcp__</span><span class="ln">tools.rs L228</span></li>
+        <li><span>非法字符洗成下划线，只留字母数字和下划线</span><span class="ln">mcp/mod.rs L477</span></li>
+        <li><span>完全相同的原始身份丢掉一份</span><span class="ln">tools.rs L134</span></li>
+        <li><span>清洗后命名空间撞车，末尾加 12 位 SHA-1</span><span class="ln">tools.rs L166</span></li>
+        <li><span>清洗后工具名撞车，同样加 12 位哈希</span><span class="ln">tools.rs L193</span></li>
+        <li><span>合起来超过 128 字节就截断再哈希，协议调用仍走原名</span><span class="ln">tools.rs L226</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看一家店接进来之后，工具名怎么变成模型看得见的能力。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>两层名字</b>左边是协议上的原名，右边是给模型看的翻译。调回去的时候走左边，不会因为右边加了哈希就进错店。</div>
+      <div class="dm-s"><b>撞名才哈希</b>干净两家不会加后缀。连字符和工具名这两档，清洗之后才会撞，哈希是消歧，不是装饰。</div>
+      <div class="dm-s"><b>自己改第二家店</b>在连字符档把店名改成和第一家清洗后一样的字，就能看见命名空间被拆开。</div>
+    </div>
+    <div class="demo-caption">教学示意：哈希取前 12 位，算法是 SHA-1，演示里用固定示意后缀。行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 对外一份清单，对内另一份</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你把 <code>codex mcp-server</code> 写进 Cursor 的 MCP 配置。Cursor 当 client，Codex 当 server。若这一次 <code>tools/list</code> 把内部 GitHub 工具一并交出去，IDE 调一次就摸到内部能力。权限边界从「调一次 Codex」扩成「直接调内部工具」。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">crate 拆成两套。<code>mcp-server</code> 从 stdin 读行，一行一条 JSON。<code>initialize</code> 只打开 tools。<code>tools/list</code> 写死两个名字：<code>codex</code> 和 <code>codex-reply</code>。<code>codex</code> 会 <code>start_thread</code>，nested thread 再起自己的 <code>McpRuntime</code>。<code>codex-mcp</code> 管连接集，外部 server 的工具另做一份目录。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/mcp-server/src/lib.rs</code> 第 131 至 152 行；<code>codex-rs/mcp-server/src/codex_tool_runner.rs</code> 第 66 至 90 行；<code>codex-rs/codex-mcp/src/runtime.rs</code> 第 88 至 98 行</p>
+  <p class="reveal">同一份 JSON-RPC 线协议，处理器不是同一个。早期资料常把它们画成同一个 runtime 的两张脸。当前源码里它们甚至不共享 <code>MessageProcessor</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/mcp-server/src/message_processor.rs</code> 第 274 至 277 行；<code>codex-rs/mcp-server/src/message_processor.rs</code> 第 336 至 348 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 320" role="img" aria-label="Codex 作为 MCP server 与作为 client 的两份清单">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="40" y="36" fill="#262d38" font-size="14" font-weight="800">IDE 看见的入口</text>
+      <rect x="40" y="52" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="115" y="82" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Cursor</text>
+      <text x="115" y="104" fill="#6b7280" text-anchor="middle" font-size="13">MCP client</text>
+      <path fill="none" d="M198 87H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="276" y="52" width="220" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="386" y="82" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">mcp-server</text>
+      <text x="386" y="104" fill="#6b7280" text-anchor="middle" font-size="13">codex · codex-reply</text>
+      <path fill="none" d="M504 87H574" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="582" y="52" width="318" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="741" y="82" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">nested thread</text>
+      <text x="741" y="104" fill="#6b7280" text-anchor="middle" font-size="13">一次 tools/call 变成一条会话</text>
+      <text x="40" y="176" fill="#262d38" font-size="14" font-weight="800">会话里看见的外部店</text>
+      <rect x="40" y="192" width="220" height="86" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="150" y="228" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">McpRuntime</text>
+      <text x="150" y="252" fill="#6b7280" text-anchor="middle" font-size="13">连接集可整份 replace</text>
+      <path fill="none" d="M268 235H338" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="346" y="192" width="168" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="430" y="228" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">GitHub</text>
+      <text x="430" y="252" fill="#6b7280" text-anchor="middle" font-size="13">mcp__github__*</text>
+      <rect x="536" y="192" width="168" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="620" y="228" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Docs</text>
+      <text x="620" y="252" fill="#6b7280" text-anchor="middle" font-size="13">mcp__docs__*</text>
+      <rect x="726" y="192" width="174" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="813" y="228" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">自建 HTTP</text>
+      <text x="813" y="252" fill="#6b7280" text-anchor="middle" font-size="13">mcp__http__*</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：上面是交给 IDE 的两个入口，下面是会话内部的外部工具目录。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked xa-peek">为什么长期成立</div>
+  <p class="reveal paywall-locked">对外承诺和对内能力分开，是网关的通用形状。换语言也是两个函数：hosted 返回 <code>run</code> / <code>continue</code>，external 返回 <code>mcp__*</code>。IDE 只看见入口，会话里才看见外部店。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 模型看见的是翻译过的名字</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">两家店都报 <code>search</code>，前缀还能分开。一家叫 <code>basic-server</code>，一家叫 <code>basic_server</code>，连字符洗成下划线之后，命名空间会撞。模型看见两个同名工具，下一次调用就不知道进哪家店。API 还有字节上限。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">server 接进来，先把各家 <code>tools/list</code> 汇成一张表，再走 <code>normalize_tools_for_model_with_prefix</code>。顺序是固定的四步。</p>
+  <p class="reveal paywall-locked">1. 给命名空间加上 <code>mcp__</code> 前缀。</p>
+  <p class="reveal paywall-locked">2. 非法字符洗成下划线，只留字母、数字和 <code>_</code>。</p>
+  <p class="reveal paywall-locked">3. 完全相同的原始身份丢掉一份。清洗后命名空间或工具名还撞，就在末尾加 12 位 SHA-1。</p>
+  <p class="reveal paywall-locked">4. 合起来超过 128 字节，截断再哈希。原始 <code>server_name</code> 和 <code>tool.name</code> 留在 <code>ToolInfo</code> 上，协议调用走原名。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/codex-mcp/src/tools.rs</code> 第 105 至 117 行；<code>codex-rs/codex-mcp/src/tools.rs</code> 第 134 至 137 行；<code>codex-rs/codex-mcp/src/tools.rs</code> 第 166 至 194 行；<code>codex-rs/codex-mcp/src/tools.rs</code> 第 226 至 227 行；<code>codex-rs/codex-mcp/src/mcp/mod.rs</code> 第 477 至 485 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="原始工具名经过清洗和消歧变成模型可见名">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="40" width="160" height="86" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="120" y="76" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">原始身份</text>
+      <text x="120" y="100" fill="#6b7280" text-anchor="middle" font-size="13">server + tool.name</text>
+      <path fill="none" d="M208 83H270" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="278" y="40" width="160" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="358" y="76" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">清洗</text>
+      <text x="358" y="100" fill="#6b7280" text-anchor="middle" font-size="13">mcp__ 加下划线</text>
+      <path fill="none" d="M446 83H508" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="516" y="40" width="160" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="596" y="76" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">消歧</text>
+      <text x="596" y="100" fill="#6b7280" text-anchor="middle" font-size="13">撞了再加哈希</text>
+      <path fill="none" d="M684 83H746" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="754" y="40" width="146" height="86" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="827" y="76" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">模型眼前</text>
+      <text x="827" y="100" fill="#6b7280" text-anchor="middle" font-size="13">唯一且够短</text>
+      <path fill="none" d="M120 134V176" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="40" y="184" width="860" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="470" y="214" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">协议调用仍带原名</text>
+      <text x="470" y="236" fill="#6b7280" text-anchor="middle" font-size="13">翻译层只管给模型看，寻址还走 server_name 和 tool.name</text>
+    </svg>
+    <div class="visual-caption">教学化流水线：给模型看的名字和调回去的名字是两层。</div>
+  </div>
+  <div class="key-line reveal paywall-locked">给模型看的是翻译，调回去走原名。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">给模型看的名字和协议上的名字本来就是两层。一层给人读、给 API 用，一层用来寻址。哈希消歧是撞名问题的通用答法。上限数字会变，这层翻译不会变。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 目录常在，点名再给正文</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">若按 MCP 存活过滤目录，冷启动那几秒模型会以为 skill 不存在，下一轮又突然出现。说明书整份灌进每一轮，上下文也会被吃光。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">点名记号是 <code>$</code>。目录只看 <code>enabled</code> 和 <code>prompt_visible</code>。用户点了名，或者任务和描述对得上，这一轮才读 <code>SKILL.md</code> 正文。Guardian 评审会话直接返回空注入，父 transcript 里的 <code>$skill</code> 不能再触发新说明书。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/skills/src/mentions.rs</code> 第 41 行；<code>codex-rs/ext/skills/src/catalog.rs</code> 第 261 至 263 行；<code>codex-rs/core/src/session/turn.rs</code> 第 766 至 770 行；<code>codex-rs/core/src/session/turn.rs</code> 第 808 至 817 行</p>
+  <p class="reveal paywall-locked">缺 MCP 时另问人。first-party 且功能开关开，才弹出 Install MCP servers。审批是 <code>Never</code> 就静默跳过。用户选 Continue anyway，目录还在，对应工具可能仍不可用。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/mcp_skill_dependencies.rs</code> 第 47 至 60 行；<code>codex-rs/core/src/mcp_skill_dependencies.rs</code> 第 268 至 270 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">发现和就绪是两件事。索引先给，全文按需再给，缺依赖问人，不要把条目从目录里抹掉。装不装是配置变更，列不列是发现。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：只桥 tools，一条插件对一台 server</h4>
+      <p>DSH 的 MCP 客户端把范围写死：连一台外部 server，工具注册到 <code>ctx.tools</code>，公开名是 <code>mcp__&lt;serverName&gt;__&lt;rawName&gt;</code>。干净情况原样拼接。字符或长度被改过，就在末尾加 12 位 SHA-256。上限 64 字符。卸载就断连、注销、放命名空间。</p>
+      <p class="src-note">出处：<code>packages/mcp/mcp-client/src/index.ts</code> 第 1 至 14 行；<code>packages/mcp/mcp-client/src/tools.ts</code> 第 96 至 102 行</p>
+      <p>没有 elicitation，也不把自己交出去当 MCP server。外部工具失败仍按普通 tool 失败处理。哈希长度碰巧也是 12，算法和拼接规则不同。</p>
+      <span class="cmp-tag">已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-21" data-lesson-id="dsh-21">DSH · MCP 与扩展</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.323-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：skill 是一等 tool</h4>
+      <p>Claude Code 给模型一个 Skill tool。模型 <code>call</code> 才拿正文。注释写明同一时间只跑一个 skill，因为 tool 会把命令展开成整份 prompt。</p>
+      <p class="src-note">出处：<code>restored-src/src/tools/SkillTool/SkillTool.ts</code> 第 331 至 344 行</p>
+      <p>MCP 上的 prompt 要标成 <code>loadedFrom === 'mcp'</code> 且 <code>type === 'prompt'</code>，才进发现列表。方向相反：Codex 是 skill 需要 MCP，Claude Code 是 MCP 贡献 skill。触发器也不同。Codex 扫 <code>$name</code>，命中就注入 <code>&lt;skill&gt;</code>，不经过一次 tool call。</p>
+      <p class="src-note">出处：<code>restored-src/src/tools/SkillTool/SkillTool.ts</code> 第 81 至 94 行</p>
+      <span class="cmp-tag">已核对源码 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>清洗之后谁还认得这家店</h3>
+      <p><code>basic-server</code> 报 <code>lookup</code>，<code>basic_server</code> 报 <code>query</code>。写出模型看见的两个命名空间，并说明调回去时凭什么还能进对的店。</p>
+      <p>再问一问：把审批改成 <code>Never</code>，打 <code>$deploy</code> 的时候，skill 目录还在不在。观察点在 <code>is_model_visible</code> 和 <code>should_install_mcp_dependencies</code>。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>对外只交两个入口，对内另做外部目录。模型看见的是翻译过的名字，撞了就哈希，原名留给协议。skill 目录常在，点名再给正文，缺 MCP 另问人。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var mode = 'clean';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevTrace = null, prevLs = '', prevRs = '';
+  var leftHost = document.getElementById('dm-left');
+  var rightHost = document.getElementById('dm-right');
+  var colsHost = document.querySelector('.dm-cols');
+  var leftCol = leftHost.closest('.dm-col');
+  var rightCol = rightHost.closest('.dm-col');
+  var traceBox = document.querySelector('.dm-trace');
+  var lN = document.getElementById('dm-l-n');
+  var rN = document.getElementById('dm-r-n');
+  var lStatus = document.getElementById('dm-left-status');
+  var rStatus = document.getElementById('dm-right-status');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var nameInput = document.getElementById('dm-name');
+  var IDLE = '点播放，看一家店接进来之后，工具名怎么变成模型看得见的能力。';
+
+  function sanitize(name){
+    var out = '';
+    for (var i = 0; i < name.length; i++) {
+      var c = name.charAt(i);
+      if (/[A-Za-z0-9_]/.test(c)) out += c;
+      else out += '_';
+    }
+    return out || '_';
+  }
+  function teachHash(label){
+    var map = {
+      'basic-server': '_a91c3e7f2b04',
+      'basic_server': '_c28d6a1b5e93',
+      'tool-name': '_e4f17c90ab26',
+      'tool_name': '_b70d2e58c1af'
+    };
+    if (map[label]) return map[label];
+    var n = 0;
+    for (var i = 0; i < label.length; i++) n = (n * 33 + label.charCodeAt(i)) >>> 0;
+    return '_' + ('000000000000' + n.toString(16)).slice(-12);
+  }
+  function secondName(){
+    var v = (nameInput && nameInput.value.trim()) || '';
+    if (mode === 'clean') return v || 'docs';
+    if (mode === 'ns') return v || 'basic_server';
+    return v || 'server';
+  }
+  function defaultSecond(){
+    if (mode === 'clean') return 'docs';
+    if (mode === 'ns') return 'basic_server';
+    return 'server';
+  }
+
+  function buildSteps(){
+    var second = secondName();
+    var out = [];
+    out.push({
+      cap: '还没接任何人。模型眼前的 MCP 清单是空的。',
+      trace: 0, ln: 0, rn: 0,
+      left: [], right: [],
+      ls: '连接集还没发布。', rs: '清单空着。'
+    });
+
+    if (mode === 'clean') {
+      out.push({
+        cap: 'GitHub 接进来。tools/list 回来 issues、search。这是协议上的原名。',
+        trace: 1, ln: 2, rn: 0,
+        left: [
+          {t:'github', d:'issues · search', k:'on'}
+        ],
+        right: [],
+        ls: '门外两件工具，还没翻译。', rs: '模型还看不见。',
+        lsKind: 'hold'
+      });
+      out.push({
+        cap: '命名空间加上 mcp__ 前缀。模型看见 mcp__github · issues 和 search。',
+        trace: 2, ln: 2, rn: 2,
+        left: [
+          {t:'github', d:'issues · search', k:'on'}
+        ],
+        right: [
+          {t:'mcp__github · issues', d:'协议仍叫 issues', k:'on'},
+          {t:'mcp__github · search', d:'协议仍叫 search', k:'on'}
+        ],
+        ls: '原名留下，给寻址用。', rs: '两件工具已经进清单。',
+        rsKind: 'hold'
+      });
+      out.push({
+        cap: '再接第二家店 ' + second + '。tools/list 回来 read。',
+        trace: 1, ln: 3, rn: 2,
+        left: [
+          {t:'github', d:'issues · search', k:'on'},
+          {t:second, d:'read', k:'on'}
+        ],
+        right: [
+          {t:'mcp__github · issues', d:'协议仍叫 issues', k:'on'},
+          {t:'mcp__github · search', d:'协议仍叫 search', k:'on'}
+        ],
+        ls: '两家店都进门了。', rs: '第二家还在翻译。',
+        lsKind: 'hold', rsKind: 'hold'
+      });
+      var ns2 = 'mcp__' + sanitize(second);
+      var collide = sanitize(second) === 'github';
+      if (collide) {
+        out.push({
+          cap: '第二家店清洗之后和 github 撞命名空间。两边都加上 12 位示意哈希。',
+          trace: 5, ln: 3, rn: 3,
+          left: [
+            {t:'github', d:'issues · search', k:'on'},
+            {t:second, d:'read', k:'on'}
+          ],
+          right: [
+            {t:'mcp__github' + teachHash('github') + ' · issues', d:'哈希后的命名空间', k:'hash'},
+            {t:'mcp__github' + teachHash('github') + ' · search', d:'同一命名空间', k:'hash'},
+            {t:ns2 + teachHash(second) + ' · read', d:'另一家店的哈希', k:'hash'}
+          ],
+          ls: '原名仍是 github 和 ' + second + '。', rs: '撞名已拆开。',
+          lsKind: 'hold', rsKind: 'ok'
+        });
+      } else {
+        out.push({
+          cap: '清洗后没有撞名。' + ns2 + ' · read 直接进清单。',
+          trace: 3, ln: 3, rn: 3,
+          left: [
+            {t:'github', d:'issues · search', k:'on'},
+            {t:second, d:'read', k:'on'}
+          ],
+          right: [
+            {t:'mcp__github · issues', d:'协议仍叫 issues', k:'on'},
+            {t:'mcp__github · search', d:'协议仍叫 search', k:'on'},
+            {t:ns2 + ' · read', d:'协议仍叫 read', k:'on'}
+          ],
+          ls: '两家店原名都在。', rs: '三件工具，无需哈希。',
+          rsKind: 'ok'
+        });
+      }
+      out.push({
+        cap: '翻译做完。模型看见的是右边，调回去仍走左边的 server 名和 tool.name。',
+        trace: 7, ln: 3, rn: collide ? 3 : 3, fin: true,
+        left: [
+          {t:'github', d:'issues · search', k:'on'},
+          {t:second, d:'read', k:'on'}
+        ],
+        right: collide ? [
+          {t:'mcp__github' + teachHash('github') + ' · issues', d:'哈希后的命名空间', k:'hash'},
+          {t:'mcp__github' + teachHash('github') + ' · search', d:'同一命名空间', k:'hash'},
+          {t:ns2 + teachHash(second) + ' · read', d:'另一家店的哈希', k:'hash'}
+        ] : [
+          {t:'mcp__github · issues', d:'协议仍叫 issues', k:'on'},
+          {t:'mcp__github · search', d:'协议仍叫 search', k:'on'},
+          {t:ns2 + ' · read', d:'协议仍叫 read', k:'on'}
+        ],
+        ls: '寻址用原名。', rs: collide ? '哈希只出现在模型眼前。' : '干净接入，名字一眼能读。',
+        lsKind: 'ok', rsKind: 'ok'
+      });
+    } else if (mode === 'ns') {
+      var other = second;
+      var a = 'basic-server';
+      out.push({
+        cap: '第一家店 ' + a + ' 接进来，工具是 lookup。',
+        trace: 1, ln: 1, rn: 0,
+        left: [{t:a, d:'lookup', k:'on'}],
+        right: [],
+        ls: '门外一件工具。', rs: '还没翻译。',
+        lsKind: 'hold'
+      });
+      out.push({
+        cap: '连字符洗成下划线，命名空间变成 mcp__basic_server。',
+        trace: 3, ln: 1, rn: 1,
+        left: [{t:a, d:'lookup', k:'on'}],
+        right: [{t:'mcp__basic_server · lookup', d:'清洗后的名字', k:'on'}],
+        ls: '原名仍是 basic-server。', rs: '暂时还没人撞它。',
+        rsKind: 'hold'
+      });
+      out.push({
+        cap: '第二家店 ' + other + ' 也接进来，工具是 query。',
+        trace: 1, ln: 2, rn: 1,
+        left: [{t:a, d:'lookup', k:'on'}, {t:other, d:'query', k:'on'}],
+        right: [{t:'mcp__basic_server · lookup', d:'清洗后的名字', k:'on'}],
+        ls: '两家店进门了。', rs: '第二家还在清洗。',
+        lsKind: 'hold', rsKind: 'hold'
+      });
+      var same = sanitize(a) === sanitize(other);
+      if (same) {
+        out.push({
+          cap: sanitize(other) + ' 和 basic_server 清洗后一样。两个命名空间都加上 12 位示意哈希。',
+          trace: 5, ln: 2, rn: 2,
+          left: [{t:a, d:'lookup', k:'on'}, {t:other, d:'query', k:'on'}],
+          right: [
+            {t:'mcp__basic_server' + teachHash(a) + ' · lookup', d:'第一家店的哈希', k:'hash'},
+            {t:'mcp__' + sanitize(other) + teachHash(other) + ' · query', d:'第二家店的哈希', k:'hash'}
+          ],
+          ls: '原名仍能分开两家店。', rs: '模型看见两个不同的命名空间。',
+          rsKind: 'ok'
+        });
+      } else {
+        out.push({
+          cap: '第二家清洗后是 mcp__' + sanitize(other) + '，没有撞。哈希用不上。',
+          trace: 3, ln: 2, rn: 2,
+          left: [{t:a, d:'lookup', k:'on'}, {t:other, d:'query', k:'on'}],
+          right: [
+            {t:'mcp__basic_server · lookup', d:'清洗后的名字', k:'on'},
+            {t:'mcp__' + sanitize(other) + ' · query', d:'另一家店', k:'on'}
+          ],
+          ls: '两家店原名不同。', rs: '前缀已经够用。',
+          rsKind: 'ok'
+        });
+      }
+      out.push({
+        cap: '调 lookup 仍进 basic-server，调 query 仍进 ' + other + '。哈希只出现在模型眼前。',
+        trace: 7, ln: 2, rn: 2, fin: true,
+        left: [{t:a, d:'lookup', k:'on'}, {t:other, d:'query', k:'on'}],
+        right: same ? [
+          {t:'mcp__basic_server' + teachHash(a) + ' · lookup', d:'第一家店的哈希', k:'hash'},
+          {t:'mcp__' + sanitize(other) + teachHash(other) + ' · query', d:'第二家店的哈希', k:'hash'}
+        ] : [
+          {t:'mcp__basic_server · lookup', d:'清洗后的名字', k:'on'},
+          {t:'mcp__' + sanitize(other) + ' · query', d:'另一家店', k:'on'}
+        ],
+        ls: '寻址用原名。', rs: same ? '撞名已被拆开。' : '没有撞名。',
+        lsKind: 'ok', rsKind: 'ok'
+      });
+    } else {
+      var host = second;
+      out.push({
+        cap: '同一家店 ' + host + ' 报上 tool-name 和 tool_name 两件工具。',
+        trace: 1, ln: 2, rn: 0,
+        left: [{t:host, d:'tool-name · tool_name', k:'on'}],
+        right: [],
+        ls: '原名能分开。', rs: '还没清洗。',
+        lsKind: 'hold'
+      });
+      out.push({
+        cap: '连字符洗成下划线。两件工具清洗后都叫 tool_name。',
+        trace: 3, ln: 2, rn: 0,
+        left: [{t:host, d:'tool-name · tool_name', k:'on'}],
+        right: [
+          {t:'mcp__' + sanitize(host) + ' · tool_name', d:'两件都洗成这个', k:'wait'},
+          {t:'mcp__' + sanitize(host) + ' · tool_name', d:'还没消歧', k:'wait'}
+        ],
+        ls: '原名仍是 tool-name 和 tool_name。', rs: '模型若现在看见，会对不上号。',
+        rsKind: 'hold'
+      });
+      out.push({
+        cap: '工具名撞车。各自加上 12 位示意哈希，模型看见两个不同的 callable_name。',
+        trace: 6, ln: 2, rn: 2,
+        left: [{t:host, d:'tool-name · tool_name', k:'on'}],
+        right: [
+          {t:'mcp__' + sanitize(host) + ' · tool_name' + teachHash('tool-name'), d:'对应 tool-name', k:'hash'},
+          {t:'mcp__' + sanitize(host) + ' · tool_name' + teachHash('tool_name'), d:'对应 tool_name', k:'hash'}
+        ],
+        ls: '协议仍用原始 tool.name。', rs: '两件工具已经拆开。',
+        rsKind: 'ok'
+      });
+      out.push({
+        cap: '翻译做完。模型点带哈希的那个名字，协议层仍把原始 tool.name 送回这家店。',
+        trace: 7, ln: 2, rn: 2, fin: true,
+        left: [{t:host, d:'tool-name · tool_name', k:'on'}],
+        right: [
+          {t:'mcp__' + sanitize(host) + ' · tool_name' + teachHash('tool-name'), d:'对应 tool-name', k:'hash'},
+          {t:'mcp__' + sanitize(host) + ' · tool_name' + teachHash('tool_name'), d:'对应 tool_name', k:'hash'}
+        ],
+        ls: '寻址用原名。', rs: '哈希只出现在模型眼前。',
+        lsKind: 'ok', rsKind: 'ok'
+      });
+    }
+    return out;
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function spawnGhost(el){
+    if (!colsHost || !el) return;
+    var box = colsHost.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    colsHost.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function rollNum(el, to, animate){
+    var from = parseInt(el.textContent, 10);
+    if (isNaN(from)) from = 0;
+    el.setAttribute('data-n', String(to));
+    if (!animate || from === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function setBars(ln, rn){
+    var max = mode === 'clean' ? 3 : 2;
+    if (leftCol) leftCol.style.setProperty('--bar', String(ln / max));
+    if (rightCol) rightCol.style.setProperty('--bar', String(rn / max));
+  }
+
+  function fadeText(el, text, animate){
+    if (!el) return;
+    if (!animate || el.textContent === text) { el.textContent = text; el.style.opacity = '1'; return; }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function paintChips(host, items, animate){
+    host.classList.add('is-live');
+    host.classList.add('dm-host');
+    var oldRects = {};
+    var nodes = Array.prototype.slice.call(host.querySelectorAll('.dm-chip'));
+    nodes.forEach(function(el){
+      oldRects[el.getAttribute('data-id')] = el.getBoundingClientRect();
+    });
+    var keep = {};
+    var list = items || [];
+    for (var i = 0; i < list.length; i++) {
+      var item = list[i];
+      var id = String(i);
+      keep[id] = true;
+      var d = host.querySelector('[data-id="' + id + '"]');
+      var isNew = !d;
+      var prevKey = d ? (d.getAttribute('data-key') || '') : '';
+      var key = item.t + '|' + (item.d || '') + '|' + (item.k || '');
+      if (!d) {
+        d = document.createElement('div');
+        d.setAttribute('data-id', id);
+        host.appendChild(d);
+      }
+      var changed = prevKey !== key;
+      d.setAttribute('data-key', key);
+      d.innerHTML = '<b></b>';
+      d.querySelector('b').textContent = item.t;
+      d.appendChild(document.createTextNode(item.d || ''));
+      d.className = 'dm-chip' + (item.k ? ' ' + item.k : '') + (changed || isNew ? ' now' : '');
+      if (animate && isNew) {
+        (function(el){
+          el.classList.add('is-enter');
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ el.classList.add('in'); });
+          });
+        })(d);
+      }
+      if (animate && !isNew && changed) {
+        if (item.k === 'hash') {
+          bump(d, 'pop');
+          spawnGhost(d);
+        } else {
+          bump(d, 'firing');
+        }
+      }
+    }
+    nodes.forEach(function(el){
+      if (!keep[el.getAttribute('data-id')]) el.remove();
+    });
+    if (animate) {
+      Array.prototype.slice.call(host.querySelectorAll('.dm-chip')).forEach(function(el){
+        var old = oldRects[el.getAttribute('data-id')];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function paint(st, animate){
+    paintChips(leftHost, st.left, animate);
+    paintChips(rightHost, st.right, animate);
+    rollNum(lN, st.ln, animate);
+    rollNum(rN, st.rn, animate);
+    setBars(st.ln, st.rn);
+    var lCls = 'dm-status' + (st.lsKind ? ' ' + st.lsKind : '');
+    var rCls = 'dm-status' + (st.rsKind ? ' ' + st.rsKind : '');
+    lStatus.className = lCls;
+    rStatus.className = rCls;
+    if (animate && prevLs !== st.ls) bump(lStatus, 'firing');
+    if (animate && prevRs !== st.rs) bump(rStatus, 'firing');
+    fadeText(lStatus, st.ls, animate);
+    fadeText(rStatus, st.rs, animate);
+    prevLs = st.ls;
+    prevRs = st.rs;
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    fadeText(captionText, st.cap, animate);
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var rights = st.right || [];
+    var hashed = false;
+    var waiting = false;
+    var r;
+    for (r = 0; r < rights.length; r++) {
+      if (rights[r].k === 'hash') hashed = true;
+      if (rights[r].k === 'wait') waiting = true;
+    }
+    if (hashed) return 2200;
+    if (waiting) return 1900;
+    if (st.rsKind === 'hold' && st.rn > 0) return 1900;
+    if (st.trace === 0) return 1100;
+    return 1400;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0; prevTrace = null; prevLs = ''; prevRs = '';
+    steps = buildSteps();
+    leftHost.classList.remove('is-live');
+    rightHost.classList.remove('is-live');
+    leftHost.classList.add('dm-host');
+    rightHost.classList.add('dm-host');
+    traceBox.classList.remove('is-live');
+    leftHost.innerHTML = '';
+    rightHost.innerHTML = '';
+    Array.prototype.slice.call(colsHost.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    setBars(0, 0);
+    lN.textContent = '0';
+    rN.textContent = '0';
+    lStatus.className = 'dm-status';
+    lStatus.style.opacity = '1';
+    lStatus.textContent = '还没接任何人。';
+    rStatus.className = 'dm-status';
+    rStatus.style.opacity = '1';
+    rStatus.textContent = '清单空着。';
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    mode = b.getAttribute('data-mode');
+    if (nameInput) nameInput.value = defaultSecond();
+    reset();
+  });
+  if (nameInput) {
+    nameInput.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      reset();
+      play();
+    });
+  }
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-mcp'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

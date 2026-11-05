@@ -1,0 +1,78 @@
+---
+title: Magic Resume Schema
+type: architecture
+status: Living
+owner: kaihuang
+created: 2026-07-03
+updated: 2026-07-03
+summary: Shared resume schema exports, template ID contract, content compatibility, and JSON schema generation.
+scope: [packages/resume-schema, packages/resume-templates, apps/web]
+repos: [Magic-Resume]
+related: [architecture/template-system]
+---
+
+# Magic Resume Schema
+
+> Public packages moved to [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) on 2026-10-25. The `packages/resume-schema`, `packages/resume-templates`, `packages/design-system`, `packages/icons`, `packages/utils` and `packages/mcp` source paths and package build commands below refer to that repository. The editor consumes published `@magic-resume-kit/*` packages; its local workspaces are listed in the root README.
+
+`packages/resume-schema` is the shared source of truth for structured resume content across the web app, template package, MCP package, and tests.
+
+## Exports
+
+- `resumeSchema`: Zod schema for full resume content.
+- `templateSchema`: Zod enum of valid template IDs.
+- `templateIds`: ordered template ID list.
+- `defaultResume`: minimal valid resume object.
+- `sampleResume`: preview/test resume with representative sections.
+- `resumeJsonSchema`: JSON schema object.
+- `dist/schema.json`: generated JSON schema artifact.
+
+## Template IDs
+
+Current IDs:
+
+- `classic`
+- `azurill`
+- `bronzor`
+- `chikorita`
+- `ditto`
+- `gengar`
+- `orange-modern`
+- `clean-minimal`
+- `teal-professional`
+- `red-accent`
+- `golden-elegant`
+- `product-ops-focus`
+- `compact-cn-photo`
+
+`resumeSchema.template` falls back to `classic` for unknown values to keep older Core content compatible. Direct `templateSchema` parsing still rejects unknown IDs.
+
+## Content Compatibility
+
+The schema intentionally preserves the existing Core `content` JSON shape:
+
+- Contact data lives under `info`.
+- Resume sections live under `sections`.
+- Section display order lives under `sectionOrder`.
+- Section items require `id` and `visible`, and allow unknown extra fields for template-specific content.
+- Rich summary fields remain HTML strings.
+
+No database migration is required for this schema package change.
+
+## Generate JSON Schema
+
+```bash
+pnpm --filter @magic-resume-kit/resume-schema build
+```
+
+The build emits:
+
+```text
+packages/resume-schema/dist/schema.json
+```
+
+Run tests:
+
+```bash
+pnpm --filter @magic-resume-kit/resume-schema test
+```

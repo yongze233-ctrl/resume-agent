@@ -1,0 +1,1481 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"zero-1",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=zero-1',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 到底是什么？它其实在玩「接话茬」 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 接话茬卡片 ── */
+.phrase-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.phrase-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 22px;
+  cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: var(--shadow-card);
+}
+.phrase-card:hover { border-color: rgba(0,102,255,0.35); transform: translateY(-1px); }
+.phrase-card.open { border-color: rgba(0,102,255,0.45); box-shadow: var(--shadow-pop); cursor: default; }
+.phrase-q {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 17px; font-weight: 800; color: var(--text);
+}
+.phrase-q .tap-hint {
+  margin-left: auto; font-size: 12px; font-weight: 700; color: var(--accent);
+  background: rgba(0,102,255,0.07); padding: 3px 12px; border-radius: 999px;
+  flex-shrink: 0; transition: opacity 0.3s;
+}
+.phrase-card.open .tap-hint { opacity: 0; }
+.phrase-answers { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+.phrase-card.open .phrase-answers { max-height: 300px; }
+.answer-list { display: flex; flex-direction: column; gap: 7px; padding-top: 16px; }
+.answer-row { display: flex; align-items: center; gap: 10px; }
+.answer-word {
+  width: 96px; font-size: 14px; font-weight: 700; color: var(--text);
+  text-align: right; flex-shrink: 0;
+}
+.answer-track { flex: 1; height: 22px; background: rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; }
+.answer-fill {
+  height: 100%; border-radius: 6px; width: 0;
+  transition: width 0.8s cubic-bezier(0.25,1,0.5,1);
+}
+.answer-pct { width: 44px; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.phrase-note { font-size: 13px; color: var(--sub); padding-top: 12px; line-height: 1.7; }
+.phrase-note b { color: var(--accent); }
+
+/* ── AI 续写演示 ── */
+.demo-box {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.demo-head {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.015);
+}
+.demo-head-label { font-size: 12px; font-weight: 800; color: var(--sub); margin-right: 4px; }
+.starter-chip {
+  border: 1.5px solid var(--border); background: var(--card);
+  border-radius: 999px; padding: 6px 16px;
+  font-size: 13px; font-weight: 700; color: var(--text);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.starter-chip:hover { border-color: rgba(0,102,255,0.4); }
+.starter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-body { padding: 22px 24px; min-height: 150px; }
+.demo-text { font-size: 17px; line-height: 2; color: var(--text); word-break: break-all; }
+.demo-text .starter-part { color: var(--sub); }
+.demo-text .ai-part { color: var(--text); font-weight: 600; }
+.demo-text .caret {
+  display: inline-block; width: 2px; height: 1.1em; background: var(--accent);
+  vertical-align: text-bottom; margin-left: 1px;
+  animation: blink 0.85s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 决策点气泡 */
+.decision-pop {
+  margin: 14px 0 4px; padding: 14px 16px;
+  background: rgba(0,102,255,0.045); border: 1.5px dashed rgba(0,102,255,0.35);
+  border-radius: var(--radius-sm);
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.decision-pop.show { opacity: 1; transform: translateY(0); }
+.decision-title { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 9px; letter-spacing: 0.3px; }
+.cand-list { display: flex; flex-direction: column; gap: 6px; }
+.cand-row { display: flex; align-items: center; gap: 9px; }
+.cand-word {
+  min-width: 68px; text-align: center; padding: 2px 10px;   /* 容得下「五花肉」这样的多字词元 */
+  font-size: 14px; font-weight: 800; border-radius: 7px;
+  background: rgba(0,0,0,0.05); color: var(--sub);
+  transition: background 0.13s, color 0.13s, transform 0.13s;
+}
+.cand-row.picked .cand-word { background: var(--accent); color: #fff; transform: scale(1.06); }
+.cand-track { flex: 1; height: 14px; background: rgba(0,0,0,0.05); border-radius: 5px; overflow: hidden; }
+/* 0.14s 配合 pace() 最短一档（220ms × 0.65 ≈ 143ms）：再慢条形就永远停在半途 */
+.cand-fill { height: 100%; border-radius: 5px; background: rgba(0,0,0,0.16); width: 0; transition: width 0.14s cubic-bezier(0.25,1,0.5,1); }
+.cand-row.picked .cand-fill { background: var(--accent); }
+.cand-pct { width: 44px; font-size: 12px; font-weight: 800; color: var(--sub); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.cand-row.picked .cand-pct { color: var(--accent); }
+
+.demo-foot {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 18px; border-top: 1px solid var(--border);
+}
+.btn-run {
+  background: var(--accent); color: #fff; border: none;
+  padding: 10px 26px; border-radius: 999px;
+  font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit;
+  transition: filter 0.15s, transform 0.15s;
+}
+.btn-run:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-run:disabled { background: #c4c8cf; cursor: not-allowed; }
+.demo-status { font-size: 12.5px; color: var(--sub); font-weight: 600; }
+
+/* ── 对话真相图 ── */
+.chat-truth { display: flex; flex-direction: column; gap: 10px; }
+.chat-row { display: flex; gap: 10px; align-items: flex-start; }
+.chat-row.user { flex-direction: row-reverse; }
+.chat-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+}
+.chat-row.user .chat-avatar { background: #64748b; }
+.chat-row.ai .chat-avatar { background: var(--accent); }
+.chat-bubble {
+  max-width: 78%; padding: 10px 16px; border-radius: 14px;
+  font-size: 14px; line-height: 1.7;
+}
+.chat-row.user .chat-bubble { background: rgba(100,116,139,0.1); border-top-right-radius: 4px; }
+.chat-row.ai .chat-bubble { background: rgba(0,102,255,0.07); border-top-left-radius: 4px; }
+.chat-annotation {
+  text-align: center; font-size: 12.5px; font-weight: 700; color: var(--amber);
+  padding: 6px 0;
+}
+
+/* ── 三连卡 ── */
+.why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.why-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.why-card .why-icon { font-size: 26px; margin-bottom: 8px; }
+.why-card h4 { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.why-card p { font-size: 13px; color: var(--sub); line-height: 1.75; }
+.why-card p b { color: var(--text); }
+
+/* ── 数学翻车实验 ── */
+.math-box {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+}
+.math-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.math-chip {
+  border: 1.5px solid var(--border); background: var(--card);
+  border-radius: 999px; padding: 8px 20px;
+  font-size: 14px; font-weight: 700; color: var(--text);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.math-chip:hover { border-color: rgba(0,102,255,0.4); }
+.math-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.math-stage { min-height: 170px; }
+.math-q { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+.math-q .mq-hint { font-size: 12px; font-weight: 700; color: var(--sub); margin-left: 10px; }
+.math-cands { margin-bottom: 14px; }
+.math-cands .cand-word { min-width: 96px; font-variant-numeric: tabular-nums; }
+.math-verdict {
+  font-size: 13px; line-height: 1.85; color: var(--sub);
+  border-top: 1px dashed var(--border); padding-top: 12px;
+  opacity: 0; transition: opacity 0.4s;
+}
+.math-verdict.show { opacity: 1; }
+.math-verdict b { color: var(--text); }
+.math-verdict .mv-ok { color: var(--success); font-weight: 800; }
+.math-verdict .mv-bad { color: var(--danger); font-weight: 800; }
+
+/* ── takeaway ── */
+.takeaway-box {
+  background: linear-gradient(135deg, #eff6ff, #eef2ff);
+  border: 1.5px solid #bfdbfe; border-radius: var(--radius);
+  padding: 24px 28px; margin-top: 36px;
+}
+.takeaway-box h3 { font-size: 17px; font-weight: 800; color: #1e40af; margin-bottom: 10px; }
+.takeaway-box ul { list-style: none; padding: 0; margin: 0; }
+.takeaway-box li {
+  font-size: 14.5px; color: #1e3a5f; line-height: 1.8;
+  padding: 4px 0 4px 22px; position: relative;
+}
+.takeaway-box li::before {
+  content: ''; position: absolute; left: 0; top: 13px;
+  width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;
+}
+
+@media (max-width: 768px) {
+  .why-grid { grid-template-columns: 1fr; }
+  .answer-word { width: 72px; font-size: 13px; }
+  .demo-text { font-size: 15px; }
+  .chat-bubble { max-width: 85%; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="AI 到底是什么？ChatGPT、DeepSeek、豆包为什么能聊天？零基础白话解释：AI 不是真的在思考，而是一台读过海量文字的「超级接话机器」。3 分钟交互演示，建立你对 AI 的第一个正确直觉。">
+<meta name="keywords" content="AI是什么,ChatGPT原理,人工智能入门,大模型是什么,AI零基础,AI怎么工作">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="AI 到底是什么？它其实在玩「接话茬」">
+<meta property="og:description" content="AI 不是真的在思考，而是一台读过海量文字的「超级接话机器」。3 分钟交互演示，建立你对 AI 的第一个正确直觉。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/zero-1.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/zero-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 到底是什么？它其实在玩「接话茬」">
+<meta name="twitter:description" content="AI 不是真的在思考，而是一台读过海量文字的「超级接话机器」。3 分钟交互演示，建立你对 AI 的第一个正确直觉。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">零基础入门 · AI 是个什么东西</div>
+    <h1>AI 到底是什么？它其实在玩「接话茬」</h1>
+    <p class="subtitle">别被「人工智能」四个字吓到。ChatGPT、DeepSeek、豆包……不管叫什么名字，它们做的事情本质上只有一件：<b>猜你这句话的下一个词是什么</b>。这一课不需要任何基础，玩两个小游戏你就明白了。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>不需要任何基础：AI 每次只做一件事——猜下一个字。两个小游戏，建立你对 AI 的第一个正确直觉</p></aside><!--seo:end-->  <div class="sec-label">第一步 · 你天生就会玩这个游戏</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">先别管 AI。下面三句话都没说完，<b style="color:var(--text)">点开每一句</b>，看看你心里冒出来的下半句，和大多数人是不是一样的。</p>
+
+  <div class="phrase-grid" id="phraseGrid"></div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    <b>发现了吗？</b>有的话茬只有一种接法（「祝你生日……」），有的话茬有好几种可能（「今天天气真……」）。你的大脑在一瞬间完成了一次「选择题」——<b>AI 每往下写一步，做的就是这道题</b>。区别只是：它读过的东西比你多几百万倍，所以猜得特别准。
+  </div>
+
+  <div class="sec-label">第二步 · 亲眼看 AI 接一次话</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">选一个开头，点「让 AI 接下去」。下面这个框，是它<b style="color:var(--text)">每往下写一步</b>时脑子里的那道选择题——放慢了给你看。留意两件事：一是它<b style="color:var(--text)">不是一个字一个字</b>往外蹦的，「馄饨」「五花肉」「分钟」都是一整块写出来的，这一块叫<b style="color:var(--text)">词元</b>（token）——有的词元是一个字，有的是一个词，后面的课会讲它是怎么切出来的；二是每个候选后面那根<b style="color:var(--text)">横条</b>的长短——横条越长，说明它越倾向于选这一块；有的一步几乎是被前文摁着写出来的，有的一步它明显在几个选项之间摇摆。<b style="color:var(--text)">同一个开头多跑几遍</b>——在几根横条差不多长的地方，它并不总是挑最长的那根。</p>
+
+  <div class="demo-box">
+    <div class="demo-head">
+      <span class="demo-head-label">选个开头：</span>
+      <button class="starter-chip active" data-i="0">今天加班到十点，</button>
+      <button class="starter-chip" data-i="1">尊敬的王老师：您好！</button>
+      <button class="starter-chip" data-i="2">红烧肉的做法是：</button>
+    </div>
+    <div class="demo-body">
+      <div class="demo-text" id="demoText"><span class="starter-part">今天加班到十点，</span><span class="caret"></span></div>
+      <div class="decision-pop" id="decisionPop">
+        <div class="decision-title" id="decisionTitle">它正在选下一个词元（token）……</div>
+        <div class="cand-list" id="candList"></div>
+      </div>
+    </div>
+    <div class="demo-foot">
+      <button class="btn-run" id="btnRun">让 AI 接下去 →</button>
+      <span class="demo-status" id="demoStatus">它不查资料、不联网，只凭「读过的文字」一个词元一个词元往下接</span>
+    </div>
+  </div>
+
+  <div class="sec-label">第三步 · 那「聊天」是怎么回事？</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">你可能会问：接话茬我懂了，可我和 AI 是在<b style="color:var(--text)">一问一答地聊天</b>啊？其实，聊天只是接话茬换了个包装——</p>
+
+  <div class="l-card">
+    <div class="chat-truth">
+      <div class="chat-row user">
+        <div class="chat-avatar">你</div>
+        <div class="chat-bubble">帮我想个周末去哪玩</div>
+      </div>
+      <div class="chat-annotation">↓ 在 AI 眼里，你的话是「上半句」，它负责接「下半句」 ↓</div>
+      <div class="chat-row ai">
+        <div class="chat-avatar">AI</div>
+        <div class="chat-bubble">可以考虑去郊区爬山，或者找个新开的展览逛逛。你更喜欢安静点的还是热闹点的？</div>
+      </div>
+      <div class="chat-row user">
+        <div class="chat-avatar">你</div>
+        <div class="chat-bubble">安静点的</div>
+      </div>
+      <div class="chat-annotation">↓ 它把前面「所有的对话」拼成一个更长的上半句，继续接 ↓</div>
+      <div class="chat-row ai">
+        <div class="chat-bubble" style="margin-left:44px;">那推荐植物园或者美术馆，人少，走累了还有地方坐……</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    它接得足够好、足够自然，看起来就像「懂你」。这一课最想和你分享的一句话是：<b>它没有想法，它有的是从人类几亿本书、几十亿网页里统计出来的「什么话后面通常跟什么话」</b>。
+  </div>
+
+  <div class="sec-label">这一个直觉，能解释后面所有事</div>
+
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="why-icon">✍️</div>
+      <h4>为什么它能写文章？</h4>
+      <p>接话茬接得又长又顺而已。你给个开头（题目和要求），它一个词一个词往下接，接出一整篇。</p>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🤥</div>
+      <h4>为什么它会胡说八道？</h4>
+      <p>它只管接得<b>像不像</b>，不管接得<b>对不对</b>。顺口的错话，比笨拙的真话更容易被它选中。这事很重要，<b>后面单独用一课讲</b>。</p>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🎲</div>
+      <h4>为什么同一个问题，每次答得不一样？</h4>
+      <p>上面的演示里，它并不总是挑最长的那根横条——在几个候选可能性相近的地方，它按可能性大小掷一次骰子，于是走上不同的句子岔路。横条长到 99% 的地方则怎么掷都是同一个结果，所以差异只出现在它本来就摇摆的那几处。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">顺便解开一个老谜团 · 它为什么算不好数学？</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">你可能听说过「AI 连小学数学都会算错」。学完接话茬，这个谜你已经能自己解开了——<b style="color:var(--text)">它从来不是在「算」，它是在接话茬</b>。下面两道题都发给它试试，看看它脑子里的候选有什么不同。</p>
+
+  <div class="math-box">
+    <div class="math-chips">
+      <button class="math-chip active" data-i="0">问它：1 + 1 =</button>
+      <button class="math-chip" data-i="1">问它：3847 × 2963 =</button>
+    </div>
+    <div class="math-stage">
+      <div class="math-q" id="mathQ"></div>
+      <div class="cand-list math-cands" id="mathCands"></div>
+      <div class="math-verdict" id="mathVerdict"></div>
+    </div>
+  </div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    看出区别了吗？<b>「1+1=2」它在训练数据里见过几百万遍，等于背下来了；「3847×2963」这道原题它几乎没见过</b>，只能挑一个「长得像答案」的数——位数对了、开头结尾也像样，中间的数字却是猜的。好消息是：现在很多 AI 产品遇到数学题，会让 AI 去调用真正的计算器或写代码来算，「猜」就变成了「算」——这个聪明的分工，后面的课里还会见到。
+  </div>
+
+  <div class="takeaway-box">
+    <h3>✅ 这一课想和你分享的</h3>
+    <ul>
+      <li><b>AI = 超级接话机器</b>：它做的事就是不停地猜「下一个词是什么」</li>
+      <li><b>聊天只是接话茬的包装</b>：你的话是上半句，它负责接下半句</li>
+      <li><b>它没有想法</b>：它有的是从海量文字里统计出来的语言规律</li>
+      <li><b>它算数学靠「背」不靠「算」</b>：常见的题背得滚瓜烂熟，没见过的题只能猜个像样的数</li>
+      <li><b>接得像 ≠ 接得对</b>：这是用好 AI 最重要的一根弦，下一课展开</li>
+    </ul>
+  </div>
+
+</main>
+<script>
+/* ── 第一步：接话茬卡片 ── */
+const PHRASES = [
+  {
+    q: '「床前明月光，……」',
+    answers: [
+      { w: '疑是地上霜', pct: 99, color: '#0066ff' },
+      { w: '低头思故乡', pct: 1,  color: '#94a3b8' },
+    ],
+    note: '几乎所有人都会接「疑是地上霜」——因为这句诗你<b>见过太多遍</b>了。AI 也一样：见得越多，接得越准。',
+  },
+  {
+    q: '「祝你生日……」',
+    answers: [
+      { w: '快乐', pct: 98, color: '#0066ff' },
+      { w: '开心', pct: 2,  color: '#94a3b8' },
+    ],
+    note: '这句谁也没专门背过，但你照样<b>脱口而出</b>。可见不是只有名句才有唯一接法——日常话里到处是这种<b>几乎没有悬念的搭配</b>。',
+  },
+  {
+    q: '「今天天气真……」',
+    answers: [
+      { w: '好',   pct: 42, color: '#0066ff' },
+      { w: '热',   pct: 26, color: '#7c3aed' },
+      { w: '冷',   pct: 18, color: '#16a34a' },
+      { w: '不错', pct: 14, color: '#d97706' },
+    ],
+    note: '这种话茬<b>有好几种合理的接法</b>。AI 会在这些候选里挑一个——这就是为什么同一个问题，它每次的回答可能不完全一样。',
+  },
+];
+
+const grid = document.getElementById('phraseGrid');
+PHRASES.forEach((p, i) => {
+  const card = document.createElement('div');
+  card.className = 'phrase-card';
+  card.innerHTML = `
+    <div class="phrase-q">${p.q}<span class="tap-hint">点开看大家怎么接</span></div>
+    <div class="phrase-answers">
+      <div class="answer-list">
+        ${p.answers.map(a => `
+          <div class="answer-row">
+            <div class="answer-word">${a.w}</div>
+            <div class="answer-track"><div class="answer-fill" style="background:${a.color}" data-w="${a.pct}"></div></div>
+            <div class="answer-pct" style="color:${a.color}">${a.pct}%</div>
+          </div>`).join('')}
+      </div>
+      <div class="phrase-note">${p.note}</div>
+    </div>`;
+  card.addEventListener('click', () => {
+    if (card.classList.contains('open')) return;
+    card.classList.add('open');
+    setTimeout(() => {
+      card.querySelectorAll('.answer-fill').forEach(el => el.style.width = el.dataset.w + '%');
+    }, 250);
+  });
+  grid.appendChild(card);
+});
+
+/* ── 第二步：AI 续写演示 ──
+   每一步一道选择题：['首选词元', 可能性, '备选', 可能性, '备选', 可能性]，
+   第七项可选，写 'alt' 表示「这一步允许掷骰子选到第二候选」（见 pickIndex）。
+   d.text（下方派生）是全程都取首选时的那句话，不另存一份，免得改了文案忘了改
+   steps、屏幕上出现「先写出这一块、再问它选什么」的错位。
+
+   为什么切到「词元」而不是逐个汉字：中文的 token 同样不等于一个字——
+   「馄饨」「五花肉」「分钟」在词表里都是整块的，后面《Token 与词表》一课里
+   中文词表也是这么建的。如果这里一格一个汉字，学员会先入为主地把
+   token 认成汉字，到那一课再纠正就晚了。切成词元还有个副作用是步数变少，
+   每一步就能停得更久、看得更清。
+
+   为什么每一步都展示、而不是只挑几个决策点：这一课要传达的正是「确定性
+   时高时低」——「馄饨」后面接标点几乎没有悬念，而「回家路上」后面接什么
+   相当发散。只挑几处看不出这种起伏，反而像是 AI 偶尔才需要选一次。
+   配合下面 pace()，有把握的一掠而过、犹豫的多停一会儿，节奏本身就在讲这件事。
+
+   概率是凭语感标的，不是真实模型输出，够传达「有的地方几乎没得选、有的地方
+   全靠掂量」即可。 */
+const DEMOS = [
+  {
+    starter: '今天加班到十点，',
+    steps: [
+      ['回家',38,'走在',19,'累得',15,'alt'],
+      ['路上',34,'的',22,'顺路',13],
+      ['买了',41,'看到',16,'想吃',12],
+      ['一碗',47,'一份',18,'个',11,'alt'],
+      ['热',43,'牛肉',19,'小',12,'alt'],
+      ['馄饨',31,'面',22,'汤',14],
+      ['，',64,'。',17,'汤',6],
+      ['吃完',44,'热',15,'一口',11],
+      ['感觉',57,'整个',14,'浑身',9],
+      ['整个',46,'身上',16,'人',13],
+      ['人',94,'世界',2,'都',1],
+      ['都',73,'才',8,'像',5],
+      ['活',54,'暖',27,'舒服',9,'alt'],
+      ['过来',96,'了',2,'回来',1],
+      ['了',88,'。',5,'，',3],
+      ['。',92,'！',4,'，',2],
+    ],
+  },
+  {
+    starter: '尊敬的王老师：您好！',
+    steps: [
+      ['我是',58,'打扰',14,'非常',9],
+      ['三年',24,'您',13,'李明',11],
+      ['二班',52,'一班',17,'三班',12],
+      ['李明',36,'王强',16,'小明',11],
+      ['的',87,'同学',4,'家长',3],
+      ['家长',79,'妈妈',6,'爸爸',5],
+      ['，',77,'。',10,'：',5],
+      ['想',37,'有',22,'今天',13],
+      ['跟您',43,'向您',21,'请',14,'alt'],
+      ['请',56,'说',12,'反映',9],
+      ['个',68,'一天',15,'假',9],
+      ['假',96,'事',1,'空',1],
+      ['：',36,'。',26,'，',20],
+      ['李明',49,'孩子',25,'他',12],
+      ['明天',51,'因为',17,'身体',11],
+      ['需要',38,'要',21,'因',13,'alt'],
+      ['去',64,'到',13,'前往',8],
+      ['医院',59,'学校',12,'复查',9],
+      ['复查',44,'检查',23,'看病',10,'alt'],
+      ['，',76,'。',12,'；',4],
+      ['无法',43,'不能',31,'没法',11,'alt'],
+      ['到校',48,'来',18,'按时',13],
+      ['上课',72,'参加',10,'到',7],
+      ['。',89,'，',5,'！',3],
+    ],
+  },
+  {
+    starter: '红烧肉的做法是：',
+    steps: [
+      ['五花肉',51,'先',24,'准备',11,'alt'],
+      ['切块',63,'洗净',15,'切成',11],
+      ['焯水',49,'冷水',20,'后',11],
+      ['，',86,'后',7,'。',3],
+      ['冰糖',37,'锅',26,'热油',15],
+      ['小火',58,'下',12,'中火',11],
+      ['炒出',61,'熬',18,'慢慢',9],
+      ['糖色',93,'焦糖',3,'红',2],
+      ['，',90,'。',5,'后',3],
+      ['下',39,'加',23,'放',19],
+      ['肉',74,'入',11,'五花肉',6],
+      ['翻炒',52,'煸炒',21,'炒',16,'alt'],
+      ['上色',56,'均匀',16,'至',11],
+      ['，',89,'。',6,'后',2],
+      ['加',54,'倒',17,'放',13],
+      ['生抽',46,'料酒',18,'酱油',14],
+      ['料酒',57,'老抽',21,'、',10],
+      ['炖',45,'烧',28,'煮',15,'alt'],
+      ['四十',33,'三十',25,'半',15,'alt'],
+      ['分钟',97,'小时',2,'钟',0.5],
+      ['。',87,'，',7,'即',3],
+    ],
+  },
+];
+DEMOS.forEach(d => { d.text = d.steps.map(s => s[0]).join(''); });
+
+let curDemo = 0;
+let running = false;
+let runSeq = 0;   // 逐字播放一轮要十几秒，切换开头得能中途打断
+const demoText  = document.getElementById('demoText');
+const btnRun    = document.getElementById('btnRun');
+const statusEl  = document.getElementById('demoStatus');
+const pop       = document.getElementById('decisionPop');
+const candList  = document.getElementById('candList');
+
+function resetDemo() {
+  const d = DEMOS[curDemo];
+  demoText.innerHTML = `<span class="starter-part">${d.starter}</span><span class="ai-part" id="aiPart"></span><span class="caret"></span>`;
+  pop.classList.remove('show');
+  btnRun.disabled = false;
+  btnRun.textContent = '让 AI 接下去 →';
+  statusEl.textContent = '它不查资料、不联网，只凭「读过的文字」一个词元一个词元往下接';
+}
+
+/* 三行候选只建一次、之后原地改内容：重建 innerHTML 会让 cand-fill 从 0 重新
+   长起来，逐步刷新时看到的就是一片乱闪；复用节点才能让条形从上一步的
+   高度平滑滑到这一步，像一排跳动的仪表。 */
+candList.innerHTML = [0, 1, 2].map(() => `
+  <div class="cand-row">
+    <div class="cand-word"></div>
+    <div class="cand-track"><div class="cand-fill"></div></div>
+    <div class="cand-pct"></div>
+  </div>`).join('');
+const candRows = [...candList.children].map(row => ({
+  row,
+  word: row.querySelector('.cand-word'),
+  fill: row.querySelector('.cand-fill'),
+  pct:  row.querySelector('.cand-pct'),
+}));
+
+function renderStep(step) {
+  candRows.forEach((r, k) => {
+    const w = step[k * 2], p = step[k * 2 + 1];
+    r.row.classList.remove('picked');
+    /* 英文词元自带前导空格（' soup'），拼进正文时要留着，摆进候选框时得去掉，
+       否则整块字都被空格顶偏。中文词元不受影响。 */
+    r.word.textContent = w.trim() || w;
+    r.pct.textContent = p + '%';
+    r.fill.style.width = p + '%';
+  });
+}
+
+document.querySelectorAll('.starter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    runSeq++;
+    running = false;
+    document.querySelectorAll('.starter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    curDemo = +chip.dataset.i;
+    resetDemo();
+  });
+});
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* 停顿时长跟着把握度走：几乎没得选的字一掠而过，拿不准的字多停一会儿。
+   全程匀速的话，「饨」和「回」看起来就一样难，而这一课要讲的恰恰是它们不一样。 */
+function pace(pct) {
+  if (pct >= 90) return 300;
+  if (pct >= 60) return 620;
+  return 950;
+}
+
+/* 掷骰子：真实模型默认不是永远取可能性最大的那个，而是在头部候选里按可能性
+   加权抽样（temperature / top-p），这正是「同一个问题每次答得不一样」的来源。
+   两个约束：
+   1. 只在标了 'alt' 的步骤上抽。别处换掉首选会让后文接不上——英文的 'gr' 换成
+      'I' 就成了「Iabbed」，韩语换掉体词还会连带把后面的助词变错。标 'alt' 的
+      位置都逐句念过，两条路都通顺。
+   2. 按两者可能性的比值抽（38 : 19 约等于 2 : 1），不是五五开。加权才是真实
+      行为，也才解释得通为什么 99% 的位置事实上从来不变、只有横条差不多长的地方才分叉。
+   window.DEMO_GREEDY 是给自动化测试用的确定性开关，相当于 temperature = 0。 */
+function pickIndex(step) {
+  if (step[6] !== 'alt' || window.DEMO_GREEDY) return 0;
+  return Math.random() * (step[1] + step[3]) < step[1] ? 0 : 1;
+}
+
+async function runDemo() {
+  if (running) return;
+  running = true;
+  const seq = ++runSeq;
+  btnRun.disabled = true;
+  btnRun.textContent = '正在接话……';
+  statusEl.textContent = '蓝色虚线框里就是它每写一个词元时面前的候选';
+
+  const d = DEMOS[curDemo];
+  const aiPart = document.getElementById('aiPart');
+  pop.classList.add('show');
+
+  let forks = 0;                         // 本轮有几处没选可能性最大的
+  for (const step of d.steps) {
+    const k = pickIndex(step);
+    const ms = pace(step[1]);
+    renderStep(step);
+    /* 65% 留给「摆出候选」这一段：犹豫的那步（950ms）有充分时间读完三个候选，
+       没悬念的（300ms）一掠而过，看个长条压满的印象就够。 */
+    await sleep(ms * 0.65);
+    if (seq !== runSeq) return;          // 期间切了开头，这一轮作废
+    candRows[k].row.classList.add('picked');
+    if (k > 0) {
+      forks++;
+      statusEl.textContent = '看到了吗？这次它没挑最长的那根——句子从这里拐上了另一条路';
+    }
+    // 分叉时多停一会儿：否则那一瞬间闪过去，学员只会以为自己看错了
+    await sleep(ms * (k > 0 ? 0.9 : 0.35));
+    if (seq !== runSeq) return;
+    aiPart.textContent += step[k * 2];
+  }
+
+  statusEl.textContent = forks
+    ? `写完了。这一遍它有 ${forks} 处没挑最大的，所以再跑一次多半又是另一句话`
+    : '写完了。这一遍它每步都挑了最大的；再跑几次，几根横条差不多长的地方就会分叉';
+  btnRun.disabled = false;
+  btnRun.textContent = '再看一遍 ↻';
+  running = false;
+}
+
+btnRun.addEventListener('click', () => {
+  if (btnRun.textContent.indexOf('再看') === 0) resetDemo();
+  setTimeout(runDemo, 50);
+});
+resetDemo();
+
+/* ── 数学翻车实验 ── */
+const MATH_CASES = [
+  {
+    q: '1 + 1 = ？',
+    hint: '这道题它在训练数据里见过几百万遍',
+    cands: [
+      { w: '2',  pct: 99 },
+      { w: '3',  pct: 0.6 },
+      { w: '11', pct: 0.4 },
+    ],
+    picked: '2',
+    verdict: '<span class="mv-ok">✓ 答对了。</span>但别误会——不是它会算术，是<b>「1+1=」后面接「2」的次数压倒性地多</b>，它等于把答案背下来了。就像你接「祝你生日……」一样，想都不用想。',
+  },
+  {
+    q: '3847 × 2963 = ？',
+    hint: '这道原题它几乎没在任何地方见过',
+    cands: [
+      { w: '11,397,461', pct: 23 },
+      { w: '11,398,661', pct: 21 },
+      { w: '11,402,381', pct: 18 },
+    ],
+    picked: '11,397,461',
+    verdict: '<span class="mv-bad">✗ 答错了。</span>正确答案是 <b>11,398,661</b>——就藏在它的候选里，但它挑了个概率更高的错误答案。注意看：几个候选<b>位数都对、开头结尾都像样</b>，因为它在凭「什么数字长得像答案」来接话茬，而不是真的动笔算。没有哪个候选的可能性是压倒性的——<b>这种「心里没底」的题，它就容易翻车</b>。',
+  },
+];
+
+const mathQ = document.getElementById('mathQ');
+const mathCands = document.getElementById('mathCands');
+const mathVerdict = document.getElementById('mathVerdict');
+let mathTimers = [];
+
+function runMath(i) {
+  mathTimers.forEach(t => clearTimeout(t));
+  mathTimers = [];
+  const c = MATH_CASES[i];
+  mathQ.innerHTML = c.q + '<span class="mq-hint">' + c.hint + '</span>';
+  mathVerdict.classList.remove('show');
+  mathCands.innerHTML = c.cands.map(x => `
+    <div class="cand-row" data-w="${x.w}">
+      <div class="cand-word">${x.w}</div>
+      <div class="cand-track"><div class="cand-fill" data-p="${x.pct}"></div></div>
+      <div class="cand-pct">${x.pct}%</div>
+    </div>`).join('');
+  mathTimers.push(setTimeout(() => {
+    mathCands.querySelectorAll('.cand-fill').forEach(el => el.style.width = Math.max(el.dataset.p, 2) + '%');
+  }, 80));
+  mathTimers.push(setTimeout(() => {
+    const row = mathCands.querySelector(`.cand-row[data-w="${c.picked}"]`);
+    if (row) row.classList.add('picked');
+  }, 950));
+  mathTimers.push(setTimeout(() => {
+    mathVerdict.innerHTML = c.verdict;
+    mathVerdict.classList.add('show');
+  }, 1500));
+}
+
+document.querySelectorAll('.math-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.math-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    runMath(+chip.dataset.i);
+  });
+});
+runMath(0);
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-5",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-5',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 一次只问我一个问题 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl-copy{margin:0;font-size:14.5px;line-height:2;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:13px;color:var(--sub);line-height:1.8;flex:1 1 220px}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:14px 16px;background:var(--card);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pct{font-size:12px;font-weight:800;color:var(--accent-deep);font-variant-numeric:tabular-nums}
+.dm-track{height:4px;background:var(--border);overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);transition:width .7s cubic-bezier(.25,1,.5,1)}
+.dm-bar.stuck{animation:barPulse 1.4s ease infinite}
+@keyframes barPulse{0%,100%{opacity:1}50%{opacity:.42}}
+.dm-pane{padding:16px 18px;min-height:252px;overflow-wrap:anywhere;word-break:break-word}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-body{max-height:0;overflow:hidden;transition:max-height .5s cubic-bezier(.25,1,.5,1)}
+.dm-body.open{max-height:300px}
+.dm-hit{color:var(--faint);padding:0 3px;border-radius:4px;transition:background .5s cubic-bezier(.25,1,.5,1),color .5s cubic-bezier(.25,1,.5,1)}
+.dm-hit.lit{background:var(--accent-soft);color:var(--accent-deep);font-weight:700}
+@keyframes wallPulse{0%,100%{opacity:1}50%{opacity:.62}}
+.qa{padding:11px 13px;border-radius:10px;background:var(--card);border:1px solid var(--border);margin:0 0 10px;font-size:13px;line-height:1.85;color:var(--text);opacity:0;transform:translateY(9px)}
+.qa:last-child{margin:0}
+.qa.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1),background .4s cubic-bezier(.4,0,.2,1)}
+.qa.show.dim{opacity:.45;transform:scale(.985)}
+.qa b{display:block;font-size:12.5px;color:var(--accent-deep);margin-bottom:4px}
+.qa i{display:block;font-style:normal;margin-top:6px;font-size:12.5px;color:var(--sub)}
+.qa p{margin:0;font-size:13px;line-height:1.9;color:var(--text)}
+.qa-now{background:var(--accent-soft);border-color:rgba(180,83,9,.28)}
+.qa-stuck{background:rgba(217,119,6,.09);border-color:rgba(217,119,6,.32)}
+.qa-stuck i{color:var(--danger);font-weight:700}
+.qa-warn{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.2)}
+.qa-warn b{color:var(--danger)}
+.qa-warn.show{animation:wallPulse 1.5s ease infinite}
+.qa-crack{background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.3)}
+.qa-crack.show{animation:fireGlow .9s ease}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+.qa.pop{animation:flashPop .8s ease}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:260px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo{max-width:100%;min-width:0}.dm-pane{min-height:0}}
+@media(prefers-reduced-motion:reduce){.dm-body,.dm-bar,.dm-summary,.qa,.qa.show,.dm-hit{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="提问写得再全，它仍可能一口气讲完，你一路点头。让 AI 一次只问我一个问题，卡在第几问会被当场暴露出来。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 一次只问我一个问题"><meta property="og:description" content="提问写得再全，它仍可能一口气讲完，你一路点头。让 AI 一次只问我一个问题，卡在第几问会被当场暴露出来。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-5.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-5.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 提问</div>
+    <h1>让 AI 一次只问我一个问题</h1>
+    <p class="subtitle">把下一步推理变成一个问句交还给你，往下想的活儿留在你这边。读完能让它一次只问一个，并看出自己卡在第几问。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>把下一步推理变成一个问句交还给你，往下想的活儿留在你这边。读完能看出自己卡在第几问。</p></aside><!--seo:end-->  <p class="reveal"><strong>今晚下单，还是等到后天</strong>。一台 4800 元的电脑躺在购物车里，你想等下个月工资到账再还这笔钱。信用卡账单日是每月 5 日，还款日 25 日，今天是 5 月 4 日。你问 AI：「今晚买和后天买，免息时间差多少？」</p>
+  <p class="reveal">AI 很快回了一整段。账单周期、入账时间、账单日、还款日都解释了，还顺手列了五个自测问题。</p>
+  <p class="reveal"><span class="clause">免息期由账单周期和还款日共同决定。账单日前入账的消费进入本期账单，账单日后入账的消费通常进入下一期账单。你可以依次想：账单日是哪天？消费何时入账？会进哪期账单？对应的还款日是哪天？两种情况相差多少天？实际结果还要以银行的入账规则为准。</span></p>
+  <p class="reveal">你从第一句读到最后一句，每个词都认识。它连问题都替你列好了，你觉得<strong>信息已经很全</strong>，便把回答收藏起来，下单前没有再算一次。</p>
+  <p class="reveal">第二天中午，同事看见订单，问：「如果这笔消费 5 月 4 日入账和 5 月 6 日入账，最晚还款日期差多少？」你看着两个日期，脱口而出：「<strong>只差两天</strong>。」实际上一笔进入 5 月账单，另一笔进入 6 月账单，按这个简化例子，最晚还款日分别是 5 月 25 日和 6 月 25 日。你原本留给下个月工资的余地，可能就这样少了一个账单周期。</p>
+  <p class="reveal">你当时会判断自己听懂了，是因为那段回答把条件、结论和五个问题一起摆在眼前。眼睛一直能找到下一句，脑子没有独自做过「这笔消费会进哪期账单」这一步。<mark>内容很全，只说明屏幕上什么都有。</mark></p>
+
+  <div class="sec-label">AI 怎么把没接住的那一步找出来</div>
+  <p class="reveal">继续让 AI 换一种说法，它仍会从头讲一遍。账单日、入账和还款日会再次出现，你也会再次觉得熟悉。真正需要检查的是：拿走整段解释以后，你能不能自己推出下一步。</p>
+  <p class="reveal">让 AI 暂停讲解，改成一次只问一个问题，过程会变成三步：</p>
+  <ol class="four reveal paywall-locked xa-peek">
+    <li><b>先问一个能继续推理的问题</b>，例如「银行在哪一天把这笔消费算进账单」。</li>
+    <li><b>等你交出答案再往下问</b>，答得上来的部分不重复讲。</li>
+    <li><b>在答不出的地方停住</b>，只给这一问所需的提示，再让你回答一次。</li>
+  </ol>
+  <p class="reveal paywall-locked"><mark>每次只问一个问题，会把「我好像懂了」换成一个能回答或答不出的结果。</mark>可它连续问下去时，究竟会在哪一问停住？下面让两种对话从同一个问题同时开始。</p>
+
+  <div class="sec-label paywall-locked">先玩一遍 · 同一个问题，两种对话会把你带到哪里</div>
+  <div class="demo reveal paywall-locked" id="demo-socratic">
+    <div class="demo-top">
+      <div class="demo-title">信用卡的免息期从哪天算</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">左右两边都从这个问题开始</span>
+      <span class="dm-b-hint">信用卡的免息期，为什么要看账单日和入账日期？</span>
+    </div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">左边：AI 把答案一口气讲完<span class="dm-pct" id="dm-lpct">0%</span></div>
+        <div class="dm-track"><div class="dm-bar" id="dm-lbar"></div></div>
+        <div class="dm-pane" id="dm-left"><div class="dm-empty">播放后，AI 的整段解释会出现在这里。</div></div>
+      </div>
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">右边：AI 等你回答后再问下一个<span class="dm-pct" id="dm-rpct">0%</span></div>
+        <div class="dm-track"><div class="dm-bar" id="dm-rbar"></div></div>
+        <div class="dm-pane" id="dm-right"><div class="dm-empty">播放后，AI 会先在这里交给你一个问题。</div></div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">播放后，两种对话会从同一个问题同时开始。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>左边为什么看起来一路顺畅</b>进度快只说明字出来得快。这一栏没有一处要你交答案。</div>
+      <div class="dm-s"><b>右边为什么会停在第三个问题</b>前两个问题你答上了，那两块不用再讲。第三个问题才是下一句该讲的。</div>
+    </div>
+    <div class="demo-caption">教学示意：两边的回答是为演示写的简化文本，不是真实模型输出。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">第三个问题为什么值得停下来</div>
+  <p class="reveal paywall-locked">右边前两个问题都答上了，说明账单日和还款期已经能被你取出来。到了「账单日前一天和后一天相差多少」这一步，你需要把日期放进两个账单周期里，刚才那句「只差两天」就在这里暴露了。</p>
+  <p class="reveal paywall-locked">左边也讲过同一件事，你当时可以顺着句子读完。右边先收走了解释，让你自己算一次。答不出来的位置变得可见，AI 才知道下一句该补账单周期，前两块可以省掉。</p>
+
+  <div class="sec-label paywall-locked">把这段话贴进去，让 AI 等你回答</div>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <p class="tpl-copy">先别直接讲完。请<strong>每次只问我一个问题</strong>，根据我的回答再决定下一步。<strong>等我回答后</strong>再继续；如果我答错或说不知道，只给一个提示，再让我答一次。先不要给结论。</p>
+    <p class="tpl-note">「根据我的回答再决定下一步」是关键。它要求 AI 检查你刚交出的答案，再选择追问、提示或继续，后面的问题就不会一次性倾倒出来。</p>
+  </div>
+  <p class="reveal paywall-locked">这段模板守住四个动作：</p>
+  <ol class="four reveal paywall-locked">
+    <li><b>先暂停完整讲解</b>，让下一步以问题出现。</li>
+    <li><b>一次只显示一个问题</b>，你不会提前看到后面的路。</li>
+    <li><b>用你的回答选择下一步</b>，会的地方直接通过，答错的地方停下。</li>
+    <li><b>提示以后再答一次</b>，结论留到你确实需要时再给。</li>
+  </ol>
+  <p class="reveal paywall-locked"><mark>「根据我的回答再决定下一步」让对话跟着你的理解走。</mark>只写「一次只问一个」时，AI 仍可能按预先列好的题目机械往下问，答错了也不处理。</p>
+
+  <div class="sec-label paywall-locked">什么时候值得用一次一问</div>
+  <p class="reveal paywall-locked">一次一问会慢。只查一个日期、一个定义，直接要答案更省时间。遇到要自己判断、计算或解释的材料时，这种问法才值得用，因为你需要知道推理断在哪一步。</p>
+  <p class="reveal paywall-locked">这是一个教学经验，页面没有把它写成实验结论。答不答得上来还能怎么检查理解，见 <a href="/dashboard/learning?view=courses" data-learning-view="courses">讲得清那一关</a>；顺畅为什么容易让人高估掌握程度，见 <a href="/dashboard/learning?view=courses" data-learning-view="courses">让 AI 帮我检查：我是真的懂了吗</a>。</p>
+
+  <div class="key-line reveal paywall-locked">答不出来的那一问，才是下一句该讲的。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-socratic');
+  var leftEl = document.getElementById('dm-left');
+  var rightEl = document.getElementById('dm-right');
+  var lBar = document.getElementById('dm-lbar');
+  var rBar = document.getElementById('dm-rbar');
+  var lPct = document.getElementById('dm-lpct');
+  var rPct = document.getElementById('dm-rpct');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var timers = [], shownL = 0, shownR = 0;
+  var IDLE = '播放后，两种对话会从同一个问题同时开始。';
+
+  function hit(t){ return '<span class="dm-hit">' + t + '</span>'; }
+
+  function say(title, body){
+    return { cls: 'qa-say', html: '<b>' + title + '</b><div class="dm-body">' + body + '</div>' };
+  }
+
+  var L1 = say('AI 先解释账单日', '<p>免息期从' + hit('账单日') + '算起。你这一个周期里刷的每一笔，都记在这一期账单上。</p>');
+  var L2 = say('AI 接着解释还款期', '<p>账单出来之后还有一段' + hit('还款期') + '。所以刷在周期头上那笔免息最久，刷在' + hit('账单日前一天') + '那笔最短。</p>');
+  var L3 = { cls: 'qa-say', html: '<b>你看完这段解释后的反应</b><p>每一句都读得通。点头，收藏，关掉。</p>' };
+  var L4 = { cls: 'qa-warn', html: '<b>全程没有卡顿，也没有任何地方被检查过</b>你答不答得上来，这一栏从头到尾没有问过。' };
+
+  var Q1 = { cls: 'qa-now', html: '<b>AI 交给你的第一个问题</b>银行是哪一天，才把这笔钱算到你头上的？' };
+  var A1 = { cls: '', html: '<b>你答过的第一个问题</b>银行是哪一天，才把这笔钱算到你头上的？<i>你：账单日出账单那天。</i>' };
+  var Q2 = { cls: 'qa-now', html: '<b>AI 根据回答继续问</b>账单出来，到最后必须还，中间还隔着一段时间吗？' };
+  var A2 = { cls: '', html: '<b>你答过的第二个问题</b>账单出来，到最后必须还，中间还隔着一段时间吗？<i>你：隔着，大概二十天。</i>' };
+  var Q3 = { cls: 'qa-now', html: '<b>AI 交给你的第三个问题</b>同一笔钱，刷在账单日前一天和后一天，免息天数差多少？' };
+
+  var STEPS = [
+    {
+      lp: 45, rp: 15,
+      left: [L1],
+      right: [Q1],
+      cap: '同一句提问。左边直接开讲，右边把第一个问题还给你。'
+    },
+    {
+      lp: 100, rp: 30,
+      left: [L1, L2],
+      right: [A1, Q2],
+      cap: '左边两段讲完，进度条到底。右边你答上了第一问，它接着问第二个。'
+    },
+    {
+      lp: 100, rp: 45,
+      left: [L1, L2, L3],
+      right: [A1, A2, Q3],
+      cap: '左边你点头收藏，进度早就满了。右边第三问出来，你停住了。'
+    },
+    {
+      lp: 100, rp: 45, stuck: true, fin: true, keepR: 2,
+      left: [L1, L2, L3, L4],
+      right: [A1, A2,
+        { cls: 'qa-stuck', html: '<b>你停在第三个问题上</b>前一天和后一天差多少天<i>你：…不知道。</i>' },
+        { cls: 'qa-crack', html: '<b>这里就是你需要补的地方</b>前两个问题答上了，那两块不用再讲。AI 下一句要讲的就是这一处。' }],
+      cap: '右边慢，但你知道自己缺哪一块了。左边快，快到你没机会发现这一块是缺的。'
+    }
+  ];
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  // 已经出现过的块留在原位并后退一层，新增的块走进场动画（double-rAF），
+  // 里面的讲解正文用 max-height 展开，关键词再逐个点亮
+  function renderStack(box, blocks, shown){
+    box.innerHTML = blocks.map(function(b){
+      return '<div class="qa ' + b.cls + '">' + b.html + '</div>';
+    }).join('');
+    var els = Array.prototype.slice.call(box.querySelectorAll('.qa'));
+    els.forEach(function(el, i){
+      var body = el.querySelector('.dm-body');
+      if (i < shown) {
+        el.style.transition = 'none';
+        el.classList.add('show', 'dim');
+        if (body) body.classList.add('open');
+        requestAnimationFrame(function(){ el.style.transition = ''; });
+        return;
+      }
+      timers.push(setTimeout(function(){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            el.classList.add('show', 'pop');
+            if (body) body.classList.add('open');
+            Array.prototype.forEach.call(el.querySelectorAll('.dm-hit'), function(h, k){
+              timers.push(setTimeout(function(){ h.classList.add('lit'); }, reduce ? 0 : 300 + k * 140));
+            });
+          });
+        });
+      }, reduce ? 0 : (i - shown) * 420));
+    });
+    return els.length;
+  }
+
+  function paint(st){
+    demoEl.classList.add('playing');
+    clearTimers();
+    lBar.style.width = st.lp + '%';
+    rBar.style.width = st.rp + '%';
+    lPct.textContent = st.lp + '%';
+    rPct.textContent = st.rp + '%';
+    rBar.classList.toggle('stuck', !!st.stuck);
+    shownL = renderStack(leftEl, st.left, st.keepL === undefined ? shownL : st.keepL);
+    shownR = renderStack(rightEl, st.right, st.keepR === undefined ? shownR : st.keepR);
+    captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function tick(){
+    if (idx >= STEPS.length) { stop(); return; }
+    paint(STEPS[idx]);
+    idx++;
+    if (idx >= STEPS.length) stop();
+  }
+
+  // 节拍不匀速：第三问出来那一步停久一点，收尾再停一次
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= STEPS.length) { stop(); return; }
+    var st = STEPS[idx];
+    paint(st);
+    idx++;
+    pauseUntil = ts + (st.fin ? 3000 : (st.rp === 45 ? 2400 : 1500));
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop(); idx = 0; pauseUntil = 0;
+    shownL = 0; shownR = 0;
+    clearTimers();
+    demoEl.classList.remove('playing');
+    lBar.style.width = '0%';
+    rBar.style.width = '0%';
+    rBar.classList.remove('stuck');
+    lPct.textContent = '0%';
+    rPct.textContent = '0%';
+    leftEl.innerHTML = '<div class="dm-empty">播放后，AI 的整段解释会出现在这里。</div>';
+    rightEl.innerHTML = '<div class="dm-empty">播放后，AI 会先在这里交给你一个问题。</div>';
+    summary.classList.remove('on');
+    captionText.textContent = IDLE;
+  }
+
+  function play(){
+    if (idx >= STEPS.length) reset();
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

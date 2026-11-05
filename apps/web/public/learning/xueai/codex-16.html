@@ -1,0 +1,1091 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-16",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-16',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Windows：受限令牌、防火墙过滤器与两个专用系统用户 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.85 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.snapshot{margin:14px 0 0;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text);background:rgba(0,0,0,.05)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s cubic-bezier(.4,0,.2,1)}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-req{position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px 20px;margin-bottom:20px;border-radius:12px;background:var(--card);border:1px solid var(--border)}
+.dm-req:after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--accent);transform:scaleX(var(--prog,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-req .dm-req-k{font-size:12px;font-weight:700;color:var(--sub)}
+.dm-req .dm-req-v{font-size:14px;font-weight:800;color:var(--accent-deep);margin-top:4px;word-break:break-all}
+.dm-req .dm-who{text-align:right}
+.dm-req .dm-who b{display:block;font-size:14px;color:var(--accent-deep);margin-top:4px}
+#dm-req-v,#dm-who{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-gates{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dm-gate{border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:20px;min-height:168px;display:flex;flex-direction:column;gap:10px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-gates.is-live .dm-gate{opacity:.4;transform:scale(.98)}
+.dm-gates.is-live .dm-gate.on,.dm-gates.is-live .dm-gate.ok,.dm-gates.is-live .dm-gate.no{opacity:1;transform:scale(1)}
+.dm-gate.on{background:var(--accent-soft);border-color:rgba(65,75,90,.45);animation:onPulse 1.2s ease infinite}
+.dm-gate.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4)}
+.dm-gate.no{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-gate.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-g-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dm-g-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-g-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--card);color:var(--sub);border:1px solid var(--border);transition:all .3s cubic-bezier(.4,0,.2,1)}
+.dm-gate.on .dm-g-badge{background:var(--accent);color:#fff;border-color:var(--accent)}
+.dm-gate.ok .dm-g-badge{background:var(--success);color:#fff;border-color:var(--success)}
+.dm-gate.no .dm-g-badge{background:var(--danger);color:#fff;border-color:var(--danger)}
+.dm-g-badge.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-g-why{font-size:13px;line-height:1.8;color:var(--sub);flex:1;max-height:140px;overflow:hidden;transition:max-height .4s ease,opacity .35s cubic-bezier(.4,0,.2,1)}
+.dm-g-why.is-enter{opacity:0;transform:translateY(8px)}
+.dm-g-why.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict{margin-top:20px;padding:16px 18px;border-radius:10px;border:1px dashed var(--border);background:var(--bg);font-size:13.5px;line-height:1.8;color:var(--sub);min-height:58px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-verdict.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-verdict.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-verdict.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-verdict.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{opacity:1;transform:scale(1);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@keyframes onPulse{0%,100%{box-shadow:0 0 0 0 rgba(65,75,90,.16)}50%{box-shadow:0 0 0 7px rgba(65,75,90,.08)}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.exercise{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-gates{grid-template-columns:1fr}.dm-req{flex-direction:column;align-items:flex-start}.dm-req .dm-who{text-align:left}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:520px}}
+</style>
+<meta name="description" content="Windows 上没有 seatbelt 和 bubblewrap。Codex 用受限令牌、防火墙过滤器和两个专用系统用户叠出沙箱，并说明 AppContainer 为什么对不上这份权限模型">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="Windows：受限令牌、防火墙过滤器与两个专用系统用户"><meta property="og:description" content="Windows 上没有 seatbelt 和 bubblewrap。Codex 用受限令牌、防火墙过滤器和两个专用系统用户叠出沙箱，并说明 AppContainer 为什么对不上这份权限模型"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-16.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/codex-16.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>Windows：受限令牌、防火墙过滤器与两个专用系统用户</h1>
+    <p class="subtitle">没有 seatbelt，也没有 bubblewrap。Windows 上的沙箱是三道关卡叠起来的：令牌管写，专用账户管你是谁，WFP 按这个身份滤网。AppContainer 对不上这份权限模型，整套还默认关着。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>没有 seatbelt 和 bubblewrap 的平台怎么叠出沙箱，以及 AppContainer 为什么被否掉</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。Windows 上为什么只能按身份锁资源。受限令牌那三个标志为什么管得住写、管不住读和网络。为什么要两个专用系统用户，以及 AppContainer 为什么被放下。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一个请求穿过三道关</div>
+  <div class="demo reveal" id="demo-gates">
+    <div class="demo-top">
+      <div class="demo-title">换动作、换档位，看请求在哪一关停下</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">动作</span>
+      <div class="dm-seg" id="dm-act">
+        <button type="button" data-act="read_ws">读工作区</button>
+        <button type="button" data-act="read_out" class="on">读工作区外</button>
+        <button type="button" data-act="net">发网络</button>
+        <button type="button" data-act="write_sys">改系统目录</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">档位</span>
+      <div class="dm-seg" id="dm-lvl">
+        <button type="button" data-lvl="off">关</button>
+        <button type="button" data-lvl="token">RestrictedToken</button>
+        <button type="button" data-lvl="elev" class="on">Elevated</button>
+      </div>
+      <span class="dm-b-hint">先看 Elevated 怎么把读挡在身份关。再降到 RestrictedToken，同一条读取会穿过去。</span>
+    </div>
+    <div class="dm-req">
+      <div>
+        <div class="dm-req-k">这次请求</div>
+        <div class="dm-req-v" id="dm-req-v">读 C:\Users\you\.ssh\id_rsa</div>
+      </div>
+      <div class="dm-who">
+        <div class="dm-req-k">当前身份</div>
+        <b id="dm-who">CodexSandboxOffline</b>
+      </div>
+    </div>
+    <div class="dm-gates">
+      <div class="dm-gate" id="dm-g1">
+        <div class="dm-g-top"><span class="dm-g-name">关卡 1 · 受限令牌</span><span class="dm-g-badge">待命</span></div>
+        <div class="dm-g-why" id="dm-g1-why">三个标志裁令牌。写必须过交叉检查，读在这一档仍跟当前用户走。</div>
+      </div>
+      <div class="dm-gate" id="dm-g2">
+        <div class="dm-g-top"><span class="dm-g-name">关卡 2 · 专用系统用户</span><span class="dm-g-badge">待命</span></div>
+        <div class="dm-g-why" id="dm-g2-why">Elevated 才登录 CodexSandboxOffline 或 Online，按账户 ACL 挖空 .ssh 这类目录。</div>
+      </div>
+      <div class="dm-gate" id="dm-g3">
+        <div class="dm-g-top"><span class="dm-g-name">关卡 3 · 防火墙过滤器</span><span class="dm-g-badge">待命</span></div>
+        <div class="dm-g-why" id="dm-g3-why">只给离线账户装持久 WFP。ICMP、DNS、SMB 被内核滤掉，普通出站给出站防火墙。</div>
+      </div>
+    </div>
+    <div class="dm-verdict" id="dm-verdict">点播放，看这个请求依次走过三道关。</div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>Windows 开关关着，平台沙箱返回空，后面不会包包装器</span><span class="ln">manager.rs L62</span></li>
+        <li><span>需要沙箱时，用自己的 exe 加隐藏参数当包装器</span><span class="ln">wrapper.rs L20</span></li>
+        <li><span>三个标志裁出受限令牌：削特权、LUA、写必须过交叉检查</span><span class="ln">token.rs L480</span></li>
+        <li><span>RestrictedToken 这一档，读检查不看 capability SID</span><span class="ln">windows.rs L109</span></li>
+        <li><span>Elevated 先用专用账户登录，再从那个令牌往下裁</span><span class="ln">runner_client.rs L348</span></li>
+        <li><span>两个账户名写死：Offline 与 Online</span><span class="ln">setup.rs L50</span></li>
+        <li><span>网络策略未开或走代理时，选 Offline 身份</span><span class="ln">setup.rs L706</span></li>
+        <li><span>只给离线账户装持久 WFP 过滤器</span><span class="ln">wfp.rs L75</span></li>
+        <li><span>用户配置根默认挖空 .ssh 等目录</span><span class="ln">setup.rs L56</span></li>
+        <li><span>没有后端时，只读档案加 Never，未匹配命令必须 Forbidden</span><span class="ln">exec_policy_windows_tests.rs L113</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看这个请求依次走过三道关。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>令牌档只锁写</b>RestrictedToken 从当前用户裁令牌。读工作区外的文件、往外发网络，这两条都会穿过。要拦它们，必须换 Elevated。</div>
+      <div class="dm-s"><b>身份关才有挖空</b>.ssh 出现在用户配置排除列表里。只有登录了专用账户，这份 ACL 才会生效。</div>
+      <div class="dm-s"><b>网络挂在 SID 上</b>WFP 只装给离线账户。令牌档没有这两个账户，第三关根本不存在。</div>
+    </div>
+    <div class="demo-caption">教学示意：路径与账户名为课程化设定。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 没有进程视图，就按身份锁资源</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">同事在 Mac 上跑 Codex，agent 去碰用户目录里的 SSH 私钥路径，立刻被 Seatbelt 拦住，错误写着 Operation not permitted。同一条读取放到 Windows 上，报错变成 Access is denied。再换一台没开 Windows 沙箱的机器，这条命令可能根本走不到 ACL，execpolicy 先把它判成 Forbidden 或 Prompt。</p>
+  <p class="reveal">三台机器、同一份意图、三种失败。模型看到的下一句话不一样，下一步也会跟着变。如果 Windows 上假装有和 Unix 一样的默认沙箱，模型会按自己被关着去规划，实际命令裸跑。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">macOS 限制这个进程能对哪些路径做哪些操作。Linux 限制这个进程能看见什么、能调哪些系统调用。Windows 没有 namespace，也没有 seccomp。Codex 换成另一套问题：这个身份能碰哪些资源。</p>
+  <p class="reveal">令牌决定你是谁。RestrictedToken 档从当前用户令牌裁，Elevated 档先用专用账户登录，再从那个令牌裁。两边最后都进同一组标志：<code>DISABLE_MAX_PRIVILEGE</code>、<code>LUA_TOKEN</code>、<code>WRITE_RESTRICTED</code>。特权被削薄，写必须同时通过普通 ACL 和 restricting SID 的交叉检查。</p>
+  <p class="reveal">读在 RestrictedToken 这一档仍然跟当前用户走。源码自己写了：<code>WRITE_RESTRICTED</code> 令牌上的 capability SID deny-read ACE 不参与读检查，所以读限制必须走 Elevated，裸跑会被直接拒绝。<span class="src-note">出处：<code>codex-rs/windows-sandbox-rs/src/token.rs</code> 第 480 行；<code>codex-rs/sandboxing/src/windows.rs</code> 第 109 至 117 行</span></p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 360" role="img" aria-label="三平台隔离分别锁在哪一层">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="28" y="28" width="280" height="300" rx="16" fill="#ffffff" stroke="rgba(65,75,90,.28)"></rect>
+      <text x="168" y="64" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">macOS</text>
+      <text x="168" y="90" fill="#6b7280" text-anchor="middle" font-size="13">锁进程能做什么</text>
+      <rect x="58" y="116" width="220" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="168" y="150" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">SBPL 文本</text>
+      <path fill="none" d="M168 172V204" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="58" y="210" width="220" height="86" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="168" y="246" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">file-read 规则拒绝</text>
+      <text x="168" y="272" fill="#6b7280" text-anchor="middle" font-size="13">Operation not permitted</text>
+      <rect x="330" y="28" width="280" height="300" rx="16" fill="#ffffff" stroke="rgba(65,75,90,.28)"></rect>
+      <text x="470" y="64" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">Linux</text>
+      <text x="470" y="90" fill="#6b7280" text-anchor="middle" font-size="13">锁进程能看见什么</text>
+      <rect x="360" y="116" width="220" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="470" y="150" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">bubblewrap 视图</text>
+      <path fill="none" d="M470 172V204" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="360" y="210" width="220" height="86" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="470" y="246" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">路径不在挂载里</text>
+      <text x="470" y="272" fill="#6b7280" text-anchor="middle" font-size="13">No such file or directory</text>
+      <rect x="632" y="28" width="280" height="300" rx="16" fill="#ffffff" stroke="rgba(65,75,90,.28)"></rect>
+      <text x="772" y="64" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">Windows</text>
+      <text x="772" y="90" fill="#6b7280" text-anchor="middle" font-size="13">锁这个身份能碰什么</text>
+      <rect x="662" y="116" width="220" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="772" y="150" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">令牌加 ACL</text>
+      <path fill="none" d="M772 172V204" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="662" y="210" width="220" height="86" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="772" y="246" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">身份没有权限</text>
+      <text x="772" y="272" fill="#6b7280" text-anchor="middle" font-size="13">Access is denied</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：同一条读取，三套隔离锁在不同层，模型看到的失败语义也不一样。</div>
+  </div>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal">主体能做什么，和客体能被谁碰，是两套隔离原语。换语言重写，Windows 上仍然没有 bwrap 可以调用。该问的还是：你有没有一份身份，这份身份被允许碰什么。</p>
+  <p class="reveal paywall-locked xa-peek">包装方式也是同一类自我调用。Windows 用自己的 exe 加上隐藏参数 <code>--run-as-windows-sandbox</code>，跟 Linux 改 arg0 是同一思路。<span class="src-note">出处：<code>codex-rs/windows-sandbox-rs/src/wrapper.rs</code> 第 20 行</span></p>
+
+  <div class="sec-label paywall-locked">思路二 · 一个身份只能挂一套网络策略</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">WFP 是 Windows Filtering Platform，一套内核里的包过滤框架。它和防火墙规则都按 SID 匹配。一个 SID 只能对应一套网络策略。同一身份没法同时表示完全没网，也没法同时表示可以走代理或出网。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">所以用两个本地用户当两个网络身份：<code>CodexSandboxOffline</code> 和 <code>CodexSandboxOnline</code>。<code>from_permissions</code> 在强制走代理，或网络策略未启用时，选 Offline。离线身份装出站阻断、代理端口白名单，再加 12 条 WFP，覆盖 ICMP、DNS 53、DNS-over-TLS 853 和 SMB。在线身份不装这套阻断。</p>
+  <p class="reveal paywall-locked">Unix 的网络隔离是给进程换一张网卡视图。WFP 是进程还在主机网络栈上，只是这个 SID 发出的特定流量被挡住。进程仍然能看见网卡、解析失败、连别的端口。</p>
+  <p class="reveal paywall-locked">过滤器用稳定 GUID 标识，带着持久标志，重启后还在。卸载和崩溃都不会自动拆掉它们。仓库里检索不到删除用户或拆除 WFP 的函数。WFP 失败被写成非致命，防火墙失败会让 setup 整段失败。<span class="src-note">出处：<code>codex-rs/windows-sandbox-rs/src/setup.rs</code> 第 50 至 51 行、第 706 至 714 行；<code>codex-rs/windows-sandbox-rs/src/wfp.rs</code> 第 69 至 95 行</span></p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="一个 SID 只能挂一套网络策略">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <text x="40" y="40" fill="#262d38" font-size="14" font-weight="800">一个 SID，两套互相打架的网策</text>
+      <rect x="40" y="62" width="200" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="104" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">同一个账户</text>
+      <path fill="none" d="M250 86H330" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="338" y="52" width="250" height="44" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="463" y="80" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">完全没网</text>
+      <path fill="none" d="M250 108H330" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="338" y="108" width="250" height="44" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="463" y="136" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">可以走代理或出网</text>
+      <text x="610" y="100" fill="#6b7280" font-size="13">过滤器按 SID 匹配，装不上两套</text>
+      <text x="40" y="196" fill="#262d38" font-size="14" font-weight="800">两个账户，两套网策</text>
+      <rect x="40" y="218" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="252" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">CodexSandboxOffline</text>
+      <path fill="none" d="M250 246H330" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="338" y="218" width="220" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="448" y="252" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">12 条 WFP 加出站阻断</text>
+      <rect x="590" y="218" width="160" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="670" y="242" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Online</text>
+      <text x="670" y="262" fill="#6b7280" text-anchor="middle" font-size="12">不装这套阻断</text>
+      <path fill="none" d="M768 246H820" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="836" y="252" fill="#6b7280" font-size="13">出网</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：网络策略有两档，就需要两个身份。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">按身份做访问控制，身份数量必须覆盖策略组合数。网络策略有两档，就需要两个身份。这和用两张门禁卡进两栋楼是同一件事，跟 WFP 这个具体 API 无关。</p>
+
+  <div class="sec-label paywall-locked">思路三 · AppContainer 对不上，Elevated 又太贵，所以默认关</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">有人会问为什么不上 AppContainer。它的可读范围默认很窄，任意路径读取要改宿主 DACL。Codex 需要 workspace 可读、平台根可读，再按 deny 列表挖空。受限令牌加 ACL 更贴这份权限模型。在 <code>codex-rs/</code> 里检索 <code>AppContainer</code>，业务代码零命中。对照仓库 DeepSeek Harness 把同一判断写成了明文：AppContainer 做不了任意路径读取。</p>
+  <p class="reveal paywall-locked">Elevated 要把读和网络也管住，就要建账户、弹 UAC、改防火墙和 WFP。企业策略可能禁止本地建用户。把默认设成 <code>Disabled</code>，等于把这道产品摩擦留给第一次启用。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">枚举自己把默认值写成关。没写 <code>windows.sandbox</code>、两个 legacy flag 也没有时，就落回 <code>Disabled</code>。legacy flag 已经被标成 Removed。</p>
+  <div class="source reveal paywall-locked">
+    <div class="source-head"><span>codex-rs/protocol/src/config_types.rs</span><span>第 297 至 302 行</span></div>
+    <pre><code>pub enum WindowsSandboxLevel {
+    #[default]
+    Disabled,
+    RestrictedToken,
+    Elevated,
+}</code></pre>
+  </div>
+  <div class="snapshot paywall-locked">源码快照说明：依据本地仓库 <code>openai/codex</code>，核对文件 <code>codex-rs/protocol/src/config_types.rs</code>，commit <code>4f39251a01</code>，核对日期 2026-08-22。代码块保留源码原文，<code>#[default]</code> 钉在 <code>Disabled</code> 上。</div>
+  <p class="reveal paywall-locked" style="margin-top:20px">关掉之后，平台沙箱确实没了。<code>get_platform_sandbox(false)</code> 在 Windows 上返回空，<code>select_initial</code> 把它变成 <code>SandboxType::None</code>。命令仍可能被策略层拦住。Windows 测试锁住了这条：没有后端时，只读档案加 <code>Never</code> 审批，未匹配的 <code>cmd.exe /c dir</code> 必须是 <code>Decision::Forbidden</code>。<span class="src-note">出处：<code>codex-rs/sandboxing/src/manager.rs</code> 第 62 至 72 行、第 301 行；<code>codex-rs/core/src/exec_policy_windows_tests.rs</code> 第 113 至 130 行</span></p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="AppContainer 被放下，默认停在 Disabled">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="36" width="260" height="200" rx="14" fill="#ffffff" stroke="rgba(65,75,90,.28)"></rect>
+      <text x="170" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">AppContainer</text>
+      <text x="170" y="112" fill="#6b7280" text-anchor="middle" font-size="13">默认可读范围很窄</text>
+      <text x="170" y="140" fill="#6b7280" text-anchor="middle" font-size="13">任意路径要改宿主 DACL</text>
+      <text x="170" y="186" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">对不上这份权限模型</text>
+      <path fill="none" d="M310 136H390" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="398" y="36" width="260" height="200" rx="14" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="528" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">组合拳</text>
+      <text x="528" y="112" fill="#6b7280" text-anchor="middle" font-size="13">令牌锁写</text>
+      <text x="528" y="140" fill="#6b7280" text-anchor="middle" font-size="13">专用账户锁读</text>
+      <text x="528" y="168" fill="#6b7280" text-anchor="middle" font-size="13">WFP 按 SID 滤网</text>
+      <text x="528" y="204" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">要 UAC，要本地用户</text>
+      <path fill="none" d="M668 136H748" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="756" y="36" width="160" height="200" rx="14" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="836" y="112" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">默认</text>
+      <text x="836" y="150" fill="#262d38" text-anchor="middle" font-size="16" font-weight="800">Disabled</text>
+      <text x="836" y="186" fill="#6b7280" text-anchor="middle" font-size="13">execpolicy 兜底</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：用得上的那套太贵，默认先关，策略层兜住裸跑。</div>
+  </div>
+  <div class="key-line reveal paywall-locked">三道关卡，一道管写，一道管你是谁，一道管这个身份能出哪扇网门。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">隔离深度跟安装预算挂钩。只防模型误改仓库，当前用户受限令牌就够。要防读出密钥再从这台机器往外传，必须再做读限制和按身份的网络过滤。承诺了做不到的墙，模型和用户都会按那道墙做决策。</p>
+  <p class="reveal paywall-locked">跨平台能力不对等时，对外说法必须按实际启用的那一层来写。macOS 默认就有 Seatbelt，Windows 默认可能是 <code>Disabled</code>。用户听到有沙箱，会以为三台机器同一道墙。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一组标志，三种愿意付的代价</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness：同一组标志，停在写限制</h4>
+      <p>DSH 的 <code>@deepseek-ai/dsh-sandbox-windows-acl</code> 用同一组 <code>CreateRestrictedToken</code> 标志：<code>DISABLE_MAX_PRIVILEGE | LUA_TOKEN | WRITE_RESTRICTED</code>。README 写明读、网络、进程可见性不受限，<code>enforcement</code> 标成 <code>partial</code>。它不建专用账户，不装 WFP。</p>
+      <p>设计笔记把 AppContainer 否掉的原因写死了：AppContainer 令牌没有环境读权限，任意路径读取必须预先授权，对不上 harness 的读模型。mxc 被否是因为系统版本底线太新，任意路径读取还是要改宿主 DACL。Codex Elevated 用两个账户加 WFP 把读和网络身份也做进去，代价是安装摩擦和卸载残留。DSH 换到的是装得上、跑得动，读侧和网络侧留给别的机制。</p>
+      <span class="cmp-tag">已核对 DSH token.ts / win32-abi.ts / README / 设计笔记 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-16" data-lesson-id="dsh-16">DSH · 沙箱：从 seatbelt 到执行世界</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude 拒绝执行，Grok 把平台标成 unknown</h4>
+      <p>Claude Code 在原生 Windows 上写明没有沙箱。企业策略要求沙箱且禁止无沙箱命令时，PowerShell 直接拒绝执行，文案是 sandboxing is not available on native Windows。它不假装有一层隔离。Grok Build 的沙箱 crate 把平台写成 <code>linux/landlock</code> 和 <code>macos/seatbelt</code>，其余标 <code>unknown</code>。在 <code>xai-grok-sandbox</code> 里检索 <code>AppContainer</code>、<code>RestrictedToken</code>、<code>CreateRestrictedToken</code>，没有对应实现。</p>
+      <p>答案分成三档。Claude 和 Grok 在 Windows 上不做文件系统沙箱。DSH 做了写限制，装得上，读和网络留给别的机制。Codex 把身份、ACL、WFP、专用账户全做进去，摩擦更大，所以默认关着。</p>
+      <span class="cmp-tag">已核对 Claude PowerShellTool.tsx、Grok types.rs · 2026-08-22 · <a href="/dashboard/learning?lesson=12-17" data-lesson-id="12-17">Grok · 五种沙箱 Profile</a></span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>同一条读取，换档之后卡在哪</h3>
+      <p>把演示里的动作留在读工作区外，档位从 Elevated 降到 RestrictedToken。先写下你的预测：哪一关会放行，哪一关会消失，最后是 Access is denied 还是穿过。再点播放核对。</p>
+      <p>进阶一问：把动作换成发网络。为什么 RestrictedToken 档第三关是跳过，Elevated 档才会亮起 WFP。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>Windows 没有 seatbelt 和 bubblewrap，隔离只能按身份锁资源。RestrictedToken 那三个标志管写，不管读和网络。要拦密钥和出网，必须再上专用账户、ACL 和按 SID 装的 WFP。AppContainer 对不上这份可读集合，Elevated 又要 UAC，所以默认关着，execpolicy 在没有后端时改成 Forbidden 或 Prompt。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var action = 'read_out', level = 'elev';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var gEls = [document.getElementById('dm-g1'), document.getElementById('dm-g2'), document.getElementById('dm-g3')];
+  var gWhy = [document.getElementById('dm-g1-why'), document.getElementById('dm-g2-why'), document.getElementById('dm-g3-why')];
+  var gatesBox = document.querySelector('.dm-gates');
+  var reqBox = document.querySelector('.dm-req');
+  var reqEl = document.getElementById('dm-req-v');
+  var whoEl = document.getElementById('dm-who');
+  var verdict = document.getElementById('dm-verdict');
+  var traceBox = document.querySelector('.dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '点播放，看这个请求依次走过三道关。';
+  var BADGE = {wait:'待命', on:'检查中', ok:'放行', no:'拦住', skip:'跳过'};
+  var GATE_IDLE = [
+    '三个标志裁令牌。写必须过交叉检查，读在这一档仍跟当前用户走。',
+    'Elevated 才登录 CodexSandboxOffline 或 Online，按账户 ACL 挖空 .ssh 这类目录。',
+    '只给离线账户装持久 WFP。ICMP、DNS、SMB 被内核滤掉，普通出站给出站防火墙。'
+  ];
+  var ACT = {
+    read_ws: {req:'读 D:\\proj\\src\\main.rs', name:'读工作区文件'},
+    read_out:{req:'读 C:\\Users\\you\\.ssh\\id_rsa', name:'读工作区外的文件'},
+    net:     {req:'连接 https://example.com', name:'往外发网络请求'},
+    write_sys:{req:'写 C:\\Windows\\System32\\drivers\\etc\\hosts', name:'改系统目录'}
+  };
+
+  function step(o){ steps.push(o); }
+
+  function buildSteps(act, lvl){
+    var A = ACT[act];
+    steps = [];
+    step({
+      cap: '请求来了：' + A.name + '。档位是 ' + (lvl === 'off' ? 'Disabled' : lvl === 'token' ? 'RestrictedToken' : 'Elevated') + '。三道关还没点亮。',
+      trace: 1, who: lvl === 'elev' ? 'CodexSandboxOffline' : (lvl === 'token' ? '当前登录用户' : '无沙箱身份'),
+      req: A.req, g:['wait','wait','wait'], w: GATE_IDLE.slice(),
+      vk:'', vs:'三道关待命。'
+    });
+
+    if (lvl === 'off') {
+      step({
+        cap: '开关是 Disabled。get_platform_sandbox 返回空，后面不会包 --run-as-windows-sandbox。',
+        trace: 0, who:'无沙箱身份', req:A.req,
+        g:['skip','skip','skip'],
+        w:['平台沙箱未启用。','专用账户未创建。','WFP 未安装。'],
+        vk:'hold', vs:'请求还没走到三道关。'
+      });
+      step({
+        cap: '没有后端可依赖。只读档案加 Never 审批，未匹配命令被 execpolicy 判成 Forbidden。',
+        trace: 9, who:'无沙箱身份', req:A.req,
+        g:['skip','skip','skip'],
+        w:['未到达。','未到达。','未到达。'],
+        vk:'warn', vs:'Forbidden。模型看到的是策略拒绝，不是 Access is denied。', fin:true
+      });
+      return steps;
+    }
+
+    step({
+      cap: '需要沙箱。Codex 用自己的 exe 加上隐藏参数 --run-as-windows-sandbox，把权限档案编进 argv。',
+      trace: 1, who: lvl === 'elev' ? '即将登录专用账户' : '当前登录用户',
+      req:A.req, g:['wait','wait','wait'], w:GATE_IDLE.slice(),
+      vk:'hold', vs:'包装器已就位，请求准备过关。'
+    });
+
+    if (lvl === 'elev') {
+      step({
+        cap: 'Elevated：先用专用账户登录。网络策略未开，选 CodexSandboxOffline。',
+        trace: 4, who:'CodexSandboxOffline', req:A.req,
+        g:['wait','on','wait'],
+        w:[GATE_IDLE[0],'CreateProcessWithLogonW 拉起 command-runner，身份换成离线账户。',GATE_IDLE[2]],
+        vk:'hold', vs:'通行证已经换成专用账户。'
+      });
+    }
+
+    if (act === 'write_sys') {
+      step({
+        cap: '进入令牌关。写必须同时通过普通 ACL 和 restricting SID 交叉检查。C:\\Windows 不在工作区可写根。',
+        trace: 2, who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+        req:A.req, g:['on','wait','wait'],
+        w:['DISABLE_MAX_PRIVILEGE | LUA_TOKEN | WRITE_RESTRICTED。系统目录没有写 capability。',GATE_IDLE[1],GATE_IDLE[2]],
+        vk:'hold', vs:'正在做写交叉检查。'
+      });
+      step({
+        cap: '令牌关拦住了。后面两关没轮到。报错是 Access is denied。',
+        trace: 2, who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+        req:A.req, g:['no','skip','skip'],
+        w:['交叉检查失败，没有系统目录的写 capability。','未到达。','未到达。'],
+        vk:'warn', vs:'Access is denied。卡在第一关。', fin:true
+      });
+      return steps;
+    }
+
+    if (act === 'read_ws') {
+      step({
+        cap: '进入令牌关。这是读，不是写。RestrictedToken 档的读检查仍跟当前用户走；Elevated 档工作区有允许 ACE。',
+        trace: 2, who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+        req:A.req, g:['on', lvl === 'elev' ? 'wait' : 'skip','skip'],
+        w:['读工作区：令牌放行。', lvl === 'elev' ? '下一步看账户 ACL 是否覆盖工作区。' : '令牌档不登录专用账户，身份关跳过。','不是网络请求，WFP 旁观。'],
+        vk:'hold', vs:'第一关放行。'
+      });
+      step({
+        cap: lvl === 'elev'
+          ? '身份关：工作区不在排除列表，账户 ACL 允许读。WFP 不插手文件。'
+          : '身份关和网络关这一档都没装。读工作区对 RestrictedToken 几乎透明。',
+        trace: lvl === 'elev' ? 5 : 3,
+        who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+        req:A.req,
+        g:['ok', lvl === 'elev' ? 'ok' : 'skip', 'skip'],
+        w:['令牌放行。', lvl === 'elev' ? '工作区在允许根里。' : '本档未启用。','本档未启用，也不是网络请求。'],
+        vk:'ok', vs:'放行。工作区读取穿过了已启用的关卡。', fin:true
+      });
+      return steps;
+    }
+
+    if (act === 'read_out') {
+      step({
+        cap: '进入令牌关。WRITE_RESTRICTED 不参与读检查。私钥路径对当前用户往往可读。',
+        trace: 3, who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+        req:A.req, g:['on', lvl === 'elev' ? 'wait' : 'skip','skip'],
+        w:['读检查不看 capability SID，令牌这一关过了。', lvl === 'elev' ? '真正的挖空在账户 ACL。' : '没有专用账户，也就没有排除列表。','不是网络请求。'],
+        vk:'hold', vs:'第一关放行。读限制不在令牌上。'
+      });
+      if (lvl === 'token') {
+        step({
+          cap: '身份关未启用。USERPROFILE_ROOT_EXCLUSIONS 里的 .ssh 此时不会生效。请求穿过了。',
+          trace: 8, who:'当前登录用户', req:A.req,
+          g:['ok','skip','skip'],
+          w:['令牌不管读。','本档未启用，没有账户 ACL 可挖空 .ssh。','本档未启用。'],
+          vk:'ok', vs:'放行。RestrictedToken 只锁写，读工作区外的文件会穿过。', fin:true
+        });
+      } else {
+        step({
+          cap: '身份关：.ssh 在用户配置排除列表里。账户 ACL 拒绝这个身份读取。',
+          trace: 8, who:'CodexSandboxOffline', req:A.req,
+          g:['ok','on','skip'],
+          w:['令牌已放行。','排除列表生效：.ssh、.aws、.gnupg 等目录被挖空。','不是网络请求。'],
+          vk:'hold', vs:'第二关正在按身份查 ACL。'
+        });
+        step({
+          cap: '身份关拦住了。同一条读取，换到 Elevated 之后卡在第二关。报错是 Access is denied。',
+          trace: 8, who:'CodexSandboxOffline', req:A.req,
+          g:['ok','no','skip'],
+          w:['令牌已放行。','CodexSandboxOffline 无权读 .ssh。','未到达。'],
+          vk:'warn', vs:'Access is denied。卡在第二关，凭的是账户 ACL 加排除列表。', fin:true
+        });
+      }
+      return steps;
+    }
+
+    step({
+      cap: '进入令牌关。三个标志管的是特权和写，不管套接字。',
+      trace: 2, who: lvl === 'elev' ? 'CodexSandboxOffline' : '当前登录用户',
+      req:A.req, g:['on', lvl === 'elev' ? 'wait' : 'skip', lvl === 'elev' ? 'wait' : 'skip'],
+      w:['令牌不决定出网。', lvl === 'elev' ? '网络身份还没把过滤器接上。' : '没有离线 SID。', lvl === 'elev' ? '过滤器按 SID 匹配，下一步才轮到。' : 'WFP 只装给离线专用账户。'],
+      vk:'hold', vs:'第一关对网络透明。'
+    });
+    if (lvl === 'token') {
+      step({
+        cap: '身份关和 WFP 都没装。令牌档不建这两个账户，第三关根本不存在。请求出网了。',
+        trace: 7, who:'当前登录用户', req:A.req,
+        g:['ok','skip','skip'],
+        w:['令牌放行。','本档未启用。','本档未启用。WFP 不会装到当前用户头上。'],
+        vk:'ok', vs:'放行。RestrictedToken 不管网络。', fin:true
+      });
+    } else {
+      step({
+        cap: '网络策略未开，from_permissions 选 Offline。请求被交给按这个 SID 匹配的过滤器。',
+        trace: 6, who:'CodexSandboxOffline', req:A.req,
+        g:['ok','on','wait'],
+        w:['令牌已放行。','身份是 Offline，准备接 WFP。','12 条过滤器尚未判决。'],
+        vk:'hold', vs:'第二关把请求交给第三关。'
+      });
+      step({
+        cap: 'WFP 按离线 SID 阻断 ICMP、DNS 53、DNS-over-TLS 853 和 SMB。普通 HTTPS 出站靠防火墙规则拦。',
+        trace: 7, who:'CodexSandboxOffline', req:A.req,
+        g:['ok','ok','on'],
+        w:['令牌已放行。','Offline 身份已选定。','正在按 ALE_USER_ID 匹配过滤器。'],
+        vk:'hold', vs:'第三关检查中。'
+      });
+      step({
+        cap: '第三关拦住了。进程还在主机网络栈上，只是这个 SID 的流量被滤掉。',
+        trace: 7, who:'CodexSandboxOffline', req:A.req,
+        g:['ok','ok','no'],
+        w:['令牌已放行。','身份关放行，并把 SID 交给过滤器。','离线账户的持久 WFP 加出站阻断生效。'],
+        vk:'warn', vs:'出网失败。卡在第三关，凭的是离线 SID 上的过滤器。', fin:true
+      });
+    }
+    return steps;
+  }
+
+  function paintGate(el, whyEl, kind, reason, animate){
+    el.className = 'dm-gate' + (kind && kind !== 'wait' ? ' ' + kind : '');
+    el.setAttribute('data-k', kind || 'wait');
+    el.querySelector('.dm-g-badge').textContent = BADGE[kind] || '待命';
+    if (!animate || reduce || whyEl.textContent === reason) {
+      whyEl.className = 'dm-g-why';
+      whyEl.textContent = reason;
+      return;
+    }
+    whyEl.className = 'dm-g-why is-enter';
+    whyEl.textContent = reason;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ whyEl.classList.add('in'); });
+    });
+  }
+
+  function setFade(el, text, animate){
+    if (!animate || reduce || el.textContent === text) {
+      el.style.opacity = '1';
+      el.textContent = text;
+      return;
+    }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function gateProg(g){
+    var n = 0;
+    for (var i = 0; i < 3; i++) {
+      if (g[i] === 'ok' || g[i] === 'no') n += 1;
+      else if (g[i] === 'on') n += 0.45;
+    }
+    return Math.min(1, n / 3);
+  }
+
+  function paint(st, animate){
+    gatesBox.classList.add('is-live');
+    traceBox.classList.add('is-live');
+    var oldRects = gEls.map(function(el){ return el.getBoundingClientRect(); });
+    setFade(reqEl, st.req, animate);
+    setFade(whoEl, st.who, animate);
+    for (var i = 0; i < 3; i++) {
+      var prev = gEls[i].getAttribute('data-k') || 'wait';
+      paintGate(gEls[i], gWhy[i], st.g[i], st.w[i], animate);
+      if (animate && !reduce && st.g[i] !== prev && (st.g[i] === 'ok' || st.g[i] === 'no')) {
+        gEls[i].classList.remove('firing');
+        void gEls[i].offsetWidth;
+        gEls[i].classList.add('firing');
+        var badge = gEls[i].querySelector('.dm-g-badge');
+        badge.classList.remove('pop');
+        void badge.offsetWidth;
+        badge.classList.add('pop');
+      }
+    }
+    if (animate && !reduce) {
+      gEls.forEach(function(el, n){
+        var now = el.getBoundingClientRect();
+        var dx = oldRects[n].left - now.left;
+        var dy = oldRects[n].top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+    reqBox.style.setProperty('--prog', String(gateProg(st.g)));
+    var prevVk = verdict.getAttribute('data-k') || '';
+    verdict.className = 'dm-verdict' + (st.vk ? ' ' + st.vk : '');
+    verdict.setAttribute('data-k', st.vk || '');
+    verdict.textContent = st.vs;
+    if (animate && !reduce && st.vk && st.vk !== prevVk) {
+      verdict.classList.remove('firing');
+      void verdict.offsetWidth;
+      verdict.classList.add('firing');
+      if (st.vk === 'warn' || st.vk === 'ok') {
+        verdict.classList.remove('pop');
+        void verdict.offsetWidth;
+        verdict.classList.add('pop');
+      }
+    }
+    if (st.trace !== null && st.trace !== undefined) {
+      traceRows.forEach(function(el, n){ el.classList.toggle('on', n === st.trace); });
+    }
+    if (animate && !reduce) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.style.opacity = '1';
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var g = st.g || [];
+    if (g.indexOf('no') !== -1) return 2200;
+    if (g.indexOf('on') !== -1) return st.cap && st.cap.length > 36 ? 2000 : 1600;
+    if (st.vk === 'hold') return 1400;
+    return 1100;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    buildSteps(action, level);
+    gatesBox.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    gEls.forEach(function(el, i){
+      el.style.transition = '';
+      el.style.transform = '';
+      paintGate(el, gWhy[i], 'wait', GATE_IDLE[i], false);
+    });
+    reqBox.style.setProperty('--prog', '0');
+    reqEl.style.opacity = '1';
+    whoEl.style.opacity = '1';
+    reqEl.textContent = ACT[action].req;
+    whoEl.textContent = level === 'elev' ? 'CodexSandboxOffline' : (level === 'token' ? '当前登录用户' : '无沙箱身份');
+    verdict.className = 'dm-verdict';
+    verdict.removeAttribute('data-k');
+    verdict.textContent = '点播放，看这个请求依次走过三道关。';
+    traceRows.forEach(function(el){ el.classList.remove('on'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-act').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    action = b.getAttribute('data-act');
+    reset();
+  });
+  document.getElementById('dm-lvl').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    level = b.getAttribute('data-lvl');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-gates'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+</body></html>

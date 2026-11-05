@@ -1,0 +1,80 @@
+---
+title: Setup
+description: "Configure the API URL and PAT, then register the spawn command with clients such as Claude Code or Cursor to run the stdio MCP server."
+---
+
+The MCP server runs as a stdio subprocess spawned by your AI tool. Configure the API URL and Personal Access Token (PAT) once, then register the spawn command with Claude Code, Cursor, or another MCP client that supports stdio.
+
+<Steps>
+<Step title="Generate a Personal Access Token">
+In the web app: **Settings → Personal Access Tokens → Create**. Copy the `mr_pat_…` value — it is shown once. Treat it like a password: it grants read/write access to all your resumes.
+</Step>
+
+<Step title="Configure the MCP server">
+```bash
+npx -y @magic-resume-kit/mcp config set \
+  --api-url "https://api.magic-resume.cn/api" \
+  --pat "mr_pat_xxx"
+```
+
+This writes `~/.magic-resume/mcp.json`. If you're running the Core gateway locally, point `--api-url` at `http://localhost:3110/api`.
+</Step>
+
+<Step title="Register with your AI tool">
+<Tabs>
+<Tab title="Claude Code">
+```bash
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp mcp
+```
+This adds Magic Resume to the user-scoped MCP list. Restart Claude Code so it picks up the new server.
+</Tab>
+<Tab title="Cursor">
+Open `~/.cursor/mcp.json` (create if missing) and add:
+
+```json
+{
+  "mcpServers": {
+    "magic-resume": {
+      "command": "npx",
+      "args": ["-y", "@magic-resume-kit/mcp", "mcp"]
+    }
+  }
+}
+```
+</Tab>
+<Tab title="Manual / Windsurf">
+Any MCP client that supports stdio servers can spawn it:
+
+```bash
+npx -y @magic-resume-kit/mcp mcp
+```
+
+The server speaks the standard MCP protocol over stdin/stdout — no flags needed.
+</Tab>
+</Tabs>
+</Step>
+
+<Step title="Verify">
+In your AI tool, ask: *"List my Magic Resume resumes."* The model should call `list_resumes` and return your list. If it errors, run `npx -y @magic-resume-kit/mcp config print` and confirm the API URL and PAT are correct.
+</Step>
+</Steps>
+
+<Info>
+The MCP server communicates over **stdio** — it does not open a network port, listen on a socket, or use SSE. Your AI tool spawns it as a child process and shuts it down when the session ends.
+</Info>
+
+## How do I update or pin the MCP version?
+
+Because the spawn command is `npx -y @magic-resume-kit/mcp mcp`, your AI tool pulls the latest version every time it starts. To pin a version explicitly:
+
+```bash
+claude mcp add magic-resume -- npx -y @magic-resume-kit/mcp@1.0.1 mcp
+```
+
+## How do I reset MCP credentials?
+
+```bash
+npx -y @magic-resume-kit/mcp config clear
+```
+
+This removes `~/.magic-resume/mcp.json`. Revoke the PAT in the web app too if it leaked.

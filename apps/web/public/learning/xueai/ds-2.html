@@ -1,0 +1,1109 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"ds-2",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=ds-2',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>数组：你聊的每句话都躺在里面 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="message list 就是一个数组：带索引编号的格子怎么装下你和 AI 的每句话、上下文窗口为什么「掐头不掐尾」、聊久了为什么忘事。再亲手往数组中间插一条数据，数一数右边要搬动多少个元素——你就懂了为什么对话历史只往后长。">
+<meta name="keywords" content="数组是什么,message list,上下文窗口,上下文截断,数组插入,append-only,数据结构数组,零基础数据结构">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="数组：你聊的每句话都躺在里面">
+<meta property="og:description" content="message list 就是一个数组：上下文窗口为什么「掐头不掐尾」，聊久了为什么忘事。再看看往数组中间插一条数据有多贵。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/ds-2.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/ds-2.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="数组：你聊的每句话都躺在里面">
+<meta name="twitter:description" content="message list 就是一个数组：上下文窗口为什么「掐头不掐尾」，聊久了为什么忘事。再看看往数组中间插一条数据有多贵。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--ds:#0284c7;--ds-deep:#075985;--ds-soft:rgba(2,132,199,.08);--ds-line:rgba(2,132,199,.28)}
+.lesson-header .kicker{color:var(--ds)}
+.l-callout b{color:var(--ds)}
+
+/* ── 对话数组 ── */
+.chatarr-box{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);overflow:hidden}
+.chatarr-legend{display:flex;gap:16px;flex-wrap:wrap;padding:11px 16px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);font-size:12px;font-weight:700;color:var(--sub)}
+.lg-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.chatarr-strip{display:flex;gap:10px;padding:18px 16px 16px;overflow-x:auto;align-items:stretch;scroll-behavior:smooth}
+.arr-cell{flex:0 0 112px;display:flex;flex-direction:column;gap:5px;transition:opacity .5s,filter .5s}
+.arr-idx{font-family:"SF Mono","Fira Code",Menlo,monospace;font-size:11.5px;font-weight:800;color:var(--sub);text-align:center}
+.arr-bubble{flex:1;border-radius:10px;padding:8px 10px;font-size:11.5px;line-height:1.55;border:1.5px solid transparent;min-height:66px;font-weight:600}
+.arr-cell.system .arr-bubble{background:rgba(100,116,139,.12);color:#475569;border-color:rgba(100,116,139,.3)}
+.arr-cell.user .arr-bubble{background:rgba(2,132,199,.1);color:var(--ds-deep);border-color:rgba(2,132,199,.28)}
+.arr-cell.assistant .arr-bubble{background:rgba(22,163,74,.09);color:#166534;border-color:rgba(22,163,74,.26)}
+.arr-role{font-size:10px;font-weight:800;text-align:center;color:var(--sub);letter-spacing:.4px}
+.arr-winbar{height:4px;border-radius:2px;background:transparent;transition:background .4s}
+.arr-cell.inwin .arr-winbar{background:var(--ds)}
+.arr-cell.evicted{opacity:.32;filter:grayscale(.9)}
+@keyframes cellIn{from{opacity:0;transform:translateY(14px) scale(.85)}to{opacity:1;transform:none}}
+.arr-cell.fresh{animation:cellIn .45s cubic-bezier(.25,1,.5,1)}
+.chatarr-foot{padding:14px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
+.chatarr-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.btn-ds{background:var(--ds);color:#fff;border:none;padding:10px 26px;border-radius:999px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:filter .15s,transform .15s}
+.btn-ds:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.btn-ds:disabled{background:#c4c8cf;cursor:not-allowed}
+.btn-ghost{background:var(--card);color:var(--sub);border:1.5px solid var(--border);padding:9px 22px;border-radius:999px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s}
+.btn-ghost:hover{border-color:var(--ds-line);color:var(--ds-deep)}
+.win-slider{display:flex;align-items:center;gap:10px;flex:1;min-width:220px}
+.win-slider label{font-size:13px;font-weight:800;color:var(--text);flex-shrink:0}
+.win-slider input[type=range]{flex:1;min-width:100px;accent-color:var(--ds)}
+.win-k{font-size:15px;font-weight:900;color:var(--ds);font-variant-numeric:tabular-nums;min-width:56px}
+.chat-status{font-size:12.5px;color:var(--sub);font-weight:600;line-height:1.7}
+.chat-status b{color:var(--ds-deep);font-variant-numeric:tabular-nums}
+
+/* ── 中间插入实验 ── */
+.ins-box{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);padding:18px 20px}
+.ins-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ins-hint{font-size:13px;color:var(--sub);font-weight:600}
+.ins-counter{font-size:12.5px;font-weight:700;color:var(--sub)}
+.ins-counter b{font-size:22px;font-weight:900;color:var(--amber);font-variant-numeric:tabular-nums;margin:0 3px}
+.ins-strip{display:flex;gap:8px;flex-wrap:wrap;min-height:84px}
+.ins-cell{width:54px;cursor:pointer}
+.ins-val{height:52px;border-radius:10px;background:rgba(0,0,0,.045);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;color:var(--text);border:1.5px solid transparent;transition:transform .16s,background .16s,border-color .16s}
+.ins-cell:hover .ins-val{border-color:var(--ds-line);background:var(--ds-soft)}
+.ins-cell.shifting .ins-val{transform:translateX(26px);background:rgba(217,119,6,.16);border-color:rgba(217,119,6,.5)}
+.ins-cell.fresh .ins-val{animation:cellIn .4s cubic-bezier(.25,1,.5,1);background:var(--ds-soft);border-color:var(--ds-line);color:var(--ds-deep)}
+.ins-idx{font-family:"SF Mono","Fira Code",Menlo,monospace;font-size:10.5px;font-weight:800;color:var(--sub);text-align:center;margin-top:4px}
+.ins-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;border-top:1px dashed var(--border);padding-top:14px}
+.ins-log{font-size:13px;color:var(--sub);font-weight:600;line-height:1.7}
+.ins-log b{color:var(--amber)}
+.ins-log .ok{color:var(--success);font-weight:800}
+
+/* ── 知识卡 ── */
+.know-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.know-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-card)}
+.know-card .kc-icon{font-size:24px;margin-bottom:8px}
+.know-card h4{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px}
+.know-card p{font-size:13px;color:var(--sub);line-height:1.75}
+.know-card p b{color:var(--text)}
+.know-card code{color:var(--ds-deep)}
+
+/* ── takeaway ── */
+.takeaway-box{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1.5px solid #bae6fd;border-radius:var(--radius);padding:24px 28px;margin-top:36px}
+.takeaway-box h3{font-size:17px;font-weight:800;color:var(--ds-deep);margin-bottom:10px}
+.takeaway-box ul{list-style:none;padding:0;margin:0}
+.takeaway-box li{font-size:14.5px;color:#0c4a6e;line-height:1.8;padding:4px 0 4px 22px;position:relative}
+.takeaway-box li::before{content:'';position:absolute;left:0;top:13px;width:8px;height:8px;border-radius:50%;background:var(--ds)}
+
+@media (max-width:768px){
+  .arr-cell{flex:0 0 96px}
+  .ins-cell{width:46px}
+  .ins-val{height:46px;font-size:15px}
+  .know-grid{grid-template-columns:1fr}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">编程基础篇 · 线性结构：你天天在用</div>
+    <h1>数组：你聊的每句话都躺在里面</h1>
+    <p class="subtitle">上一课说好了：数据结构 = 收纳方式。第一种收纳方式你其实天天在喂它数据——你和 AI 的每一段对话，在程序眼里就是一个 <b>message list</b>，而 message list 的真身，是最朴素的收纳方式：<b>一排编了号的格子，叫数组</b>。这一课先把你的对话摊开来看，再顺手回答一个老疑问：为什么聊久了它会忘事。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>message list 就是一个数组：对话历史怎么排队、上下文截断为什么掐头不掐尾；顺便看数组中间插一条数据有多贵</p></aside><!--seo:end-->  <div class="sec-label">先玩 · 你的对话正躺在一排格子里</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">下面就是一个 message list：每条消息占一个格子，格子上方是它的<b style="color:var(--text)">索引</b>（编号，从 0 开始数——程序员的老习惯）。点<b style="color:var(--text)">「发一条消息」</b>，看新消息落在哪；再拖<b style="color:var(--text)">「上下文窗口」滑块</b>，留意哪些格子变灰了、哪个格子永远不灰。</p>
+
+  <div class="chatarr-box">
+    <div class="chatarr-legend">
+      <span><span class="lg-dot" style="background:rgba(100,116,139,.5)"></span>system（📌 钉住）</span>
+      <span><span class="lg-dot" style="background:rgba(2,132,199,.5)"></span>user（你）</span>
+      <span><span class="lg-dot" style="background:rgba(22,163,74,.5)"></span>assistant（AI）</span>
+      <span><span class="lg-dot" style="background:var(--ds)"></span>底下有蓝条 = 在上下文窗口里</span>
+    </div>
+    <div class="chatarr-strip" id="chatStrip"></div>
+    <div class="chatarr-foot">
+      <div class="chatarr-controls">
+        <button class="btn-ds" id="btnSend">发一条消息 →</button>
+        <div class="win-slider">
+          <label>上下文窗口</label>
+          <input type="range" id="winRange" min="2" max="8" value="4">
+          <span class="win-k" id="winK">4 条</span>
+        </div>
+      </div>
+      <div class="chat-status" id="chatStatus"></div>
+    </div>
+  </div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    <b>这就是「聊久了忘事」的全部真相。</b>模型一次能读的内容有上限（上下文窗口），装不下时就得扔。扔哪头？<b>掐头不掐尾</b>——最早的闲聊先扔，最近几句必须留着，不然它连你刚说什么都不知道。唯独 <code>[0]</code> 号格子的 system 提示词被<b>钉住</b>了：它是人设和规矩（「你是一个贴心的助理」），扔了它，AI 就忘了自己是谁。所以「忘事」不是玄学，就是<b>数组切片</b>：留下 system + 最近 K 条，其余不再送进模型。
+  </div>
+
+  <div class="sec-label">第二局 · 往中间插一条，有多贵？</div>
+
+  <p style="font-size:15px;color:var(--sub);margin-bottom:16px;">数组的格子在内存里是<b style="color:var(--text)">紧挨着</b>排的，中间不许有空位。这带来一个麻烦：想往中间塞一个新元素，右边的所有元素都得<b style="color:var(--text)">挨个往右搬一格</b>给它腾地方。<b style="color:var(--text)">点任意一个格子</b>，在它的位置插入一颗 ⭐，盯着「搬动次数」；再点「在末尾追加」对比一下。</p>
+
+  <div class="ins-box">
+    <div class="ins-head">
+      <span class="ins-hint">👇 点格子 = 在这个位置插入 ⭐（越靠左，右边要搬家的越多）</span>
+      <span class="ins-counter">搬动次数<b id="moveN">0</b>次</span>
+    </div>
+    <div class="ins-strip" id="insStrip"></div>
+    <div class="ins-foot">
+      <button class="btn-ds" id="btnAppend">在末尾追加 ⭐</button>
+      <button class="btn-ghost" id="btnResetIns">重置 ↻</button>
+      <span class="ins-log" id="insLog">先点一个靠左的格子试试，比如 [1]</span>
+    </div>
+  </div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    <b>看出规律了吗？</b>末尾追加永远只要 1 步，中间插入要搬动一大片——格子越多、插得越靠前，搬得越狠。这就是为什么对话历史被设计成<b>只往后长</b>（append-only）：每条新消息 push 到末尾，谁也不搬家，快且省。你从来没见过哪个聊天软件让你「把一句话插到十分钟前」，不是产品经理没想到，是这么干真的贵。
+  </div>
+
+  <div class="sec-label">数组的看家本领（和它的软肋）</div>
+
+  <div class="know-grid">
+    <div class="know-card">
+      <div class="kc-icon">🎯</div>
+      <h4>看家本领：按编号直达</h4>
+      <p>想拿第 3 条消息？<code>messages[3]</code>，<b>不用从头数</b>，一步到位。因为格子紧挨着排，编号本身就是地址——这叫 O(1)，翻译成人话是「<b>不管数组多长，耗时都一样</b>」。按位置取数据，数组是所有收纳方式里最快的，没有之一。</p>
+    </div>
+    <div class="know-card">
+      <div class="kc-icon">⚖️</div>
+      <h4>软肋：中间插入贵</h4>
+      <p>你刚才亲手搬过了。顺带认识一个亲戚：<b>链表</b>——它中间插入很便宜（改两根「下一个是谁」的指针就行），代价是失去了按编号直达，找第 100 个得从头挨个走。<b>没有全能的收纳方式，只有取舍</b>。对话这种「只追加、常整段读」的场景，数组完胜，所以 message list 用它。</p>
+    </div>
+  </div>
+
+  <div class="takeaway-box">
+    <h3>✅ 这一课想和你分享的</h3>
+    <ul>
+      <li><b>message list 就是数组</b>：一排编了号的格子，每条消息躺一格，索引从 0 开始</li>
+      <li><b>索引直达 O(1)</b>：按位置取数据，数组是最快的收纳方式</li>
+      <li><b>上下文截断 = 数组切片</b>：留 system + 最近 K 条，「掐头不掐尾」，这就是聊久了忘事的真相</li>
+      <li><b>中间插入贵、末尾追加便宜</b>：所以对话历史只往后长（append-only）</li>
+      <li><b>收纳方式都是取舍</b>：链表中间插得快但没了直达——场景决定选择</li>
+    </ul>
+  </div>
+
+</main>
+<script>
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ── 交互一：对话就是数组 ──
+   窗口规则：钉住 [0] 的 system，再留最近 K 条 user/assistant。
+   初始 3 条 + 默认 K=4 时怎么发都不溢出，所以 FEED 备了 12 条轮换，
+   发到第 5 条左右学员第一次看到「变灰」，正好在滑块玩腻之前。 */
+const msgs = [
+  { role:'system',    text:'你是一个贴心的生活助理' },
+  { role:'user',      text:'帮我想个周末去哪玩' },
+  { role:'assistant', text:'郊区爬山，或者看个新展？' },
+];
+const FEED = [
+  { role:'user',      text:'想去安静点的地方' },
+  { role:'assistant', text:'那推荐植物园或美术馆' },
+  { role:'user',      text:'植物园怎么去？' },
+  { role:'assistant', text:'地铁 3 号线坐到底就是' },
+  { role:'user',      text:'门票贵吗？' },
+  { role:'assistant', text:'20 元，儿童半价' },
+  { role:'user',      text:'带娃方便吗？' },
+  { role:'assistant', text:'有亲子区和小火车' },
+  { role:'user',      text:'中午吃什么？' },
+  { role:'assistant', text:'东门那家面馆不错' },
+  { role:'user',      text:'万一下雨呢？' },
+  { role:'assistant', text:'就改逛室内的美术馆' },
+];
+let feedIdx = 0;
+let K = 4;
+
+const strip      = document.getElementById('chatStrip');
+const winRange   = document.getElementById('winRange');
+const winK       = document.getElementById('winK');
+const chatStatus = document.getElementById('chatStatus');
+const btnSend    = document.getElementById('btnSend');
+
+function renderChat(freshIdx){
+  strip.innerHTML = msgs.map((m, i) => {
+    const win = i === 0 || i >= msgs.length - K;
+    return `
+    <div class="arr-cell ${m.role}${win ? ' inwin' : ' evicted'}${i === freshIdx ? ' fresh' : ''}">
+      <div class="arr-idx">[${i}]</div>
+      <div class="arr-bubble">${m.role === 'system' ? '📌 ' : ''}${m.text}</div>
+      <div class="arr-role">${m.role === 'system' ? 'system · 钉住' : m.role}</div>
+      <div class="arr-winbar"></div>
+    </div>`;
+  }).join('');
+  const evicted = Math.max(0, msgs.length - 1 - K);
+  if (evicted === 0) {
+    chatStatus.innerHTML = `数组长度 <b>${msgs.length}</b>，窗口还装得下全部对话。继续发消息，看它什么时候装不下`;
+  } else {
+    chatStatus.innerHTML = `数组长度 <b>${msgs.length}</b>：最早的 <b>${evicted}</b> 条对话被挤出窗口（变灰，模型看不见了）——但 [0] 的 system 提示词还钉在窗口里`;
+  }
+}
+
+btnSend.addEventListener('click', () => {
+  msgs.push(FEED[feedIdx % FEED.length]);
+  feedIdx++;
+  renderChat(msgs.length - 1);
+  strip.scrollTo({ left: strip.scrollWidth, behavior: 'smooth' });
+});
+
+winRange.addEventListener('input', () => {
+  K = +winRange.value;
+  winK.textContent = K + ' 条';
+  renderChat(-1);
+});
+
+renderChat(-1);
+
+/* ── 交互二：中间插入有多贵 ──
+   动画只做「右移预告」：被搬的格子先橙色右滑（此时还没真插入），
+   停一拍再重排 DOM 落位。真同步移动需要 FLIP 动画，成本高且学员
+   要看的其实是「搬了几次」这个数，不是像素级的位移。 */
+const INS_INIT = ['A','B','C','D','E','F','G','H','I','J'];
+let arr = INS_INIT.slice();
+let insBusy = false;
+
+const insStrip    = document.getElementById('insStrip');
+const moveN       = document.getElementById('moveN');
+const insLog      = document.getElementById('insLog');
+const btnAppend   = document.getElementById('btnAppend');
+const btnResetIns = document.getElementById('btnResetIns');
+
+function renderIns(freshIdx){
+  insStrip.innerHTML = arr.map((v, i) => `
+    <div class="ins-cell${i === freshIdx ? ' fresh' : ''}" data-i="${i}">
+      <div class="ins-val">${v}</div>
+      <div class="ins-idx">[${i}]</div>
+    </div>`).join('');
+}
+
+async function insertAt(i){
+  if (insBusy) return;
+  if (arr.length >= 16) {
+    insLog.innerHTML = '格子够多了，点「重置 ↻」再玩一轮';
+    return;
+  }
+  insBusy = true;
+  let moves = 0;
+  moveN.textContent = '0';
+  const cells = [...insStrip.children];
+  for (let j = arr.length - 1; j >= i; j--) {
+    cells[j].classList.add('shifting');
+    moves++;
+    moveN.textContent = moves;
+    await sleep(150);
+  }
+  await sleep(300);
+  arr.splice(i, 0, '⭐');
+  renderIns(i);
+  insLog.innerHTML = `在 [${i}] 插入：右边 <b>${moves}</b> 个元素全体搬家，再加 1 次写入。插得越靠左，搬得越多`;
+  insBusy = false;
+}
+
+insStrip.addEventListener('click', e => {
+  const cell = e.target.closest('.ins-cell');
+  if (cell) insertAt(+cell.dataset.i);
+});
+
+btnAppend.addEventListener('click', () => {
+  if (insBusy) return;
+  if (arr.length >= 16) {
+    insLog.innerHTML = '格子够多了，点「重置 ↻」再玩一轮';
+    return;
+  }
+  arr.push('⭐');
+  moveN.textContent = '0';
+  renderIns(arr.length - 1);
+  insLog.innerHTML = '末尾追加：<b>0</b> 次搬动 + 1 次写入，<span class="ok">1 步到位</span>——这就是对话历史选择 append-only 的原因';
+});
+
+btnResetIns.addEventListener('click', () => {
+  if (insBusy) return;
+  arr = INS_INIT.slice();
+  moveN.textContent = '0';
+  renderIns(-1);
+  insLog.textContent = '重置好了，再试试点一个靠左的格子';
+});
+
+renderIns(-1);
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

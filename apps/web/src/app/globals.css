@@ -1,0 +1,2574 @@
+@import "tailwindcss";
+@import "@magic-resume-kit/design-system/styles/tokens.css";
+@import "@magic-resume-kit/design-system/styles/utilities.css";
+@import "@magic-resume-kit/design-system/styles/motion.css";
+@import "@fontsource-variable/inter";
+@import "../styles/theme.css";
+@import "../styles/typography.css";
+@import "../styles/editor-motion.css";
+@import "../styles/ai-motion.css";
+
+/* Tailwind v4 从构建的 cwd(apps/web)自动探测源文件,workspace 包不在范围内——它们的
+   工具类只有在本 app 恰好也用了同一个类时才碰巧存在,少样式时不报错。扫 src 而非 dist:dist 被
+   gitignore,且不保证已构建。新增发布 UI 的 workspace 包时必须往这里加一行。 */
+@source "../../../../packages/genui/src";
+@source "../../node_modules/@magic-resume-kit/resume-templates/dist";
+@source "../../node_modules/@magic-resume-kit/design-system/dist";
+
+/* 让 Tailwind 的 `dark:` 变体跟随 <html> 上的 .dark class(由 ThemeProvider / 内联脚本控制),
+   而非默认的 prefers-color-scheme。深色为产品默认。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: "Source Han Sans SC";
+  src: url("/fonts/SourceHanSansSC-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Sans SC";
+  src: url("/fonts/SourceHanSansSC-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Sans SC";
+  src: url("/fonts/SourceHanSansSC-RegularOblique.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Sans SC";
+  src: url("/fonts/SourceHanSansSC-BoldOblique.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("/fonts/SourceHanSerifSC-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("/fonts/SourceHanSerifSC-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("/fonts/SourceHanSerifSC-RegularOblique.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("/fonts/SourceHanSerifSC-BoldOblique.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+/* 楷体:霞鹜文楷(subset-fonts.mjs 产出的子集 woff2)。让不带系统楷体的机器上
+   HTML 预览也用它,与 react-pdf 导出一致。Medium 当 700 加粗用。 */
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/LXGWWenKai-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("/fonts/LXGWWenKai-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+/* ——— 后加的十档 CJK 字体。有真 Bold 文件的按 400 600 / 700 900 两档声明;
+   只有 Regular 的那几款**只声明 400**,让浏览器合成粗体。
+
+   ⚠️ 别把只有一个文件的字体写成 `font-weight: 400 900`。那不是「覆盖这个区间」的
+   意思——对静态字体它等于声明这一个 face 就是 400 到 900 的全部,于是请求 900 时
+   精确命中它,浏览器认为已经拿到 900,**不会再合成粗体**。实测四款这么写的字体
+   900 与 400 逐像素完全相同,富文本里的 <strong> 一点都不粗(见 .wysiwyg strong)。
+   只声明真实档位,让 700/900 落空,合成才会发生。 ——— */
+
+@font-face {
+  font-family: "Glow Sans SC";
+  src: url("/fonts/GlowSansSC-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Glow Sans SC";
+  src: url("/fonts/GlowSansSC-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Hei HK";
+  src: url("/fonts/ChironHeiHK-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Hei HK";
+  src: url("/fonts/ChironHeiHK-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Sung HK";
+  src: url("/fonts/ChironSungHK-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Sung HK";
+  src: url("/fonts/ChironSungHK-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW Bright GB";
+  src: url("/fonts/LXGWBrightGB-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW Bright GB";
+  src: url("/fonts/LXGWBrightGB-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sarasa Gothic SC";
+  src: url("/fonts/SarasaGothicSC-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sarasa Gothic SC";
+  src: url("/fonts/SarasaGothicSC-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Maple Mono CN";
+  src: url("/fonts/MapleMonoCN-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Maple Mono CN";
+  src: url("/fonts/MapleMonoCN-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Zhuque Fangsong";
+  src: url("/fonts/ZhuqueFangsong-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW ZhenKai GB";
+  src: url("/fonts/LXGWZhenKaiGB-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Qiushui Shotai";
+  src: url("/fonts/QiushuiShotai-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW Marker Gothic";
+  src: url("/fonts/LXGWMarkerGothic-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-brand: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-nunito: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-quicksand: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-comfortaa: 'Comfortaa', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-raleway: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-righteous: 'Righteous', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-pacifico: 'Pacifico', cursive;
+  --font-caveat: 'Caveat', cursive;
+  --font-dancing-script: 'Dancing Script', cursive;
+  --font-lobster: 'Lobster', cursive;
+  --font-orbitron: 'Orbitron', monospace;
+  --font-space-mono: 'Space Mono', monospace;
+  --font-pt-serif: 'PT Serif', serif;
+  --font-playfair-display: 'Playfair Display', serif;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+  --font-source-code-pro: 'Source Code Pro', monospace;
+  
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* ============================================================
+   语义 token 层 —— 浅色适配的单一事实源
+   规范:docs/specs/light-theme/design.md §2
+   概念:日光下的实验台 · 暖纸桌 + 冷 sky 墨。
+   深色为默认(:root 与 .dark 均取深色值,对齐迁移前观感 = 零回归);
+   .light 覆盖为暖纸原生值。颜色用 OKLCH,向明/暗极值降 chroma。
+   Phase 1 只落 token,不改组件消费(组件迁移见 §8);故本层不改深色观感。
+   ============================================================ */
+:root,
+.dark {
+  color-scheme: dark;
+
+  /* 表面 / 中性 —— 向暖微染(hue 85,与浅色主题同一支)并抬高一档明度。
+     暖染:纯灰深色底与已经暖染的浅色底不是一套语言。越亮 chroma 越低,否则接近白处发黄;
+     发丝线与 hover 叠加保持中性白透明,压在暖面上才不浑。
+     明度:原来 desk 落在 rgb(11,10,8),比参照的 rgb(19,18,17) 暗一大截,并排看是两种黑。
+     抬到 0.18 后三层变成 0.155/0.18/0.205 的均匀阶,原来 desk→raised 那个 0.06 的大跳
+     也一并抹平。 */
+  --surface-desk: oklch(0.18 0.004 85);    /* 桌面底 ≈ rgb(18,17,16) */
+  --surface-sunk: oklch(0.155 0.004 85);   /* 凹槽 */
+  --surface-raised: oklch(0.205 0.005 85); /* 面板/卡片 */
+  --surface-overlay: oklch(0.21 0.004 85 / 0.72);/* 浮层/磨砂 */
+  --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白且**不染**(所见即所得) */
+  --surface-hover: oklch(1 0 0 / 0.06);    /* 交互态叠加,不是一个新的面 */
+  --surface-hover-2: oklch(1 0 0 / 0.10);  /* 更强一档 */
+  --border-hairline: oklch(1 0 0 / 0.08);  /* 分隔/描边 */
+  --border-strong: oklch(1 0 0 / 0.16);    /* 输入框/强边界 */
+  --text-primary: oklch(0.93 0.003 85);    /* 正文 */
+  --text-secondary: oklch(0.72 0.005 85);  /* 次要 */
+  --text-muted: oklch(0.61 0.006 85);      /* 弱化/占位；随底色抬高而上调,否则跌破 AA */
+
+  /* 强调色 sky —— 拆两支:墨(承载对比) vs 光(仅装饰) */
+  --ink-sky: #38bdf8;                       /* 深色下亮 sky 即可承载 */
+  --ink-sky-hover: #7dd3fc;
+  --fill-sky: #0ea5e9;
+  --on-fill-sky: #0a0a0a;
+  --tint-sky: rgba(56, 189, 248, 0.12);
+  --glow-sky: #38bdf8;                      /* 装饰光效 */
+
+  /* 状态色 */
+  --rev-add: #22c55e;
+  --rev-del: #f87171;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --success: #22c55e;
+
+  /* 高度/阴影(深色靠发光,阴影极浅) */
+  --elev-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-2: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --elev-3: 0 18px 44px -22px rgba(0, 0, 0, 0.7);
+}
+
+.light {
+  color-scheme: light;
+
+  /* 表面 / 中性 —— 暖纸(OKLCH hue≈85,刻意向暖染) */
+  --surface-desk: oklch(0.975 0.004 85);   /* ≈ #FAF8F4 暖纸桌 */
+  --surface-sunk: oklch(0.955 0.005 85);   /* ≈ #F1EEE8 凹槽 */
+  --surface-raised: oklch(0.992 0.002 85); /* ≈ #FDFCFA 面板/卡片 */
+  --surface-overlay: oklch(1 0 0 / 0.86);  /* 暖白 frost */
+  --surface-paper: oklch(0.995 0 0);       /* 简历画布,恒定近白 */
+  --surface-hover: oklch(0.2 0.02 85 / 0.04);   /* 暖底上叠黑 */
+  --surface-hover-2: oklch(0.2 0.02 85 / 0.07);
+  --border-hairline: oklch(0.90 0.004 85); /* ≈ #E4E0D9 */
+  --border-strong: oklch(0.83 0.006 85);   /* ≈ #CFC9BF */
+  --text-primary: oklch(0.27 0.01 85);     /* ≈ #2B2723 暖炭 */
+  --text-secondary: oklch(0.44 0.01 85);   /* ≈ #524D46 */
+  --text-muted: oklch(0.55 0.01 85);       /* ≈ #6E695F */
+
+  /* sky —— 墨走深档(AA 达标),光留亮 sky */
+  --ink-sky: oklch(0.52 0.13 233);         /* ≈ #0369a1 sky-700,文字/边框 */
+  --ink-sky-hover: oklch(0.46 0.13 233);   /* ≈ #075985 */
+  --fill-sky: oklch(0.60 0.14 233);        /* ≈ #0284c7 主按钮 */
+  --on-fill-sky: oklch(0.99 0.01 233);     /* 近白 */
+  --tint-sky: oklch(0.95 0.03 233);        /* ≈ #E8F4FB 极淡染 */
+  --glow-sky: #38bdf8;                      /* 装饰,配低透明使用 */
+
+  /* 状态色(白底沿用,红删略深保 AA) */
+  --rev-add: #15803d;
+  --rev-del: #c81e1e;
+  --danger: #c81e1e;
+  --warning: #b45309;
+  --success: #15803d;
+
+  /* 高度/阴影 —— 边界 + 落地暖影替代发光 */
+  --elev-1: 0 1px 2px oklch(0.2 0.02 85 / 0.06);
+  --elev-2: 0 2px 8px oklch(0.2 0.02 85 / 0.08);
+  --elev-3: 0 12px 32px oklch(0.2 0.02 85 / 0.12);
+
+  /* --------------------------------------------------------------
+     Tailwind `neutral` 色阶浅色重映射(全量迁移的主干)。
+     Tailwind v4 的工具类编译为 var(--color-neutral-*),在 .light 作用域内
+     覆盖这些变量即可让全部 bg/text/border-neutral-* 自动翻面——深色底阶→暖纸、
+     浅色文字阶→暖墨,无需改组件。暖 hue≈85,向极值降 chroma。
+     -------------------------------------------------------------- */
+  --color-neutral-950: oklch(0.985 0.004 85); /* 原最深底 → 最亮纸 */
+  --color-neutral-900: oklch(0.970 0.004 85); /* 面板/卡片底 */
+  --color-neutral-800: oklch(0.902 0.005 85); /* 边界/hover 底 */
+  --color-neutral-700: oklch(0.828 0.006 85); /* 强边界 */
+  --color-neutral-600: oklch(0.640 0.010 85);
+  --color-neutral-500: oklch(0.520 0.010 85); /* muted 文字(×144) */
+  --color-neutral-400: oklch(0.455 0.012 85); /* secondary 文字 */
+  --color-neutral-300: oklch(0.400 0.012 85);
+  --color-neutral-200: oklch(0.340 0.012 85);
+  --color-neutral-100: oklch(0.280 0.010 85); /* 标题/主文字(×64) */
+  --color-neutral-50:  oklch(0.240 0.010 85); /* 最深墨 */
+
+  /* white → 暖墨:承载「深色上的白色主文字」在浅色翻为墨色。
+     彩色按钮上的白字改用字面量 text-[#fff] 保持近白(见迁移说明)。
+     border-white/xx、bg-white/xx 的半透明描边/悬停底则自动变为淡墨,正确。 */
+  --color-white: oklch(0.270 0.010 85);
+
+  /* sky 浅端(100–400)加深:这些阶主要当「文字/图标/激活态」用,
+     浅 sky 落在暖纸上对比不足(如侧栏激活项 text-sky-300/200)。加深到可读档,
+     白底 AA 达标。填充阶 sky-500/600/700 保持鲜亮(按钮/强调块)不动。 */
+  --color-sky-100: oklch(0.640 0.110 240);
+  --color-sky-200: oklch(0.585 0.130 240); /* 激活标签 text-sky-200 */
+  --color-sky-300: oklch(0.540 0.140 240); /* 激活图标 text-sky-300(×47) */
+  --color-sky-400: oklch(0.520 0.150 240); /* text-sky-400(×40)/tint/ring */
+
+  /* --------------------------------------------------------------
+     Web UI bridge.
+
+     The product deliberately inverts the raw neutral ramp in light mode so
+     pre-existing `bg-neutral-*` / `text-neutral-*` utilities flip without a
+     component-by-component migration. Web UI's default light semantics use
+     that raw ramp directly, which consequently made its modal resolve as a
+     dark surface under `.light`. Keep Web UI on the product's semantic layer
+     instead: the settings shell, its portalled selects and all controls now
+     consume the same warm-paper surfaces and ink as the rest of the app.
+     -------------------------------------------------------------- */
+  --color-foreground-full:               var(--on-fill-sky);
+  --color-foreground-icon-primary:       var(--text-primary);
+  --color-foreground-icon-hover:         var(--text-primary);
+  --color-foreground-icon-secondary:     var(--text-secondary);
+  --color-foreground-icon-tertiary:      var(--text-muted);
+  --color-foreground-icon-quaternary:    var(--text-muted);
+  --color-foreground-icon-error:         var(--danger);
+  --color-foreground-icon-disabled:      var(--text-muted);
+  --color-foreground-disabled:           var(--text-muted);
+  --color-foreground-disabled-danger:    var(--danger);
+  --color-input-disabled-foreground:     var(--text-muted);
+  --color-icon-button-disabled-foreground: var(--text-muted);
+  --color-button-primary-disabled-foreground: var(--text-muted);
+
+  --color-text-primary:         var(--text-primary);
+  --color-text-secondary:       var(--text-secondary);
+  --color-text-tertiary:        var(--text-muted);
+  --color-text-disabled:        var(--text-muted);
+  --color-text-disabled-danger: var(--danger);
+  --color-text-placeholder:     var(--text-muted);
+  --color-text-error-primary:   var(--danger);
+  --color-text-white:           var(--on-fill-sky);
+  --color-input-disabled-text:  var(--text-muted);
+
+  --color-background-full:              var(--surface-raised);
+  --color-background-primary-default:   var(--surface-raised);
+  --color-background-inner-default:     var(--surface-raised);
+  --color-background-primary-hover:     var(--surface-sunk);
+  --color-background-primary-active:    var(--surface-sunk);
+  --color-background-primary-disabled:  var(--surface-sunk);
+  --color-input-disabled-background:    var(--surface-sunk);
+  --color-background-secondary-default: var(--surface-sunk);
+  --color-background-secondary-hover:   var(--surface-hover);
+  --color-background-tertiary-default:  var(--surface-hover);
+  --color-background-tertiary-hover:    var(--surface-hover-2);
+  --color-background-tertiary-error:    color-mix(in oklch, var(--danger) 10%, var(--surface-raised));
+  --color-background-quaternary-default: var(--surface-hover-2);
+  --color-background-quaternary-hover:   color-mix(in oklch, var(--text-primary) 12%, var(--surface-raised));
+  --color-background-recent-hire-role:  var(--surface-sunk);
+  --color-avatar-neutral-background:    var(--surface-sunk);
+  --color-file-upload-icon-background:  var(--surface-hover-2);
+  --color-file-upload-icon-foreground:  var(--text-muted);
+  --color-file-upload-icon-foreground-hover: var(--text-secondary);
+
+  --color-border-button-default:   var(--border-hairline);
+  --color-border-button-hover:     var(--border-strong);
+  --color-border-button-active:    var(--border-strong);
+  --color-border-button-white:     var(--on-fill-sky);
+  --color-border-error-default:    var(--danger);
+  --color-border-checkbox-default: var(--border-strong);
+  --color-border-checkbox-hover:   var(--text-muted);
+  --color-border-checkbox-active:  var(--text-secondary);
+  --color-border-checkbox-white:   var(--on-fill-sky);
+  --color-border-component-detail-container: var(--border-hairline);
+  --color-border-ai-profile-card:             var(--border-hairline);
+  --color-border-table:            var(--border-hairline);
+  --color-border-button-group:     var(--border-hairline);
+  --color-border-sidebar-profile-hover: var(--border-strong);
+  --color-separator-border:        var(--border-hairline);
+  --color-separator-border-strong: var(--border-strong);
+  --color-border-focus-ring:       var(--fill-sky);
+
+  --color-control-indicator-background:        var(--on-fill-sky);
+  --color-control-indicator-background-subtle: var(--surface-raised);
+  --color-switch-off-chip-start:                var(--surface-raised);
+  --color-switch-off-chip-end:                  var(--surface-sunk);
+  --color-stat-card-icon-background:            var(--surface-raised);
+  --color-segmented-control-background:         var(--surface-sunk);
+  --color-segmented-control-selected-background: var(--surface-raised);
+  --color-theme-toggle-sidebar-background:       var(--surface-sunk);
+  --color-theme-toggle-sidebar-selected-background: var(--surface-raised);
+  --color-ai-chat-composer-add-background:       var(--surface-sunk);
+  --color-ai-chat-composer-add-hover-background: var(--surface-hover-2);
+  --color-agent-progress-ring:                   var(--text-secondary);
+  --color-button-ghost-background:               var(--mr-accent-tint);
+  --color-button-ghost-hover:                    color-mix(in oklch, var(--fill-sky) 16%, var(--surface-raised));
+  --color-button-ghost-active:                   color-mix(in oklch, var(--fill-sky) 24%, var(--surface-raised));
+  --color-button-ghost-disabled:                 var(--surface-sunk);
+  --color-button-ghost-foreground:               var(--mr-accent);
+  --color-button-ghost-disabled-foreground:      var(--text-muted);
+  --color-dropdown-item-hover-background:        var(--surface-hover);
+  --color-kbd-background:                        var(--surface-hover-2);
+  --color-kbd-foreground:                        var(--text-secondary);
+
+  --gradient-button-primary-disabled: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--fill-sky) 18%, var(--surface-sunk)) 0%,
+    color-mix(in oklch, var(--fill-sky) 26%, var(--surface-sunk)) 100%
+  );
+}
+
+/* 字体class */
+.font-inter { font-family: var(--font-inter); }
+.font-nunito { font-family: var(--font-nunito); }
+.font-quicksand { font-family: var(--font-quicksand); }
+.font-comfortaa { font-family: var(--font-comfortaa); }
+.font-raleway { font-family: var(--font-raleway); }
+.font-righteous { font-family: var(--font-righteous); }
+.font-pacifico { font-family: var(--font-pacifico); }
+.font-caveat { font-family: var(--font-caveat); }
+.font-dancing-script { font-family: var(--font-dancing-script); }
+.font-lobster { font-family: var(--font-lobster); }
+.font-orbitron { font-family: var(--font-orbitron); }
+.font-space-mono { font-family: var(--font-space-mono); }
+.font-pt-serif { font-family: var(--font-pt-serif); }
+.font-playfair-display { font-family: var(--font-playfair-display); }
+.font-jetbrains-mono { font-family: var(--font-jetbrains-mono); }
+.font-source-code-pro { font-family: var(--font-source-code-pro); }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Keep the app aliases pointed at the self-hosted font contract. The old
+     Geist variables were never defined after removing next/font/google, which
+     made `font-sans` silently fall back to the system stack. */
+  --font-sans: var(--font-brand);
+  --font-mono: var(--font-space-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+
+  /* 语义 token → 工具类(bg-desk / text-primary / border-hairline / text-ink-sky …) */
+  --color-desk: var(--surface-desk);
+  --color-sunk: var(--surface-sunk);
+  --color-raised: var(--surface-raised);
+  --color-overlay: var(--surface-overlay);
+  --color-paper: var(--surface-paper);
+  --color-hairline: var(--border-hairline);
+  --color-strong: var(--border-strong);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-ink-sky: var(--mr-accent);
+  --color-ink-sky-hover: var(--mr-accent-hover);
+  --color-fill-sky: var(--fill-sky);
+  --color-on-fill-sky: var(--on-fill-sky);
+  --color-tint-sky: var(--mr-accent-tint);
+  --color-glow-sky: var(--glow-sky);
+  --color-rev-add: var(--rev-add);
+  --color-rev-del: var(--rev-del);
+
+  /* Web compatibility aliases. Product pages still use these names while
+     feature-by-feature migration continues; new shared and Agent UI code uses
+     the design-system `mr-*` vocabulary directly. */
+  --color-ink: var(--text-primary);
+  --color-ink-2: var(--text-secondary);
+  --color-ink-3: var(--text-muted);
+  --color-surface: var(--surface-raised);
+  --color-inset: var(--surface-sunk);
+  --color-canvas: var(--surface-desk);
+  --color-field: var(--surface-sunk);
+  --color-hover: var(--surface-hover);
+  --color-hover-2: var(--surface-hover-2);
+  --color-line: var(--border-hairline);
+  --color-line-strong: var(--border-strong);
+  /* accent 以填充为主（bg-accent），文字另有 accent-ink —— 浅色下它走深档保 AA。 */
+  --color-accent: var(--fill-sky);
+  --color-accent-ink: var(--mr-accent);
+  --color-accent-tint: var(--mr-accent-tint);
+
+  /* 圆角三档。之前那次扫描只统计颜色令牌，把这些漏了——`rounded-card` 不生效，
+     卡片就没有圆角；`rounded-control` 不生效，所有小控件都是直角。 */
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --radius-chip: 999px;
+
+  /* 状态色：他们用 green/red/orange 三支，我们已有对应语义变量。 */
+  --color-green: var(--rev-add);
+  --color-red: var(--rev-del);
+  --color-orange: var(--warning);
+  --color-green-tint: color-mix(in oklch, var(--rev-add) 14%, transparent);
+  --color-red-tint: color-mix(in oklch, var(--rev-del) 14%, transparent);
+  --color-orange-tint: color-mix(in oklch, var(--warning) 14%, transparent);
+
+  /* 四档阴影：我们原本只有 --elev-*，这里给出它们要的名字。 */
+  --shadow-hairline: 0 0 0 1px var(--border-hairline);
+  --shadow-btn: var(--elev-1);
+  --shadow-card: var(--elev-2);
+  --shadow-raised: var(--elev-3);
+  /* `--shadow-overlay` 缺席时不会报错，也不会回退成无样式：Tailwind v4 的 shadow-*
+     同时是 box-shadow 与 shadow-color 两个命名空间，于是 `shadow-overlay` 会静默
+     退化成只设 `--tw-shadow-color`（fallback 到 --color-overlay）、没有 box-shadow
+     的空类。弹层因此完全没有影子。 */
+  --shadow-overlay: var(--elev-3);
+
+  /* 交互曲线 → `ease-enter` / `ease-exit` / `ease-state` 工具类。
+     值在上面的 :root 里，这里只是给它们 Tailwind 认得的名字。 */
+  --ease-enter: var(--narrate-ease);
+  --ease-exit: var(--exit-ease);
+  --ease-state: var(--state-ease);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--surface-desk);
+  color: var(--text-primary);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body.grabbing, body.grabbing * {
+  cursor: grabbing !important;
+}
+
+/* 这里曾有一条 `.text-primary { color: #3b82f6 }`（注释写着给 classic 模板用）。
+   删掉的原因：@theme inline 里的 --color-primary 会让 Tailwind 生成同名工具类，
+   这条手写规则排在后面就把语义 token 整个盖掉——凡是用 text-primary 的正文都变成了
+   蓝色。模板侧早已不用它，唯一被它影响的是 button 的 link 变体（已改为显式取色）。
+   往 @theme inline 里加 token 时，先确认没有同名的手写规则。 */
+
+/* @layer components {
+  .add-btn {
+    @apply text-white inline-flex w-full scale-100 items-center justify-center rounded-sm text-sm font-medium ring-offset-background border border-secondary bg-transparent h-9 px-5 gap-x-2 border-dashed py-6 leading-relaxed;
+  }
+} */
+
+.wysiwyg ul,
+.wysiwyg ol {
+  margin-left: 1.2em;
+  padding-left: 1em;
+}
+
+.wysiwyg ul {
+  list-style-type: disc;
+}
+
+/*
+ * 嵌套列表逐级换符号。此前每一级都是 disc，于是三级嵌套读起来是三行一模一样的
+ * 圆点，层级信息全丢了——而简历的经历描述正是靠层级把「做了什么 / 怎么做的 /
+ * 结果如何」分开的。
+ *
+ * ⚠️ PDF 侧 `PdfRichText.tsx` 的 `li` 渲染器用同一套（实心点 → 空心圆 → 方块），
+ * **改这里必须同时改那里**，否则屏幕与导出会长得不一样。
+ */
+.wysiwyg ul ul {
+  list-style-type: circle;
+}
+
+.wysiwyg ul ul ul {
+  list-style-type: square;
+}
+
+.wysiwyg ol {
+  list-style-type: decimal;
+}
+
+.wysiwyg blockquote {
+  border-left: 3px solid currentColor;
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: inherit;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 0.25em;
+  opacity: 0.8;
+}
+
+.wysiwyg h1,
+.wysiwyg h2,
+.wysiwyg h3,
+.wysiwyg h4,
+.wysiwyg h5,
+.wysiwyg h6 {
+  font-weight: bold;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+.wysiwyg h1 { font-size: 1.5em; }
+.wysiwyg h2 { font-size: 1.3em; }
+.wysiwyg h3 { font-size: 1.15em; }
+.wysiwyg h4, .wysiwyg h5, .wysiwyg h6 { font-size: 1em; }
+
+.wysiwyg p {
+  line-height: 1.5;
+}
+
+/* Honor explicit tree typography in both display and editable rich text. */
+[data-template-line-height] .wysiwyg p {
+  line-height: inherit;
+}
+
+.wysiwyg a {
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
+}
+.wysiwyg a:hover {
+  color: #1d4ed8;
+}
+
+.wysiwyg code {
+  background: #f3f3f3;
+  color: #d6336c;
+  padding: 0.1em 0.3em;
+  border-radius: 0.2em;
+  font-size: 0.95em;
+}
+
+.wysiwyg pre {
+  background: #18181b;
+  color: #fff;
+  padding: 0.8em 1em;
+  border-radius: 0.3em;
+  overflow-x: auto;
+  font-size: 0.95em;
+  margin: 1em 0;
+}
+
+.wysiwyg img {
+  max-width: 100%;
+  border-radius: 0.3em;
+  margin: 0.5em 0;
+  display: block;
+}
+
+.wysiwyg hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+}
+
+.wysiwyg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+.wysiwyg th,
+.wysiwyg td {
+  border: 1px solid #e5e7eb;
+  padding: 0.4em 0.7em;
+  text-align: left;
+}
+.wysiwyg th {
+  background: #f3f4f6;
+  font-weight: bold;
+}
+
+.wysiwyg strong,
+.wysiwyg b {
+  font-weight: 900;
+  color: inherit;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #262626; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #525252; 
+  border-radius: 9999px;
+  border: 1px solid #262626;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #737373;
+  background-clip: padding-box;
+}
+
+/* 浅色:滚动条转暖灰,轨道贴纸、滑块可辨 */
+.light ::-webkit-scrollbar-track {
+  background: oklch(0.94 0.004 85);
+}
+.light ::-webkit-scrollbar-thumb {
+  background: oklch(0.80 0.006 85);
+  border-color: oklch(0.94 0.004 85);
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.68 0.008 85);
+}
+
+/* 浅色:深色为主设计的重阴影(黑 40–60%,深底上才可见)在白纸上会显脏发重,
+   统一收敛为柔和暖影(仅浅色作用域覆盖,深色的 Tailwind 阴影不动 = 零回归)。
+   用主题感知的 --elev-*(见 §3),连带覆盖 shadow-black/xx 的深色阴影色组合。 */
+.light .shadow-md {
+  box-shadow: var(--elev-1);
+}
+.light .shadow-lg {
+  box-shadow: var(--elev-2);
+}
+.light .shadow-xl {
+  box-shadow: var(--elev-2);
+}
+.light .shadow-2xl {
+  box-shadow: var(--elev-3);
+}
+
+button {
+  cursor: pointer;
+}
+
+/* 编辑器样式 */
+/* Basic editor styles */
+.tiptap {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  
+  :first-child {
+    margin-top: 0;
+  }
+
+  /* List styles */
+  ul, 
+  ol {
+    margin: 1.25rem 1rem 1.25rem 0.4rem;
+    
+    li p {
+      margin-top: 0.25em;
+      margin-bottom: 0.25em;
+    }
+  }
+
+  /* Heading styles */
+  h1, 
+  h2, 
+  h3, 
+  h4, 
+  h5, 
+  h6 {
+    line-height: 1.1;
+    margin-top: 2.5rem;
+    text-wrap: pretty;
+  }
+
+  h1, 
+  h2 {
+    margin-top: 3.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 { 
+    font-size: 1.4rem; 
+  }
+
+  h2 { 
+    font-size: 1.2rem; 
+  }
+
+  h3 { 
+    font-size: 1.1rem; 
+  }
+
+  h4, 
+  h5, 
+  h6 { 
+    font-size: 1rem; 
+  }
+
+  /* Code and preformatted text styles */
+  code {
+    background-color: var(--purple-light);
+    border-radius: 0.4rem;
+    color: var(--black);
+    font-size: 0.85rem;
+    padding: 0.25em 0.3em;
+  }
+
+  pre {
+    background: var(--black);
+    border-radius: 0.5rem;
+    color: var(--white);
+    font-family: 'JetBrainsMono', monospace;
+    margin: 1.5rem 0;
+    padding: 0.75rem 1rem;
+
+    code {
+      background: none;
+      color: inherit;
+      font-size: 0.8rem;
+      padding: 0;
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid var(--gray-3);
+    margin: 1.5rem 0;
+    padding-left: 1rem;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--gray-2);
+    margin: 2rem 0;
+  }
+  
+  p {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Custom styles for Tiptap editor list items */
+.prose ul > li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: currentColor;
+}
+
+.prose ul > li {
+  padding-left: 1.5em; /* Adjust padding to make space for the bullet */
+  position: relative;
+}
+
+
+.polaris-fab {
+  --polaris-sky: 56, 189, 248;
+  --orb-speed: 1;
+  isolation: isolate;
+}
+
+/* 球外呼吸光晕:环境光落在深色画布上,hover / 生成中变亮 */
+.polaris-fab__halo {
+  position: absolute;
+  inset: -12px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(120, 150, 255, 0.5),
+    rgba(var(--polaris-sky), 0.22) 48%,
+    transparent 74%
+  );
+  filter: blur(11px);
+  opacity: 0.38;
+  transition: opacity 0.2s ease-out;
+  /* 心跳的两倍拍，而不是另取 5.5s——同屏呼吸元素周期互质会看着发飘。 */
+  animation: polaris-halo calc(var(--breath-duration) * 2 * var(--orb-speed, 1)) var(--breath-ease) infinite;
+  will-change: transform, opacity;
+}
+
+.polaris-fab:hover .polaris-fab__halo {
+  opacity: 0.62;
+}
+
+/* AI editor motion is kept in styles/ai-motion.css. */
+.editor-container {
+  position: relative;
+  min-height: 150px;
+}
+
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+
+/* 反向动画 */
+.animation-reverse {
+  animation-direction: reverse;
+}
+
+
+/* 简历优化页面增强样式 */
+.optimize-container {
+  background: linear-gradient(135deg, 
+    rgba(23, 23, 23, 0.95) 0%, 
+    rgba(38, 38, 38, 0.95) 50%, 
+    rgba(23, 23, 23, 0.95) 100%);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.08) 0%, 
+    rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+
+/* 优化按钮悬停效果 */
+.optimize-button {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(45deg, #0ea5e9, #3b82f6);
+}
+
+.optimize-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  transition: left 0.5s ease;
+}
+
+.optimize-button:hover::before {
+  left: 100%;
+}
+
+
+/* JSON视图增强样式 */
+.json-viewer-enhanced {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.json-viewer-enhanced .react-json-view {
+  background: transparent !important;
+  border-radius: 8px;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  max-width: 100%;
+}
+
+/* 确保JSON中的长字符串能够换行 */
+.json-viewer-enhanced .string-value {
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+  white-space: pre-wrap !important;
+  max-width: 100% !important;
+}
+
+/* 处理JSON视图中的长内容 */
+.json-viewer-enhanced .object-key-val,
+.json-viewer-enhanced .array-key-val {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.json-viewer-enhanced .pushed-content {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* 确保JSON容器本身不会溢出 */
+.json-viewer-enhanced * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 自定义JSON视图中的颜色 */
+.json-viewer-enhanced .object-key-val {
+  padding: 4px 8px !important;
+  margin: 2px 0 !important;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.json-viewer-enhanced .object-key-val:hover {
+  background-color: rgba(56, 189, 248, 0.1) !important;
+}
+
+.json-viewer-enhanced .pushed-content {
+  margin-left: 20px !important;
+}
+
+.json-viewer-enhanced .array-key {
+  font-weight: 600 !important;
+  color: #22d3ee !important;
+}
+
+.json-viewer-enhanced .object-key {
+  font-weight: 600 !important;
+  color: #34d399 !important;
+}
+
+.json-viewer-enhanced .string-value {
+  color: #fbbf24 !important;
+  font-weight: 500 !important;
+}
+
+.json-viewer-enhanced .number-value {
+  color: #f472b6 !important;
+  font-weight: 600 !important;
+}
+
+.json-viewer-enhanced .boolean-value {
+  color: #a78bfa !important;
+  font-weight: 600 !important;
+}
+
+/* 展开/折叠按钮样式 */
+.json-viewer-enhanced .click-to-expand,
+.json-viewer-enhanced .click-to-expand-collapsed {
+  font-size: 14px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.json-viewer-enhanced .click-to-expand:hover,
+.json-viewer-enhanced .click-to-expand-collapsed:hover {
+  background-color: rgba(56, 189, 248, 0.25) !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  transform: scale(1.05);
+}
+
+/* 数组和对象的大小指示器 */
+.json-viewer-enhanced .object-size,
+.json-viewer-enhanced .array-group-meta-data {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-left: 8px !important;
+}
+
+/* 应用更改按钮特效（已移除遮罩） */
+
+.apply-changes-button:active {
+  transform: scale(0.98) !important;
+}
+
+/* 隐藏滚动条 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* 自定义面板：sky 主色细滑块（track 填充由内联渐变给出） */
+.range-sky {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.range-sky::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--fill-sky);
+  border: 2px solid var(--surface-raised);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.range-sky::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.18);
+}
+.range-sky::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--fill-sky);
+  border: 2px solid var(--surface-raised);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
+}
+.range-sky:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.28);
+}
+
+/* ============================================================
+   Coming Soon / 预约门禁页
+   舞台 = 正在被 AI 写出来的简历;前景 = 倒计时 → 预约。
+   仅 transform / opacity 动效,轻、快、不弹跳。
+   ============================================================ */
+.cs-root {
+  --cs-sky: 56, 189, 248;
+}
+
+/* 环境光:两团缓慢漂移的 sky 光晕(不用紫,避免通用 AI 味) */
+.cs-aura {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.cs-aura--a {
+  top: -20%;
+  left: 50%;
+  width: min(820px, 92vw);
+  height: 460px;
+  background: rgba(var(--cs-sky), 0.13);
+  animation: cs-aura-a 17s ease-in-out infinite;
+}
+.cs-aura--b {
+  bottom: -24%;
+  right: 2%;
+  width: min(600px, 80vw);
+  height: 440px;
+  background: rgba(var(--cs-sky), 0.07);
+  animation: cs-aura-b 21s ease-in-out infinite;
+}
+@keyframes cs-aura-a {
+  0%,
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(-52%, 5%) scale(1.09);
+    opacity: 1;
+  }
+}
+@keyframes cs-aura-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate(-5%, -4%) scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* 透视网格:实验台地面,向外柔和淡出 */
+.cs-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask: radial-gradient(ellipse 92% 72% at 50% 32%, #000 26%, transparent 80%);
+  mask: radial-gradient(ellipse 92% 72% at 50% 32%, #000 26%, transparent 80%);
+  pointer-events: none;
+}
+
+/* 舞台容器:透视景深 */
+.cs-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 1500px;
+  pointer-events: none;
+}
+
+/* 组装中的简历面板:偏右、倾斜、低透明,读作舞台而非内容 */
+.cs-resume {
+  position: absolute;
+  top: 50%;
+  right: -7%;
+  width: min(560px, 54vw);
+  transform-style: preserve-3d;
+  opacity: 0.55;
+  animation: cs-float 13s ease-in-out infinite;
+  will-change: transform;
+}
+.cs-resume--ghost {
+  left: -12%;
+  right: auto;
+  width: min(360px, 40vw);
+  opacity: 0.22;
+  filter: blur(1.5px);
+  animation-duration: 16s;
+  animation-direction: reverse;
+}
+@keyframes cs-float {
+  0%,
+  100% {
+    transform: translateY(-50%) rotateY(-23deg) rotateX(7deg) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-53%) rotateY(-20deg) rotateX(6deg) rotate(2deg);
+  }
+}
+@media (max-width: 640px) {
+  .cs-resume {
+    opacity: 0.3;
+    right: -22%;
+  }
+  .cs-resume--ghost {
+    display: none;
+  }
+}
+
+.cs-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px;
+  border-radius: 18px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.055),
+    rgba(255, 255, 255, 0.012)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 44px 90px -44px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* AI 写作光标:一道柔光自上而下扫过面板 */
+.cs-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -140px;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(var(--cs-sky), 0.11),
+    transparent
+  );
+  animation: cs-scan-move 5.6s cubic-bezier(0.45, 0, 0.55, 1) infinite 1.6s;
+  will-change: transform;
+  pointer-events: none;
+}
+@keyframes cs-scan-move {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  16% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(640px);
+    opacity: 0;
+  }
+}
+
+/* 骨架条:入场时从左"写"出来(scaleX),一次成型 */
+.cs-bar {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.09);
+  transform-origin: left center;
+  animation: cs-write 0.66s var(--narrate-ease) both;
+}
+.cs-bar--head {
+  height: 9px;
+  background: rgba(var(--cs-sky), 0.42);
+}
+/* 少数"正在被写"的行:sky 微光持续流动 */
+.cs-bar--active {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--cs-sky), 0.14),
+    rgba(var(--cs-sky), 0.55),
+    rgba(var(--cs-sky), 0.14)
+  );
+  background-size: 220% 100%;
+  animation:
+    cs-write 0.66s var(--narrate-ease) both,
+    cs-bar-shimmer 3.4s ease-in-out infinite 0.9s;
+}
+@keyframes cs-write {
+  from {
+    opacity: 0;
+    transform: scaleX(0.18);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+@keyframes cs-bar-shimmer {
+  0%,
+  100% {
+    background-position: 190% 0;
+  }
+  50% {
+    background-position: -90% 0;
+  }
+}
+.cs-avatar {
+  animation: cs-write 0.66s var(--narrate-ease) both;
+}
+
+/* 前景文字后方的暗晕:压住舞台,保证可读性 */
+.cs-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 52% at 50% 48%,
+    rgba(10, 10, 10, 0.82),
+    rgba(10, 10, 10, 0.4) 46%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+/* 徽章脉冲点 */
+.cs-dot {
+  animation: cs-dot-pulse 2.6s ease-in-out infinite;
+}
+@keyframes cs-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 倒计时分隔冒号:慢速时钟眨动 */
+.cs-colon {
+  animation: cs-colon-blink 2s steps(1, end) infinite;
+}
+@keyframes cs-colon-blink {
+  0%,
+  49% {
+    opacity: 0.5;
+  }
+  50%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* 主 CTA:hover 轻抬 + 一道 sheen 扫过 */
+.cs-cta {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s var(--narrate-ease),
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+.cs-cta:hover {
+  transform: translateY(-2px);
+}
+.cs-cta:active {
+  transform: translateY(0);
+}
+.cs-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 36%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 64%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.cs-cta:hover::after {
+  transform: translateX(130%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-aura--a,
+  .cs-aura--b,
+  .cs-resume,
+  .cs-scan,
+  .cs-bar,
+  .cs-bar--active,
+  .cs-avatar,
+  .cs-dot,
+  .cs-colon {
+    animation: none !important;
+  }
+  .cs-bar,
+  .cs-bar--active,
+  .cs-avatar {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .cs-cta::after {
+    display: none;
+  }
+}
+
+/* Coming Soon 舞台:暖纸化 —— 网格转极淡暖线、玻璃面板转暖纸卡、
+   sky 大光晕降透明、暗晕反相为提亮暖晕保证前景可读、骨架条转纸上浅墨。 */
+.light .cs-grid {
+  background-image:
+    linear-gradient(oklch(0.2 0.01 85 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.2 0.01 85 / 0.045) 1px, transparent 1px);
+}
+.light .cs-aura--a {
+  background: rgba(56, 189, 248, 0.1);
+}
+.light .cs-aura--b {
+  background: rgba(56, 189, 248, 0.06);
+}
+.light .cs-panel {
+  background: linear-gradient(
+    160deg,
+    oklch(1 0 0 / 0.72),
+    oklch(0.99 0.002 85 / 0.42)
+  );
+  border-color: oklch(0.9 0.004 85);
+  box-shadow:
+    0 30px 60px -34px oklch(0.28 0.02 85 / 0.22),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+}
+.light .cs-bar {
+  background: oklch(0.88 0.008 85);
+}
+.light .cs-vignette {
+  background: radial-gradient(
+    ellipse 60% 52% at 50% 48%,
+    oklch(0.985 0.004 85 / 0.82),
+    oklch(0.985 0.004 85 / 0.4) 46%,
+    transparent 72%
+  );
+}
+
+/* ---- 描述编辑器(TiptapEditor)排版 ----
+   表单场景下收敛的层级:标题只比正文大一到两号,列表节奏紧凑,
+   链接 sky 点缀。替代 prose 插件,避免文章级的巨大标题出现在弹窗里。 */
+.tiptap-desc p {
+  margin: 0.35em 0;
+}
+.tiptap-desc h1,
+.tiptap-desc h2,
+.tiptap-desc h3 {
+  font-weight: 600;
+  color: rgba(245, 245, 245, 0.96);
+  margin: 0.9em 0 0.35em;
+  line-height: 1.45;
+}
+.tiptap-desc h1 {
+  font-size: 16px;
+}
+.tiptap-desc h2 {
+  font-size: 15px;
+}
+.tiptap-desc h3 {
+  font-size: 14px;
+}
+.tiptap-desc > :first-child {
+  margin-top: 0;
+}
+.tiptap-desc > :last-child {
+  margin-bottom: 0;
+}
+.tiptap-desc ul,
+.tiptap-desc ol {
+  margin: 0.35em 0;
+  padding-left: 1.35em;
+}
+.tiptap-desc ul {
+  list-style: disc;
+}
+.tiptap-desc ol {
+  list-style: decimal;
+}
+.tiptap-desc li {
+  margin: 0.2em 0;
+}
+.tiptap-desc li::marker {
+  color: #737373;
+}
+.tiptap-desc a {
+  color: #7dd3fc;
+  text-decoration: underline;
+  text-decoration-color: rgba(14, 165, 233, 0.4);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+.tiptap-desc a:hover {
+  text-decoration-color: #7dd3fc;
+}
+.tiptap-desc code {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.9em;
+}
+.tiptap-desc ::selection {
+  background: rgba(14, 165, 233, 0.3);
+}
+/* Placeholder 扩展的空态提示 */
+.tiptap-desc p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #525252;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 链接面板进场:轻微上浮淡入,120ms,只动 transform/opacity */
+@keyframes tiptap-pop {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
+/* 任务卡的极光。两团径向渐变缓慢漂移——只动 transform，交给合成器，
+   流式那几帧再忙也不掉帧。见 conversation/TasksCard.tsx。 */
+@keyframes aurora {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-6%, 3%, 0) scale(1.12); }
+  100% { transform: translate3d(4%, -2%, 0) scale(1.04); }
+}
+
+/* Composer 状态文字：深色沿用模式色，浅色混入暖墨以保持可读。 */
+@layer components {
+  .composer-mode-label {
+    color: var(--composer-mode-accent);
+  }
+
+  .light .composer-mode-label {
+    color: color-mix(in oklab, var(--composer-mode-accent) 38%, var(--mr-ink));
+  }
+}
+
+/* ── GenUI 的组件级类（specs/genui-ui）────────────────────
+   这些不是颜色令牌，是承载**内边距与表格结构**的类。第一次接入时把它们当噪音
+   过滤掉了，结果是卡片没有内边距——CodeBlock 的标题文字直接贴在容器边上。 */
+@layer components {
+  /* Agent Progress — measured reconstruction of Web UI's collapsible work block.
+     The card geometry and interactions stay unchanged; only its surface color
+     follows Magic Resume's semantic raised background. */
+  .agent-progress-stage {
+    display: grid;
+    width: 100%;
+    min-height: 300px;
+    place-items: center;
+    padding: 0 16px;
+  }
+
+  .agent-progress-stage-card {
+    --agent-progress-card: var(--mr-surface);
+    --agent-progress-text: #080808;
+    --agent-progress-secondary: #6e6e6e;
+    --agent-progress-track: #ebebeb;
+    --agent-progress-ring: #454545;
+    --agent-progress-icon-fill: #d7d7d7;
+    --agent-progress-icon-stroke: #7b7b7b;
+    --agent-progress-pending-stroke: #d7d7d7;
+    position: relative;
+    width: min(341px, 100%);
+    max-width: 100%;
+    overflow: hidden;
+    border: 0;
+    border-radius: 16px;
+    background: var(--agent-progress-card);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+    color: var(--agent-progress-text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 24px;
+    transition: height 360ms cubic-bezier(.16, 1, .3, 1), opacity 320ms cubic-bezier(.16, 1, .3, 1), filter 320ms cubic-bezier(.16, 1, .3, 1), transform 320ms cubic-bezier(.16, 1, .3, 1);
+    will-change: height;
+  }
+
+  .agent-progress-stage-card:not(.is-entered) {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(.96);
+  }
+
+  .agent-progress-overall-ring {
+    position: absolute;
+    z-index: 3;
+    top: 14px;
+    left: 14px;
+    display: flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .agent-progress-overall-ring svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    transform-origin: 50% 50%;
+    animation: agent-progress-spin 1.1s linear infinite;
+  }
+
+  .agent-progress-expanded {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 235px;
+    padding: 8px 10px 10px;
+    opacity: 1;
+    filter: blur(0);
+    transition: opacity 180ms ease, filter 180ms ease;
+  }
+
+  .agent-progress-stage-card.is-minimized .agent-progress-expanded {
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(3px);
+  }
+
+  .agent-progress-expanded-inner { padding-top: 4px; }
+
+  .agent-progress-header {
+    display: flex;
+    width: 100%;
+    height: 20px;
+    align-items: center;
+    padding-left: 4px;
+  }
+
+  .agent-progress-header-spacer { width: 0; flex: 0 0 auto; }
+  .agent-progress-header-spacer.has-ring { width: 24px; }
+
+  .agent-progress-header-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: var(--agent-progress-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .agent-progress-label-pop { animation: agent-progress-label-pop 300ms cubic-bezier(.16, 1, .3, 1) both; }
+
+  .agent-progress-minimize-button {
+    display: flex;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--agent-progress-icon-stroke);
+    cursor: pointer;
+    transition: opacity 180ms ease;
+  }
+
+  .agent-progress-minimize-button:hover { opacity: .8; }
+  .agent-progress-minimize-button:focus-visible,
+  .agent-progress-minimized-button:focus-visible {
+    outline: 2px solid var(--mr-accent);
+    outline-offset: 2px;
+  }
+
+  .agent-progress-minimize-icon {
+    position: relative;
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+
+  .agent-progress-minimize-icon > span {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: var(--agent-progress-icon-fill);
+  }
+
+  .agent-progress-minimize-icon > i {
+    position: absolute;
+    top: 13px;
+    left: 4px;
+    width: 12px;
+    height: 2px;
+    border-radius: 3px;
+    background: var(--agent-progress-icon-stroke);
+  }
+
+  .agent-progress-rows {
+    display: flex;
+    margin-top: 9px;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .agent-progress-row {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 32px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    transition: border-color 220ms ease, padding 220ms cubic-bezier(.16, 1, .3, 1), background-color 220ms ease;
+    animation: agent-progress-row-in 420ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  .agent-progress-row.is-active {
+    padding-right: 8px;
+    padding-left: 6px;
+    border-color: var(--agent-progress-track);
+  }
+
+  .agent-progress-row-icon {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 14px;
+    height: 14px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 14px;
+  }
+
+  .agent-progress-check-icon,
+  .agent-progress-pending-icon,
+  .agent-progress-step-ring {
+    display: block;
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+  }
+
+  .agent-progress-step-ring {
+    width: 14px;
+    height: 14px;
+    transform-origin: 50% 50%;
+    animation: agent-progress-spin 1.1s linear infinite;
+  }
+
+  .agent-progress-label {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: var(--agent-progress-secondary);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .agent-progress-label > span {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .agent-progress-label.is-current { color: var(--agent-progress-text); }
+
+  .agent-progress-label.is-done > span::after {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: currentColor;
+    content: "";
+    opacity: .8;
+    transform-origin: left center;
+  }
+
+  .agent-progress-minimized-button {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    height: 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    color: var(--agent-progress-secondary);
+    cursor: pointer;
+    text-align: left;
+    opacity: 0;
+    filter: blur(3px);
+    pointer-events: none;
+    transition: opacity 180ms ease, filter 180ms ease;
+  }
+
+  .agent-progress-stage-card.is-minimized .agent-progress-minimized-button {
+    opacity: 1;
+    filter: blur(0);
+    pointer-events: auto;
+  }
+
+  .agent-progress-minimized-count {
+    min-width: 0;
+    flex: 0 0 auto;
+    padding-left: 4px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  .agent-progress-minimized-spacer { width: 24px; flex: 0 0 24px; }
+
+  .agent-progress-minimized-current {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    padding: 6px 24px 6px 0;
+    mask-image: linear-gradient(to right, #000 0%, #000 100%);
+  }
+
+  .agent-progress-minimized-current > span {
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .agent-progress-arrow-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+  .agent-progress-minimized-button > .agent-progress-minimize-icon { position: absolute; top: 12px; right: 10px; opacity: 0; transition: opacity 180ms ease; }
+  .agent-progress-minimized-button:hover > .agent-progress-minimize-icon,
+  .agent-progress-minimized-button:focus-visible > .agent-progress-minimize-icon { opacity: 1; }
+
+  .dark .agent-progress-stage-card {
+    --agent-progress-card: var(--mr-surface);
+    --agent-progress-text: #f3f3f3;
+    --agent-progress-secondary: #7b7b7b;
+    --agent-progress-track: #454545;
+    --agent-progress-ring: rgb(255 255 255 / 50%);
+    --agent-progress-icon-fill: #454545;
+    --agent-progress-icon-stroke: #7b7b7b;
+    --agent-progress-pending-stroke: #454545;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+  }
+
+  .light .agent-progress-stage-card {
+    --agent-progress-card: var(--mr-surface);
+    --agent-progress-text: #080808;
+    --agent-progress-secondary: #6f6f6f;
+    --agent-progress-track: #ebebeb;
+    --agent-progress-ring: #454545;
+    --agent-progress-icon-fill: #d7d7d7;
+    --agent-progress-icon-stroke: #7b7b7b;
+    --agent-progress-pending-stroke: #d7d7d7;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+  }
+
+  @media (max-width: 600px) {
+    .agent-progress-stage { padding-inline: 16px; }
+    .agent-progress-stage-card { width: min(341px, 100%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .agent-progress-stage-card,
+    .agent-progress-expanded,
+    .agent-progress-row,
+    .agent-progress-minimized-button,
+    .agent-progress-minimize-button { transition-duration: 1ms; }
+    .agent-progress-row,
+    .agent-progress-label-pop { animation: none; }
+    .agent-progress-overall-ring svg,
+    .agent-progress-step-ring { animation: none; }
+  }
+
+  @keyframes agent-progress-spin {
+    from { transform: rotate(-90deg); }
+    to { transform: rotate(270deg); }
+  }
+
+  @keyframes agent-progress-label-pop {
+    from { opacity: 0; filter: blur(3px); transform: translateY(2px); }
+  }
+
+  @keyframes agent-progress-row-in {
+    from { opacity: 0; filter: blur(4px); transform: translateY(5px); }
+  }
+
+  .primitive-card-pad { padding: 0.75rem 0.875rem; }
+  /* 取自 genui-ui：卡片角上的图标按钮（关闭/更多）。28px 是给触摸留的命中面积，
+     视觉图标只有 14px——比图标本身大一圈，否则在移动端点不中。 */
+  .primitive-icon-button {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+  }
+  .primitive-card-bar { padding: 0.5rem 0.875rem; }
+  .primitive-card-footer { padding: 0.625rem 0.875rem; }
+  .primitive-table-cell { padding: 0.5rem 0.75rem; text-align: left; }
+
+  .source-avatar { object-fit: cover; }
+
+  /* 表格族（RecordsTable）。**逐条取自 genui-ui 的 app/globals.css**，不要按感觉改：
+     此前这里是照着组件反推手写的一版，行高、字号、复选框尺寸、字母标形状全不对，
+     来回改了三轮也只是"接近"。它用到的 20 个令牌本仓已有 16 个，另四个在下面补。 */
+    :root {
+      --ease-out-strong: var(--narrate-ease);
+      --tooltip-border: var(--mr-line-strong);
+      /* 提示气泡是**反相**的：正文墨色当底、桌面色当字。深浅两套主题各自反过来，
+         所以这里引的是语义令牌而不是写死的黑白——浅色主题下它是深底浅字，
+         深色主题下自动变成浅底深字，两边都还能从卡片背景里跳出来。 */
+      --tooltip-bg: var(--mr-ink);
+      --tooltip-fg: var(--mr-desk);
+    }
+
+  .records-shell {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--mr-line);
+    border-radius: 10px;
+    background: var(--mr-surface);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
+  }
+  .records-shell.is-fill {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .records-shell.is-fill .records-scroll { max-height: none; flex: 1; }
+
+  .records-company-header,
+  .records-strength,
+  .records-link,
+  .records-add-calculation {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .records-scroll {
+    max-height: 438px;
+    overflow: auto;
+    overscroll-behavior: none;
+    scrollbar-color: var(--mr-line-strong) transparent;
+    scrollbar-gutter: stable;
+  }
+  .records-scroll:focus-visible { outline: 2px solid var(--mr-accent); outline-offset: -2px; }
+
+  .records-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--mr-ink);
+    font-size: 13px;
+    font-weight: 500;
+    table-layout: fixed;
+  }
+
+  .records-company-col { width: 270px; }
+  .records-category-col { width: 275px; }
+  .records-last-col { width: 190px; }
+  .records-strength-col { width: 210px; }
+  .records-link-col { width: 175px; }
+
+  .records-table th,
+  .records-table td {
+    border-right: 1px solid color-mix(in srgb, var(--mr-line) 78%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--mr-line) 78%, transparent);
+    text-align: left;
+    vertical-align: middle;
+  }
+  .records-table tr > :last-child { border-right: 0; }
+
+  .records-table thead th {
+    position: sticky;
+    z-index: 5;
+    top: 0;
+    height: 35px;
+    background: var(--mr-surface);
+    color: var(--mr-ink-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .records-header-cell { padding: 0; }
+  .records-header-cell.records-sticky-cell { z-index: 7; }
+
+  .records-resize-handle {
+    position: absolute;
+    z-index: 12;
+    top: 0;
+    right: -6px;
+    width: 12px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+  }
+  .records-resize-handle::after {
+    position: absolute;
+    top: 7px;
+    bottom: 7px;
+    left: 5px;
+    width: 2px;
+    border-radius: 99px;
+    background: var(--mr-accent);
+    content: "";
+    opacity: 0;
+    transform: scaleY(0.65);
+    transition: opacity 120ms ease-out, transform 150ms var(--ease-out-strong);
+  }
+  .records-resize-handle:hover::after,
+  .records-resize-handle.is-resizing::after { opacity: 1; transform: scaleY(1); }
+
+  .records-header-button,
+  .records-company-header { width: 100%; height: 35px; gap: 8px; padding: 0 12px; }
+  .records-company-header { padding-left: 6px; display: flex; }
+  .records-company-header > span:not(.records-checkbox-box) { white-space: nowrap; }
+
+  .records-header-button {
+    display: flex;
+    align-items: center;
+    color: var(--mr-ink-secondary);
+    text-align: left;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
+  }
+  .records-header-button:hover { background: var(--mr-surface-soft); color: var(--mr-ink); }
+  .records-header-icon { display: inline-flex; flex-shrink: 0; color: var(--mr-muted); }
+
+  .records-sort {
+    display: inline-flex;
+    flex-shrink: 0;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 120ms ease-out, transform 160ms var(--ease-out-strong);
+  }
+  .records-header-button:hover .records-sort,
+  .records-sort.is-visible { opacity: 1; }
+
+  .records-checkbox {
+    position: relative;
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-chip);
+  }
+  /* 原生 input 只留 1px 且透明：既藏起来又保住键盘可达与 :focus-visible。 */
+  .records-checkbox input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .records-checkbox-box {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid oklch(0.845 0.011 247.953);
+    border-radius: 6px;
+    color: oklch(0.446 0.018 251.343);
+    background: oklch(1 0 0);
+    transition: border-color 140ms ease-out, background-color 140ms ease-out,
+      box-shadow 140ms ease-out, transform 140ms var(--ease-out-strong);
+  }
+  .records-checkbox:hover .records-checkbox-box {
+    border-color: oklch(0.773 0.016 251.194);
+    background: oklch(0.966 0.003 228.784);
+  }
+  .records-checkbox:active .records-checkbox-box { transform: scale(0.96); }
+  .records-checkbox input:focus-visible + .records-checkbox-box {
+    outline: 2px solid var(--mr-accent);
+    outline-offset: 2px;
+  }
+  .records-checkbox-box.is-active {
+    border-color: var(--mr-accent);
+    color: oklch(1 0 0);
+    background: var(--mr-accent);
+    box-shadow: none;
+  }
+  .records-checkbox-dash { width: 8px; height: 1.5px; border-radius: 99px; background: oklch(1 0 0); }
+
+  .dark .records-checkbox-box {
+    border-color: oklch(0.45 0.017 254.711);
+    color: oklch(0.917 0.007 247.901);
+    background: oklch(0.346 0.015 252.294);
+  }
+  .dark .records-checkbox:hover .records-checkbox-box {
+    border-color: oklch(0.521 0.019 254);
+    background: oklch(0.391 0.016 251.761);
+  }
+  .dark .records-checkbox-box.is-active { border-color: var(--mr-accent); color: oklch(1 0 0); background: var(--mr-accent); }
+  .dark .records-checkbox-dash { background: oklch(1 0 0); }
+
+  .records-cell {
+    height: 35px;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .records-sticky-cell {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--mr-surface);
+    box-shadow: 5px 0 8px -10px oklch(0 0 0 / 0.4);
+  }
+  .records-company-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 6px;
+    overflow: visible;
+  }
+
+  .records-row > .records-cell { transition: background-color 120ms ease-out, color 120ms ease-out; }
+  .records-row:hover > .records-cell { background: var(--mr-surface-soft); }
+  /* 悬停色是**叠加层**（6% 白），不是一个不透明的面——令牌注释里就是这么写的。
+     粘性首列如果直接把它当 background 铺上，就把自己那层实心 `--surface` 顶掉了：
+     横向滚动时后面的列从首列底下穿过去，两列文字叠在一起。
+     所以粘性格子把交互色放进 background-image，background-color 永远是实心的。 */
+  .records-row:hover > .records-cell.records-sticky-cell {
+    background-color: var(--mr-surface);
+    background-image: linear-gradient(var(--mr-surface-soft), var(--mr-surface-soft));
+  }
+  .records-row:hover > .records-cell.records-sticky-cell.is-colsel {
+    background-color: color-mix(in srgb, var(--mr-accent) 8%, var(--mr-surface));
+    background-image: none;
+  }
+  .records-row.is-selected > .records-cell { background: color-mix(in srgb, var(--mr-accent) 7%, var(--mr-surface)); }
+
+  .records-rownum {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    align-items: center;
+    justify-content: center;
+    color: var(--mr-muted);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 序号与复选框占同一格、互斥显示：平时是序号，悬停或选中才换成复选框。
+     两个都常驻就是那种"每行挂两个小方块"的杂乱——之前正是这样。 */
+  .records-row .records-checkbox { display: none; }
+  .records-row:hover .records-rownum,
+  .records-row.is-selected .records-rownum { display: none; }
+  .records-row:hover .records-checkbox,
+  .records-row.is-selected .records-checkbox { display: inline-flex; }
+
+  .records-table th.is-colsel {
+    background: color-mix(in srgb, var(--mr-accent) 8%, var(--mr-surface));
+    box-shadow: inset 0 2px 0 var(--mr-accent);
+  }
+  th.is-colsel .records-header-button,
+  th.is-colsel .records-company-header,
+  th.is-colsel .records-header-icon { color: var(--mr-accent-ink); }
+  .records-table td.is-colsel { background: color-mix(in srgb, var(--mr-accent) 4%, var(--mr-surface)); }
+  .records-row:hover > td.is-colsel { background: color-mix(in srgb, var(--mr-accent) 8%, var(--mr-surface)); }
+  .records-row.is-selected > td.is-colsel { background: color-mix(in srgb, var(--mr-accent) 10%, var(--mr-surface)); }
+
+  .records-calc { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .records-pulse {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 50%;
+    background: var(--mr-accent);
+    animation: records-pulse 1.1s ease-in-out infinite;
+  }
+
+  .records-company-mark {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 6px;
+    color: var(--mr-ink-secondary);
+    background: var(--mr-sunk);
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .records-company-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--mr-ink);
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .records-company-name.has-link:hover,
+  .records-company-name.has-link:focus-visible {
+    color: var(--mr-accent-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .records-tags {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .records-tags-measure {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    width: max-content;
+    gap: 4px;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .records-tags-measure > span { display: inline-flex; }
+  .records-tag {
+    display: inline-flex;
+    height: 23px;
+    max-width: 115px;
+    align-items: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--tag-base) 32%, var(--mr-surface));
+    border-radius: 8px;
+    padding: 0 7px;
+    color: color-mix(in srgb, var(--tag-base) 92%, var(--mr-ink));
+    background: color-mix(in srgb, var(--tag-base) 18%, var(--mr-surface));
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .records-more-tag {
+    display: inline-flex;
+    height: 23px;
+    align-items: center;
+    flex-shrink: 0;
+    border: 1px solid var(--mr-line-strong);
+    border-radius: 6px;
+    padding: 0 7px;
+    color: var(--mr-muted);
+    background: var(--mr-sunk);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .records-muted { color: var(--mr-muted); }
+  .records-strength { gap: 8px; color: var(--mr-ink-secondary); }
+  .records-strength-dot { display: inline-block; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; }
+
+  .records-link {
+    max-width: 100%;
+    gap: 5px;
+    overflow: hidden;
+    color: var(--mr-accent-ink);
+    text-overflow: ellipsis;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 3px;
+    transition: color 120ms ease-out, text-decoration-color 120ms ease-out;
+  }
+  .records-link-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .records-link svg { flex-shrink: 0; }
+  .records-link:hover,
+  .records-link:focus-visible { color: var(--mr-ink); text-decoration-color: currentColor; }
+
+  .records-table tfoot td {
+    position: sticky;
+    z-index: 4;
+    bottom: 0;
+    height: 35px;
+    background: var(--mr-sunk);
+    color: var(--mr-ink-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .records-table tfoot .records-sticky-cell { z-index: 6; background: var(--mr-sunk); }
+  .records-calculation-label { color: var(--mr-ink-secondary); font-weight: 500; }
+  .records-footer-value { display: inline-flex; height: 35px; align-items: center; vertical-align: middle; }
+  .records-calculation-number { margin-right: 3px; color: var(--mr-ink); font-variant-numeric: tabular-nums; }
+  .records-add-calculation {
+    height: 35px;
+    gap: 6px;
+    color: var(--mr-muted);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    transition: color 120ms ease-out, transform 140ms var(--ease-out-strong);
+  }
+  .records-add-calculation:hover { color: var(--mr-ink); }
+  .records-average { display: inline-flex; align-items: center; gap: 7px; color: var(--mr-ink-secondary); }
+
+  /* FilterTable 的 demo 默认药丸。真实调用方（ApplicationTrackerCard）传自己的
+     语义类，这三个只在裸渲染 `<FilterTable />` 时用到——陈列页就是裸渲染。 */
+  .filter-status-todo { background: var(--mr-warning-tint); color: var(--warning); }
+  .filter-status-progress { background: var(--mr-accent-tint); color: var(--mr-accent); }
+  .filter-status-done { background: var(--mr-success-tint); color: var(--rev-add); }
+}
+
+/* ── GenUI 的关键帧 ────────────────────────────────────────────────
+   这批组件用内联 `animation: fade-up ...` 声明入场，关键帧却在它们站点的 CSS 里——
+   我第一次只搬了令牌，没搬关键帧。缺了它们 CSS 不报错也不回退，**动画静默不播**：
+   行不再逐条递进、芯片不再弹出、加载标签不再流光，整块看起来是死的。
+
+   名字必须与组件里内联的字符串逐字一致，改名就等于再关一次。 */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 「文字从模糊里显影」——流式正文逐词入场用的就是它。这是本仓少见的 filter 动画
+   （设计基线是只动 transform/opacity），留着是因为它正是这套组件的手感来源。 */
+@keyframes stream-in {
+  from { opacity: 0; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* 增量 Markdown 会在语法边界重建节点。保留 4px 模糊质感，但不从全透明开始；即使
+   新列表项刚出现，正文也仍有可见轮廓，不会只剩浏览器原生的圆点 marker。 */
+@keyframes markdown-stream-in {
+  from { opacity: 0.62; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+/* 配 `background-size: 200% 100%` 的渐变文字扫光：正在进行时的唯一动态信号。 */
+@keyframes shimmer-text {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 入场动画整体停掉，但**终态必须是可见的**——`both` 会把元素钉在 from 那一帧，
+     直接 `animation: none` 会让它们永远停在 opacity 0。 */
+  [style*="fade-up"],
+  [style*="fade-in"],
+  [style*="pop-in"],
+  [style*="stream-in"],
+  [style*="markdown-stream-in"],
+  [style*="shimmer-text"] {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
+
+/* ——— 字体选择器的预览子集:每款只含「字 Aa」,几 KB。
+   用整包去画那一个字等于绕过下载闸门——@font-face 会为了它把 3–11MB 全拉下来。 ——— */
+
+@font-face {
+  font-family: "Glow Sans SC Preview";
+  src: url("/fonts/GlowSansSC-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Hei HK Preview";
+  src: url("/fonts/ChironHeiHK-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chiron Sung HK Preview";
+  src: url("/fonts/ChironSungHK-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW Bright GB Preview";
+  src: url("/fonts/LXGWBrightGB-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sarasa Gothic SC Preview";
+  src: url("/fonts/SarasaGothicSC-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Zhuque Fangsong Preview";
+  src: url("/fonts/ZhuqueFangsong-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW ZhenKai GB Preview";
+  src: url("/fonts/LXGWZhenKaiGB-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Qiushui Shotai Preview";
+  src: url("/fonts/QiushuiShotai-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "LXGW Marker Gothic Preview";
+  src: url("/fonts/LXGWMarkerGothic-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Maple Mono CN Preview";
+  src: url("/fonts/MapleMonoCN-Preview.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* 预览慢帧提示的扫光。只动 transform，不碰布局属性。 */
+@keyframes magic-preview-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

@@ -1,0 +1,1153 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"zero-2",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=zero-2',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 不是搜索引擎：它没有在网上帮你查答案 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 问题切换 ── */
+.q-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.q-chip {
+  border: 1.5px solid var(--border); background: var(--card);
+  border-radius: 999px; padding: 8px 18px;
+  font-size: 13.5px; font-weight: 700; color: var(--text);
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.q-chip:hover { border-color: rgba(0,102,255,0.4); }
+.q-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── 对比面板 ── */
+.vs-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.vs-panel {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column;
+}
+.vs-panel-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; font-size: 13px; font-weight: 800;
+  border-bottom: 1px solid var(--border);
+}
+.vs-panel.search .vs-panel-head { background: rgba(100,116,139,0.06); color: #475569; }
+.vs-panel.ai .vs-panel-head { background: rgba(0,102,255,0.05); color: var(--accent); }
+.vs-panel-body { padding: 14px 16px; flex: 1; min-height: 240px; }
+
+/* 搜索结果模拟 */
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--border); border-radius: 999px;
+  padding: 7px 14px; font-size: 13px; color: var(--text);
+  margin-bottom: 12px; background: #fff;
+}
+.search-bar svg { flex-shrink: 0; color: #94a3b8; }
+.sr-item { padding: 9px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.sr-item.ad .sr-title::before {
+  content: '广告'; font-size: 10px; font-weight: 800; color: #b45309;
+  background: rgba(217,119,6,0.12); border-radius: 4px;
+  padding: 1px 5px; margin-right: 6px; vertical-align: 1px;
+}
+.sr-title { font-size: 14px; font-weight: 700; color: #1d4ed8; margin-bottom: 2px; }
+.sr-url { font-size: 11px; color: #16a34a; margin-bottom: 2px; }
+.sr-snip { font-size: 12px; color: var(--sub); line-height: 1.6; }
+.sr-note {
+  margin-top: 10px; font-size: 12px; color: var(--sub); font-weight: 600;
+  padding: 8px 12px; background: rgba(100,116,139,0.06); border-radius: 8px; line-height: 1.7;
+}
+.search-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 190px; gap: 8px; color: var(--sub); text-align: center;
+}
+.search-empty .big { font-size: 30px; }
+.search-empty p { font-size: 13px; line-height: 1.7; max-width: 260px; }
+
+/* AI 回答模拟 */
+.ai-answer { font-size: 13.5px; line-height: 1.85; color: var(--text); }
+.ai-answer p { margin-bottom: 8px; }
+.ai-answer b { color: var(--accent); }
+.ai-note {
+  margin-top: 10px; font-size: 12px; color: var(--accent); font-weight: 600;
+  padding: 8px 12px; background: rgba(0,102,255,0.05); border-radius: 8px; line-height: 1.7;
+}
+
+/* ── 图书馆比喻 ── */
+.lib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.lib-card {
+  border-radius: var(--radius); padding: 22px 24px;
+  border: 1.5px solid var(--border); background: var(--card); box-shadow: var(--shadow-card);
+}
+.lib-card.search-side { border-color: rgba(100,116,139,0.3); }
+.lib-card.ai-side { border-color: rgba(0,102,255,0.3); background: rgba(0,102,255,0.02); }
+.lib-emoji { font-size: 34px; margin-bottom: 10px; }
+.lib-card h4 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.lib-card.search-side h4 { color: #475569; }
+.lib-card.ai-side h4 { color: var(--accent); }
+.lib-card p { font-size: 13.5px; color: var(--sub); line-height: 1.85; }
+.lib-card p b { color: var(--text); }
+
+/* ── 三个后果 ── */
+.conseq-list { display: flex; flex-direction: column; gap: 12px; }
+.conseq-item {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow-card);
+}
+.conseq-num {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 900; color: var(--amber);
+  background: rgba(217,119,6,0.1);
+}
+.conseq-item h4 { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.conseq-item p { font-size: 13.5px; color: var(--sub); line-height: 1.8; }
+.conseq-item p b { color: var(--text); }
+
+/* ── 何时用哪个表 ── */
+.when-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.when-table th, .when-table td { padding: 12px 16px; text-align: left; }
+.when-table th {
+  font-size: 12.5px; font-weight: 800; color: var(--sub);
+  border-bottom: 2px solid var(--border); letter-spacing: 0.4px;
+}
+.when-table td { border-bottom: 1px solid rgba(0,0,0,0.05); line-height: 1.7; }
+.when-table tr:last-child td { border-bottom: none; }
+.pill {
+  display: inline-block; font-size: 12px; font-weight: 800;
+  padding: 3px 12px; border-radius: 999px; white-space: nowrap;
+}
+.pill.search-p { background: rgba(100,116,139,0.12); color: #475569; }
+.pill.ai-p { background: rgba(0,102,255,0.1); color: var(--accent); }
+.pill.both-p { background: rgba(22,163,74,0.1); color: var(--success); }
+
+.takeaway-box {
+  background: linear-gradient(135deg, #eff6ff, #eef2ff);
+  border: 1.5px solid #bfdbfe; border-radius: var(--radius);
+  padding: 24px 28px; margin-top: 36px;
+}
+.takeaway-box h3 { font-size: 17px; font-weight: 800; color: #1e40af; margin-bottom: 10px; }
+.takeaway-box ul { list-style: none; padding: 0; margin: 0; }
+.takeaway-box li {
+  font-size: 14.5px; color: #1e3a5f; line-height: 1.8;
+  padding: 4px 0 4px 22px; position: relative;
+}
+.takeaway-box li::before {
+  content: ''; position: absolute; left: 0; top: 13px;
+  width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;
+}
+
+@media (max-width: 768px) {
+  .vs-panels, .lib-grid { grid-template-columns: 1fr; }
+  .vs-panel-body { min-height: 0; }
+  .when-table { font-size: 13px; }
+  .when-table th, .when-table td { padding: 10px 8px; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="很多人以为 AI 是更聪明的搜索引擎，其实完全不是一回事。搜索引擎帮你找别人写的网页，AI 凭「读过的记忆」直接回答。理解这个区别，你就知道什么时候适合搜索、什么时候适合问 AI、什么话值得核实一下。">
+<meta name="keywords" content="AI和搜索引擎的区别,ChatGPT联网吗,AI知识截止,AI怎么用,人工智能入门">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="AI 不是搜索引擎：它没有在网上帮你查答案">
+<meta property="og:description" content="搜索引擎帮你找别人写的网页，AI 凭「读过的记忆」直接回答。理解这个区别，你就知道什么时候用哪个。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/zero-2.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/zero-2.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 不是搜索引擎：它没有在网上帮你查答案">
+<meta name="twitter:description" content="搜索引擎帮你找别人写的网页，AI 凭「读过的记忆」直接回答。理解这个区别，你就知道什么时候用哪个。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">零基础入门 · AI 是个什么东西</div>
+    <h1>它不是在网上帮你搜答案</h1>
+    <p class="subtitle">关于 AI，新手最常见的误解是：「不就是个更聪明的搜索框吗？」——完全不是一回事。上一课你已经知道它在「接话茬」，这一课看清它和搜索引擎的本质区别，你就知道<b>什么时候该用哪个</b>。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>搜索给书架，AI 给结论。理解「凭记忆回答」的三个后果：会记串、知识有截止日期、没有出处可查</p></aside><!--seo:end-->  <div class="sec-label">同一个问题 · 两种完全不同的反应</div>
+
+  <div class="q-chips" id="qChips"></div>
+
+  <div class="vs-panels">
+    <div class="vs-panel search">
+      <div class="vs-panel-head">🔍 搜索引擎</div>
+      <div class="vs-panel-body" id="searchBody"></div>
+    </div>
+    <div class="vs-panel ai">
+      <div class="vs-panel-head">🤖 AI 助手</div>
+      <div class="vs-panel-body" id="aiBody"></div>
+    </div>
+  </div>
+
+  <div class="sec-label">为什么差别这么大？一个比喻</div>
+
+  <div class="lib-grid">
+    <div class="lib-card search-side">
+      <div class="lib-emoji">🗂️</div>
+      <h4>搜索引擎 = 图书管理员</h4>
+      <p>你说要找什么，它<b>把你带到书架前</b>，指给你十本可能相关的书（还顺手塞两本广告）。书是别人写的，它自己<b>一个字都没读过</b>，读不读、信不信，是你的事。</p>
+    </div>
+    <div class="lib-card ai-side">
+      <div class="lib-emoji">🧠</div>
+      <h4>AI = 读完了整个图书馆的人</h4>
+      <p>它<b>提前读完了图书馆里几乎所有的书</b>，然后把书全部还了回去。你问它问题时，它手边一本书都没有——全凭<b>消化后的记忆</b>，现场把答案「接」出来。</p>
+    </div>
+  </div>
+
+  <div class="sec-label">「凭记忆回答」这件事，带来三个后果</div>
+
+  <div class="conseq-list">
+    <div class="conseq-item">
+      <div class="conseq-num">1</div>
+      <div>
+        <h4>它可能记串</h4>
+        <p>读过的书太多，两本书的内容在记忆里<b>糊在一起</b>是常有的事：把 A 作者的书安到 B 头上、把两个相似案件的细节混着说。它记错的时候<b>语气和记对的时候一样自信</b>——下一课专门讲这个。</p>
+      </div>
+    </div>
+    <div class="conseq-item">
+      <div class="conseq-num">2</div>
+      <div>
+        <h4>它的知识有「截止日期」</h4>
+        <p>它读书是在<b>过去某个时间点</b>完成的，之后世界上发生的事它一概不知道。问它昨天的新闻、今天的天气、现在的股价，它要么坦白说不知道，要么<b>凭旧记忆瞎接一个</b>——后者更危险。</p>
+      </div>
+    </div>
+    <div class="conseq-item">
+      <div class="conseq-num">3</div>
+      <div>
+        <h4>它给结论，不给书架</h4>
+        <p>搜索结果里每条都有网址，你能点进去核对；AI 给你的是<b>一段现成的话</b>，没有天然的「出处」可查。它说得越流畅，你越容易忘了问一句：<b>这是真的吗？</b></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="l-callout" style="margin-top:18px;">
+    <b>那为什么有的 AI 也能查今天的新闻？</b>现在很多 AI 产品带「联网搜索」：先当一回搜索引擎把资料查回来，再当接话机器把资料<b>总结成人话</b>。这不矛盾——查资料的是外挂功能，组织语言的还是那台接话机器。看到 AI 回答里带「引用来源」，通常就是这个模式在工作。
+  </div>
+
+  <div class="sec-label">实用速查 · 什么事找谁办</div>
+
+  <div class="l-card" style="padding:8px 16px;">
+    <table class="when-table">
+      <tbody><tr><th>你想干什么</th><th>找谁</th><th>为什么</th></tr>
+      <tr>
+        <td>查今天的天气、新闻、股价、营业时间</td>
+        <td><span class="pill search-p">搜索 / AI 联网</span></td>
+        <td>要的是「此刻的事实」，纯凭记忆的 AI 不可能知道</td>
+      </tr>
+      <tr>
+        <td>解释一个看不懂的概念、名词、体检报告</td>
+        <td><span class="pill ai-p">问 AI</span></td>
+        <td>它读过的解释比任何一个网页都多，还能顺着你的追问讲</td>
+      </tr>
+      <tr>
+        <td>改写、润色、翻译、起名字、出主意</td>
+        <td><span class="pill ai-p">问 AI</span></td>
+        <td>这类活儿没有「标准答案网页」可搜，是 AI 的独门强项</td>
+      </tr>
+      <tr>
+        <td>查一个重要的事实（法条、药量、数据）</td>
+        <td><span class="pill both-p">AI 先答 + 搜索核对</span></td>
+        <td>AI 帮你快速搞懂大概，但拍板前要找到原始出处</td>
+      </tr>
+    </tbody></table>
+  </div>
+
+  <div class="takeaway-box">
+    <h3>✅ 这一课想和你分享的</h3>
+    <ul>
+      <li><b>搜索引擎给书架，AI 给结论</b>：一个帮你找别人写的网页，一个凭消化后的记忆直接回答</li>
+      <li><b>凭记忆 = 可能记串</b>：AI 记错时和记对时一样自信</li>
+      <li><b>它的知识有截止日期</b>：「此刻的事实」要靠搜索或 AI 的联网功能</li>
+      <li><b>重要事实值得核对出处</b>：它答得越流畅，越值得顺手确认一次</li>
+    </ul>
+  </div>
+
+</main>
+<script>
+const QA = [
+  {
+    chip: '猫不吃饭怎么办？',
+    query: '猫不吃饭怎么办',
+    search: `
+      <div class="sr-item ad">
+        <div class="sr-title">XX 宠物医院 24 小时在线问诊</div>
+        <div class="sr-url">www.example-petad.com</div>
+        <div class="sr-snip">猫咪厌食？专业兽医在线解答，点击立即咨询…</div>
+      </div>
+      <div class="sr-item">
+        <div class="sr-title">猫咪不吃东西的 8 个原因 - 宠物百科</div>
+        <div class="sr-url">baike.example.com › 猫咪健康</div>
+        <div class="sr-snip">猫咪食欲下降可能由应激、口腔问题、肠胃不适等引起，本文详细介绍…</div>
+      </div>
+      <div class="sr-item">
+        <div class="sr-title">急！猫三天不吃饭了怎么办 - 某论坛</div>
+        <div class="sr-url">bbs.example.com › 求助</div>
+        <div class="sr-snip">楼主家猫三天没吃东西，各位铲屎官有遇到过吗？在线等…</div>
+      </div>
+      <div class="sr-note">给你 10 个链接自己挑、自己读、自己综合——哪条靠谱你说了算。</div>`,
+    ai: `
+      <div class="ai-answer">
+        <p>猫不吃饭先看两件事：<b>精神状态</b>和<b>持续时间</b>。</p>
+        <p>如果精神还好、只是一两顿不吃，可能是换粮、天热或轻微应激，可以先换回原来的粮、给点温水观察一天。</p>
+        <p>但如果<b>超过 24 小时完全不吃</b>，或者伴随呕吐、蔫着不动，别等了，尽快去宠物医院——猫长时间空腹有脂肪肝风险。</p>
+        <p>需要的话，告诉我猫的年龄和最近有什么变化，我帮你进一步判断。</p>
+      </div>
+      <div class="ai-note">直接把「读过的所有养猫知识」综合成一段针对你的回答，还能继续追问。</div>`,
+  },
+  {
+    chip: '昨晚比赛谁赢了？',
+    query: '昨晚比赛谁赢了',
+    search: `
+      <div class="sr-item">
+        <div class="sr-title">昨晚比赛战报：比分、集锦、赛后采访 - 体育新闻</div>
+        <div class="sr-url">sports.example.com › 昨天 23:47</div>
+        <div class="sr-snip">刚刚结束的比赛中……（几分钟前更新的页面，结果准确）</div>
+      </div>
+      <div class="sr-item">
+        <div class="sr-title">全场回放与技术统计</div>
+        <div class="sr-url">video.example.com</div>
+        <div class="sr-snip">完整比赛录像及数据统计…</div>
+      </div>
+      <div class="sr-note">搜索引擎的强项：网页是<b>刚刚</b>更新的，「此刻的事实」它最靠谱。</div>`,
+    ai: `
+      <div class="ai-answer">
+        <p>抱歉，我没法知道<b>昨晚</b>的比赛结果——我的知识停留在训练完成的那一天，之后发生的事我并不知道。</p>
+        <p>你可以搜索一下，或者打开我的「联网搜索」功能，我可以帮你查到结果之后再给你总结分析。</p>
+      </div>
+      <div class="ai-note">诚实的 AI 会承认知识有截止日期。危险的是有些时候它会<b>凭旧记忆编一个比分</b>——语气还特别肯定。</div>`,
+  },
+  {
+    chip: '把这段话改得客气一点',
+    query: '把这段话改得客气一点：「这个方案不行，重做」',
+    search: `
+      <div class="search-empty">
+        <div class="big">🤷</div>
+        <p><b>搜索引擎做不了这件事。</b><br>没有任何一个现成的网页，写着「你这段话」的客气版本。它只能找到别人写好的东西，<b>不能为你创造新东西</b>。</p>
+      </div>`,
+    ai: `
+      <div class="ai-answer">
+        <p>可以这样改：</p>
+        <p style="background:rgba(0,102,255,0.05);border-radius:8px;padding:10px 14px;">「这个方案目前和我们的预期还有一些差距，辛苦再调整一版。有几个具体问题我们可以先对一下，避免返工。」</p>
+        <p>要更委婉一些、还是保留一点严肃？我可以再给你两个不同语气的版本。</p>
+      </div>
+      <div class="ai-note">改写、润色、翻译、起名、出主意——这类「没有标准答案网页」的活儿，是 AI 的独门强项。</div>`,
+  },
+];
+
+const chipsEl = document.getElementById('qChips');
+const searchBody = document.getElementById('searchBody');
+const aiBody = document.getElementById('aiBody');
+
+function renderQA(i) {
+  const q = QA[i];
+  searchBody.innerHTML = `
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      ${q.query}
+    </div>${q.search}`;
+  aiBody.innerHTML = q.ai;
+}
+
+QA.forEach((q, i) => {
+  const b = document.createElement('button');
+  b.className = 'q-chip' + (i === 0 ? ' active' : '');
+  b.textContent = q.chip;
+  b.addEventListener('click', () => {
+    chipsEl.querySelectorAll('.q-chip').forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    renderQA(i);
+  });
+  chipsEl.appendChild(b);
+});
+renderQA(0);
+</script>
+
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

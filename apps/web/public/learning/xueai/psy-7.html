@@ -1,0 +1,1504 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-7",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-7',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>心智模型：用户拿错了说明书 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   taste.css —— 专题篇章「审美工程」共用设计系统
+   背景：本章 12 页交互密度极高（每页 2~3 处以上可玩组件），
+   若按成本篇的做法每页各写一套样式，A/B 找茬、迷你界面、
+   点选题这些跨页组件会复制 12 遍并逐渐漂移。
+   设计意图：本章讲的就是「一致性产生系统感」，篇章样式自身
+   必须是正面教材——主题色、圆角、间距全部收敛在这一个文件里，
+   页面特有样式才允许写在各页 <style> 中。
+   约束：全章唯一主色 --ct（玫红），间距一律 8 的倍数；
+   在 lesson.css 之后引入，只做增量不覆盖骨架。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#db2777;            /* 章主色：玫红 */
+  --ct-deep:#9d174d;       /* 深玫红：正文里的强调字 */
+  --ct-soft:rgba(219,39,119,.08);
+  --ct-line:rgba(219,39,119,.25);
+  --good:#16a34a;
+  --good-soft:rgba(22,163,74,.08);
+  --bad:#dc2626;
+  --bad-soft:rgba(220,38,38,.07);
+}
+
+.lesson-header .kicker{color:var(--ct);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.chip{padding:6px 14px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);font-size:13px;font-weight:700;}
+.desc{font-size:15px;color:var(--sub);line-height:1.8;}
+.desc b{color:var(--ct-deep);}
+.quote-card{background:var(--ct-soft);border:1.5px solid var(--ct-line);border-radius:14px;padding:16px 24px;font-size:16px;line-height:1.8;}
+.quote-card b{color:var(--ct-deep);}
+
+/* ── 表格（对齐成本篇的表格语言） ── */
+.tbl-wrap{overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card);}
+.tbl th{background:var(--ct-soft);color:var(--ct-deep);font-weight:800;text-align:left;padding:12px 16px;font-size:13px;}
+.tbl td{padding:12px 16px;border-top:1px solid var(--border);color:var(--sub);line-height:1.65;vertical-align:top;}
+.tbl td b{color:var(--ct-deep);}
+
+/* ── 交互容器：所有能玩的组件统一装进 .toy ──
+   头部彩条 + 「动手」徽标是全章交互区的统一识别色，
+   读者扫一眼就知道这块能点。 */
+.toy{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-top:16px;box-shadow:var(--shadow-card);overflow:hidden;}
+.toy-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);}
+.toy-head .toy-ic{width:26px;height:26px;border-radius:8px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toy-head .toy-ic svg{width:15px;height:15px;}
+.toy-head .toy-t{font-size:14px;font-weight:800;color:var(--text);}
+.toy-head .toy-badge{margin-left:auto;font-size:11px;font-weight:800;padding:3px 12px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);white-space:nowrap;}
+.toy-head .toy-badge.solved{background:var(--good-soft);color:var(--good);}
+.toy-body{padding:20px;}
+.toy-hint{font-size:12.5px;color:var(--sub);font-weight:600;margin-bottom:12px;}
+
+/* ── A/B 对决（找茬）：两块界面选出更好的那块 ── */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.duel-side{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;background:var(--bg);}
+.duel-side:hover{border-color:var(--ct-line);transform:translateY(-2px);box-shadow:var(--shadow-pop);}
+.duel.done .duel-side{cursor:default;}
+.duel.done .duel-side:hover{transform:none;box-shadow:none;}
+.duel-side .duel-tag{position:absolute;top:8px;left:8px;z-index:2;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--sub);border:1px solid var(--border);}
+.duel-side.win{border-color:var(--good);}
+.duel-side.lose{border-color:var(--bad);opacity:.75;}
+.duel-side.win .duel-tag{background:var(--good);color:#fff;border-color:var(--good);}
+.duel-side.lose .duel-tag{background:var(--bad);color:#fff;border-color:var(--bad);}
+.duel-verdict{margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.duel-verdict.show{display:block;}
+.duel-verdict.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.duel-verdict.good b{color:var(--good);}
+.duel-verdict.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+.duel-verdict.miss b{color:var(--text);}
+
+/* ── 迷你界面积木：页内所有「假界面」的统一零件 ──
+   pointer-events 关掉，读者点的是整块卡片而不是假按钮。 */
+.mock{background:#fff;padding:16px;min-height:150px;pointer-events:none;user-select:none;font-size:12px;line-height:1.5;}
+.mock *{box-sizing:border-box;}
+.mock-bar{height:8px;border-radius:4px;background:#e5e7eb;}
+.mock-dot{width:24px;height:24px;border-radius:50%;background:#e5e7eb;flex-shrink:0;}
+.mock-h{font-weight:800;color:#111827;}
+.mock-p{color:#6b7280;}
+.mock-btn{display:inline-block;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;background:#111827;color:#fff;}
+.mock-btn.ghost{background:transparent;color:#6b7280;border:1px solid #d1d5db;}
+.mock-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;}
+.mock-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+
+/* ── 点选题（多选项挑一个） ── */
+.quiz-opts{display:flex;flex-direction:column;gap:10px;}
+.quiz-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;background:var(--card);font-size:14px;line-height:1.65;color:var(--text);}
+.quiz-opt:hover{border-color:var(--ct-line);background:var(--ct-soft);}
+.quiz-opt .qo-key{width:24px;height:24px;border-radius:8px;background:rgba(0,0,0,.05);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.quiz-opt.right{border-color:var(--good);background:var(--good-soft);cursor:default;}
+.quiz-opt.right .qo-key{background:var(--good);color:#fff;}
+.quiz-opt.wrong{border-color:var(--bad);background:var(--bad-soft);cursor:default;opacity:.8;}
+.quiz-opt.wrong .qo-key{background:var(--bad);color:#fff;}
+.quiz-fb{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.quiz-fb.show{display:block;}
+.quiz-fb.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.quiz-fb.good b{color:var(--good);}
+.quiz-fb.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+
+/* ── 迷你浏览器外壳：所有 mock 教具的统一画框 ──
+   背景：v1.3 验收打回，裸的 mock 读起来像没画完的线框图。
+   设计意图：三个圆点 + 地址栏的顶栏让读者一眼认出「这是展品」，
+   正反案例的差距才会读成档次差而非完成度差。
+   用法：<div class="mockwin"><div class="mockwin-bar"><i></i><i></i><i></i>
+   <span class="mockwin-url">yoga.example.com</span></div>
+   <div class="mock">…</div></div> */
+.mockwin{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.mockwin-bar{display:flex;align-items:center;gap:5px;padding:8px 12px;background:#f4f4f5;border-bottom:1px solid var(--border);}
+.mockwin-bar i{width:9px;height:9px;border-radius:50%;background:#d4d4d8;flex-shrink:0;}
+.mockwin-bar i:first-child{background:#fca5a5;}
+.mockwin-bar i:nth-child(2){background:#fcd34d;}
+.mockwin-bar i:nth-child(3){background:#86efac;}
+.mockwin-url{margin-left:8px;flex:1;min-width:0;font-size:10.5px;color:#a1a1aa;background:#fff;border-radius:6px;padding:3px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,monospace;}
+
+/* ── 滑块行 ── */
+.sl-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.sl-row label{font-size:14px;font-weight:700;color:var(--text);min-width:96px;}
+.sl-row input[type=range]{flex:1;min-width:160px;accent-color:var(--ct);}
+.sl-row .sl-val{font-size:14px;font-weight:800;min-width:88px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ct-deep);}
+
+/* ── 分段切换 ── */
+.seg{display:inline-flex;background:rgba(0,0,0,.05);border-radius:10px;padding:3px;gap:2px;}
+.seg button{border:none;background:transparent;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.seg button.on{background:#fff;color:var(--ct-deep);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* ── 要点回顾 ── */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card);}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px;}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0;}
+.tk-item p b{color:var(--ct-deep);}
+
+/* ── 图片对比 / 挑选 ── */
+.pic-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pic-cell{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s;background:#000;}
+.pic-cell:hover{border-color:var(--ct-line);transform:translateY(-2px);}
+.pic-cell img{width:100%;display:block;aspect-ratio:1;object-fit:cover;}
+.pic-cell .pic-tag{position:absolute;top:8px;left:8px;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px);}
+.pic-cell.win{border-color:var(--good);}
+.pic-cell.lose{border-color:var(--bad);opacity:.7;}
+.pic-grid.done .pic-cell{cursor:default;}
+.pic-grid.done .pic-cell:hover{transform:none;}
+.pic-cap{font-size:12.5px;color:var(--sub);padding:8px 4px 0;line-height:1.6;}
+
+/* ── 出处注脚 ── */
+.src-note{margin-top:32px;font-size:13px;color:var(--sub);line-height:1.85;}
+.src-note b{color:var(--text);}
+
+@media (max-width:768px){
+  .duel{grid-template-columns:1fr;}
+  .pic-grid{grid-template-columns:1fr;}
+  .toy-body{padding:16px;}
+  .toy-head .toy-badge{display:none;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   psy.css —— 专题篇章「AI 产品心理学」样式覆盖
+   背景：本章 v3 起复用审美工程的组件体系（taste.css 的
+   toy / duel / quiz / mockwin / takeaways），组件颜色全部走
+   --ct 系列变量，本文件只负责把章色从玫红换成青色，
+   并保留旧页面在用的 --psy 别名。
+   约束：必须在 taste.css 之后引入；页面特有样式写在各页 <style>。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#0d9488;            /* 章主色：青 */
+  --ct-deep:#115e59;
+  --ct-soft:rgba(13,148,136,.08);
+  --ct-line:rgba(13,148,136,.28);
+  /* 旧页面别名，v3 重做完成后可移除 */
+  --psy:#0d9488;
+  --psy-deep:#115e59;
+  --psy-soft:rgba(13,148,136,.08);
+  --psy-line:rgba(13,148,136,.28);
+}
+
+/* 本章仪表类教具的公共零件：许多页要显示一个「情绪 / 弃用率 / 折扣」仪表，
+   拨开关看指针移动是本章工程杠杆的标准演示形态。 */
+.gauge{display:flex;flex-direction:column;gap:6px;}
+.gauge-head{display:flex;align-items:baseline;justify-content:space-between;}
+.gauge-label{font-size:12.5px;font-weight:800;color:var(--sub);}
+.gauge-num{font-size:22px;font-weight:900;color:var(--ct-deep);font-variant-numeric:tabular-nums;transition:color .25s;}
+.gauge-num.bad{color:var(--bad);}
+.gauge-track{height:12px;border-radius:8px;background:rgba(0,0,0,.06);overflow:hidden;}
+.gauge-fill{height:100%;border-radius:8px;background:var(--ct);width:0;transition:width .45s cubic-bezier(.22,1,.36,1),background .3s;}
+.gauge-fill.bad{background:var(--bad);}
+.gauge-note{font-size:12px;color:var(--sub);line-height:1.7;}
+
+/* 开关行：工程杠杆的标准形态，拨一下，上面的仪表当场动 */
+.lever-list{display:flex;flex-direction:column;gap:10px;}
+.lever{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:border-color .18s,background .18s;}
+.lever:hover{border-color:var(--ct-line);}
+.lever.on{border-color:var(--ct);background:var(--ct-soft);}
+.lever-sw{width:38px;height:22px;border-radius:99px;background:rgba(0,0,0,.15);flex-shrink:0;position:relative;transition:background .2s;margin-top:2px;}
+.lever-sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.22,1,.36,1);}
+.lever.on .lever-sw{background:var(--ct);}
+.lever.on .lever-sw::after{transform:translateX(16px);}
+.lever-body h6{font-size:13.5px;font-weight:800;color:var(--text);line-height:1.5;}
+.lever-body p{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:2px;}
+.lever-body p b{color:var(--ct-deep);}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="大部分 AI 差评的根源是心智模型错配：用户把 AI 当搜索引擎（要出处拿到编造）、当数据库（要精确拿到概率）、当会学习的学徒（「说了也不听」）、当计算器（求和都会错）。四段真实对话亲手找茬认出错误说明书，再玩三个纠正教具：空状态设计器亲手把首屏改成教室、「已记住」外显对决终结说了也不听、边界前置对决看声明时机怎么决定坦诚还是狡辩。">
+<meta name="keywords" content="心智模型,Mental Model,AI差评,用户预期管理,空状态设计,记忆外显,能力边界,新手引导,AI产品设计">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="心智模型：用户拿错了说明书">
+<meta property="og:description" content="四段对话找茬认出四本错误说明书，再亲手玩空状态设计器、记忆外显对决、边界前置对决三个纠正教具。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-7.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-7.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="心智模型：用户拿错了说明书">
+<meta name="twitter:description" content="用户把 AI 当搜索引擎、当数据库、当学徒、当计算器，四种错配四类差评。找茬加三个纠正教具，亲手玩。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+/* ── 四本说明书：三行排版按用户定稿保留 ── */
+.man-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.man-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);padding:16px 20px;}
+.man-card h5{font-size:14px;font-weight:800;color:var(--text);margin-bottom:9px;}
+.man-rows{display:flex;flex-direction:column;gap:8px;}
+.man-row{display:flex;gap:9px;align-items:flex-start;}
+.man-lab{flex-shrink:0;font-size:10px;font-weight:900;letter-spacing:.5px;padding:2.5px 8px;border-radius:6px;margin-top:2px;background:rgba(0,0,0,.05);color:var(--sub);white-space:nowrap;}
+.man-txt{font-size:12.5px;color:var(--sub);line-height:1.7;}
+.man-row.bad{border-top:1px dashed var(--border);padding-top:8px;margin-top:1px;}
+.man-row.bad .man-lab{background:var(--bad-soft);color:var(--bad);}
+.man-row.bad .man-txt{color:var(--bad);font-weight:700;}
+.man-badge{display:inline-block;font-size:10.5px;font-weight:900;letter-spacing:.5px;padding:3px 10px;border-radius:99px;background:var(--bad-soft);color:var(--bad);margin-bottom:7px;}
+
+/* ── 找茬：对话卡与判定按钮 ── */
+.mm-list{display:flex;flex-direction:column;gap:14px;}
+.mm-card{border:1.5px solid var(--border);border-radius:12px;padding:18px 20px;background:var(--card);}
+.mm-chat{display:flex;flex-direction:column;gap:8px;margin-bottom:13px;}
+.mm-msg{max-width:88%;padding:9px 14px;border-radius:13px;font-size:13px;line-height:1.65;}
+.mm-msg.u{align-self:flex-end;background:var(--ct);color:#fff;border-bottom-right-radius:4px;}
+.mm-msg.a{align-self:flex-start;background:rgba(0,0,0,.045);color:var(--text);border-bottom-left-radius:4px;}
+.mm-msg.note{align-self:center;background:transparent;color:var(--sub);font-size:12px;font-style:italic;padding:2px;}
+.mm-q{font-size:13.5px;font-weight:800;color:var(--text);margin-bottom:9px;}
+.mm-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.mm-btn{padding:7px 15px;border-radius:999px;border:1.5px solid var(--border);background:transparent;font-size:12.5px;font-weight:800;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .15s;}
+.mm-btn:hover:not(:disabled){border-color:var(--ct);color:var(--ct-deep);}
+.mm-btn:disabled{cursor:default;opacity:.45;}
+.mm-btn.hit{opacity:1;background:var(--good);border-color:var(--good);color:#fff;animation:psy-pop .25s ease;}
+.mm-btn.miss{opacity:1;background:var(--bad);border-color:var(--bad);color:#fff;}
+.mm-explain{margin-top:12px;font-size:13px;line-height:1.8;color:var(--sub);background:var(--ct-soft);border:1px solid var(--ct-line);border-radius:9px;padding:11px 15px;display:none;}
+.mm-explain.show{display:block;animation:psy-slide-up .3s ease;}
+.mm-explain b{color:var(--ct-deep);}
+
+/* ── 空状态设计器：左档位与仪表，右首屏 mock ── */
+.es-wrap{display:grid;grid-template-columns:5fr 7fr;gap:16px;align-items:start;}
+.es-mock{border:2px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;pointer-events:none;user-select:none;}
+.es-top{padding:10px 16px;border-bottom:1px solid #f3f4f6;font-size:11px;font-weight:800;color:#111827;display:flex;align-items:center;gap:7px;}
+.es-top .mock-dot{width:16px;height:16px;background:#ccfbf1;}
+.es-screen{min-height:212px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;}
+.es-blank{width:40px;height:40px;border-radius:50%;background:#f3f4f6;}
+.es-hello{font-size:12.5px;color:#374151;font-weight:700;}
+.es-ex{width:100%;display:flex;flex-direction:column;gap:7px;}
+.es-chip{border:1px solid #99f6e4;background:#f0fdfa;color:#115e59;border-radius:10px;padding:8px 12px;font-size:10.5px;line-height:1.6;text-align:left;opacity:0;transform:translateY(8px);transition:all .35s ease;}
+.es-chip.in{opacity:1;transform:none;}
+.es-bound{width:100%;margin-top:5px;font-size:9.5px;color:#6b7280;line-height:1.6;border-top:1px dashed #e5e7eb;padding-top:8px;opacity:0;transition:opacity .35s ease .3s;}
+.es-bound.in{opacity:1;}
+.es-input{margin:0 14px 14px;border:1px solid #e5e7eb;border-radius:10px;padding:8px 12px;font-size:10.5px;color:#9ca3af;background:#fafafa;}
+.es-first{margin-top:12px;padding:11px 14px;border-radius:10px;background:rgba(0,0,0,.035);font-size:12.5px;color:var(--sub);line-height:1.75;}
+.es-first b{color:var(--ct-deep);}
+.es-kv{margin-top:12px;font-size:13px;line-height:1.8;color:var(--sub);}
+.es-kv b{color:var(--ct-deep);}
+
+/* ── 对决里的对话 mock：小号气泡 ── */
+.duel-side .mock{padding:0;min-height:0;}
+.dm-chat{display:flex;flex-direction:column;gap:7px;padding:38px 13px 15px;}
+.dm-msg{max-width:90%;padding:7px 11px;border-radius:11px;font-size:11px;line-height:1.62;}
+.dm-msg.u{align-self:flex-end;background:var(--ct);color:#fff;border-bottom-right-radius:3px;}
+.dm-msg.a{align-self:flex-start;background:#f3f4f6;color:#374151;border-bottom-left-radius:3px;}
+.dm-note{align-self:center;font-size:9.5px;color:#9ca3af;font-style:italic;}
+.dm-pref{display:inline-block;font-size:9px;font-weight:800;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:99px;padding:1.5px 8px;margin-bottom:4px;}
+.dm-li{display:block;margin-top:2px;}
+.mem-float{position:absolute;top:34px;right:10px;z-index:2;background:#fff;border:1.5px solid var(--ct-line);border-radius:10px;padding:7px 11px;font-size:10px;font-weight:800;color:var(--ct-deep);box-shadow:0 6px 18px rgba(0,0,0,.14);animation:psy-slide-up .45s ease .35s both;}
+.mini-tbl{width:100%;border-collapse:collapse;font-size:9px;margin-top:6px;background:#fff;}
+.mini-tbl th,.mini-tbl td{border:1px solid #e5e7eb;padding:2.5px 6px;color:#6b7280;text-align:left;font-weight:400;}
+.mini-tbl th{background:#f9fafb;font-weight:700;color:#4b5563;}
+
+/* ── 边界前置对决：预警条与联网开关 ── */
+.bd-notice{align-self:flex-start;max-width:92%;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:7px 11px;font-size:10.5px;color:#92400e;line-height:1.65;}
+.bd-switch{display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:9.5px;font-weight:800;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:99px;padding:3px 10px;}
+.bd-knob{width:22px;height:13px;border-radius:99px;background:var(--ct);position:relative;}
+.bd-knob::after{content:'';position:absolute;top:1.5px;right:1.5px;width:10px;height:10px;border-radius:50%;background:#fff;}
+
+@media (max-width:768px){
+  .man-grid{grid-template-columns:1fr;}
+  .es-wrap{grid-template-columns:1fr;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">专题篇章 · AI 产品心理学</div>
+    <h1>心智模型：用户拿错了说明书</h1>
+    <p class="subtitle">交互设计有个老概念叫心智模型：用户会带着一套「这东西应该怎么运作」的假设来用你的产品，假设错了，操作就错，然后<b>差评打给产品，账算在你头上</b>。AI 是人类历史上第一个「长得像老产品、内核两样」的东西，心智错配格外严重。这一课先认出四本错误说明书，再亲手玩三个纠正教具。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>把 AI 当搜索引擎、当数据库、当会学习的学徒、当计算器，四种错配四类差评。四段对话找茬，再给空状态示例、边界前置、记忆外显三个纠正手段</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">四本错误说明书 · 差评的批发源头</div>
+    <p class="desc">聊天框长得像搜索框，回答长得像百科，界面像个耐心的客服。用户按外观匹配了四本旧说明书，每一本都会精准地制造一类差评。</p>
+    <div class="man-grid" style="margin-top:16px">
+      <div class="man-card">
+        <div class="man-badge">错误说明书 ①</div>
+        <h5>当搜索引擎用</h5>
+        <div class="man-rows">
+          <div class="man-row"><span class="man-lab">预期</span><span class="man-txt">结果有出处、信息是实时的</span></div>
+          <div class="man-row"><span class="man-lab">现实</span><span class="man-txt">凭记忆回答、知识有截止日、没有链接。第零篇章讲过「搜索给书架，AI 给结论」，但用户没上过这门课</span></div>
+          <div class="man-row bad"><span class="man-lab">差评</span><span class="man-txt">「给我的链接点不开」「查个今天的新闻都不会」</span></div>
+        </div>
+      </div>
+      <div class="man-card">
+        <div class="man-badge">错误说明书 ②</div>
+        <h5>当数据库用</h5>
+        <div class="man-rows">
+          <div class="man-row"><span class="man-lab">预期</span><span class="man-txt">问什么查什么，查不到会说没有</span></div>
+          <div class="man-row"><span class="man-lab">现实</span><span class="man-txt">概率补全机器，查不到的时候会现编一个像样的答案</span></div>
+          <div class="man-row bad"><span class="man-lab">差评</span><span class="man-txt">「问我们公司 Q3 营收，它张口就报了个数，吓死我了」</span></div>
+        </div>
+      </div>
+      <div class="man-card">
+        <div class="man-badge">错误说明书 ③</div>
+        <h5>当会学习的学徒用</h5>
+        <div class="man-rows">
+          <div class="man-row"><span class="man-lab">预期</span><span class="man-txt">说过一次就记住，越用越懂我</span></div>
+          <div class="man-row"><span class="man-lab">现实</span><span class="man-txt">参数冻结，新会话即失忆，「越聊越懂」只是笔记被塞回了上下文</span></div>
+          <div class="man-row bad"><span class="man-lab">差评</span><span class="man-txt">「跟它说过八百遍别用表格，转头就忘，态度有问题」</span></div>
+        </div>
+      </div>
+      <div class="man-card">
+        <div class="man-badge">错误说明书 ④</div>
+        <h5>当计算器用</h5>
+        <div class="man-rows">
+          <div class="man-row"><span class="man-lab">预期</span><span class="man-txt">数字运算天经地义是对的</span></div>
+          <div class="man-row"><span class="man-lab">现实</span><span class="man-txt">语言模型按 Token 概率生成数字，长算式、多行求和经常错。正确姿势是让它写代码去算</span></div>
+          <div class="man-row bad"><span class="man-lab">差评</span><span class="man-txt">「37 个数求和都能错，这也配叫智能？」</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">找茬练习 · 认出用户手里那本说明书</div>
+    <p class="desc">四段对话，事故都已经发生。先判断用户拿的是哪本说明书，判完看解析：解析里带产品对策，诊断只是开始。</p>
+    <div class="toy" id="mmToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></span>
+        <span class="toy-t">四段对话，四次误诊现场</span>
+        <span class="toy-badge" id="mmBadge">0 / 4 已判</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">线索都在对话里：看用户要什么，再看 AI 实际给了什么。</div>
+        <div class="mm-list" id="mmList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked xa-peek">
+    <div class="sec-label">纠正手段一 · 把空状态改成教室</div>
+    <p class="desc">心智模型没法靠说明文档纠正，没人读。只能在使用路径上见缝插针地教，而第一个现场就是新会话的空白首屏：用户还没打出第一个字，说明书还没翻开，这一屏写什么，决定他拿起哪本。<b>三种首屏方案，亲手切换</b>，看右边的界面和下面的首问质量怎么变。</p>
+    <div class="toy" id="esToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M8 22h8"></path><path d="M12 18v4"></path></svg></span>
+        <span class="toy-t">空状态设计器</span>
+        <span class="toy-badge">切一切</span>
+      </div>
+      <div class="toy-body">
+        <div class="es-wrap">
+          <div>
+            <div class="seg" id="esSeg">
+              <button class="on" data-k="0">一片空白</button>
+              <button data-k="1">一句欢迎语</button>
+              <button data-k="2">示例＋边界</button>
+            </div>
+            <div class="psy-meter">
+              <span class="pm-label">新用户首问质量</span>
+              <div class="pm-track"><div class="pm-fill hot" id="esFill" style="width:24%"></div></div>
+              <span class="pm-num" id="esNum">24</span>
+            </div>
+            <div class="es-first" id="esFirst"></div>
+            <div class="es-kv" id="esKv"></div>
+          </div>
+          <div class="es-mock">
+            <div class="es-top"><span class="mock-dot"></span>你的 AI 助手 · 新会话</div>
+            <div class="es-screen" id="esScreen"></div>
+            <div class="es-input">给 AI 发消息…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">纠正手段二 · 让用户亲眼看到「已记住」</div>
+    <p class="desc">学徒说明书的差评词是「说了也不听」。下面两个产品都答应了用户的要求，差别在<b>答应的方式</b>。点你判断能终结这句差评的那一版。</p>
+    <div class="toy" id="mdToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l2.5 2.5"></path><circle cx="12" cy="12" r="9"></circle></svg></span>
+        <span class="toy-t">「已记住」外显对决</span>
+        <span class="toy-badge">选一个</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">两版的用户都说了同一句话。往下看三天后发生了什么。</div>
+        <div class="duel">
+          <div class="duel-side">
+            <span class="duel-tag">A 版</span>
+            <div class="mock">
+              <div class="dm-chat">
+                <div class="dm-msg u">以后回复别用表格，我要直接贴进微信群。</div>
+                <div class="dm-msg a">好的。</div>
+                <div class="dm-note">三天后 · 新会话</div>
+                <div class="dm-msg u">帮我对比下这三款投影仪。</div>
+                <div class="dm-msg a">给你整理了对比表格：
+                  <table class="mini-tbl">
+                    <tbody><tr><th>型号</th><th>亮度</th><th>价格</th></tr>
+                    <tr><td>X1</td><td>800 流明</td><td>2299</td></tr>
+                    <tr><td>X2</td><td>1200 流明</td><td>3499</td></tr>
+                  </tbody></table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="duel-side">
+            <span class="duel-tag">B 版</span>
+            <span class="mem-float">✓ 已记入偏好：避免表格</span>
+            <div class="mock">
+              <div class="dm-chat">
+                <div class="dm-msg u">以后回复别用表格，我要直接贴进微信群。</div>
+                <div class="dm-msg a">好的，之后改用条列说明。</div>
+                <div class="dm-note">三天后 · 新会话</div>
+                <div class="dm-msg u">帮我对比下这三款投影仪。</div>
+                <div class="dm-msg a"><span class="dm-pref">按你的偏好 · 不用表格</span>
+                  <span class="dm-li">· X2 亮度最高，白天客厅也能看清；</span>
+                  <span class="dm-li">· X1 最便宜，胜在轻便好收纳；</span>
+                  <span class="dm-li">· X3 系统体验最顺，追剧优先选它。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="duel-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">纠正手段三 · 边界声明抢在出错前面</div>
+    <p class="desc">时效类问题是搜索引擎说明书的高发区，找茬第一段对话就是这么翻车的。两版 AI 说的边界内容一字不差，差别只在<b>什么时候说</b>。选更能保住心智的那版。</p>
+    <div class="toy" id="bdToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg></span>
+        <span class="toy-t">边界前置对决</span>
+        <span class="toy-badge">选一个</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">同一个问题，同一个知识截止日，两种时机。</div>
+        <div class="duel">
+          <div class="duel-side">
+            <span class="duel-tag">A 版 · 出错后解释</span>
+            <div class="mock">
+              <div class="dm-chat">
+                <div class="dm-msg u">今天美元兑人民币的汇率是多少？</div>
+                <div class="dm-msg a">美元兑人民币汇率约为 7.24。</div>
+                <div class="dm-note">用户打开银行 App 一查：实际 7.09</div>
+                <div class="dm-msg u">不对啊，差这么多？</div>
+                <div class="dm-msg a">抱歉。我的知识截止 2025 年 6 月，无法获取实时汇率，刚才给出的是训练数据中的旧值。</div>
+              </div>
+            </div>
+          </div>
+          <div class="duel-side">
+            <span class="duel-tag">B 版 · 回答前声明</span>
+            <div class="mock">
+              <div class="dm-chat">
+                <div class="dm-msg u">今天美元兑人民币的汇率是多少？</div>
+                <div class="bd-notice">这是实时数据问题：我的知识截止 2025 年 6 月，这类问题建议开启联网搜索。
+                  <span class="bd-switch">联网搜索<span class="bd-knob"></span>已开启</span>
+                </div>
+                <div class="dm-msg a">已联网查询：今天美元兑人民币中间价 7.09（来源：外汇交易中心，10:15 更新）。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="duel-verdict"></div>
+      </div>
+    </div>
+    <div class="quote-card" style="margin-top:16px"><b>计算器说明书是同款药方：</b>求和、统计、日期计算，路由给代码解释器执行，界面标注「已用代码计算」。错误率压下去的同时，用户也看明白了：AI 靠谱的方式是调工具，它徒手算数的部分本来就不该信。</div>
+  </section>
+
+  <div class="src-note paywall-locked">
+    <b>出处与延伸：</b>心智模型的概念由 Craik（1943）提出，Norman 在《设计心理学》里把它带进产品设计：用户按自己的模型操作，模型错则操作错。记忆外显对应 Nielsen 十大可用性启发式的第一条「系统状态可见」；空状态放示例的原理还叠加了 Cialdini《影响力》的社会认同：别人都这么问，我也这么问。首错引爆弃用的证据见第 6 课算法厌恶（Dietvorst et al., 2015）。
+  </div>
+
+  <div class="takeaway-box paywall-locked">
+    <h3>✅ 这一课想和你分享的</h3>
+    <ul>
+      <li><b>差评先查心智</b>：用户按旧产品的说明书用 AI，先认出他手里那本，再谈修复</li>
+      <li><b>空状态别写欢迎语</b>：放三条示范正确问法的示例，加一句边界声明</li>
+      <li><b>记忆要外显</b>：「已记住」做成能看、能删的界面实物，口头答应治不了学徒错配</li>
+      <li><b>边界声明抢在出错前面</b>：时效、算数这类短板提前亮出来，并给工具开关当出路</li>
+    </ul>
+  </div>
+
+</main>
+<script>/* ═══════════════════════════════════════════════════════════
+   taste.js —— 专题篇章「审美工程」共用交互组件
+   背景：本章多页反复用到「A/B 对决找茬」和「点选题」两种玩法，
+   逐页手写会复制大量事件绑定代码并各自漂移。
+   设计意图：只抽真正跨页复用的两个组件；页面独有的滑块、
+   开关类演示留在各页 <script> 里，避免过度抽象。
+   约束：依赖 taste.css 的 .duel / .quiz-* 类名；
+   必须在 DOM 就绪后调用（各页脚本置于 </main> 之后天然满足）。
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* 判词与标签走 i18n，否则英韩译文页一交互就冒出中文。
+     i18n.js 未加载时按中文兜底，与 build.js / lesson.js 同一套口径。 */
+  function T(key, zh) {
+    var i18n = window.XUEAI_I18N;
+    return i18n ? i18n.t(key) : zh;
+  }
+
+  /* A/B 对决：两块内容选出更好的那块。
+     背景：识别美的教学模式是「先动手判断，再听理论」（沿用 zero-3 找茬），
+     本章四个抓手页每页至少一局。
+     设计意图：答案揭晓后不锁死页面，双方标签换成「更好/欠佳」并给判词，
+     选错也给判词但语气区分——教学目标是看懂差异，不是考倒读者。
+     约束：cfg.winner 为更好一侧的索引（0 左 1 右）；
+     verdictWin / verdictMiss 支持 HTML；onDone 可选，用于页内进度统计。 */
+  window.tasteDuel = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var duel = root.querySelector('.duel');
+    var verdict = root.querySelector('.duel-verdict');
+    var badge = root.querySelector('.toy-badge');
+    var sides = duel.querySelectorAll('.duel-side');
+    duel.addEventListener('click', function (e) {
+      var side = e.target.closest('.duel-side');
+      if (!side || duel.classList.contains('done')) return;
+      var idx = Array.prototype.indexOf.call(sides, side);
+      duel.classList.add('done');
+      sides[cfg.winner].classList.add('win');
+      sides[1 - cfg.winner].classList.add('lose');
+      sides[cfg.winner].querySelector('.duel-tag').textContent = T('tasteBetter', '✓ 更好');
+      sides[1 - cfg.winner].querySelector('.duel-tag').textContent = T('tasteWorse', '✗ 欠佳');
+      var hit = idx === cfg.winner;
+      verdict.className = 'duel-verdict show ' + (hit ? 'good' : 'miss');
+      verdict.innerHTML = (hit
+        ? T('tasteDuelHit', '<b>眼力不错。</b>')
+        : T('tasteDuelMiss', '<b>这局看走眼了，正常，学完这节回来就能看出来。</b>')) + cfg.verdict;
+      if (badge) { badge.textContent = T('tasteRevealed', '✓ 已揭晓'); badge.classList.add('solved'); }
+      if (typeof cfg.onDone === 'function') cfg.onDone(hit);
+    });
+  };
+
+  /* 点选题：多个选项挑一个对的。
+     背景：审美词汇、提示词写法这类知识点，选一次比读三遍记得牢。
+     设计意图：选错立即标红并给「为什么不对」，允许继续选直到命中，
+     命中后整题锁定——试错本身就是教学过程。
+     约束：容器内选项需带 data-k（0 起）；cfg.answer 为正确索引；
+     cfg.why 数组给每个选项的判词，支持 HTML。 */
+  window.tasteQuiz = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var fb = root.querySelector('.quiz-fb');
+    var badge = root.querySelector('.toy-badge');
+    root.addEventListener('click', function (e) {
+      var opt = e.target.closest('.quiz-opt');
+      if (!opt || root.classList.contains('done')) return;
+      var k = +opt.dataset.k;
+      if (k === cfg.answer) {
+        root.classList.add('done');
+        opt.classList.add('right');
+        fb.className = 'quiz-fb show good';
+        fb.innerHTML = T('tasteQuizRight', '<b>对。</b>') + cfg.why[k];
+        if (badge) { badge.textContent = T('tasteSolved', '✓ 已解决'); badge.classList.add('solved'); }
+        if (typeof cfg.onDone === 'function') cfg.onDone();
+      } else if (!opt.classList.contains('wrong')) {
+        opt.classList.add('wrong');
+        fb.className = 'quiz-fb show miss';
+        fb.innerHTML = cfg.why[k] + T('tasteQuizRetry', ' 再挑一个。');
+      }
+    });
+  };
+})();
+</script>
+<script>
+/* ── 找茬：每段对话的「事故」都克制在真实产品里天天发生的级别，
+   选项固定为四本说明书，答案解析必须带产品对策，不停在诊断。 ── */
+const MM = [
+  { chat: [
+      { r: 'u', t: '帮我查下今天美元兑人民币的汇率' },
+      { r: 'a', t: '美元兑人民币汇率约为 7.24。' },
+      { r: 'note', t: '用户截图发进了公司群，当天实际汇率是 7.09' },
+    ],
+    a: 0,
+    e: '<b>搜索引擎说明书。</b>用户假设「查」出来的就是实时的，但模型给的是训练数据里的旧值，措辞还很笃定。产品对策：识别到时效性问题时，要么接实时数据源，要么先声明「无法获取实时数据」，别让旧数字穿着新衣服出门。下面的纠正手段三，就是这版界面的成品。' },
+  { chat: [
+      { r: 'u', t: '我们公司 2025 年 Q3 的营收是多少？' },
+      { r: 'a', t: '贵公司 2025 年 Q3 营收约为 2.3 亿元，同比增长 18%。' },
+      { r: 'note', t: '该公司从未公开过财报，AI 也没接入内部数据' },
+    ],
+    a: 1,
+    e: '<b>数据库说明书。</b>用户以为它在查库，查不到会说「无记录」；实际上模型面对没见过的问题，会按概率编一个格式完美的答案，这正是自信编造型幻觉。产品对策：企业场景必须接 RAG 并声明数据范围，检索无命中时明确说「知识库中没有相关数据」。' },
+  { chat: [
+      { r: 'u', t: '记住，以后所有回复都别用表格，我要发微信群。' },
+      { r: 'a', t: '好的，已了解，之后回复将不使用表格。' },
+      { r: 'note', t: '三天后新开会话，第一条回复又是表格。用户评价：说了也不听' },
+    ],
+    a: 2,
+    e: '<b>学徒说明书。</b>「好的我记住了」在当次会话内确实有效，但新会话即失忆：参数冻结，对话内容不会变成模型的长期记忆。用户把无状态理解成了态度问题。产品对策：把偏好写进显式的记忆系统并在界面亮出「已记住」标记。下面的纠正手段二，会把两种答应方式摆在一起给你选。' },
+  { chat: [
+      { r: 'u', t: '这 37 行销售数据帮我求个和：8420, 7315, 9102, …' },
+      { r: 'a', t: '合计为 297,846 元。' },
+      { r: 'note', t: '实际合计 301,264 元。用户：连加法都不会，还谈什么智能' },
+    ],
+    a: 3,
+    e: '<b>计算器说明书。</b>模型生成数字靠的是 Token 概率，长列表求和是它的天生短板，错得还毫无愧色。产品对策：数字任务路由给代码解释器执行并标注「已用代码计算」，让确定性的活回到确定性的工具手里。' },
+];
+const MANUALS = ['搜索引擎说明书', '数据库说明书', '学徒说明书', '计算器说明书'];
+const mmList = document.getElementById('mmList');
+const mmBadge = document.getElementById('mmBadge');
+let mmDone = 0;
+
+mmList.innerHTML = MM.map((m, i) => `
+  <div class="mm-card" data-i="${i}">
+    <div class="mm-chat">
+      ${m.chat.map(c => `<div class="mm-msg ${c.r === 'note' ? 'note' : c.r}">${c.t}</div>`).join('')}
+    </div>
+    <div class="mm-q">这位用户拿的是哪本说明书？</div>
+    <div class="mm-btns">
+      ${MANUALS.map((label, k) => `<button class="mm-btn" data-k="${k}">${label}</button>`).join('')}
+    </div>
+    <div class="mm-explain">${m.e}</div>
+  </div>`).join('');
+
+[...mmList.children].forEach(card => {
+  const i = +card.dataset.i;
+  const btns = [...card.querySelectorAll('.mm-btn')];
+  btns.forEach(btn => btn.addEventListener('click', () => {
+    if (card.dataset.done) return;
+    card.dataset.done = '1';
+    const k = +btn.dataset.k;
+    btns.forEach(b => {
+      b.disabled = true;
+      if (+b.dataset.k === MM[i].a) b.classList.add('hit');
+      else if (b === btn) b.classList.add('miss');
+    });
+    card.querySelector('.mm-explain').classList.add('show');
+    mmDone++;
+    mmBadge.textContent = mmDone + ' / 4 已判';
+    if (mmDone === 4) { mmBadge.textContent = '✓ 四段判完'; mmBadge.classList.add('solved'); }
+  }));
+});
+
+/* ── 空状态设计器 ── */
+const ES = [
+  { w: 24,
+    first: '<b>新用户的典型首问：</b>「在吗？」「帮我查下今天的新闻」…旧说明书的标准开场。',
+    kv: '空白的首屏一个字也没教，用户只能把旧说明书原样带进来：把聊天框当搜索框，把 AI 当客服。<b>第一问就问错，差评从这里开始积累</b>。' },
+  { w: 45,
+    first: '<b>新用户的典型首问：</b>「帮我写份周报」，一句话甩过来，没背景没要求，产出只能靠猜。',
+    kv: '客气，但没有信息量。「有什么可以帮你」是客服的开场白，这句话反而把「它是客服」的旧心智又加固了一层，用户照旧不知道该怎么问。' },
+  { w: 86,
+    first: '<b>新用户的典型首问：</b>「帮我把这份周报改成给 CEO 看的版本，突出风险，200 字以内」，照着示例的骨架，第一问就是能出活的问法。',
+    kv: '三条示例在演示「这东西该怎么用」：带背景、带要求、让 AI 反问。这是 Norman 讲的心智模型在产品里的教学现场，叠加了 Cialdini《影响力》的社会认同：<b>别人都这么问，我也这么问</b>。末尾那句边界声明，顺手把搜索引擎说明书也拆了。' },
+];
+const esSeg = document.getElementById('esSeg');
+const esScreen = document.getElementById('esScreen');
+function esRender(k) {
+  const d = ES[k];
+  if (k === 0) {
+    esScreen.innerHTML = '<span class="es-blank"></span>';
+  } else if (k === 1) {
+    esScreen.innerHTML = '<span class="es-blank"></span><div class="es-hello">你好，有什么可以帮你？</div>';
+  } else {
+    esScreen.innerHTML = `
+      <div class="es-ex">
+        <div class="es-chip">「把这份周报改写成给 CEO 看的版本，突出风险，200 字以内」</div>
+        <div class="es-chip">「我要做一页融资 BP 的市场分析，先问我需要补哪些信息，再动笔」</div>
+        <div class="es-chip">「用大白话解释什么是心智模型，配一个生活里的例子」</div>
+      </div>
+      <div class="es-bound">⚠ 我的知识截止 2025 年 6 月，实时信息请开启联网搜索；长列表求和会转交代码执行。</div>`;
+    [...esScreen.querySelectorAll('.es-chip')].forEach((el, i) => setTimeout(() => el.classList.add('in'), 60 + i * 130));
+    setTimeout(() => esScreen.querySelector('.es-bound').classList.add('in'), 120);
+  }
+  const fill = document.getElementById('esFill');
+  fill.style.width = d.w + '%';
+  fill.className = 'pm-fill ' + (d.w < 35 ? 'hot' : d.w < 70 ? 'warm' : '');
+  document.getElementById('esNum').textContent = d.w;
+  document.getElementById('esFirst').innerHTML = d.first;
+  document.getElementById('esKv').innerHTML = d.kv;
+  [...esSeg.children].forEach(b => b.classList.toggle('on', +b.dataset.k === k));
+}
+esSeg.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) esRender(+b.dataset.k);
+});
+esRender(0);
+
+/* ── 「已记住」外显对决 ── */
+tasteDuel('mdToy', {
+  winner: 1,
+  verdict: 'B 版把「记住」从一句口头承诺变成了界面上的实物：偏好卡浮出来能看见，三天后的回复带着「按你的偏好」的标注在兑现承诺。<b>记忆看不见，等于没有</b>。A 版的「好的」在当次会话里也有效，但用户手里没有证据，下次再撞见表格，账就记成「说了也不听」。学徒说明书的错配，要靠记忆外显来纠正：能看、能删、能兑现。',
+});
+
+/* ── 边界前置对决 ── */
+tasteDuel('bdToy', {
+  winner: 1,
+  verdict: 'B 在用户撞上短板之前就把边界亮了出来，还给了联网开关这条出路，声明读起来是坦诚。A 说的内容一字不差，只因为出现在报错数字之后，读起来就成了狡辩。<b>边界声明要出现在出错之前的现场</b>。第 6 课讲过算法厌恶：用户逮住 AI 一次出错就大幅撤回信任，前置声明挡住的正是那第一错。',
+});
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

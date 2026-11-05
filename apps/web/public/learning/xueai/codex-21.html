@@ -1,0 +1,1212 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-21",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-21',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>apply-patch，给模型设计一种 diff | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.85 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.snapshot{margin:14px 0 0;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text);background:rgba(0,0,0,.05)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:24px;min-width:0}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{display:flex;gap:16px;font-size:11px;font-weight:600;color:var(--sub);text-align:right}
+.dm-meter b{display:block;color:var(--accent-deep);font-size:16px;line-height:1.15;transition:opacity .3s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:14px;min-height:280px}
+.dm-fmt{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.dm-chip{flex:1;min-width:56px;padding:8px 8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);text-align:center;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-fmt.is-live .dm-chip{opacity:.4;transform:scale(.98)}
+.dm-fmt.is-live .dm-chip.now{opacity:1;transform:scale(1)}
+.dm-chip b{display:block;font-size:18px;line-height:1.2;color:var(--accent-deep);font-variant-numeric:tabular-nums;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-chip i{display:block;margin-top:4px;font-style:normal;font-size:11px;color:var(--sub)}
+.dm-chip.on{background:var(--accent-soft);border-color:rgba(65,75,90,.45)}
+.dm-chip.bad{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-chip.bad b{color:var(--danger)}
+.dm-chip.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4)}
+.dm-chip.ok b{color:var(--success)}
+.dm-chip.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-chip.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-chip.is-enter{opacity:0;transform:translateY(8px)}
+.dm-chip.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-anchor{padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);font:600 13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);opacity:1;transform:scale(1);transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-body.is-live .dm-anchor{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-anchor.now{opacity:1;transform:scale(1)}
+.dm-anchor.on{background:var(--accent-soft);color:var(--accent-deep);border-color:rgba(65,75,90,.45)}
+.dm-anchor.ok{background:rgba(22,163,74,.07);color:var(--success);border-color:rgba(22,163,74,.4)}
+.dm-anchor.bad{background:rgba(220,38,38,.05);color:var(--danger);border-color:rgba(220,38,38,.35)}
+.dm-anchor.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-anchor.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-lines{display:flex;flex-direction:column;gap:6px}
+.dm-row{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);min-height:36px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-lines.is-live .dm-row{opacity:.4;transform:scale(.98)}
+.dm-lines.is-live .dm-row.now{opacity:1;transform:scale(1)}
+.dm-row .dm-n{font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint);font-variant-numeric:tabular-nums}
+.dm-row .dm-tx{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);overflow-wrap:anywhere;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-row.look{background:var(--accent-soft);border-color:rgba(65,75,90,.45)}
+.dm-row.look .dm-tx,.dm-row.look .dm-n{color:var(--accent-deep);font-weight:600}
+.dm-row.hit{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4)}
+.dm-row.hit .dm-tx,.dm-row.hit .dm-n{color:var(--success);font-weight:600}
+.dm-row.miss{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35)}
+.dm-row.miss .dm-tx,.dm-row.miss .dm-n{color:var(--danger);font-weight:600}
+.dm-row.insert{background:var(--accent-soft);border-style:dashed}
+.dm-row.insert .dm-tx{color:var(--accent-deep)}
+.dm-row.plus{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4)}
+.dm-row.plus .dm-tx{color:var(--success);font-weight:600}
+.dm-row.is-enter{opacity:0;transform:translateY(8px)}
+.dm-row.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-row.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-row.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:62px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-body.is-live .dm-status{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-status.now{opacity:1;transform:scale(1)}
+.dm-status.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-status.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:420px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:680px}}
+</style>
+<meta name="description" content="Codex 给模型一份没有行号的补丁语言：定位靠上下文锚点，应用靠四级匹配，单文件对不上就不写盘">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="apply-patch，给模型设计一种 diff"><meta property="og:description" content="Codex 给模型一份没有行号的补丁语言：定位靠上下文锚点，应用靠四级匹配，单文件对不上就不写盘"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-21.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/codex-21.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>apply-patch，给模型设计一种 diff</h1>
+    <p class="subtitle">模型填一份没有行号的补丁，人看的是事后算出来的 unified diff。同一处修改，两套格式各自会在哪一步翻车。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>一份没有行号的补丁语言：定位靠上下文锚点，应用靠四级匹配，单文件对不上就不写盘</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清两件事：给模型的 diff 为什么只写一行上下文锚点，不写 <code>@@ -l,s +l,s</code> 那四个数字；以及上下文对不上时，单文件为什么整份不落盘，跨多个文件时这个保证为什么不成立。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一处修改，两种写法</div>
+  <div class="demo reveal" id="demo-diff">
+    <div class="demo-top">
+      <div class="demo-title">把 <code>greet</code> 里的 <code>pass</code> 换成 <code>return 123</code></div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">磁盘上的文件</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-sc="intact" class="on">原样</button>
+        <button type="button" data-sc="drift">上面插了两行</button>
+        <button type="button" data-sc="miss">锚点行被改掉</button>
+      </div>
+      <span class="dm-b-hint">切到插了两行，左边四个数字会偏。切到锚点丢了，右边会停笔。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">unified diff</span><span class="dm-meter"><span><b id="dm-l-tag">四个数字</b>要填对</span></span></div>
+        <div class="dm-body">
+          <div class="dm-fmt" id="dm-left-nums"></div>
+          <div class="dm-lines" id="dm-left-lines"></div>
+          <div class="dm-status" id="dm-left-status">等待开始。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">apply-patch</span><span class="dm-meter"><span><b id="dm-r-tag">一行锚点</b>现搜</span></span></div>
+        <div class="dm-body">
+          <div class="dm-anchor" id="dm-right-anchor">@@ def greet():</div>
+          <div class="dm-lines" id="dm-right-lines"></div>
+          <div class="dm-status" id="dm-right-status">等待开始。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>文法里的 <code>@@</code> 只有锚点，没有起始行和跨度</span><span class="ln">parser.rs L20</span></li>
+        <li><span>更新文件的 chunks 必须按在文件中出现的先后排列</span><span class="ln">parser.rs L74</span></li>
+        <li><span>有 <code>change_context</code> 时，从 <code>line_index</code> 往下搜这一行</span><span class="ln">file_update.rs L99</span></li>
+        <li><span>先整行精确比，再抹掉行尾空白，再两边 trim</span><span class="ln">seek_sequence.rs L40</span></li>
+        <li><span>锚点找不到，立刻报 Failed to find context，不按附近行猜</span><span class="ln">file_update.rs L109</span></li>
+        <li><span>单文件全部 chunk 在内存里算完，才调用 write_file</span><span class="ln">lib.rs L695</span></li>
+        <li><span>跨文件失败时带着已经提交的 delta 返回，没有回滚</span><span class="ln">lib.rs L453</span></li>
+        <li><span>给人看的 unified diff 是事后用 TextDiff 另算的</span><span class="ln">file_update.rs L328</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一处修改在两种 diff 写法下怎么定位。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>四个数字</b>unified diff 的 <code>@@</code> 头要同时填对旧起始、旧跨度、新起始、新跨度。文件上面插两行，这四个数字一起废。</div>
+      <div class="dm-s"><b>一行锚点</b>apply-patch 只写 <code>@@ def greet():</code>，运行时现搜。插两行也能对上，因为行号根本没进这份格式。</div>
+      <div class="dm-s"><b>对不上就停</b>锚点行被改掉时，右边报 Failed to find context，这个文件保持原样。左边那种格式会在行号附近 fuzz，有可能贴到邻近函数。</div>
+    </div>
+    <div class="demo-caption">教学示意：文件行块与行号是课程化设定，用来对照两种格式的定位方式。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 模型填一份格式，人看另一份</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你让模型改一个函数：把 <code>greet</code> 里的 <code>pass</code> 换成 <code>return 123</code>。它吐出标准 unified diff，头一行写成 <code>@@ -47,3 +47,3 @@</code>。</p>
+  <p class="reveal">文件刚才被另一处编辑插了两行，<code>greet</code> 已经在第 49 行。模型是在带行号的摘录里数的，写补丁时还要自己加算起始行和跨度。这四个数字一起错，是常态。</p>
+  <p class="reveal"><code>patch(1)</code> 会按行号去找，找不到就 fuzz。fuzz 再失败，整份补丁作废。更麻烦的是它可能把变更贴到邻近的另一个函数上。测试还是绿的，只是改错了函数。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把填写和阅读拆开。模型填的那份没有行号。更新一段时，头一行只写成 <code>@@ def greet():</code>。单独一个 <code>@@</code> 表示从当前位置继续搜。定位交给运行时的 <code>seek_sequence</code>。</p>
+  <p class="reveal">人看变更时，界面上再另外用 <code>similar::TextDiff</code> 生成一份标准 unified diff。工具参数里那份 Codex 格式到这里已经用完了。</p>
+  <span class="src-note">出处：<code>codex-rs/apply-patch/src/file_update.rs</code> 第 328 至 329 行</span>
+  <p class="reveal">这份文法把没有行号写进了产生式。两种 <code>@@</code> 写法都只带文本锚点：</p>
+  <div class="source reveal">
+    <div class="source-head"><span>codex-rs/apply-patch/src/parser.rs</span><span>第 20 至 22 行</span></div>
+    <pre><code>//! change_context: ("@@" | "@@ " /(.+)/) LF
+//! change_line: ("+" | "-" | " ") /(.+)/ LF
+//! eof_line: "*** End of File" LF</code></pre>
+  </div>
+  <div class="snapshot">源码快照说明：依据本地仓库 <code>openai/codex</code>，核对文件 <code>codex-rs/apply-patch/src/parser.rs</code>，commit <code>4f39251a01</code>，核对日期 2026-08-22。代码块保留源码原文，这三行就是给模型的 diff 头：有锚点，没有行号。</div>
+  <p class="reveal paywall-locked xa-peek" style="margin-top:20px">发给模型的说明书把这套语言写成「stripped-down, file-oriented diff format designed to be easy to parse and safe to apply」。Add、Delete、Move 在文法里是三种标记，解析器按标记分发。模型不用记 <code>---</code>、<code>+++</code>、<code>/dev/null</code> 和 rename 头怎么拼。</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="模型填写与人阅读拆成两套格式">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="40" y="40" fill="#262d38" font-size="14" font-weight="800">模型填写</text>
+      <rect x="40" y="56" width="140" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="110" y="86" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">模型</text>
+      <text x="110" y="108" fill="#6b7280" text-anchor="middle" font-size="13">写一份补丁</text>
+      <path fill="none" d="M188 91H270" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="278" y="56" width="220" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="388" y="86" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">apply-patch</text>
+      <text x="388" y="108" fill="#6b7280" text-anchor="middle" font-size="13">@@ 锚点，没有行号</text>
+      <path fill="none" d="M506 91H586" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="594" y="56" width="306" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="747" y="86" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">seek_sequence</text>
+      <text x="747" y="108" fill="#6b7280" text-anchor="middle" font-size="13">在磁盘上现搜，算出新内容</text>
+      <text x="40" y="176" fill="#262d38" font-size="14" font-weight="800">人阅读</text>
+      <rect x="40" y="192" width="280" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="180" y="222" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">已经算好的新旧文本</text>
+      <text x="180" y="244" fill="#6b7280" text-anchor="middle" font-size="13">工具参数里那份格式到此用完</text>
+      <path fill="none" d="M328 227H410" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="418" y="192" width="200" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="518" y="222" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">TextDiff</text>
+      <text x="518" y="244" fill="#6b7280" text-anchor="middle" font-size="13">事后生成 unified diff</text>
+      <path fill="none" d="M626 227H708" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="716" y="192" width="184" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="808" y="222" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">界面</text>
+      <text x="808" y="244" fill="#6b7280" text-anchor="middle" font-size="13">给人看的那一份</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：同一处修改，模型填锚点，人看行号。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">坐标靠加算，内容靠识别。模型数行号这件事，换一个模型、换一种语言都好不到哪去。把找到哪一段从填写时的算术，改成应用时的字符串搜索，这个分工不依赖 Rust，也不依赖 unified diff 这个具体格式。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 空白可以放宽，位置不猜</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">模型写补丁时，行尾多一个空格，或者文件里是 en-dash、它写成了减号，都是高频事故。每次都整份失败，模型只能重写。按行号附近再试几行，又会回到 fuzz 贴错函数的老路。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked"><code>seek_sequence</code> 按四档从紧到松搜。第一档整行精确相等。第二档去掉行尾空白再比。第三档两边都 <code>trim()</code>。第四档把常见 Unicode 短横和弯引号收成 ASCII。四级都失败就返回空，报「Failed to find context」或「Failed to find expected lines」。没有按附近几行再试这个循环。</p>
+  <span class="src-note paywall-locked">出处：<code>codex-rs/apply-patch/src/seek_sequence.rs</code> 第 40 至 114 行</span>
+  <p class="reveal paywall-locked">早期有一次事故，专门为奇怪的 Unicode 字符加了第四级。它只放宽空白和标点，不放宽位置。中文全角引号不在归一化表里，模型写了全角左引号，文件里是半角引号，四级都会失败。</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="四级匹配只放宽空白和标点">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="40" y="36" width="160" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="120" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">精确相等</text>
+      <path fill="none" d="M208 64H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="276" y="36" width="160" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="356" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">trim_end</text>
+      <path fill="none" d="M444 64H504" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="512" y="36" width="160" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="592" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">两边 trim</text>
+      <path fill="none" d="M680 64H740" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="748" y="36" width="152" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="824" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">normalise</text>
+      <path fill="none" d="M470 100V148" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="300" y="156" width="340" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="470" y="186" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">四级都失败，返回空</text>
+      <text x="470" y="208" fill="#6b7280" text-anchor="middle" font-size="13">没有按行号上下挪几行再试</text>
+      <path fill="none" d="M648 191H740" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="748" y="164" width="152" height="54" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="824" y="196" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">立刻报错</text>
+    </svg>
+    <div class="visual-caption">教学化流程图：空格和短横可以过，行号偏移不在这四级里。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">容错要分清两类差异。行尾空格、弯引号是无意义的字节差，可以归一。行号偏了两行，是贴错地方，应该报错让模型重写。这个分界换语言重写也成立。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 单文件算完再写，跨文件没有事务</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">一份补丁里有两个 chunk。第二个对不上，第一个已经改进去了，文件会变成半成品。排查的人看到的是一份应用成功了一半的文件，比整份失败更难修。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">单文件内部，<code>compute_replacements</code> 把每个 chunk 先收成替换列表，某一个对不上就立刻返回错误，还没走到 <code>write_file</code>。这个文件保持原样。</p>
+  <span class="src-note paywall-locked">出处：<code>codex-rs/apply-patch/src/file_update.rs</code> 第 109 至 113 行</span>
+  <p class="reveal paywall-locked">跨文件是另一回事。<code>apply_hunks_to_files</code> 按 hunk 顺序写盘，失败时带着已经提交的 <code>AppliedPatchDelta</code> 返回，循环里没有回滚。测试 015 把这个钉死了：先成功新增 <code>created.txt</code>，再更新一个不存在的文件，磁盘上 <code>created.txt</code> 还在。</p>
+  <span class="src-note paywall-locked">出处：<code>codex-rs/apply-patch/src/lib.rs</code> 第 453 行，以及第 504 行起的 hunk 循环</span>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="单文件不写半成品，跨文件不回滚">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <text x="40" y="40" fill="#262d38" font-size="14" font-weight="800">同一个文件里的两个 chunk</text>
+      <rect x="40" y="56" width="200" height="54" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="89" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">chunk 1 在内存里算完</text>
+      <path fill="none" d="M248 83H318" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="326" y="56" width="200" height="54" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="426" y="89" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">chunk 2 对不上，返回</text>
+      <path fill="none" d="M534 83H604" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="612" y="56" width="288" height="54" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="756" y="89" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">write_file 还没走到，文件原样</text>
+      <text x="40" y="176" fill="#262d38" font-size="14" font-weight="800">两个文件级 hunk</text>
+      <rect x="40" y="192" width="200" height="54" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="225" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Add File 已经写盘</text>
+      <path fill="none" d="M248 219H318" stroke="#dc2626" stroke-width="2" marker-end="url(#arrD)"></path>
+      <rect x="326" y="192" width="200" height="54" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="426" y="225" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">Update 一个不存在的路径</text>
+      <path fill="none" d="M534 219H604" stroke="#dc2626" stroke-width="2" marker-end="url(#arrD)"></path>
+      <rect x="612" y="192" width="288" height="54" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="756" y="225" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">delta 留下，created.txt 还在</text>
+    </svg>
+    <div class="visual-caption">教学化对照：没有部分成功这个保证，只对单个文件成立。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">模型填锚点。人看行号。单文件对不上就不写。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">算完再提交的范围，要和你能原子处理的单位对齐。一个文件可以先在内存里算完全部替换再写一次。多个文件已经落到磁盘上，回滚就要再写一遍，还要处理 Move 这种源和目标都动过的半成功。要不要跨文件事务，是产品选择，不是格式本身的承诺。写给模型的说明里，别把单文件的保证说成全局保证。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness：先读过，才能改</h4>
+      <p>DSH 的 <code>editIntent</code> 查的是这个 session 有没有观测过这个文件。没观测过就抛 <code>FS_NOT_OBSERVED</code>。观测记录的是 <code>dev:ino:size:mtimeNs:ctimeNs</code> 拼出来的版本，不是内容 hash。</p>
+      <p>即便过了这道门，<code>applyLiteralEdit</code> 默认还要求 <code>old_string</code> 只出现一次，多处命中就抛 <code>FS_AMBIGUOUS_EDIT</code>。防错挂在事件门禁和字面量唯一上。Codex 没有先读约束，定位信息写在补丁里，运行时现搜；<code>old_lines</code> 出现两次时取第一处，没有歧义报错。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-14" data-lesson-id="dsh-14">DSH · 文件编辑的工程学</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：没读过就拒绝，多处命中也拒绝</h4>
+      <p><code>FileEditTool</code> 同时要两件事。文件必须先读过，没读过报 errorCode 6，原文是 File has not been read yet。 <code>old_string</code> 在文件里多于一处且 <code>replace_all</code> 为假时，报 errorCode 9，要求补更多上下文，把这一处单独标出来。</p>
+      <p>模糊只覆盖引号。<code>findActualString</code> 先精确搜，再把弯引号收成直引号搜。没有 Codex 那种行尾空白三级，也没有短横归一化。想少一次工具往返，抄 Codex 的格式；想对模型错误信息更具体，抄这几条带 errorCode 的拒绝文案。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>两段相同的 old_lines，改哪一段</h3>
+      <p>文件里有两段完全相同的 <code>old_lines</code>，模型只想改第二段，却没有给足够的 <code>@@</code> 锚点。<code>seek_sequence</code> 会改哪一段，为什么？</p>
+      <p>进阶一问：若希望单独命中第二段，锚点应该写在哪一行前面？同一份补丁里若先成功新增一个文件，再更新一个不存在的路径，磁盘上会留下什么？</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>给模型的 diff 不要行号，定位交给运行时搜上下文。空白和标点可以逐级放宽，位置不猜。单文件对不上就不写盘；跨多个文件时，已经写下的文件会留在磁盘上。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var scenario = 'intact';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevChip = '', prevAnc = '', prevTrace = null;
+  var leftLines = document.getElementById('dm-left-lines');
+  var rightLines = document.getElementById('dm-right-lines');
+  var leftNums = document.getElementById('dm-left-nums');
+  var rightAnchor = document.getElementById('dm-right-anchor');
+  var lTag = document.getElementById('dm-l-tag');
+  var rTag = document.getElementById('dm-r-tag');
+  var lStatus = document.getElementById('dm-left-status');
+  var rStatus = document.getElementById('dm-right-status');
+  var leftBody = leftLines.closest('.dm-body');
+  var rightBody = rightLines.closest('.dm-body');
+  var traceBox = document.querySelector('.dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '点播放，看同一处修改在两种 diff 写法下怎么定位。';
+
+  var FILES = {
+    intact: [
+      {n:45, t:'import os'},
+      {n:46, t:''},
+      {n:47, t:'def greet():', role:'anchor'},
+      {n:48, t:'    pass', role:'old'},
+      {n:49, t:''},
+      {n:50, t:'def farewell():'}
+    ],
+    drift: [
+      {n:45, t:'from typing import Any', role:'insert'},
+      {n:46, t:'import logging', role:'insert'},
+      {n:47, t:'import os', role:'wrong'},
+      {n:48, t:''},
+      {n:49, t:'def greet():', role:'anchor'},
+      {n:50, t:'    pass', role:'old'}
+    ],
+    miss: [
+      {n:45, t:'import os'},
+      {n:46, t:''},
+      {n:47, t:'def hello():', role:'gone'},
+      {n:48, t:'    pass', role:'old'},
+      {n:49, t:''},
+      {n:50, t:'def farewell():'}
+    ]
+  };
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function rollBadge(el, text, animate){
+    var prev = el.getAttribute('data-text') || el.textContent;
+    el.setAttribute('data-text', text);
+    var numRe = /(\d+)/;
+    var m0 = prev.match(numRe);
+    var m1 = text.match(numRe);
+    var sameShape = m0 && m1 && prev.replace(numRe, '#') === text.replace(numRe, '#');
+    if (!animate || !sameShape) { el.textContent = text; return; }
+    var from = parseInt(m0[1], 10);
+    var to = parseInt(m1[1], 10);
+    if (from === to) { el.textContent = text; return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      var n = Math.round(from + (to - from) * eased);
+      el.textContent = text.replace(numRe, String(n));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function fadeCopy(el, text, animate){
+    if (!el) return;
+    if (!animate || el.textContent === text) { el.textContent = text; el.style.opacity = '1'; return; }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function ensureChips(){
+    if (leftNums.getAttribute('data-ready') === '1') return;
+    leftNums.innerHTML = '';
+    var items = [
+      {v:'47', l:'旧起始'},
+      {v:'3', l:'旧跨度'},
+      {v:'47', l:'新起始'},
+      {v:'3', l:'新跨度'}
+    ];
+    items.forEach(function(it){
+      var d = document.createElement('div');
+      d.className = 'dm-chip';
+      d.setAttribute('data-v', it.v);
+      d.innerHTML = '<b></b><i></i>';
+      d.querySelector('b').textContent = it.v;
+      d.querySelector('i').textContent = it.l;
+      leftNums.appendChild(d);
+    });
+    leftNums.setAttribute('data-ready', '1');
+  }
+
+  function paintChips(kind, animate){
+    ensureChips();
+    leftNums.classList.add('is-live');
+    var chips = Array.prototype.slice.call(leftNums.querySelectorAll('.dm-chip'));
+    chips.forEach(function(d){
+      var b = d.querySelector('b');
+      rollBadge(b, d.getAttribute('data-v'), animate);
+      var cls = 'dm-chip' + (kind ? ' ' + kind : '');
+      if (kind && kind !== prevChip) cls += ' now';
+      d.className = cls;
+      if (animate && kind && kind !== prevChip) {
+        bump(d, kind === 'bad' ? 'firing' : 'pop');
+      }
+    });
+    prevChip = kind || '';
+  }
+
+  function rowId(row){
+    if (row.role === 'insert') return 'ins:' + row.t;
+    if (row.role === 'anchor' || row.role === 'gone') return 'head';
+    if (row.role === 'old') return 'body';
+    if (row.t === 'import os' || row.role === 'wrong') return 'os';
+    if (row.t === 'def farewell():') return 'farewell';
+    return 'gap:' + row.n;
+  }
+
+  function rowClass(row, mark){
+    var cls = 'dm-row';
+    var text = row.t;
+    if (row.role === 'insert') cls += ' insert';
+    if (mark === 'look47' && row.n === 47) cls += ' look';
+    if (mark === 'left-wrong' && row.role === 'wrong') cls += ' miss';
+    if (mark === 'left-gone' && row.role === 'gone') cls += ' miss';
+    if (mark === 'left-hit' && row.role === 'anchor') cls += ' hit';
+    if (mark === 'right-seek' && row.role === 'anchor') cls += ' look';
+    if (mark === 'right-gone' && row.role === 'gone') cls += ' miss';
+    if (mark === 'right-hit' && row.role === 'anchor') cls += ' hit';
+    if (mark === 'left-applied' && row.role === 'old') { cls += ' plus'; text = '    return 123'; }
+    if (mark === 'left-applied' && row.role === 'anchor') cls += ' hit';
+    if (mark === 'right-applied' && row.role === 'old') { cls += ' plus'; text = '    return 123'; }
+    if (mark === 'right-applied' && row.role === 'anchor') cls += ' hit';
+    if (mark === 'left-fuzz' && (row.n === 47 || row.role === 'insert' || row.role === 'gone')) cls += ' miss';
+    return {cls: cls, text: text};
+  }
+
+  function paintLines(host, file, mark, animate){
+    var oldRects = {};
+    var nodes = {};
+    Array.prototype.slice.call(host.querySelectorAll('.dm-row')).forEach(function(el){
+      var id = el.getAttribute('data-id');
+      nodes[id] = el;
+      oldRects[id] = el.getBoundingClientRect();
+    });
+    host.classList.add('is-live');
+    var prevMark = host.getAttribute('data-mark') || '';
+    var keep = {};
+    file.forEach(function(row, idx){
+      var id = rowId(row);
+      keep[id] = true;
+      var spec = rowClass(row, mark);
+      var isFocus = /\b(look|hit|miss|plus)\b/.test(spec.cls);
+      var cls = spec.cls + (isFocus ? ' now' : '');
+      var d = nodes[id];
+      var isNew = !d;
+      if (!d) {
+        d = document.createElement('div');
+        d.setAttribute('data-id', id);
+        var n = document.createElement('span'); n.className = 'dm-n';
+        var tx = document.createElement('span'); tx.className = 'dm-tx';
+        d.appendChild(n); d.appendChild(tx);
+        var nxt = null;
+        var j;
+        for (j = idx + 1; j < file.length; j++) {
+          nxt = host.querySelector('[data-id="' + rowId(file[j]) + '"]');
+          if (nxt) break;
+        }
+        if (nxt) host.insertBefore(d, nxt);
+        else host.appendChild(d);
+      }
+      var nEl = d.querySelector('.dm-n');
+      var tx = d.querySelector('.dm-tx');
+      rollBadge(nEl, String(row.n), animate && !isNew);
+      var newText = spec.text === '' ? ' ' : spec.text;
+      var prevText = tx.getAttribute('data-t');
+      if (prevText === null) prevText = tx.textContent;
+      d.className = cls;
+      if (animate && isNew) {
+        d.classList.add('is-enter');
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ d.classList.add('in'); });
+        });
+      }
+      if (animate && !isNew && prevText !== newText) {
+        tx.style.opacity = '0';
+        requestAnimationFrame(function(){
+          tx.textContent = newText;
+          tx.setAttribute('data-t', newText);
+          requestAnimationFrame(function(){ tx.style.opacity = '1'; });
+        });
+        bump(d, 'pop');
+      } else {
+        tx.textContent = newText;
+        tx.setAttribute('data-t', newText);
+      }
+      if (animate && !isNew && isFocus && mark !== prevMark) {
+        bump(d, /\bmiss\b/.test(cls) ? 'firing' : 'pop');
+      }
+    });
+    Object.keys(nodes).forEach(function(id){
+      if (!keep[id]) nodes[id].remove();
+    });
+    if (animate) {
+      Array.prototype.slice.call(host.querySelectorAll('.dm-row')).forEach(function(el){
+        var id = el.getAttribute('data-id');
+        var old = oldRects[id];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+    host.setAttribute('data-mark', mark || '');
+  }
+
+  function buildSteps(sc){
+    var file = FILES[sc];
+    var out = [];
+    out.push({
+      cap: '同一处修改：把 greet 里的 pass 换成 return 123。左边要填四个数字，右边只写一行锚点。',
+      trace: 0, lMark: '', rMark: '',
+      chip: '', anc: '',
+      lTag: '四个数字', rTag: '一行锚点',
+      ls: '头一行：@@ -47,3 +47,3 @@',
+      rs: '头一行：@@ def greet():'
+    });
+    out.push({
+      cap: '左边四个数字是旧起始、旧跨度、新起始、新跨度。文件稍有漂移，四个一起错。右边没有数字可填错。',
+      trace: 0, lMark: '', rMark: '',
+      chip: 'on', anc: 'on',
+      lTag: '四个数字', rTag: '一行锚点',
+      lsKind: 'hold', ls: '模型要同时算对这四个数字。',
+      rsKind: 'hold', rs: '模型只写一行上下文锚点。'
+    });
+    if (sc === 'intact') {
+      out.push({
+        cap: '磁盘上 greet 还在第 47 行。两边拿到的是同一份文件。',
+        trace: 1, lMark: '', rMark: '',
+        chip: 'on', anc: 'on',
+        lTag: '四个数字', rTag: '一行锚点',
+        ls: '按行号 47 去找。',
+        rs: '按锚点 def greet(): 去搜。'
+      });
+      out.push({
+        cap: '左边按 @@ 头里的 47 落到 greet。行号碰巧还对。',
+        trace: 2, lMark: 'look47', rMark: '',
+        chip: 'on', anc: 'on',
+        lTag: '第 47 行', rTag: '一行锚点',
+        lsKind: 'hold', ls: '第 47 行是 def greet():，上下文也对得上。',
+        rs: '还没开始搜。'
+      });
+      out.push({
+        cap: '右边从 line_index 往下搜锚点，第一档精确匹配就命中同一行。',
+        trace: 3, lMark: 'look47', rMark: 'right-seek',
+        chip: 'on', anc: 'on',
+        lTag: '第 47 行', rTag: '精确命中',
+        lsKind: 'hold', ls: '第 47 行是 def greet():，上下文也对得上。',
+        rsKind: 'hold', rs: 'seek_sequence 找到 def greet():。'
+      });
+      out.push({
+        cap: '两边都贴上了。左边靠行号碰巧对了，右边靠锚点搜到了。人看的 unified diff 这时才另算一份。',
+        trace: 7, lMark: 'left-applied', rMark: 'right-applied',
+        chip: 'ok', anc: 'ok',
+        lTag: '已写入', rTag: '已写入',
+        lsKind: 'ok', ls: 'pass 换成了 return 123。',
+        rsKind: 'ok', rs: '单文件全部 chunk 算完，才 write_file。',
+        fin: true
+      });
+    } else if (sc === 'drift') {
+      out.push({
+        cap: '文件上面刚插了两行，greet 已经到第 49 行。左边那四个数字还按 47 填。',
+        trace: 1, lMark: '', rMark: '',
+        chip: 'on', anc: 'on',
+        lTag: '四个数字', rTag: '一行锚点',
+        lsKind: 'hold', ls: '仍然去第 47 行。',
+        rs: '行号没进这份格式。'
+      });
+      out.push({
+        cap: '左边落到第 47 行，那里现在是 import os。unified diff 会在附近 fuzz，有可能贴到邻近代码。',
+        trace: 2, lMark: 'left-wrong', rMark: '',
+        chip: 'bad', anc: 'on',
+        lTag: '行号偏了', rTag: '一行锚点',
+        lsKind: 'warn', ls: '第 47 行已经不是 greet。fuzz 会在附近再试。',
+        rs: '准备按锚点搜。'
+      });
+      out.push({
+        cap: '右边从当前位置往下搜 def greet():，在第 49 行命中。插进来的两行不影响锚点。',
+        trace: 3, lMark: 'left-fuzz', rMark: 'right-seek',
+        chip: 'bad', anc: 'on',
+        lTag: '行号偏了', rTag: '精确命中',
+        lsKind: 'warn', ls: '第 47 行已经不是 greet。fuzz 会在附近再试。',
+        rsKind: 'hold', rs: 'seek_sequence 在第 49 行找到锚点。'
+      });
+      out.push({
+        cap: '右边写入。左边停在错误的行号上，四个数字一起废了。这就是给模型的格式里不放行号的原因。',
+        trace: 5, lMark: 'left-fuzz', rMark: 'right-applied',
+        chip: 'bad', anc: 'ok',
+        lTag: '未可靠写入', rTag: '已写入',
+        lsKind: 'warn', ls: '行号不可信，fuzz 可能改错函数。',
+        rsKind: 'ok', rs: 'pass 换成了 return 123。',
+        fin: true
+      });
+    } else {
+      out.push({
+        cap: '函数已经被改名叫 hello，锚点 def greet(): 在文件里找不到了。',
+        trace: 1, lMark: '', rMark: '',
+        chip: 'on', anc: 'on',
+        lTag: '四个数字', rTag: '一行锚点',
+        ls: '仍按行号 47 去找。',
+        rs: '仍按锚点 def greet(): 去搜。'
+      });
+      out.push({
+        cap: '左边第 47 行变成了 def hello()。上下文对不上，fuzz 可能贴到邻近函数。',
+        trace: 2, lMark: 'left-gone', rMark: '',
+        chip: 'bad', anc: 'on',
+        lTag: '上下文偏了', rTag: '一行锚点',
+        lsKind: 'warn', ls: '第 47 行是 hello，不是 greet。',
+        rs: '准备按锚点搜。'
+      });
+      out.push({
+        cap: '右边四级都失败，立刻报 Failed to find context。没有附近几行再试试。',
+        trace: 4, lMark: 'left-gone', rMark: 'right-gone',
+        chip: 'bad', anc: 'bad',
+        lTag: '上下文偏了', rTag: '找不到锚点',
+        lsKind: 'warn', ls: '第 47 行是 hello，不是 greet。',
+        rsKind: 'warn', rs: 'Failed to find context \'def greet():\' in greet.py'
+      });
+      out.push({
+        cap: '这个文件保持原样。没有部分成功这个保证只对单个文件成立；同一份补丁跨多个文件时，已经写下的文件会留在磁盘上。',
+        trace: 6, lMark: 'left-gone', rMark: 'right-gone',
+        chip: 'bad', anc: 'bad',
+        lTag: '未写入', rTag: '未写入',
+        lsKind: 'warn', ls: 'fuzz 风险还在，文件状态不确定。',
+        rsKind: 'warn', rs: 'write_file 还没走到，文件保持原样。',
+        fin: true
+      });
+    }
+    return out;
+  }
+
+  function paint(st, animate){
+    var file = FILES[scenario];
+    if (leftBody) leftBody.classList.add('is-live');
+    if (rightBody) rightBody.classList.add('is-live');
+    paintChips(st.chip || '', animate);
+    var ancCls = 'dm-anchor' + (st.anc ? ' ' + st.anc : '');
+    if (st.anc && st.anc !== prevAnc) ancCls += ' now';
+    rightAnchor.className = ancCls;
+    if (animate && st.anc && st.anc !== prevAnc) {
+      bump(rightAnchor, st.anc === 'bad' ? 'firing' : 'pop');
+    }
+    prevAnc = st.anc || '';
+    paintLines(leftLines, file, st.lMark || '', animate);
+    paintLines(rightLines, file, st.rMark || '', animate);
+    fadeCopy(lTag, st.lTag, animate);
+    fadeCopy(rTag, st.rTag, animate);
+    var lNow = !!(st.lsKind);
+    var rNow = !!(st.rsKind);
+    lStatus.className = 'dm-status' + (st.lsKind ? ' ' + st.lsKind : '') + (lNow ? ' now' : '');
+    rStatus.className = 'dm-status' + (st.rsKind ? ' ' + st.rsKind : '') + (rNow ? ' now' : '');
+    fadeCopy(lStatus, st.ls, animate);
+    fadeCopy(rStatus, st.rs, animate);
+    if (animate && lNow) bump(lStatus, 'firing');
+    if (animate && rNow) bump(rStatus, 'firing');
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    if (animate) fadeCopy(captionText, st.cap, true);
+    else captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.rsKind === 'warn' || st.lsKind === 'warn') return 2200;
+    if (st.rMark === 'right-seek' || st.lMark === 'look47') return 1900;
+    if (st.lMark === 'left-wrong' || st.lMark === 'left-gone' || st.lMark === 'left-fuzz') return 1900;
+    if (st.chip === 'on' && st.trace === 0) return 1400;
+    if (st.trace === 0) return 1100;
+    return 1400;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(animateFile){
+    stop(); idx = 0; prevChip = ''; prevAnc = ''; prevTrace = null;
+    steps = buildSteps(scenario);
+    if (leftBody) leftBody.classList.remove('is-live');
+    if (rightBody) rightBody.classList.remove('is-live');
+    leftNums.classList.remove('is-live');
+    leftLines.classList.remove('is-live');
+    rightLines.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    leftNums.removeAttribute('data-ready');
+    leftNums.removeAttribute('data-kind');
+    leftLines.removeAttribute('data-mark');
+    rightLines.removeAttribute('data-mark');
+    if (!animateFile) {
+      leftLines.innerHTML = '';
+      rightLines.innerHTML = '';
+    }
+    paintChips('', false);
+    leftNums.classList.remove('is-live');
+    rightAnchor.className = 'dm-anchor';
+    paintLines(leftLines, FILES[scenario], '', !!animateFile);
+    paintLines(rightLines, FILES[scenario], '', !!animateFile);
+    if (!animateFile) {
+      leftLines.classList.remove('is-live');
+      rightLines.classList.remove('is-live');
+    }
+    lTag.style.opacity = '1';
+    rTag.style.opacity = '1';
+    lTag.textContent = '四个数字';
+    rTag.textContent = '一行锚点';
+    lTag.setAttribute('data-text', '四个数字');
+    rTag.setAttribute('data-text', '一行锚点');
+    lStatus.className = 'dm-status'; lStatus.style.opacity = '1'; lStatus.textContent = '等待开始。';
+    rStatus.className = 'dm-status'; rStatus.style.opacity = '1'; rStatus.textContent = '等待开始。';
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset(false);
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', function(){ reset(false); });
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    scenario = b.getAttribute('data-sc');
+    reset(true);
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-diff'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

@@ -1,0 +1,921 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-04",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-04',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中途插话：这句话进本轮、下一轮，还是被拒 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 160px;padding-top:10px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-input{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:12px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-input label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-input input{flex:1 1 180px;min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-stage{display:grid;grid-template-columns:1fr;gap:16px}
+.dm-meta{display:flex;flex-wrap:wrap;gap:10px}
+.dm-pill{padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:12.5px;font-weight:700;color:var(--sub);transition:all .3s cubic-bezier(.4,0,.2,1)}
+.dm-pill b{color:var(--accent-deep)}
+.dm-pill.hot{background:var(--accent-soft);border-color:rgba(65,75,90,.4);color:var(--accent-deep)}
+.dm-pill.warn{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger)}
+.dm-pills-ok{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07);color:var(--success)}
+.dm-bins{position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.dm-bin{border:1px solid var(--border);border-radius:12px;background:var(--bg);min-height:148px;padding:14px;display:flex;flex-direction:column;gap:10px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-bins.has-focus .dm-bin{opacity:.4;transform:scale(.98)}
+.dm-bins.has-focus .dm-bin.active{opacity:1;transform:scale(1)}
+.dm-bin.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft)}
+.dm-bin.drop{border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.04)}
+.dm-bin.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-bin::after{content:"";display:block;height:4px;width:48px;margin-top:auto;border-radius:99px;background:var(--accent);transform:scaleX(0);transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-bin.drop::after{background:var(--danger)}
+.dm-bin.fill-1::after{transform:scaleX(.5)}
+.dm-bin.fill-2::after{transform:scaleX(1)}
+.dm-bin h3{margin:0;font-size:13px;font-weight:800;color:var(--text)}
+.dm-bin .dm-bin-sub{font-size:11.5px;color:var(--sub);line-height:1.6}
+.dm-slip{padding:10px 12px;border-radius:8px;border:1px solid rgba(65,75,90,.28);background:var(--card);font-size:12.5px;line-height:1.7;color:var(--accent-deep);font-weight:600;opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-slip.mail{border-style:dashed}
+.dm-slip.ghost{opacity:.4;border-style:dashed;font-weight:500;color:var(--faint)}
+.dm-slip.is-enter,.dm-empty.is-enter{opacity:0;transform:translateY(8px)}
+.dm-slip.is-enter.in,.dm-empty.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.25,1,.5,1),transform .35s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-empty{font-size:12.5px;color:var(--faint);line-height:1.7;padding:8px 0;max-height:48px;overflow:hidden;transition:max-height .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict{padding:12px 14px;border-radius:9px;font-size:13px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:48px;transition:background .3s cubic-bezier(.4,0,.2,1),border-color .3s cubic-bezier(.4,0,.2,1),color .3s cubic-bezier(.4,0,.2,1)}
+.dm-verdict.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-verdict.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-verdict.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-verdict.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1),background .35s cubic-bezier(.4,0,.2,1)}
+#dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+#dm-trace.is-live li.on{opacity:1;transform:scale(1);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-bins{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-budget .dm-b-label{padding-top:0}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}}
+</style>
+<meta name="description" content="Agent 正在改文件，你补了一句约束。Codex 用一个入口、三种模式、两阶段信箱，当场决定开工、插话还是拒绝">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="中途插话：这句话进本轮、下一轮，还是被拒"><meta property="og:description" content="Agent 正在改文件，你补了一句约束。Codex 用一个入口、三种模式、两阶段信箱，当场决定开工、插话还是拒绝"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-04.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · Turn 循环</div>
+    <h1>中途插话：这句话进本轮、下一轮，还是被拒</h1>
+    <p class="subtitle">Agent 正在改第三个文件，你看见方向偏了，补了一句：配置用 YAML。回车之后，这句话是开工、插进当前轮，还是当场被拒，Core 当场拍板，不等模型开口。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>Agent 正在改第三个文件，你看见方向偏了，补了一句：配置用 YAML。回车之后，这句话是开工、插进当前轮，还是当场被拒，Core 当场拍板，不等模型开口。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。第一，为什么提交必须立刻回 Started、Steered 或 NotSubmitted。第二，审查和压缩为什么拒收插话，并且不会因此新开一轮。第三，最终答案上屏之后，迟到的子邮件为什么默认躺到下一轮，用户再插一句又为什么能把门打开。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一句话，四个时机</div>
+  <div class="demo reveal" id="demo-inbox">
+    <div class="demo-top">
+      <div class="demo-title">信箱分拣台：同一句约束，投递时刻不同，落点就不同</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">时机</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-scene="idle" class="on">空闲</button>
+        <button type="button" data-scene="busy">采样中</button>
+        <button type="button" data-scene="answer">答案上屏</button>
+        <button type="button" data-scene="review">审查中</button>
+      </div>
+      <span class="dm-b-hint">四个时机共用同一句输入。空闲会开工，采样中会插话，答案上屏后子邮件先躺着，审查中会被挡在门口。</span>
+    </div>
+    <div class="dm-input">
+      <label for="dm-text">这句话</label>
+      <input id="dm-text" type="text" value="配置用 YAML，别用 JSON" autocomplete="off">
+    </div>
+    <div class="dm-stage">
+      <div class="dm-meta">
+        <span class="dm-pill" id="dm-clock">时刻 · 空闲</span>
+        <span class="dm-pill" id="dm-kind">任务 · 无</span>
+        <span class="dm-pill" id="dm-phase">相位 · —</span>
+      </div>
+      <div class="dm-bins">
+        <div class="dm-bin" id="dm-bin-now">
+          <h3>当前轮</h3>
+          <div class="dm-bin-sub">pending_input，相位 CurrentTurn 时会被掏走</div>
+          <div id="dm-now-items"><div class="dm-empty">空</div></div>
+        </div>
+        <div class="dm-bin" id="dm-bin-next">
+          <h3>下一轮</h3>
+          <div class="dm-bin-sub">会话信箱，相位 NextTurn 时只排队不掏</div>
+          <div id="dm-next-items"><div class="dm-empty">空</div></div>
+        </div>
+        <div class="dm-bin drop" id="dm-bin-drop">
+          <h3>门口拒收</h3>
+          <div class="dm-bin-sub">NotSubmitted，设置也不会落地</div>
+          <div id="dm-drop-items"><div class="dm-empty">空</div></div>
+        </div>
+      </div>
+      <div class="dm-verdict" id="dm-verdict">等待投递。</div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>按 TurnInputMode 分发，默认走 StartOrSteer</span><span class="ln">turn_input.rs L141</span></li>
+        <li><span>先试 steer_input，只有 NoActiveTurn 才开工</span><span class="ln">turn_input.rs L195</span></li>
+        <li><span>Regular 才收，Review 和 Compact 当场拒</span><span class="ln">turn_input.rs L507</span></li>
+        <li><span>空闲则 apply_started，再 spawn_task</span><span class="ln">turn_input.rs L242</span></li>
+        <li><span>插话写入 pending，并把相位打回 CurrentTurn</span><span class="ln">turn_input.rs L558</span></li>
+        <li><span>最终答案把投递相位 defer 到 NextTurn</span><span class="ln">input_queue.rs L206</span></li>
+        <li><span>工具项把相位 accept 回 CurrentTurn</span><span class="ln">stream_events_utils.rs L302</span></li>
+        <li><span>get_pending_input 看相位，再决定掏不掏信箱</span><span class="ln">input_queue.rs L297</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">选一个时机，点播放。看同一句话进当前轮、躺到下一轮，还是被挡在门口。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>用户插话的落点</b>空闲是 Started，采样中是 Steered。审查中是 NotSubmitted，不会偷偷新开一轮普通对话。</div>
+      <div class="dm-s"><b>子邮件的落点</b>答案已经上屏时，迟到的子邮件先躺在会话信箱。本轮认为没有待处理输入。</div>
+      <div class="dm-s"><b>门什么时候重开</b>用户再插一句，或模型再发出工具调用，相位翻回 CurrentTurn，积压的子邮件跟着进下一次采样。</div>
+    </div>
+    <div class="demo-caption">教学示意：筐与纸条是课程化隐喻，对应 turn 内 pending_input 与会话级 mailbox。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 提交立刻回判定</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">三种日常结局都不好受。立刻打断，前面两个文件的改动可能半成品留在磁盘上。排到下一轮，你只能看着它把剩下的文件按旧方向改完。塞进当前上下文却不叫醒循环，模型要到下一次自己开口才看得到，你补的约束等于迟到。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把这件事收成一个入口、三种模式。调用方选 <code>StartOrSteer</code>、<code>StartIfIdle</code> 或 <code>Steer</code>，不直接喊 start。Core 按现场忙闲和任务种类判定，立刻回 <code>Started</code>、<code>Steered</code> 或 <code>NotSubmitted</code>。回完决定就结束，不等 user-prompt hook，不等历史落盘，不等模型开始采样。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/session/turn_input.rs</code> 第 1 至 9 行；<code>codex-rs/protocol/src/turn_input.rs</code> 第 127 至 136 行</p>
+  <p class="reveal"><code>StartOrSteer</code> 的顺序和函数名一致。先试插话。只有返回 <code>NoActiveTurn</code>，才 <code>apply_started</code> 再 <code>spawn_task</code>。其他拒绝原因原样包装成 <code>NotSubmitted</code>，不会偷偷开工。TUI 实时语音也走这条，和默认入口共用同一套判定。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/session/turn_input.rs</code> 第 141 至 156 行、第 195 至 249 行</p>
+  <p class="reveal">设置不能先改再判定。<code>prepare</code> 先预览线程设置，预览失败直接 <code>InvalidRequest</code>。真正写入发生在 <code>apply_started</code> 或 <code>apply_steered</code>。被拒绝的输入连设置都不改。插话成功后只落持久设置，当前轮的 <code>TurnContext</code> 不换。开工专用的选项，比如结构化输出 schema，只在 Started 上用。</p>
+  <p class="src-note reveal paywall-locked xa-peek">出处：<code>codex-rs/core/src/session/turn_input.rs</code> 第 58 至 80 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="一条输入进入 handle 之后的三条出路">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="104" width="150" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="115" y="136" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">用户提交</text>
+      <text x="115" y="158" fill="#6b7280" text-anchor="middle" font-size="13">TurnInputMode</text>
+      <path fill="none" d="M198 140H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="276" y="96" width="196" height="88" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="374" y="132" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">handle</text>
+      <text x="374" y="156" fill="#6b7280" text-anchor="middle" font-size="13">先试 steer，空闲再开工</text>
+      <path fill="none" d="M472 118H542" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M472 140H542" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M472 162H542" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="550" y="36" width="350" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="725" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Started · 新开 Regular 轮</text>
+      <rect x="550" y="112" width="350" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="725" y="146" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Steered · 插进当前 Regular 轮</text>
+      <rect x="550" y="188" width="350" height="56" rx="10" fill="#ffffff" stroke="rgba(220,38,38,.45)"></rect>
+      <text x="725" y="222" fill="#dc2626" text-anchor="middle" font-size="14" font-weight="700">NotSubmitted · 线程保持原样</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：入口只做判定，hook、落盘和采样都还没开始。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">开工和插话必须在同一把锁里做完。先看有没有活动轮，再看 kind，再写入 pending，中间不能让另一次提交把轮次换掉。设置却要先预览后写入，因为拒绝路径必须保证线程不变。判定和入队拆成两次加锁，用户回车和子邮件同时到达时，可能出现判定时还空闲、入队时已经有人占坑的窗口。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 只有 Regular 收插话</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">审查任务自己再开一条 one-shot 子对话，压缩任务在换窗口。用户在这时候补一句「用 YAML」，没有当前轮的工具循环可以接住它。如果因此新开一轮普通对话，审查结果和压缩摘要会跟新对话抢同一个 <code>active_turn</code>。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked"><code>steer_input</code> 拿着 <code>active_turn</code> 锁做完全部检查。没有活动轮，或者有槽没有 task，都算 <code>NoActiveTurn</code>。<code>TaskKind</code> 只有 Regular、Review、Compact 三个变体。审查和压缩返回 <code>ActiveTurnNotSteerable</code>。<code>StartOrSteer</code> 也不会因此开工。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn_input.rs</code> 第 507 至 519 行；<code>codex-rs/core/src/state/turn.rs</code> 第 67 至 72 行</p>
+  <p class="reveal paywall-locked">检查过关之后，用户输入被推进 <code>pending_input</code>，同时把信箱相位打回 <code>CurrentTurn</code>。穷尽 match 在这里有业务后果：新加一种任务类型，编译器会逼你回答能不能插话。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn_input.rs</code> 第 546 至 564 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">内部任务有自己的生命周期。把用户插话焊进审查轮，等于让两种工作抢同一条执行槽。调用方收到拒绝，这条输入不会被默默排进一条新对话。换个语言重写，该守的仍是：能接住插话的任务和不能接住的任务，必须在类型上分开。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 一面翻牌决定能不能续写</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">主 agent 已经在屏幕上打出一段看起来像最终答案的话，子 agent 同时发回一条进度。并进去，用户已经看见的答案会被续写。一律等到下一轮，子 agent 的结果可能要隔一次采样才进模型。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">用户插话进的是 turn 内的 <code>pending_input</code>。子 agent 的信走会话级 <code>mailbox_pending_mails</code>。两套存货能不能并进当前轮，由 <code>MailboxDeliveryPhase</code> 决定。相位从 <code>CurrentTurn</code> 起步。用户已经看见最终答案之后切到 <code>NextTurn</code>。用户再插一句，或者模型又发出工具调用，相位会重开。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/state/turn.rs</code> 第 37 至 56 行</p>
+  <p class="reveal paywall-locked">切到 <code>NextTurn</code> 有一条例外：<code>pending_input</code> 里只要还有一条不是排队不叫醒的子邮件，就保持当前相位。取信时也看这面牌。<code>NextTurn</code> 时 turn 内 pending 也不拿，会话信箱更不掏。<code>CurrentTurn</code> 时先拿走 turn 内 pending，再掏会话信箱，拼在后面。所以最终答案落地之后，子邮件可以躺在信箱里，循环却认为没有待处理输入，本轮会收束。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/input_queue.rs</code> 第 206 至 227 行、第 284 至 336 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="信箱相位在 CurrentTurn 与 NextTurn 之间切换">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="80" y="70" width="280" height="100" rx="14" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="220" y="114" fill="#262d38" text-anchor="middle" font-size="16" font-weight="800">CurrentTurn</text>
+      <text x="220" y="140" fill="#6b7280" text-anchor="middle" font-size="13">pending 加信箱，并进本轮</text>
+      <rect x="580" y="70" width="280" height="100" rx="14" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="720" y="114" fill="#262d38" text-anchor="middle" font-size="16" font-weight="800">NextTurn</text>
+      <text x="720" y="140" fill="#6b7280" text-anchor="middle" font-size="13">两套存货都不掏</text>
+      <path fill="none" d="M360 90H572" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="466" y="78" fill="#6b7280" text-anchor="middle" font-size="13">最终答案上屏</text>
+      <path fill="none" d="M580 150H368" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="474" y="196" fill="#6b7280" text-anchor="middle" font-size="13">用户插话，或工具调用，或模型还要 follow-up</text>
+    </svg>
+    <div class="visual-caption">教学化状态图：答案上屏后关闸，明确的同轮工作再开门。</div>
+  </div>
+  <p class="reveal paywall-locked">什么算出用户可见的最终答案？助手正文，<code>phase</code> 是 Commentary 的不算，trim 之后为空的也不算。未打标的助手消息按最终答案处理。未打标的提供方默认走更安全的那条：先把信箱关到下一轮。审批、权限、提问、elicitation、动态工具是五张独立的 oneshot 表，不进这套信箱，各等各的回执。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/stream_events_utils.rs</code> 第 486 至 501 行；<code>codex-rs/core/src/state/turn.rs</code> 第 87 至 103 行</p>
+
+  <div class="key-line reveal paywall-locked">答案已经给用户看过，迟到的信默认不续写。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">「答案已经给用户看过」是一条产品边界，不依赖 Rust 或某个信箱实现。换语言重写，仍然需要一面翻牌：迟到的附属消息默认不续写已经上屏的答案；明确的同轮工作，比如用户再插一句或模型再调工具，再把门打开。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：两个参数，两条轨道</h4>
+      <p>DSH 对外是三个别名，底层共用 <code>send</code>。目标队列和唤不唤醒是两个正交参数。<code>followup</code> 自己独占一轮并叫醒，<code>steer</code> 插进下一站并叫醒，<code>inject</code> 上车不催司机。Inbox 是 <code>next-turn</code> 和 <code>next-step</code> 两条持久列表，<code>claim</code> 先掏空 <code>next-step</code>，目标是 <code>next-turn</code> 时再多取一条。</p>
+      <p>Codex 没有这三个公开函数。<code>StartOrSteer</code> 把空闲开工和忙时插话焊在一次判定里。相位这面翻牌，DSH 可以没有，因为它把等整轮和等下一站写成两条列表。代价是答案已经上屏之后，<code>next-step</code> 非空仍会续命当前 Turn。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-3" data-lesson-id="dsh-3">DSH · Inbox</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：一条队列，用优先级补时机</h4>
+      <p>还原源码里，用户输入、任务通知、孤儿权限走同一条 <code>commandQueue</code>。优先级是 now 大于 next 大于 later，同级 FIFO。用户命令默认 next，任务通知默认 later，用户输入不会被系统消息饿死。消费发生在当前流结束之后，没有步级插话。你补的那句 YAML 约束，要等当前生成器收尾才进模型。</p>
+      <span class="cmp-tag">已核对还原源码 · 2026-08-22 · messageQueueManager.ts</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>答案上屏之后，这封子邮件什么时候被看见</h3>
+      <p>最终答案落地之后，先入队一封 <code>trigger_turn: false</code> 的子邮件，再喂一条 <code>FunctionCall</code>。先在纸上推演 <code>get_pending_input</code> 该返回什么。</p>
+      <p>对照路径：正文落盘时相位切到 <code>NextTurn</code>，这封信看不见；工具项到达后相位重开，下一圈才能把它掏出来，并进同轮的下一次模型请求。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>提交立刻回判定，回的是收下还是拒绝，采样还没开始。只有 Regular 收插话，审查和压缩当场拒。答案上屏后默认不续写，用户再插或工具再调，才把门打开。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var scene = 'idle';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false, prevSt = null;
+  var clockEl = document.getElementById('dm-clock');
+  var kindEl = document.getElementById('dm-kind');
+  var phaseEl = document.getElementById('dm-phase');
+  var nowHost = document.getElementById('dm-now-items');
+  var nextHost = document.getElementById('dm-next-items');
+  var dropHost = document.getElementById('dm-drop-items');
+  var binNow = document.getElementById('dm-bin-now');
+  var binNext = document.getElementById('dm-bin-next');
+  var binDrop = document.getElementById('dm-bin-drop');
+  var binsBox = document.querySelector('.dm-bins');
+  var verdict = document.getElementById('dm-verdict');
+  var traceBox = document.getElementById('dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var textInput = document.getElementById('dm-text');
+  var IDLE = '选一个时机，点播放。看同一句话进当前轮、躺到下一轮，还是被挡在门口。';
+
+  function slipText(){
+    var t = (textInput.value || '').trim();
+    return t || '配置用 YAML，别用 JSON';
+  }
+  function enterEl(el){
+    el.classList.add('is-enter');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ el.classList.add('in'); });
+    });
+  }
+  function spawnGhost(el){
+    var box = binsBox.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    binsBox.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+  function snapshotSlips(stay, animate){
+    var oldRects = {};
+    [nowHost, nextHost, dropHost].forEach(function(host){
+      Array.prototype.slice.call(host.querySelectorAll('.dm-slip')).forEach(function(el){
+        oldRects[el.textContent] = el.getBoundingClientRect();
+        if (animate && !stay[el.textContent]) spawnGhost(el);
+      });
+    });
+    return oldRects;
+  }
+  function fillHost(host, items, animate, oldRects){
+    host.innerHTML = '';
+    if (!items || !items.length) {
+      var e = document.createElement('div');
+      e.className = 'dm-empty';
+      e.textContent = '空';
+      host.appendChild(e);
+      if (animate) enterEl(e);
+      return;
+    }
+    items.forEach(function(it){
+      var d = document.createElement('div');
+      d.className = 'dm-slip' + (it.mail ? ' mail' : '') + (it.ghost ? ' ghost' : '');
+      d.textContent = it.text;
+      host.appendChild(d);
+      var old = oldRects[it.text];
+      if (animate && old) {
+        var now = d.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (dx || dy) {
+          d.style.transition = 'none';
+          d.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+          requestAnimationFrame(function(){
+            d.style.transition = '';
+            d.style.transform = '';
+          });
+        }
+      } else if (animate) {
+        enterEl(d);
+      }
+    });
+  }
+  function setBinState(el, items, isActive, doFire, animate){
+    var n = items && items.length ? items.length : 0;
+    el.classList.toggle('on', n > 0);
+    el.classList.toggle('active', !!isActive);
+    el.classList.remove('fill-1', 'fill-2');
+    if (n === 1) el.classList.add('fill-1');
+    else if (n >= 2) el.classList.add('fill-2');
+    el.classList.remove('firing');
+    if (animate && doFire) {
+      void el.offsetWidth;
+      el.classList.add('firing');
+    }
+  }
+  function countOf(st, key){
+    if (!st || !st[key]) return 0;
+    return st[key].length;
+  }
+  function buildSteps(){
+    var msg = slipText();
+    var user = {text: '用户 · ' + msg};
+    var mail = {text: '子 agent · 第三个文件改完了', mail: true};
+    if (scene === 'idle') {
+      return [
+        {cap:'线程空闲，没有活动轮。这句话走 StartOrSteer，先去试 steer。',trace:0,clock:'空闲',kind:'无',phase:'—',left:[],right:[],drop:[],v:'',vk:''},
+        {cap:'steer_input 看见没有 ActiveTurn，返回 NoActiveTurn。其他拒绝原因到这里会停住，不会偷偷开工。',trace:1,clock:'空闲',kind:'无',phase:'—',left:[],right:[],drop:[],v:'steer 失败：NoActiveTurn',vk:'hold'},
+        {cap:'空闲才轮到开工。apply_started 写入线程设置和开工选项，再 spawn_task 开一轮 Regular。',trace:3,clock:'空闲',kind:'Regular',phase:'CurrentTurn',left:[],right:[],drop:[],v:'准备 Started',vk:'hold'},
+        {cap:'Core 回 Started。采样还没开始。这句话就是这一轮的第一批输入，不是插话。',trace:3,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[user],right:[],drop:[],v:'Started · 新开 Regular 轮',vk:'ok',fin:true}
+      ];
+    }
+    if (scene === 'busy') {
+      return [
+        {cap:'模型正在采样。活动任务是 Regular，相位停在 CurrentTurn。同一句话再次送进来。',trace:0,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[],right:[],drop:[],v:'',vk:''},
+        {cap:'StartOrSteer 先试 steer_input。有活动轮，而且 kind 是 Regular，放行。',trace:2,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[],right:[],drop:[],v:'Regular 可插话',vk:'hold'},
+        {cap:'输入推进 pending_input，相位保持 CurrentTurn。Core 回 Steered。当前轮的 TurnContext 不换。',trace:4,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[user],right:[],drop:[],v:'Steered · 插进当前轮',vk:'ok'},
+        {cap:'第一次采样结束后，get_pending_input 会把这张纸条掏走，并进同轮的下一次模型请求。',trace:7,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[user],right:[],drop:[],v:'Steered · 等下一次采样看见',vk:'ok',fin:true}
+      ];
+    }
+    if (scene === 'answer') {
+      return [
+        {cap:'助手正文已经上屏，按最终答案处理。相位从 CurrentTurn 翻到 NextTurn。',trace:5,clock:'最终答案',kind:'Regular',phase:'NextTurn',left:[],right:[],drop:[],v:'相位关闭，本轮视为没有待处理输入',vk:'hold'},
+        {cap:'子 agent 来信。它不走 handle，先入队会话信箱。相位是 NextTurn，这封信只进右筐。',trace:7,clock:'最终答案',kind:'Regular',phase:'NextTurn',left:[],right:[mail],drop:[],v:'子邮件排队 · 本轮看不见',vk:'hold'},
+        {cap:'用户把同一句话再送进来。steer_input 仍是 Regular，写入 pending，并把相位打回 CurrentTurn。',trace:4,clock:'最终答案',kind:'Regular',phase:'CurrentTurn',left:[user],right:[mail],drop:[],v:'Steered · 相位重开',vk:'ok'},
+        {cap:'下一圈 get_pending_input 先拿 pending，再掏信箱。用户插话把积压的子邮件一起带走。',trace:7,clock:'采样中',kind:'Regular',phase:'CurrentTurn',left:[user, mail],right:[],drop:[],v:'本轮一次取走两封',vk:'ok',fin:true}
+      ];
+    }
+    return [
+      {cap:'当前轮是 Review。审查自己再开一条子对话，没有普通工具循环可以接住插话。',trace:0,clock:'审查中',kind:'Review',phase:'CurrentTurn',left:[],right:[],drop:[],v:'',vk:''},
+      {cap:'StartOrSteer 先试 steer_input。kind 不是 Regular，返回 ActiveTurnNotSteerable。',trace:2,clock:'审查中',kind:'Review',phase:'CurrentTurn',left:[],right:[],drop:[],v:'ActiveTurnNotSteerable · Review',vk:'warn'},
+      {cap:'其他拒绝原因原样包装成 NotSubmitted。StartOrSteer 不会因此新开一轮普通对话。',trace:2,clock:'审查中',kind:'Review',phase:'CurrentTurn',left:[],right:[],drop:[user],v:'NotSubmitted · 设置未改',vk:'warn'},
+      {cap:'纸条停在门口。根 turn id 仍是审查轮原来的值，插话不会改谱系。',trace:2,clock:'审查中',kind:'Review',phase:'CurrentTurn',left:[],right:[],drop:[user],v:'NotSubmitted · ActiveTurnNotSteerable',vk:'warn',fin:true}
+    ];
+  }
+  function paint(st, animate){
+    var stay = {};
+    [st.left, st.right, st.drop].forEach(function(arr){
+      (arr || []).forEach(function(it){ stay[it.text] = true; });
+    });
+    var oldRects = snapshotSlips(stay, animate);
+    clockEl.textContent = '时刻 · ' + st.clock;
+    kindEl.textContent = '任务 · ' + st.kind;
+    phaseEl.textContent = '相位 · ' + st.phase;
+    clockEl.className = 'dm-pill hot';
+    kindEl.className = 'dm-pill' + (st.kind === 'Review' ? ' warn' : (st.kind === 'Regular' ? ' hot' : ''));
+    phaseEl.className = 'dm-pill' + (st.phase === 'NextTurn' ? ' warn' : (st.phase === 'CurrentTurn' ? ' hot' : ''));
+    fillHost(nowHost, st.left, animate, oldRects);
+    fillHost(nextHost, st.right, animate, oldRects);
+    fillHost(dropHost, st.drop, animate, oldRects);
+    var focusNow = countOf(st, 'left') > 0;
+    var focusNext = countOf(st, 'right') > 0;
+    var focusDrop = countOf(st, 'drop') > 0;
+    binsBox.classList.toggle('has-focus', focusNow || focusNext || focusDrop);
+    setBinState(binNow, st.left, focusNow, countOf(st, 'left') > countOf(prevSt, 'left'), animate);
+    setBinState(binNext, st.right, focusNext, countOf(st, 'right') > countOf(prevSt, 'right'), animate);
+    setBinState(binDrop, st.drop, focusDrop, countOf(st, 'drop') > countOf(prevSt, 'drop'), animate);
+    var vText = st.v || '等待投递。';
+    verdict.className = 'dm-verdict' + (st.vk ? ' ' + st.vk : '');
+    verdict.textContent = vText;
+    if (animate && (st.vk === 'ok' || st.vk === 'warn') && (!prevSt || prevSt.vk !== st.vk || prevSt.v !== st.v)) {
+      void verdict.offsetWidth;
+      verdict.classList.add('pop');
+    }
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){ el.classList.toggle('on', n === st.trace); });
+    }
+    if (animate) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+    prevSt = st;
+  }
+  function holdFor(i){
+    var st = steps[i];
+    var before = i > 0 ? steps[i - 1] : null;
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var slips = countOf(st, 'left') + countOf(st, 'right') + countOf(st, 'drop');
+    var grew = slips > (countOf(before, 'left') + countOf(before, 'right') + countOf(before, 'drop'));
+    if (st.vk === 'ok' || st.vk === 'warn') return grew ? 2000 : 1700;
+    if (grew) return 1800;
+    if (st.vk === 'hold') return 1500;
+    return 1100;
+  }
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0; prevSt = null;
+    steps = buildSteps();
+    binsBox.classList.remove('has-focus');
+    Array.prototype.slice.call(binsBox.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    clockEl.textContent = '时刻 · —'; clockEl.className = 'dm-pill';
+    kindEl.textContent = '任务 · —'; kindEl.className = 'dm-pill';
+    phaseEl.textContent = '相位 · —'; phaseEl.className = 'dm-pill';
+    fillHost(nowHost, [], false, {}); fillHost(nextHost, [], false, {}); fillHost(dropHost, [], false, {});
+    setBinState(binNow, [], false, false, false);
+    setBinState(binNext, [], false, false, false);
+    setBinState(binDrop, [], false, false, false);
+    verdict.className = 'dm-verdict'; verdict.textContent = '等待投递。';
+    traceBox.classList.remove('is-live');
+    traceRows.forEach(function(el){ el.classList.remove('on'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    scene = b.getAttribute('data-scene');
+    reset();
+  });
+  textInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault();
+      reset();
+      play();
+    }
+  });
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-inbox'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

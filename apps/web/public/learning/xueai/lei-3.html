@@ -1,0 +1,1137 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"lei-3",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=lei-3',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="雷军创业课第 3 节：选方向的三问，你喜欢什么、你能干什么、哪个事情足够大。毒霸 vs 词霸、多玩转 YY 的天花板故事，以及 Go Big Market。">
+<meta name="author" content="洛小山">
+<title>选方向：Go Big Market | 雷军创业课</title>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+<style>
+:root{--lei:#f97316;--lei-deep:#c2410c;--lei-soft:rgba(249,115,22,.08)}
+.lesson-header .kicker{color:var(--lei)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:13px;font-weight:700}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+.quote-callout{background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.28);border-radius:14px;padding:18px 22px}
+.quote-callout b{color:var(--lei-deep)}
+
+/* 三问筛选器 */
+.q3-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.q3-btn{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit;text-align:left;min-height:44px;box-shadow:var(--shadow-card)}
+.q3-btn:hover{border-color:rgba(0,0,0,.15)}
+.q3-btn h4{font-size:15px;font-weight:800;color:var(--text)}
+.q3-state{font-size:13px;font-weight:800;color:var(--sub)}
+.q3-btn.yes{border-color:var(--lei);background:rgba(249,115,22,.05)}
+.q3-btn.yes h4{color:var(--lei-deep)}
+.q3-btn.yes .q3-state{color:var(--lei)}
+.q3-verdict{margin-top:14px;border-radius:12px;padding:16px 19px;font-size:15px;line-height:1.85;background:rgba(0,0,0,.03);border:1.5px solid var(--border);transition:all .25s}
+.q3-verdict.hot{background:var(--lei-soft);border-color:rgba(249,115,22,.3)}
+.q3-verdict b{color:var(--lei-deep)}
+
+/* 天花板对比条 */
+.cap-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.cap-tab{padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit;text-align:left;min-height:44px;box-shadow:var(--shadow-card)}
+.cap-tab h4{font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px}
+.cap-tab p{font-size:13px;color:var(--sub)}
+.cap-tab.active{border-color:var(--lei);background:rgba(249,115,22,.05)}
+.cap-tab.active h4{color:var(--lei-deep)}
+.cap-stage{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:14px;box-shadow:var(--shadow-card)}
+.cap-row{margin-top:16px}
+.cap-row:first-child{margin-top:0}
+.cap-label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:7px}
+.cap-label .cn{font-size:15px;font-weight:800;color:var(--text)}
+.cap-label .cv{font-size:14px;font-weight:800;color:var(--lei-deep);font-family:"SF Mono",Menlo,monospace}
+.cap-track{height:18px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden}
+.cap-fill{height:100%;border-radius:999px;width:0;transition:width .8s cubic-bezier(.22,.9,.35,1)}
+.cap-fill.small{background:#9ca3af}
+.cap-fill.big{background:var(--lei)}
+.cap-note{margin-top:16px;font-size:14.5px;line-height:1.8;color:var(--text);background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.25);border-radius:12px;padding:13px 17px}
+.cap-note b{color:var(--lei-deep)}
+
+/* 投你太太测验 */
+.wife-chat{background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-top:12px}
+.wife-bar{padding:10px 16px;background:rgba(0,0,0,.02);font-size:14px;font-weight:700;color:var(--sub)}
+.wife-body{padding:16px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.msg{padding:10px 14px;border-radius:10px;font-size:14.5px;line-height:1.65;opacity:0;transform:translateY(8px);transition:all .35s ease}
+.msg.show{opacity:1;transform:translateY(0)}
+.msg.lei{background:var(--lei-soft);color:var(--lei-deep);font-weight:600}
+.msg.founder{background:rgba(0,0,0,.045);color:var(--text)}
+.btn{padding:11px 24px;border-radius:9px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px}
+.btn-p{background:var(--lei);color:#fff}
+.btn-p:hover{filter:brightness(1.08)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-r{background:rgba(0,0,0,.05);color:var(--sub);border:1px solid var(--border)}
+.ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.hint{font-size:13px;color:var(--sub)}
+.wife-choice{display:none;margin-top:14px}
+.wife-choice.show{display:block}
+.wc-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.wc-btn{padding:15px 18px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit;font-size:15px;font-weight:800;color:var(--text);min-height:44px;box-shadow:var(--shadow-card)}
+.wc-btn:hover{border-color:var(--lei)}
+.wc-btn.picked{border-color:var(--lei);background:rgba(249,115,22,.05);color:var(--lei-deep)}
+.wife-verdict{display:none;margin-top:12px}
+.wife-verdict.show{display:block}
+
+/* 市场测算 */
+.calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.calc-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;text-align:center;box-shadow:var(--shadow-card)}
+.calc-card .cv{font-size:28px;font-weight:800;color:var(--lei);font-family:"SF Mono",Menlo,monospace;line-height:1.3}
+.calc-card .cl{font-size:12.5px;color:var(--sub);font-weight:700;margin-top:4px;line-height:1.5}
+
+.src-note{margin-top:28px;font-size:13px;color:var(--sub)}
+@media (max-width:768px){
+  .q3-grid,.calc-grid{grid-template-columns:1fr}
+  .cap-tabs,.wc-btns{grid-template-columns:1fr}
+}
+
+/* OPC 视角卡片组 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--lei-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--lei)}
+/* 本节要点清单 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--lei-soft);color:var(--lei);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--lei-deep)}
+@media(max-width:768px){.opc-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="选方向：Go Big Market"><meta property="og:description" content="雷军创业课第 3 节：选方向的三问，你喜欢什么、你能干什么、哪个事情足够大。毒霸 vs 词霸、多玩转 YY 的天花板故事，以及 Go Big Market。"><meta property="og:url" content="https://xueai.miyang.cn/slides/lei-3.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/lei-3.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">雷军创业课 · 3 / 14</div>
+    <h1>选方向：Go Big Market</h1>
+    <p class="subtitle">「你们干的事情，都不一定是你们能干的最大的事情。」这一节是雷军办金山最大的后悔和总结：方向怎么选、天花板怎么算，以及一句他用得比发明人还多的话：Go Big Market，做最肥的市场。</p>
+    <div class="chips"><span class="chip">方向三问</span><span class="chip">毒霸 vs 词霸</span><span class="chip">多玩转 YY</span><span class="chip">Go Big Market</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>兴趣是第一驱动力，但天花板由市场决定：毒霸与词霸、多玩与 YY 的两次教训</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">从零开始，先问三个问题</div>
+    <div class="quote-callout">
+      <p>雷军特别喜欢问从零开始的创业者三个问题：<b>你喜欢什么？你能干什么？你认为哪个事情足够大、你能干得了？</b>选方向就是在这三个圈的交集里找答案。他说自己做小米「运气很好，做了一件我喜欢干、我能干，而且市场规模足够大的事」。</p>
+    </div>
+    <p class="desc" style="margin-top:12px">第一问为什么排在最前面？雷军试过反着来。柳传志说「要把需要变成爱好」，他拿来激励自己，后来发现「把需要变成爱好挺难的，这有点违背人性了」。</p>
+    <p class="desc" style="margin-top:12px">金山转型做网络游戏时，他号召所有同事必须玩游戏，不玩扣发年终奖，逼着所有人游戏过关。多年下来的结果：还是有很多人骨子里不喜欢玩游戏，只是在大浪潮下违心地说「我爱玩游戏」。「你说他不喜欢玩游戏，他怎么可能把游戏做好呢？」</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 方向三问筛选器</div>
+    <p class="desc">拿一个你正在考虑的方向，点击回答三问，看雷军的判定。</p>
+    <div class="q3-grid">
+      <button class="q3-btn" id="q3a" onclick="q3Toggle(0)"><h4>你喜欢这件事吗？</h4><span class="q3-state">还没回答 · 点击切换</span></button>
+      <button class="q3-btn" id="q3b" onclick="q3Toggle(1)"><h4>你能干得了吗？</h4><span class="q3-state">还没回答 · 点击切换</span></button>
+      <button class="q3-btn" id="q3c" onclick="q3Toggle(2)"><h4>市场足够大吗？</h4><span class="q3-state">还没回答 · 点击切换</span></button>
+    </div>
+    <div class="q3-verdict" id="q3Verdict"></div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">两个天花板的故事</div>
+    <p class="desc">「选择自己喜欢干的、自己能干的，在这个领域里面找大的」，这句总结的背后是两笔真实的账。</p>
+    <p class="desc">第一笔是雷军自己的：当年在毒霸和词霸之间，他因为「做毒霸需要跟公安部门打交道，有点烦」选了词霸，可毒霸的市场是词霸的一百倍以上。等金山毒霸推出，已经比词霸晚了四年，「一场血战，打到今天还是第二名」。</p>
+    <p class="desc">第二笔是李学凌的：先做多玩游戏门户，雷军提醒他「撑死了一亿美金的价值」，拼命干了三年，发现真的是一亿美金；改做 YY 之后，从 2008 年 7 月 28 日发布算起，两年四个月估值过十亿美金，头上还压着一个叫腾讯的大哥。</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示二 · 天花板对比</div>
+    <p class="desc">点击切换两组案例，对比条按市场规模等比缩放。注意小的那根有多短。</p>
+    <div class="cap-tabs">
+      <button class="cap-tab active" id="ct0" onclick="capPick(0)"><h4>词霸 vs 毒霸</h4><p>雷军办金山最大的后悔</p></button>
+      <button class="cap-tab" id="ct1" onclick="capPick(1)"><h4>多玩 vs YY</h4><p>李学凌的换战场实验</p></button>
+    </div>
+    <div class="cap-stage">
+      <div class="cap-row">
+        <div class="cap-label"><span class="cn" id="cn0"></span><span class="cv" id="cv0"></span></div>
+        <div class="cap-track"><div class="cap-fill small" id="cf0"></div></div>
+      </div>
+      <div class="cap-row">
+        <div class="cap-label"><span class="cn" id="cn1"></span><span class="cv" id="cv1"></span></div>
+        <div class="cap-track"><div class="cap-fill big" id="cf1"></div></div>
+      </div>
+      <div class="cap-note" id="capNote"></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">Go Big Market：小米为什么值钱</div>
+    <p class="desc">「Go big market，做最肥的市场」，雷军说这话是陈一舟发明的，「我觉得他讲得特好，所以我用的次数比他用的次数更多」。</p>
+    <p class="desc">小米值钱的原因不神秘：智能手机的市场值那么多钱。iPhone 发布五年，收入可能到一千亿美金规模；全球一年卖十六亿部手机，都在把功能机换成智能机。雷军给中国市场算的账：</p>
+    <div class="calc-grid">
+      <div class="calc-card"><div class="cv">4 亿部</div><div class="cl">中国一年新买的手机，其中两点几亿是智能机，再过一段时间会是百分之百</div></div>
+      <div class="calc-card"><div class="cv">× 1000 元</div><div class="cl">按平均每部智能机一千块人民币计算</div></div>
+      <div class="calc-card"><div class="cv">≈ 4000 亿</div><div class="cl">一年近四千亿人民币，还不算上下游和衍生业务</div></div>
+    </div>
+    <div class="quote-callout" style="margin-top:14px">
+      <p>「如果我不是做这个市场的话，我怎么可能第一年开始卖产品就是一百亿人民币呢？如果我今天还是做 WPS，在中国加上微软，加起来才十亿人民币。」<b>方向足够大的时候，你的机会就足够大。如果你干了一个很小的方向，你再干死干活，都干不了多大规模。</b>规模，受限于你所处的市场。</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示三 · 投你，还是投你太太？</div>
+    <p class="desc">市场再大，还有最后一关：你是不是干这件事的人。这是雷军见过的一个真实创业者。点击「下一句」听完对话，然后做出你的投资决定。</p>
+    <div class="wife-chat">
+      <div class="wife-bar">雷军 × 一位想开服装店的创业者</div>
+      <div class="wife-body" id="wifeBody"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="wifeNext" onclick="wifeStep()">下一句</button>
+      <button class="btn btn-r" onclick="wifeReset()">重播</button>
+      <span class="hint" id="wifeHint"></span>
+    </div>
+    <div class="wife-choice" id="wifeChoice">
+      <p style="font-size:15px;font-weight:800">对话结束。如果你是投资人，你投谁？</p>
+      <div class="wc-btns">
+        <button class="wc-btn" id="wc0" onclick="wifePick(0)">投他</button>
+        <button class="wc-btn" id="wc1" onclick="wifePick(1)">投他太太</button>
+      </div>
+      <div class="wife-verdict" id="wifeVerdict">
+        <div class="quote-callout">
+          <p>雷军当场问的就是这句：<b>「我是投资你，还是投资你太太？」</b>他的结论：「当你是这个公司最重要的人的时候，你一定要想清楚，你是不是这个公司的核心价值，你能不能做你懂的东西。如果这都是你太太懂的东西，能不能让你太太创业，你帮你太太打下手？这个公司会更容易成功。」三问筛出来的方向，最后还要过这一关：做自己懂的事。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">选方向 · 独立开发者版</span>
+        <p><b>独立开发者最常犯的错，恰好就是「选了词霸」。</b>会写代码的人天然爱做开发者工具：熟悉、顺手、不用跟公安部门打交道，但那往往就是「词霸市场」；同样的技术栈换个人群（给外贸商家、给宝妈、给自媒体作者），可能就是一百倍的盘子。AI 应用尤其如此：模型能力是通用的，天花板几乎完全由你选的人群和场景决定。</p>
+        <p style="margin-top:8px"><b>动手之前先算一笔多玩式的账：这个方向撑死了值多少？</b>如果答案是「一个不错的副业」，而你想要的不止于此，学李学凌，换战场要趁早。</p>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">核心价值 · 一人公司版</span>
+        <p><b>「投你还是投你太太」对一人公司是个更狠的问题，因为没有太太可以让贤。</b>你就是全部团队，所以「做自己懂的东西」是硬约束：不懂电商就别做选品工具，不懂医疗就别碰问诊产品，哪怕市场再肥。</p>
+        <p style="margin-top:8px">可行的路径是雷军那条的变体：<b>要么先把自己变成目标用户</b>（真金白银地用半年），<b>要么找一个「懂的人」深度绑定</b>。三问的完整版是四问：喜欢、能干、市场大，以及这事的核心价值在不在你身上。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>选方向三问</b>：你喜欢什么、你能干什么、哪个事情足够大。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>兴趣排第一</b>：「把需要变成爱好」违背人性，不喜欢的事做不好。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>在喜欢且能干的领域里选最大的市场</b>：词霸和毒霸差一百倍，多玩和 YY 差十倍，天花板在动手之前就定了。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>Go Big Market，最后再自问一句</b>：这家公司的核心价值，是不是你。</p></div>
+    </div>
+    <p class="src-note">素材来源：雷军创业公开课口述整理</p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 交互一：方向三问筛选器 ── */
+var q3 = [false, false, false];
+var Q3_IDS = ['q3a', 'q3b', 'q3c'];
+
+function q3Toggle(idx) {
+  q3[idx] = !q3[idx];
+  var btn = document.getElementById(Q3_IDS[idx]);
+  btn.classList.toggle('yes', q3[idx]);
+  btn.querySelector('.q3-state').textContent = q3[idx] ? '是 ✓' : '否 · 点击切换';
+  q3Render();
+}
+
+function q3Render() {
+  var v = document.getElementById('q3Verdict');
+  var like = q3[0], can = q3[1], big = q3[2];
+  var html;
+  if (like && can && big) {
+    html = '<b>三问全过：小米式方向。</b>雷军对这种组合的评价：「我真的很好很好的运气，做了一件我喜欢干、我能干，而且市场规模足够大的事。」他也说得很直白：方向足够大的时候，你的机会就足够大。剩下的事，是回到第 2 节想好怎么死。';
+  } else if (like && can && !big) {
+    html = '<b>多玩式方向：喜欢、能干，但天花板低。</b>李学凌拼命干了三年，验证了雷军的预言：真的就是一亿美金。这种方向不是不能做，但要先想清楚：「如果你的公司天花板就是一亿美金，你无论怎么折腾就是一亿美金。」换个大战场，可能两年就到十亿。';
+  } else if (!like && can && big) {
+    html = '<b>金山游戏式方向：市场大、你也能干，但你不喜欢。</b>雷军试过用行政命令解决这个问题（不玩游戏扣年终奖），结果是员工违心地说爱玩。「你说他不喜欢玩游戏，他怎么可能把游戏做好呢？」把需要变成爱好违背人性，慎入。';
+  } else if (like && !can && big) {
+    html = '<b>服装店式方向：喜欢、市场也大，但能干的人不是你。</b>这正是「投你还是投你太太」那道题（见本页最后一个演示）。雷军的建议：要么让懂的人主导、你打下手，要么先把自己变成懂的人，再谈创业。';
+  } else if (like && !can && !big) {
+    html = '喜欢，但既不能干、市场又小：<b>这是爱好，不是方向。</b>爱好很珍贵，留着它给生活，别急着让它养活你。';
+  } else if (!like && can && !big) {
+    html = '不喜欢、市场也小，只是恰好会干：<b>这是一份工作的形状，不是一次创业的形状。</b>按雷军的筛选逻辑，三问一个都不该缺，这个方向缺了两个。';
+  } else if (!like && !can && big) {
+    html = '只剩市场大这一条。<b>肥的市场轮不到不喜欢也不能干的人。</b>Go Big Market 的前提是前两问先过。雷军的原话顺序是「选择自己喜欢干的、自己能干的，在这个领域里面找大的」。';
+  } else {
+    html = '三问都还是「否」。点击上方卡片切换回答。顺序建议按雷军问的来：<b>先问喜欢，再问能干，最后问够不够大。</b>';
+  }
+  v.innerHTML = html;
+  v.classList.toggle('hot', like && can && big);
+}
+q3Render();
+
+/* ── 交互二：天花板对比条 ── */
+var CAPS = [
+  {
+    a: { name: '金山词霸', val: '基准 1 倍', pct: 1.2 },
+    b: { name: '金山毒霸', val: '100 倍以上', pct: 100 },
+    note: '「毒霸的市场是词霸市场的一百倍以上的规模。」因为「跟公安部门打交道有点烦」，雷军先做了词霸，毒霸晚推出四年，从 1997 年打到十五年后<b>还是第二名</b>。他自己复盘：「毒霸和词霸我都能做，事实上最后我也都做了，我干嘛不先做毒霸呢？先做大的。」'
+  },
+  {
+    a: { name: '多玩游戏门户 · 3 年', val: '约 1 亿美金', pct: 10 },
+    b: { name: 'YY · 2 年 4 个月', val: '10 亿美金+', pct: 100 },
+    note: '多玩干了三年，天花板果然是一亿美金。YY 从 2008 年 7 月 28 日发布，<b>两年四个月估值过十亿美金</b>，融了小一亿美金，头上还压着腾讯。「你要换了一个几十亿上百亿美金的空间，你可能两年你就做到十亿美金了。」'
+  }
+];
+
+function capPick(idx) {
+  document.getElementById('ct0').classList.toggle('active', idx === 0);
+  document.getElementById('ct1').classList.toggle('active', idx === 1);
+  var d = CAPS[idx];
+  document.getElementById('cn0').textContent = d.a.name;
+  document.getElementById('cv0').textContent = d.a.val;
+  document.getElementById('cn1').textContent = d.b.name;
+  document.getElementById('cv1').textContent = d.b.val;
+  document.getElementById('capNote').innerHTML = d.note;
+  var f0 = document.getElementById('cf0');
+  var f1 = document.getElementById('cf1');
+  f0.style.width = '0';
+  f1.style.width = '0';
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      f0.style.width = d.a.pct + '%';
+      f1.style.width = d.b.pct + '%';
+    });
+  });
+}
+capPick(0);
+lessonOnView(document.querySelector('.cap-stage'), function () { capPick(0); });
+
+/* ── 交互三：投你还是投你太太 ── */
+var WIFE = [
+  { cls: 'lei',     text: '雷军：你为什么做服装店？' },
+  { cls: 'founder', text: '创业者：我太太喜欢服装。' },
+  { cls: 'lei',     text: '雷军：你能选择好的衣服吗？' },
+  { cls: 'founder', text: '创业者：我太太会选择。' },
+  { cls: 'lei',     text: '雷军：你知道今年流行的趋势吗？' },
+  { cls: 'founder', text: '创业者：我太太知道。' }
+];
+var wifeCur = 0;
+
+function wifeStep() {
+  if (wifeCur >= WIFE.length) return;
+  var m = WIFE[wifeCur];
+  var body = document.getElementById('wifeBody');
+  var el = document.createElement('div');
+  el.className = 'msg ' + m.cls;
+  el.textContent = m.text;
+  body.appendChild(el);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('show'); }); });
+  wifeCur++;
+  document.getElementById('wifeHint').textContent = wifeCur + ' / ' + WIFE.length;
+  if (wifeCur >= WIFE.length) {
+    document.getElementById('wifeNext').disabled = true;
+    document.getElementById('wifeChoice').classList.add('show');
+  }
+}
+
+function wifeReset() {
+  wifeCur = 0;
+  document.getElementById('wifeBody').innerHTML = '';
+  document.getElementById('wifeHint').textContent = '';
+  document.getElementById('wifeNext').disabled = false;
+  document.getElementById('wifeChoice').classList.remove('show');
+  document.getElementById('wifeVerdict').classList.remove('show');
+  document.getElementById('wc0').classList.remove('picked');
+  document.getElementById('wc1').classList.remove('picked');
+}
+
+function wifePick(idx) {
+  document.getElementById('wc0').classList.toggle('picked', idx === 0);
+  document.getElementById('wc1').classList.toggle('picked', idx === 1);
+  document.getElementById('wifeVerdict').classList.add('show');
+}
+
+lessonOnView(document.getElementById('wifeBody'), function () {
+  if (wifeCur === 0) wifeStep();
+});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

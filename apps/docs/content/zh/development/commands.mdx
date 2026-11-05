@@ -1,0 +1,73 @@
+---
+title: 命令速查
+description: "本页汇总全仓、单 workspace 和 MCP CLI 的常用命令，路径均相对仓库根目录。"
+---
+
+本页汇总全仓（Turbo）、单 workspace（pnpm filter）和 MCP CLI 的常用命令。路径都相对仓库根目录。
+
+## 怎么运行全仓命令（Turbo）？
+
+```bash
+pnpm install      # 装全部依赖，解析 workspace link
+pnpm run dev      # turbo dev —— 每个 workspace 的 dev 脚本
+pnpm run build    # turbo build —— 尊重任务依赖
+pnpm run lint     # turbo lint
+pnpm run test     # turbo test
+```
+
+## 怎么运行单个 workspace 的命令（pnpm filter）？
+
+```bash
+pnpm --filter @magic-resume/web dev
+pnpm --filter @magic-resume/web build
+pnpm --filter @magic-resume/web lint
+pnpm --filter @magic-resume/web i18n:check
+
+cd apps/docs/content && npx mint dev            # 文档站点（Mintlify 本地预览）
+
+```
+
+以下公共包命令在 [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit) 根目录执行：
+
+```bash
+pnpm --filter @magic-resume-kit/resume-schema build
+pnpm --filter @magic-resume-kit/resume-schema test  # node --test
+
+pnpm --filter @magic-resume-kit/resume-templates build
+
+pnpm --filter @magic-resume-kit/mcp build
+pnpm --filter @magic-resume-kit/mcp test
+pnpm --filter @magic-resume-kit/mcp lint            # tsc --noEmit
+```
+
+## 安装后有哪些 MCP CLI 命令？
+
+```bash
+npx -y @magic-resume-kit/mcp config set --api-url <url> --pat <token>
+npx -y @magic-resume-kit/mcp config print
+npx -y @magic-resume-kit/mcp config clear
+npx -y @magic-resume-kit/mcp mcp                    # 启动 stdio 服务器
+```
+
+## 有哪些偶尔会用的命令？
+
+```bash
+# 在 magic-resume-kit 中：只重新生成 JSON Schema 产物
+pnpm --filter @magic-resume-kit/resume-schema build
+
+# 回到 Magic-Resume：Web 应用的 bundle 分析
+pnpm --filter @magic-resume/web analyze
+
+# Web 应用的生产构建
+pnpm --filter @magic-resume/web build:prod
+```
+
+## Husky 与 lint-staged 会自动运行哪些检查？
+
+这些在 `git commit` 时自动跑：
+
+- 对暂存的 `*.{js,jsx,ts,tsx}` 跑 ESLint `--fix`
+- 对暂存的 `apps/web` 文件跑 `i18n:check`
+- 对暂存的 JSON / Markdown / YAML 跑 Prettier
+
+真正的紧急情况下要跳过：`git commit --no-verify`。但是请不要。

@@ -1,0 +1,774 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-8",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-8',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>这次回答，我要不要去查原文 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl ol{margin:0;padding:0;list-style:none;counter-reset:tpl}
+.tpl li{counter-increment:tpl;position:relative;padding-left:34px;margin-bottom:18px}
+.tpl li:last-child{margin-bottom:0}
+.tpl li:before{content:counter(tpl);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tpl li b{display:block;font-size:12.5px;font-weight:700;color:var(--accent-deep);margin-bottom:5px}
+.tpl li q{display:block;quotes:"「" "」";font-size:13.5px;line-height:1.95;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 170px}
+.sl-track{flex:1 1 240px;min-width:200px}
+.sl-track input[type=range]{width:100%;height:28px;accent-color:var(--accent);cursor:pointer}
+.sl-ticks{position:relative;height:22px;margin:0 9px}
+.sl-ticks span{position:absolute;transform:translateX(-50%);font-size:10.5px;font-weight:700;color:var(--sub);white-space:nowrap;transition:color .15s}
+.sl-ticks span:before{content:"";display:block;width:1px;height:5px;margin:0 auto 3px;background:var(--border);transition:background .15s}
+.sl-ticks span:nth-child(1){left:0;transform:none}
+.sl-ticks span:nth-child(2){left:25%}
+.sl-ticks span:nth-child(3){left:50%}
+.sl-ticks span:nth-child(4){left:75%}
+.sl-ticks span:nth-child(5){left:auto;right:0;transform:none}
+.sl-ticks span.on{color:var(--accent)}
+.sl-ticks span.on:before{background:var(--accent)}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-seg button.want{animation:wantPulse 1.3s ease infinite}
+@keyframes wantPulse{0%,100%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 0 7px rgba(180,83,9,.06)}}
+.dm-track{height:4px;border-radius:99px;background:var(--border);margin:6px 0 20px;overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s cubic-bezier(.25,1,.5,1)}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pane{padding:16px 18px;font-size:13.5px;line-height:1.9;color:var(--text);min-height:186px;overflow-wrap:anywhere;word-break:break-word}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-enter{opacity:0;transform:translateY(10px)}
+.dm-enter.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-body{max-height:0;overflow:hidden;padding:0;transition:max-height .5s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+.dm-body.open{max-height:320px;padding:2px 0 4px}
+.dm-ans b{display:block;font-size:12.5px;color:var(--accent-deep);margin:0 0 8px}
+.dm-ans p{margin:0;font-size:13.5px;line-height:1.9;color:var(--text)}
+.dm-hit{color:var(--faint);padding:0 3px;border-radius:4px;transition:background .5s cubic-bezier(.25,1,.5,1),color .5s cubic-bezier(.25,1,.5,1)}
+.dm-hit.lit{background:var(--accent-soft);color:var(--accent-deep);font-weight:700}
+.dm-verdict{padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:13px;line-height:1.8;color:var(--text);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict b{display:block;font-size:14px;margin-bottom:5px;color:var(--sub)}
+.dm-verdict.go{background:var(--accent-soft);border-color:rgba(180,83,9,.3)}
+.dm-verdict.go b{color:var(--accent-deep)}
+.dm-verdict.pop{animation:flashPop .8s ease}
+.dm-verdict.glow{animation:fireGlow .9s ease}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.dm-chip{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(180,83,9,.28);opacity:0;transform:translateY(8px)}
+.dm-chip.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-chip.pop{animation:flashPop .8s ease}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:260px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo,.dm-cmp-col{max-width:100%;min-width:0}.dm-budget{flex-direction:column;align-items:stretch}.sl-track{min-width:0;width:100%}.sl-ticks span{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.dm-seg button,.dm-enter,.dm-enter.show,.dm-body,.dm-bar,.dm-summary,.dm-chip,.dm-chip.show,.dm-hit,.dm-verdict{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="按后果决定要不要离开对话去查原文。越是它答得流畅完整的地方，越值得抽一处去对原文。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="这次回答，我要不要去查原文"><meta property="og:description" content="按后果决定要不要离开对话去查原文。越是它答得流畅完整的地方，越值得抽一处去对原文。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-8.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-8.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 防幻觉</div>
+    <h1>这次回答，我要不要去查原文</h1>
+    <p class="subtitle">按后果决定查不查。越是它答得流畅完整的地方，越值得抽一处去对原文。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>按后果决定查不查。越是它答得流畅完整的地方，越值得抽一处去对原文。</p></aside><!--seo:end-->  <p class="reveal">确认页上只有一行字：每期手续费率 0.6%。完整规则在下面那个协议链接里，十几页。你在银行 App 里，要把一台 <strong>12000 元的电脑分 12 期</strong>。你把这行字发给 AI，问总共多付多少，提前还清还要不要继续交手续费。</p>
+  <p class="reveal">它算出每期 72 元，12 期一共 864 元，还补了一句：「提前结清后，剩余期数的手续费不再收取。」前半段乘法能对上，后半句也符合「没借那么久就少付一点」的直觉。你觉得这只是算账，<strong>没必要再点开十几页协议</strong>，于是按下确认。</p>
+  <p class="reveal">三个月后奖金到账，你提前结清。页面显示本金之外还要付 648 元，正好是剩下 9 期的手续费。你回到那段对话，发现 AI 给了完整规则，却没有银行名称、协议版本和条款位置。再打开当时跳过的协议，里面写着：</p>
+  <p class="reveal"><span class="clause">提前结清时，已收取的手续费不予退还，未收取的剩余期数手续费于结清当日一次性收取。</span></p>
+  <p class="reveal">那一步会被放过，是因为<strong>正确的乘法替整段回答赢得了信任</strong>。72 乘 12 等于 864，只能证明计算没错；提前结清怎么收费，取决于这份协议写了什么。<mark>算得对，不能替没出处的规则作证。</mark></p>
+
+  <div class="sec-label">AI 可以先把核查缩到一两句话</div>
+  <p class="reveal">继续追问「你确定吗」，得到的仍然是同一场对话里的生成结果。AI 更适合替你缩小范围，让离开对话后的动作从「读完十几页」变成下面三步：</p>
+  <ol class="four reveal">
+    <li><b>圈出会改变决定的原句</b>，这里就是「剩余手续费不再收取」。</li>
+    <li><b>说清该找哪份原始材料</b>，这里要找当前分期产品的协议，不能拿另一家银行的客服问答代替。</li>
+    <li><b>给出要搜索的词</b>，打开协议后搜索「提前结清」「剩余手续费」，直接读命中的上下两段。</li>
+  </ol>
+  <p class="reveal">这样查一次只需核一条规则。可学习时每句话都这样处理，注意力会被来回切走。哪些情况可以留在对话里继续学，<strong>哪些情况该马上去查原文</strong>？下面把用途和回答的顺畅程度一起拨动。</p>
+
+  <div class="sec-label paywall-locked xa-peek">先玩一遍 · 看用途，再决定是否离开对话</div>
+  <div class="demo reveal paywall-locked" id="demo-verify">
+    <div class="demo-top">
+      <div class="demo-title">同一段分期回答，换一种用途再看处理方式</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">你准备拿这段话做什么</span>
+      <div class="sl-track">
+        <input type="range" id="dm-range" min="0" max="4" step="1" value="0" aria-label="这段回答用错后的后果轻重">
+        <div class="sl-ticks" id="dm-ticks" aria-hidden="true">
+          <span>只想了解一下</span><span>准备转述给朋友</span><span>要用它做决定</span><span>钱会按它来扣</span><span>签字后自己担责</span>
+        </div>
+      </div>
+      <span class="dm-b-hint" id="dm-scene"></span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">这段回答读起来有多顺</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-smooth="0" class="on">回答里有明显含糊处</button>
+        <button type="button" data-smooth="1">回答顺得挑不出毛病</button>
+      </div>
+      <span class="dm-b-hint" id="dm-hint"></span>
+    </div>
+    <div class="dm-track"><div class="dm-bar" id="dm-bar"></div></div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">AI 在对话里给出的回答（示意）</div>
+        <div class="dm-pane" id="dm-left"><div class="dm-empty">先选择用途和顺畅程度，或者点播放观看变化。</div></div>
+      </div>
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">这时应该怎么处理这段话</div>
+        <div class="dm-pane" id="dm-right"><div class="dm-empty">先选一种你准备使用这段回答的场景。</div></div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">先看这段话你拿它去干什么。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>使用后果没变，回答只是读起来更顺</b>顺、完整、语气稳，是它生成出来的样子。它有依据和没有依据时，都可能使用同样的语气。</div>
+      <div class="dm-s"><b>抽查要落在最容易被放行的具体说法上</b>开头那句「提前结清不再收取剩余手续费」看着最完整，所以先拿它去对协议。</div>
+    </div>
+    <div class="demo-caption">教学示意：两段回答与其中的数字是为演示写的，不对应任何一家银行的规则。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">出现这些信号，就去查原文</div>
+  <p class="reveal paywall-locked">判断时先看用错一次会发生什么，再看答案有没有让你放松警觉。下面四条可以整段贴回对话，让 AI 先替你生成一张最短核查单。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <ol>
+      <li><b>先找会改变行动的句子</b><q>请原样摘出上面回答中会改变我付款、签字、提交材料、公开转述或替别人做决定的句子。只摘原句，不要先解释。</q></li>
+      <li><b>再写清用错一次的后果</b><q>逐句写出：如果这句话错了，我会多付什么、漏掉什么条件、承担什么责任，或者让谁跟着做错。后果写不清的先放到低优先级。</q></li>
+      <li><b>指定真正要打开的原始材料</b><q>为每一句指出该查的原始材料和具体位置，例如当前版本协议、官方公告、账单字段或原始数据。不要只给搜索结果、转述文章或另一段 AI 回答。</q></li>
+      <li><b>把没有出处的完整说法单独标出</b><q>回答里凡是语气确定、细节完整，却没有可定位出处的句子，请标为「待核对」。找不到依据时保留空缺，不要根据常见做法补答案。</q></li>
+    </ol>
+    <p class="tpl-note">AI 在这里负责缩短清单，不能把「待核对」改成「已经证实」。最后一步仍要离开对话，亲眼看见原始材料里的对应句子。</p>
+  </div>
+
+  <div class="sec-label paywall-locked">为什么第一道门要看后果</div>
+  <p class="reveal paywall-locked">只想了解一个陌生概念，偶尔错一句的代价很低。你可以先留在对话里，让它给出处、标不确定，再继续往下学。答案一旦要进入付款页、申请表、合同或公开内容，同一句话就会推动真实动作，核查的优先级随之升高。</p>
+  <p class="reveal paywall-locked">顺畅程度是第二个信号。含糊的回答会让你自然停下来，完整的数字和规则容易一路通过。<mark>越像可以直接拿去用的答案，越要抽一条关键说法去碰原文。</mark>这句话表示分配核查精力，不表示流畅的回答一定有错。</p>
+  <p class="reveal paywall-locked">开头那笔分期只需核两处：在确认页对上每期 0.6%，再在当前版本协议里搜索「提前结清」。第二处如果找不到支持，就把「剩余手续费不再收取」留在待核对清单里，暂停确认。用<a href="/dashboard/learning?lesson=learn-7" data-lesson-id="learn-7">让 AI 的回答先过三道检查</a>可以先收窄范围，原文负责关上最后一道门。</p>
+  <p class="reveal paywall-locked">这是按使用后果分配核查精力的经验做法，没有对应的实验阈值。</p>
+
+  <div class="key-line reveal paywall-locked">顺、完整、语气稳，都不能当证据。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var lv = 0, smooth = 0;
+  var idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-verify');
+  var rangeEl = document.getElementById('dm-range');
+  var ticks = Array.prototype.slice.call(document.querySelectorAll('#dm-ticks span'));
+  var segEl = document.getElementById('dm-seg');
+  var sceneEl = document.getElementById('dm-scene');
+  var hintEl = document.getElementById('dm-hint');
+  var leftEl = document.getElementById('dm-left');
+  var rightEl = document.getElementById('dm-right');
+  var barEl = document.getElementById('dm-bar');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var timers = [];
+
+  var SCENE = [
+    '只是想了解一下，看完暂时不会行动',
+    '准备转述给朋友，不会直接替他做决定',
+    '家里要照这个数字决定办不办理分期',
+    '将在申请页确认，钱会按照这个数字扣',
+    '准备写进协议，出错后要承担责任'
+  ];
+  // 后果基分。拿去拍板起跳就够 3 分，所以那三档无论答得顺不顺都要去查原文。
+  var WEIGHT = [0, 1, 3, 4, 5];
+  var GO_AT = 3;
+
+  function hit(t){ return '<span class="dm-hit">' + t + '</span>'; }
+
+  function ansHtml(){
+    if (smooth) {
+      return '<div class="dm-ans dm-body"><b>回答顺得挑不出毛病的版本</b><p>每期按本金的 ' + hit('0.6%') +
+        ' 收，12 期合计 ' + hit('7.2%') + '。提前还款时，剩余期数的手续费' + hit('不再收取') + '。</p></div>';
+    }
+    return '<div class="dm-ans dm-body"><b>回答里有明显含糊处的版本</b><p>手续费' + hit('大概') +
+      '是按每期收一点，' + hit('具体看银行') + '。提前还款' + hit('可能') + '还照收，建议问一下客服。</p></div>';
+  }
+
+  function acts(go){
+    if (go) return ['打开账单页对数字', '看提前还款那一条', '对不上就不用它这句'];
+    return lv >= 1 ? ['让它给出可定位的出处', '先把这句话记作待核对'] : ['先把这句话记作待核对'];
+  }
+
+  function capOf(go){
+    if (lv >= 2) return '要按这个数做事了。到这几档，答得顺不顺都得去对原文。';
+    if (go) return '后果一点没加重，只是它答得更顺，结果翻成了去查。';
+    if (lv === 1) return '饭桌上转述一句，后果还是轻的。防线把可疑区收窄就够。';
+    return '只是好奇，看完就过。这一段可以不查。';
+  }
+
+  function hintOf(go){
+    if (smooth) return '顺的那版没有一处让你停下来。';
+    return lv <= 1 ? '把这个开关拨到右边，看结果会不会变。' : '含糊的地方它自己标出来了，好认。';
+  }
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  // 答案进场：double-rAF 之后再开 max-height，插进 DOM 就加 class 的话动画不会播
+  function enterLeft(){
+    var wrap = document.createElement('div');
+    wrap.className = 'dm-enter';
+    wrap.innerHTML = ansHtml();
+    leftEl.innerHTML = '';
+    leftEl.appendChild(wrap);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        wrap.classList.add('show');
+        var body = wrap.querySelector('.dm-body');
+        if (body) body.classList.add('open');
+        var lits = wrap.querySelectorAll('.dm-hit');
+        Array.prototype.forEach.call(lits, function(el, i){
+          var t = setTimeout(function(){ el.classList.add('lit'); }, reduce ? 0 : 240 + i * 130);
+          timers.push(t);
+        });
+      });
+    });
+  }
+
+  // 动作标签换一批时，留下来的那个先记旧位、反向位移回去再放开，它会自己滑到新位置（FLIP）
+  function paintActs(go, pop){
+    var old = {};
+    Array.prototype.forEach.call(rightEl.querySelectorAll('.dm-chip'), function(el){
+      old[el.textContent] = el.getBoundingClientRect().left;
+    });
+    var list = acts(go);
+    var html = '<div class="dm-verdict ' + (go ? 'go' : '') + (pop ? ' pop' : '') + '"><b>' +
+      (go ? '现在离开对话去查原文' : '先留在对话里收窄范围') + '</b>' +
+      (go ? '拿关键数字和收费规则去对确认页与当前协议。' : '先把可疑的地方和出处要求标出来，再继续了解。') +
+      '</div><div class="dm-chips">';
+    list.forEach(function(c){ html += '<span class="dm-chip">' + c + '</span>'; });
+    rightEl.innerHTML = html + '</div>';
+    var chips = Array.prototype.slice.call(rightEl.querySelectorAll('.dm-chip'));
+    chips.forEach(function(el){
+      var prev = old[el.textContent];
+      if (prev === undefined) return;
+      var dx = prev - el.getBoundingClientRect().left;
+      el.classList.add('show');
+      el.style.transition = 'none';
+      el.style.transform = 'translateX(' + dx + 'px)';
+      requestAnimationFrame(function(){
+        el.style.transition = '';
+        el.style.transform = '';
+      });
+    });
+    chips.forEach(function(el, i){
+      if (el.classList.contains('show')) return;
+      var t = setTimeout(function(){ el.classList.add('show', 'pop'); }, reduce ? 0 : i * 90);
+      timers.push(t);
+    });
+    if (go && lv <= 1) {
+      var v = rightEl.querySelector('.dm-verdict');
+      var t2 = setTimeout(function(){ if (v) v.classList.add('glow'); }, reduce ? 0 : 300);
+      timers.push(t2);
+    }
+  }
+
+  function render(opts){
+    opts = opts || {};
+    var score = WEIGHT[lv] + (smooth ? 2 : 0);
+    var go = score >= GO_AT;
+    rangeEl.value = lv;
+    ticks.forEach(function(el, i){ el.classList.toggle('on', i === lv); });
+    Array.prototype.forEach.call(segEl.querySelectorAll('button'), function(el){
+      el.classList.toggle('on', +el.getAttribute('data-smooth') === smooth);
+      el.classList.remove('want');
+    });
+    if (opts.want) {
+      var target = segEl.querySelector('button[data-smooth="1"]');
+      if (target) target.classList.add('want');
+    }
+    sceneEl.textContent = SCENE[lv];
+    hintEl.textContent = hintOf(go);
+    barEl.style.width = Math.min(score, 6) / 6 * 100 + '%';
+    clearTimers();
+    enterLeft();
+    paintActs(go, opts.pop);
+    captionText.textContent = opts.cap || capOf(go);
+    // 后果不重却判去查，只可能是「答得顺」推过去的。解释块只在这一格展开。
+    if (go && lv <= 1) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  var STEPS = [
+    { lv: 0, sm: 0, hold: 1400 },
+    { lv: 1, sm: 0, hold: 2000 },
+    { lv: 1, sm: 0, hold: 5200, want: true, cap: '使用后果没有变化。现在把右边的选项拨到「回答顺得挑不出毛病」。' },
+    { lv: 1, sm: 1, hold: 3000, pop: true }
+  ];
+
+  function applyStep(i){
+    var st = STEPS[i];
+    lv = st.lv; smooth = st.sm;
+    render({ cap: st.cap, want: st.want, pop: st.pop });
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  // 节拍不匀速：第三格停 5 秒多，把拨开关这一下留给读者
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= STEPS.length) { stop(); return; }
+    applyStep(idx);
+    pauseUntil = ts + STEPS[idx].hold;
+    idx++;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function play(){
+    if (idx >= STEPS.length) idx = 0;
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop();
+    idx = 0; pauseUntil = 0;
+    lv = 0; smooth = 0;
+    clearTimers();
+    rangeEl.value = 0;
+    ticks.forEach(function(el){ el.classList.remove('on'); });
+    Array.prototype.forEach.call(segEl.querySelectorAll('button'), function(el){
+      el.classList.remove('want');
+      el.classList.toggle('on', el.getAttribute('data-smooth') === '0');
+    });
+    barEl.style.width = '0%';
+    sceneEl.textContent = SCENE[0];
+    hintEl.textContent = '';
+    leftEl.innerHTML = '<div class="dm-empty">先选择用途和顺畅程度，或者点播放观看变化。</div>';
+    rightEl.innerHTML = '<div class="dm-empty">先选一种你准备使用这段回答的场景。</div>';
+    summary.classList.remove('on');
+    captionText.textContent = '先看这段话你拿它去干什么。';
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){
+    stop();
+    if (idx >= STEPS.length) idx = 0;
+    applyStep(idx);
+    idx++;
+  });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+
+  rangeEl.addEventListener('input', function(){
+    stop();
+    lv = +this.value;
+    idx = STEPS.length;
+    render({ pop: true });
+  });
+
+  segEl.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    stop();
+    smooth = +b.getAttribute('data-smooth');
+    idx = STEPS.length;
+    render({ pop: true, cap: (smooth && lv <= 1) ? '你刚拨的这一下，后果没动，结果翻成了去查。' : null });
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

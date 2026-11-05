@@ -1,0 +1,46 @@
+---
+import type { Copy } from '@/i18n/ui';
+import Icon from '@/components/Icon.astro';
+import { GITHUB } from '@/consts';
+interface Props { copy: Copy; }
+const { copy } = Astro.props;
+// 必须用下标取 `export`:Astro 编译器会把 frontmatter 里的 `export` 词当成顶层导出往外提,
+// 提完剩下 `export;` + 半截声明,astro check 不报错、astro build 直接语法错。
+const s = copy.landing['export'];
+const icons = ['pen', 'cloud', 'download', 'braces'] as const;
+// 源站实测的三圈直径 176 / 256.5 / 337.5 落在 452.7 宽的面板上,换成百分比才跟着面板缩放。
+const rings = [38.9, 56.7, 74.6];
+---
+<section id="sync" class="be-section be-section-tinted" data-beui="trust-security-safeguards">
+  <div class="be-container">
+    <header class="be-safe-head reveal" style="--reveal-delay:0">
+      <span class="be-safe-eyebrow">{s.eyebrow}</span>
+      <h2>{s.title.split('\n').map((line) => <span>{line}</span>)}</h2>
+      <p>{s.subtitle}</p>
+    </header>
+
+    <div class="be-safe-body reveal" style="--reveal-delay:1">
+      <div class="be-safe-panel">
+        {rings.map((d, i) => <span class="be-safe-ring" style={`--d:${d};--i:${i}`} aria-hidden="true"></span>)}
+        <div class="be-safe-tile" aria-hidden="true"><Icon name="lock" size={48}/></div>
+        <span class="be-safe-pill is-a">{s.pills[0]}</span>
+        <span class="be-safe-pill is-b">{s.pills[1]}</span>
+      </div>
+
+      <div class="be-safe-list">
+        <div class="be-safe-rows">
+          {s.items.map((item, i) => (
+            <article>
+              <span class="be-safe-mark" aria-hidden="true"><Icon name={icons[i]} size={18}/></span>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+            </article>
+          ))}
+        </div>
+        <a class="be-safe-cta" href={GITHUB.repo} target="_blank" rel="noreferrer">
+          {s.cta}<Icon name="arrow-right" size={16}/>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,72 @@
+---
+title: Local development
+description: "This page covers daily development after installing dependencies, including editor setup, cross-workspace hot reload, checks, and branch conventions."
+---
+
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
+After cloning the Magic Resume repo and running `pnpm install`, run `pnpm run dev` from the repo root to start each workspace’s `dev` script in parallel through Turbo. Use `pnpm run lint` and `pnpm run test` for the full quality checks.
+
+If you have not set up the repo yet, start at [Self-Hosted](/en/getting-started/self-hosted).
+
+## How is the repository organized?
+
+```
+Magic-Resume/
+├── apps/
+│   ├── web/         # Next.js 16 editor + BYOK AI Lab
+│   ├── landing/     # Astro marketing site
+│   └── docs/        # Mintlify content
+├── packages/
+│   ├── genui/       # Local AI Lab components
+│   └── tsconfig/    # Shared TypeScript configs
+├── patches/         # Host PDF patches
+├── turbo.json
+├── pnpm-workspace.yaml
+└── CLAUDE.md
+```
+
+## How do I set up my editor?
+
+The repo is TypeScript end-to-end. The recommended editor setup:
+
+- VS Code with the **ESLint** and **TypeScript Nightly** extensions, or
+- Cursor / Windsurf / Claude Code — all three know how to read `CLAUDE.md` and the workspace TS configs.
+
+`pnpm-workspace.yaml` and `packages/tsconfig` mean type-checking works across workspaces with no extra config. If your editor doesn't find a type, restart its TS server.
+
+## How does hot reload work across workspaces?
+
+`pnpm run dev` from the repo root runs every workspace's `dev` script in parallel through Turbo. Most workspaces are watch-mode:
+
+| Workspace | What `dev` does |
+|---|---|
+| `apps/web` | `next dev` on `:3000` |
+| `apps/docs/content` | Mintlify — preview with `npx mint dev` (not part of `turbo dev`) |
+| `packages/genui` | `tsc --watch` |
+| `apps/landing` | `astro dev` on `:3002` |
+
+Public package changes must be built and published from magic-resume-kit, then adopted by updating exact versions here; they are no longer local workspace links.
+
+<Info>Next.js 16 uses Turbopack for `dev` by default. Use `pnpm --filter @magic-resume/web dev:webpack` when Webpack is needed.</Info>
+
+## How do I run lint and tests before committing?
+
+`lint-staged` (configured in the root `package.json`) runs on staged files via Husky, but the full sweep is:
+
+```bash
+pnpm run lint    # turbo lint across every workspace
+pnpm run test    # turbo test
+```
+
+The `apps/web` workspace has an i18n check that fires on staged `.tsx`/`.ts` files:
+
+```bash
+pnpm --filter @magic-resume/web i18n:check
+```
+
+This validates that every new translation key is present in every locale. Adding a key in `en.json` without adding it in `zh-CN.json` will fail the pre-commit hook.
+
+## What are the branch and commit conventions?
+
+The default branch is `master`. Feature branches use `<type>/<short-name>` (e.g. `feat/turborepo-mcp-migration-wip`). Commits follow conventional-commit style — see `git log` for examples.

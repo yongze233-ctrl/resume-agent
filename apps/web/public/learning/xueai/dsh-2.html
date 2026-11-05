@@ -1,0 +1,1405 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-2",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-2',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Model-visible ⟺ logged：一条会崩给你看的不变量 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.04),0 0 0 52px rgba(77,107,254,.025)}
+article.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+article.lesson .sec-label{margin:56px 0 20px}
+p.src{font-size:12px;color:var(--sub);line-height:1.8;margin:-8px 0 24px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:20px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.keyline{margin:32px auto;padding:24px 28px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:14px;text-align:center;font-size:18px;font-weight:800;color:var(--accent-deep);line-height:1.8}
+.flow{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow-card);margin:0 0 24px}
+.flow svg{width:100%;height:auto;display:block}
+.visual-caption{font-size:12px;color:var(--sub);text-align:center;margin-top:12px}
+.doc-quote{background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:12px;padding:20px 24px;margin:0 0 24px;font-size:14px;line-height:1.9;color:var(--text)}
+.doc-quote .q-src{display:block;margin-top:10px;font-size:12px;color:var(--sub)}
+ul.pointlist{margin:0 0 24px;padding-left:24px}
+ul.pointlist li{font-size:15px;line-height:2;color:var(--text);margin-bottom:12px}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:0 0 16px;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}
+.source code{color:var(--text);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin:0 0 24px;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eef1ff,var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 8px;color:var(--text);font-size:16px}.exercise p{margin:0;color:var(--sub);font-size:14px;line-height:1.9}
+.takeaway{margin-top:32px;padding:24px 26px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+
+/* ── 日志篡改实验室 ── */
+#demo-invariant{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);margin-top:12px}
+#demo-invariant.inv-shake{animation:invShake .5s ease}
+@keyframes invShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(7px)}45%{transform:translateX(-5px)}60%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+.inv-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:18px}
+.inv-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(77,107,254,.4);background:var(--accent-soft);color:var(--accent-deep);border-radius:11px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;min-height:48px}
+.inv-btn svg{flex:0 0 auto}
+.inv-btn:disabled{opacity:.38;cursor:not-allowed}
+.inv-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+#inv-stage{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+#inv-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.inv-pane{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;min-width:0}
+.inv-pane-title{font-size:12.5px;font-weight:800;letter-spacing:.4px;color:var(--sub);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.inv-pane-title svg{color:var(--accent)}
+.inv-pane-title .ev-en{margin-left:auto}
+.inv-right{display:grid;gap:20px;align-content:start}
+.ev-en{font:10.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);opacity:.75}
+.ev-row{position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.7;color:var(--text);opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s,border-color .2s,box-shadow .2s}
+.ev-row.in{opacity:1;transform:translateY(0)}
+.ev-head{display:flex;align-items:baseline;gap:8px}
+.ev-row .ev-type{font-weight:800;color:var(--accent)}
+.ev-row.logonly .ev-type{color:var(--sub)}
+.ev-row .ev-body{display:block;color:var(--sub);font-size:12.5px}
+.ev-row.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(77,107,254,.18)}
+.ev-row.deleted{opacity:.5}.ev-row.deleted .ev-body{text-decoration:line-through}
+.ev-row.crossed{border-color:var(--danger);box-shadow:0 0 0 2px rgba(220,38,38,.18)}
+.ev-acts{display:none;gap:8px;margin-top:9px}
+.inv-armed .ev-row .ev-acts{display:flex}
+.ev-act{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);background:var(--bg);color:var(--sub);border-radius:7px;padding:6px 10px;font-size:11.5px;font-family:inherit;cursor:pointer;min-height:32px}
+.ev-act:hover{color:var(--accent);border-color:rgba(77,107,254,.4)}
+.ev-act.danger:hover{color:var(--danger);border-color:rgba(220,38,38,.4)}
+.dm-row,.rq-row{position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.7;color:var(--text);opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s,border-color .2s,box-shadow .2s}
+.dm-row.in,.rq-row.in{opacity:1;transform:translateY(0)}
+.dm-row .role,.rq-row .role{font-weight:800;color:var(--accent);margin-right:8px}
+.dm-row.active,.rq-row.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(77,107,254,.18)}
+.rq-row.tampered{border-color:var(--amber);background:rgba(217,119,6,.06)}
+.rq-row .badge{position:absolute;right:9px;top:9px;width:18px;height:18px;display:grid;place-items:center}
+.rq-row.pass{border-color:var(--success)}.rq-row.fail-row{border-color:var(--danger);box-shadow:0 0 0 2px rgba(220,38,38,.18)}
+.dm-row.fail-row{border-color:var(--danger);box-shadow:0 0 0 2px rgba(220,38,38,.18)}
+.rq-header{background:var(--accent-soft);border:1px solid rgba(77,107,254,.3);color:var(--accent-deep);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;line-height:1.7}
+.inv-banner{display:none;margin-top:16px;border-radius:10px;padding:14px 16px;font:12.5px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+.inv-banner.fail{display:block;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.4);color:var(--danger)}
+.inv-banner.ok{display:block;background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.4);color:var(--success)}
+.inv-caption{display:flex;gap:10px;align-items:flex-start;margin-top:16px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.8;color:var(--text)}
+.inv-caption svg{flex:0 0 auto;color:var(--accent);margin-top:3px}
+.inv-empty{font-size:12.5px;color:var(--sub);padding:6px 2px}
+@media(max-width:760px){
+  #inv-stage{grid-template-columns:1fr}#inv-lines{display:none}
+  .source-head{flex-direction:column}.flow{padding:16px}
+  .objective{grid-template-columns:1fr}.exercise{grid-template-columns:1fr}.lesson-header:after{display:none}
+  .inv-btn{flex:1 1 auto;justify-content:center}
+  .ev-act{min-height:44px;padding:8px 12px}
+  .keyline{font-size:16px;padding:20px}
+}
+</style>
+<meta name="description" content="模型看到的一切必须能从日志重建：讲透 DSH 这条不变量背后的两个设计思路，只留一份真相，验不过就崩">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="Model-visible ⟺ logged：一条会崩给你看的不变量"><meta property="og:description" content="模型看到的一切必须能从日志重建：讲透 DSH 这条不变量背后的两个设计思路，只留一份真相，验不过就崩"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-2.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 会话与循环</div>
+    <h1>Model-visible ⟺ logged：一条会崩给你看的不变量</h1>
+    <p class="subtitle">模型看到的一切都要能从日志重建，发请求前还要现场验一遍，验不过直接崩。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>从 invariant.ts 的逐字节比对讲起：为什么模型看到的一切必须能从日志重建</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：为什么 DSH 规定对话只能有一份真相，模型看到的一切都必须能从会话日志重建；发请求之前它怎么现场重建一遍、逐字节比对一遍；比对不过时它为什么选择当场崩溃，连一行告警都懒得打。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 日志篡改实验室</div>
+  <p class="reveal">先玩再讲。左边是一条只能往后追加的事件日志，右边是从日志重建出来的消息数组，和即将发给模型的请求。点播放看事件流入。播完你可以当一次坏人：删一条日志，或者绕过日志直接改请求，再点「发起下一次请求」，看比对怎么逐条打钩、在分歧处打红叉、然后当场崩给你看。</p>
+  <div id="demo-invariant" class="reveal">
+    <div class="inv-toolbar">
+      <button class="inv-btn primary" id="invPlay">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"></path></svg>播放
+      </button>
+      <button class="inv-btn" id="invStep">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8z" fill="currentColor" stroke="none"></path><path d="M19 5v14"></path></svg>单步
+      </button>
+      <button class="inv-btn" id="invSend" disabled="">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4z"></path></svg>发起下一次请求
+      </button>
+      <button class="inv-btn" id="invReset">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置
+      </button>
+    </div>
+    <div id="inv-stage">
+      <svg id="inv-lines"></svg>
+      <div class="inv-pane">
+        <div class="inv-pane-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          只追加的事件日志<span class="ev-en">session-1</span>
+        </div>
+        <div id="invLog"><div class="inv-empty">（空日志）</div></div>
+      </div>
+      <div class="inv-right">
+        <div class="inv-pane">
+          <div class="inv-pane-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path></svg>
+            从日志重建的消息数组<span class="ev-en">deriveMessages()</span>
+          </div>
+          <div id="invDerived"><div class="inv-empty">（还没有要给模型看的内容）</div></div>
+        </div>
+        <div class="inv-pane">
+          <div class="inv-pane-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4z"></path></svg>
+            即将发给模型的请求
+          </div>
+          <div id="invReq"><div class="inv-empty">（请求尚未构建）</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="inv-banner" id="invBanner"></div>
+    <div class="inv-caption" id="invCaption">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2"></path></svg>
+      <span id="invCaptionText">点「播放」，看事件逐条流入日志。</span>
+    </div>
+  </div>
+  <p class="src reveal" style="margin-top:12px">实验台的比对顺序与源码一致，红条里的报错保留源码原文：比对逻辑在 <code>packages/core/agent-loop/src/invariant.ts</code> 第 31 至 42 行，报错前缀拼接在 <code>packages/runtime-diagnostics/invariants/src/index.ts</code> 第 62 行。核对日期 2026-08-13。</p>
+
+  <div class="sec-label">思路一 · 只留一份真相</div>
+  <p class="reveal"><b>它解决什么问题。</b>大多数聊天程序都有两份对话：内存里一份数组，磁盘上一份存档，各写各的。某天进程崩了，你从存档恢复会话，恢复出来的历史比模型当时实际看到的少了一条工具结果。模型接下来的回答全对不上号，你还查不出原因，因为两份状态谁也证明不了谁。只要真相有两份，它们迟早漂移。</p>
+  <p class="reveal"><b>思路是什么。</b>DSH 把真相压缩到一份。规矩写在仓库根部的 <code>AGENTS.md</code> 第 107 行：</p>
+  <div class="doc-quote reveal">
+    <b>Model-visible ⟺ logged</b>: anything that reaches a model request must be reconstructable from the session log; a new model-visible input requires a session event.
+    <span class="q-src">出处：deepseek-harness-master 仓库 <code>AGENTS.md</code> 第 107 行，核对日期 2026-08-13</span>
+  </div>
+  <p class="reveal">拆开说。会话日志是一份只追加的事件流，任何想让模型看到的内容，必须先变成一条事件写进日志。消息历史从日志派生，官方文档的说法是「从不单独存储」。所以在 DSH 里，日志就是对话本身，系统里没有第二份对话状态。</p>
+  <p class="src reveal">出处：<code>docs/subsystems/session.zh.md</code> 第 5 行，核对日期 2026-08-13。</p>
+  <p class="reveal">然后是标题里那个双向箭头 ⟺。日志推得出请求，请求也必须能被日志解释。光写日志做不到这一点，还得有人在发请求的路口站岗。每次请求出站前，DSH 从日志现场重新派生一份应有的消息数组，和请求里实际带的那份做全量字符串比对；系统提示词、模型名、采样参数、工具清单也要和日志里的请求头快照逐字段对上。全对上才放行。</p>
+  <div class="flow reveal">
+    <svg viewBox="0 0 940 330" role="img" aria-label="日志派生与出站口比对流程">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1"><stop stop-color="#3450d4"></stop><stop offset="1" stop-color="#4d6bfe"></stop></linearGradient>
+        <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d6bfe"></path></marker>
+      </defs>
+      <rect x="30" y="60" width="230" height="215" rx="14" fill="#ffffff" stroke="rgba(77,107,254,.35)"></rect>
+      <text x="145" y="92" fill="#3450d4" text-anchor="middle" font-size="15" font-weight="700">只追加的事件日志</text>
+      <text x="145" y="122" fill="#6b7280" text-anchor="middle" font-size="13">请求头快照</text>
+      <text x="145" y="148" fill="#6b7280" text-anchor="middle" font-size="13">用户消息</text>
+      <text x="145" y="174" fill="#6b7280" text-anchor="middle" font-size="13">助手消息</text>
+      <text x="145" y="200" fill="#6b7280" text-anchor="middle" font-size="13">工具调用 · 工具结果</text>
+      <text x="145" y="244" fill="#9ca3af" text-anchor="middle" font-size="12">唯一真相，别处没有副本</text>
+      <path fill="none" d="M260 115H330" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a)"></path>
+      <text x="295" y="103" fill="#9ca3af" text-anchor="middle" font-size="11">现场重建</text>
+      <rect x="342" y="66" width="256" height="96" rx="14" fill="url(#g)"></rect>
+      <text x="470" y="106" fill="#ffffff" text-anchor="middle" font-size="14" font-weight="800">从日志派生应有的请求</text>
+      <text x="470" y="134" fill="#e6ebff" text-anchor="middle" font-size="12.5">消息数组 + 请求头快照</text>
+      <path fill="none" d="M260 240H330" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a)"></path>
+      <rect x="342" y="200" width="256" height="80" rx="14" fill="#ffffff" stroke="rgba(77,107,254,.35)"></rect>
+      <text x="470" y="233" fill="#3450d4" text-anchor="middle" font-size="13.5" font-weight="700">循环实际构建的请求</text>
+      <text x="470" y="259" fill="#6b7280" text-anchor="middle" font-size="12.5">深度冻结，过检后改不了</text>
+      <path fill="none" d="M598 115H668" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a)"></path>
+      <path fill="none" d="M598 240H668" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a)"></path>
+      <rect x="680" y="105" width="230" height="130" rx="14" fill="#ffffff" stroke="rgba(77,107,254,.45)"></rect>
+      <text x="795" y="142" fill="#3450d4" text-anchor="middle" font-size="13.5" font-weight="700">出站口逐字节比对</text>
+      <text x="795" y="172" fill="#16a34a" text-anchor="middle" font-size="12.5">一致，放行发出</text>
+      <text x="795" y="200" fill="#dc2626" text-anchor="middle" font-size="12.5">不一致，当场崩</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：节点与连线用于解释源码关系，内容经过课程化整理。</div>
+  </div>
+  <p class="reveal">站岗的核心就四行，短到可以当金句贴墙上。它在证明一件事：每次派发前，DSH 真的会从日志重新派生一份消息，和实际请求做全量字符串比对，对不上就地失败：</p>
+  <div class="source reveal">
+    <div class="source-head"><span>packages/core/agent-loop/src/invariant.ts</span><span>第 39 至 42 行</span></div>
+    <pre><code>    <span class="kw">const</span> expected = session.<span class="fn">deriveMessages</span>()
+    <span class="kw">if</span> (JSON.stringify(options.messages) !== JSON.stringify(expected)) {
+      <span class="fn">fail</span>(<span class="str">`llm request for session "${String(session.id)}" diverges from the dispatch-time durable derivation (log-reconstruction desync)`</span>)
+    }</code></pre>
+  </div>
+  <div class="snapshot paywall-locked xa-peek"><b>源码快照说明：</b>依据本地仓库 <code>deepseek-harness-master</code>，核对文件 <code>packages/core/agent-loop/src/invariant.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+  <p class="reveal paywall-locked">还有一个细节。检查用的派生函数，和恢复、回放用的是同一套公开函数，检查者和被检查者共享同一套重建规则，谁也没有私货。请求头的重建也只是一个七行的纯函数，扫一遍事件、取最后一个快照。</p>
+  <p class="src reveal paywall-locked">出处：完整检查顺序在 <code>packages/core/agent-loop/src/invariant.ts</code> 第 22 至 52 行；请求头重建在 <code>packages/core/session/src/request-header.ts</code> 第 65 至 71 行。核对日期 2026-08-13。</p>
+  <p class="reveal paywall-locked"><b>为什么长期成立。</b>single source of truth（单一事实来源）是数据库领域用了五十年的老道理：账本只能有一本，其余全是账本的视图，视图可以随便丢、随便重建。DSH 只是把这条纪律搬进了 agent 的对话管理。哪天源码重写成 Rust、事件类型翻三倍，账本只有一本这件事照样成立。</p>
+  <div class="keyline reveal paywall-locked">日志就是对话本身，其余都是视图。</div>
+
+  <div class="sec-label paywall-locked">思路二 · 验不过就崩，不要带病运行</div>
+  <p class="reveal paywall-locked"><b>它解决什么问题。</b>设想站岗的发现对不上，只打一行告警会怎样。告警意味着违规请求已经发给了模型：某个插件绕过日志偷偷改了消息，模型看到的和日志记的从这一刻起是两回事。日志接着记，记的全是错账。三天后有人拿这份日志回放排查，怎么都复现不出线上的怪行为。静默偏差比崩溃可怕，它把排查成本悄悄转嫁给了未来。</p>
+  <p class="reveal paywall-locked"><b>思路是什么。</b>所以 DSH 选了最硬的那条路：比对不过，抛异常，这次请求当场作废，根本发不出去。设计笔记里明确否决过温和方案，对「比较连续请求，发散时告警」这条备选的判词是「因违规必须在接口层面不可表达而否决」。</p>
+  <p class="src reveal paywall-locked">出处：<code>.agents/notes/implemented/architecture/2026-07-05-reconstructable-requests.zh.md</code>「曾考虑的替代方案」一节，核对日期 2026-08-13。</p>
+  <p class="reveal paywall-locked">配套还有两个小机关。检查器插在事件监听队列的队头，防止别的监听器提前短路、把检查静默跳过，站岗的人要第一个看到请求。然后请求对象和消息数组必须深度冻结，堵住先过检、再改内容的后门。</p>
+  <p class="src reveal paywall-locked">出处：队头注册见 <code>invariant.ts</code> 第 20 至 21 行与第 54 行，冻结与会话检查见第 22 至 29 行。核对日期 2026-08-13。</p>
+  <div class="flow reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="告警方案与崩溃方案的后果对比">
+      <defs>
+        <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#9ca3af"></path></marker>
+        <marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d6bfe"></path></marker>
+      </defs>
+      <text x="30" y="52" fill="#6b7280" font-size="13" font-weight="700">告警方案（被设计笔记否决）</text>
+      <rect x="30" y="70" width="170" height="56" rx="12" fill="#ffffff" stroke="rgba(220,38,38,.35)"></rect>
+      <text x="115" y="103" fill="#dc2626" text-anchor="middle" font-size="13">发现请求和日志有分歧</text>
+      <path fill="none" d="M200 98H244" stroke="#9ca3af" stroke-width="2" marker-end="url(#a2)"></path>
+      <rect x="256" y="70" width="150" height="56" rx="12" fill="#ffffff" stroke="var(--border)"></rect>
+      <text x="331" y="103" fill="#6b7280" text-anchor="middle" font-size="13">打一行告警</text>
+      <path fill="none" d="M406 98H450" stroke="#9ca3af" stroke-width="2" marker-end="url(#a2)"></path>
+      <rect x="462" y="70" width="180" height="56" rx="12" fill="#ffffff" stroke="var(--border)"></rect>
+      <text x="552" y="103" fill="#6b7280" text-anchor="middle" font-size="13">违规请求照样发出</text>
+      <path fill="none" d="M642 98H686" stroke="#9ca3af" stroke-width="2" marker-end="url(#a2)"></path>
+      <rect x="698" y="70" width="212" height="56" rx="12" fill="rgba(220,38,38,.06)" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="804" y="96" fill="#dc2626" text-anchor="middle" font-size="13">日志从此记的是错账</text>
+      <text x="804" y="116" fill="#dc2626" text-anchor="middle" font-size="12">回放、审计全部失真</text>
+      <text x="30" y="192" fill="#3450d4" font-size="13" font-weight="700">DSH 的选择</text>
+      <rect x="30" y="210" width="170" height="56" rx="12" fill="#ffffff" stroke="rgba(220,38,38,.35)"></rect>
+      <text x="115" y="243" fill="#dc2626" text-anchor="middle" font-size="13">发现请求和日志有分歧</text>
+      <path fill="none" d="M200 238H244" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a3)"></path>
+      <rect x="256" y="210" width="150" height="56" rx="12" fill="#ffffff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="331" y="243" fill="#3450d4" text-anchor="middle" font-size="13">抛异常，当场崩</text>
+      <path fill="none" d="M406 238H450" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a3)"></path>
+      <rect x="462" y="210" width="180" height="56" rx="12" fill="#ffffff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="552" y="243" fill="#3450d4" text-anchor="middle" font-size="13">请求作废，发不出去</text>
+      <path fill="none" d="M642 238H686" stroke="#4d6bfe" stroke-width="2" marker-end="url(#a3)"></path>
+      <rect x="698" y="210" width="212" height="56" rx="12" fill="rgba(22,163,74,.07)" stroke="rgba(22,163,74,.4)"></rect>
+      <text x="804" y="236" fill="#16a34a" text-anchor="middle" font-size="13">日志保持干净</text>
+      <text x="804" y="256" fill="#16a34a" text-anchor="middle" font-size="12">修好 bug 重跑即可</text>
+    </svg>
+    <div class="visual-caption">同一个分歧，两种处理方式的后果对比。教学化示意图。</div>
+  </div>
+  <p class="reveal paywall-locked"><b>为什么长期成立。</b>这就是 fail-fast（快速失败）。崩溃把损失锁在零：日志里没有被污染的轮次，修好 bug 重跑就行。带病运行的成本是复利，跑得越久坏数据越多，最后连哪天开始坏的都查不出来。在边界上崩一次，比在三天后的诡异现象里考古便宜得多。这条判断和语言、框架都没有关系。</p>
+  <div class="keyline reveal paywall-locked">请求发出去的那一刻，日志就再也解释不了模型。</div>
+
+  <div class="sec-label paywall-locked">思路三 · 一份日志买到全家桶</div>
+  <p class="reveal paywall-locked">前两个思路各花一份力气，回报在这里一起结算。日志既然是唯一真相，围绕它能白拿一整套能力：</p>
+  <ul class="pointlist reveal paywall-locked">
+    <li><b>恢复</b>：进程崩了，从日志重新派生一遍，接着聊。</li>
+    <li><b>分叉</b>：从任意一条事件岔出去，开一条平行会话。</li>
+    <li><b>回放</b>：把日志再派生一遍就是当年的请求，回放测试连 API Key 都不用。</li>
+    <li><b>审计</b>：界面上看到的轨迹就是模型看到的内容，背后有运行时断言背书。</li>
+  </ul>
+  <p class="reveal paywall-locked">连 Compaction（压缩，把过长的历史换成摘要）都被这条不变量罩着：压缩产生的摘要同样以事件形式写进日志，压缩之后的请求照样要过出站比对，压缩实现写出 bug 会当场崩，逃不掉。</p>
+  <p class="reveal paywall-locked"><b>为什么长期成立。</b>这套玩法有个学名，event sourcing（事件溯源），银行和会计系统用了很多年：不存余额，只存流水，余额永远从流水算出来。DSH 只是把交易流水换成了对话事件。只要事件流还是唯一真相，这些能力就一直是免费的副产品。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 都写日志，谁在反向校验</div>
+  <p class="reveal paywall-locked">会话持久化几乎是编码 agent 的标配，差别在方向。Grok Build（xAI 开源的 Rust 编码 agent）的持久化是一条单行道：内存里的对话状态是主，落盘是从。每来一条消息，把内存条目拷一份丢进落盘通道，发送结果直接丢弃，落盘失败也不打断对话；压缩时还允许把整份落盘历史一次性替换掉。这是合理的产品取舍，只是持久层不承担正确性职责：没有任何路径把日志反向派生回来、和出站请求比对。</p>
+  <p class="src reveal paywall-locked">出处：grok-build-main 仓库 <code>crates/codegen/xai-grok-shell/src/session/chat_persistence.rs</code> 第 30 至 38 行（<code>persist_message</code> 与 <code>replace_history</code>），核对日期 2026-08-13。</p>
+  <p class="reveal paywall-locked">Claude Code 闭源，公开可见的是 <code>~/.claude</code> 下的 <code>.jsonl</code> 会话日志和恢复功能。基于已公开证据，它属于事后记录型持久化；没有公开材料表明存在派发时刻从日志重建请求并比对的运行时断言，内部有没有等价机制属于未知。</p>
+  <p class="reveal paywall-locked">所以这里只比机制方向：Grok Build 和 Claude Code 把持久化当恢复手段，DSH 把日志升格为需要运行时证明的第一性原理。Codex 在同一道题上把闸门开在了更早的地方：每一种注入先得是一个登记过的类型，装配时按字段分拣，站内 <a href="/dashboard/learning?lesson=codex-06" data-lesson-id="codex-06">Codex 上下文碎片</a> 一课有源码拆解。</p>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div><h3>推演一次触发路径</h3><p>某插件监听请求出站事件，想在发出前往消息数组里塞一条系统提示。按本课的检查顺序推演两种情况：它直接改那个被冻结的数组会发生什么？它先克隆整个请求、改克隆体再转发，又会在哪一步被拦下？提示：冻结检查和逐字节比对各自守住什么。</p></div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>DSH 的会话日志是对话的唯一真相，恢复、分叉、回放、审计共用同一份事件流。每次请求出站前从日志现场重建并逐字节比对，对不上当场抛异常，请求发不出去。崩溃优于告警，因为请求发出去的那一刻，日志就再也解释不了模型的行为。</span>
+  </div>
+</article>
+
+
+<script>
+(function () {
+  'use strict';
+  /* ── 日志篡改实验室 ──
+     比对逻辑复刻 packages/core/agent-loop/src/invariant.ts 第 31 至 42 行：
+     1) events.some(step/start)  2) foldRequestHeader 存在  3) JSON.stringify 消息比对 */
+  var FAIL_PREFIX = 'invariant violated by "@deepseek-ai/dsh-agent-loop": ';
+  var MSG_NO_STEP = 'a loop-built request with no step/start in its session log';
+  var MSG_NO_HEADER = 'a loop-built request with no request/header event in its session log';
+  var MSG_DESYNC = 'llm request for session "session-1" diverges from the dispatch-time durable derivation (log-reconstruction desync)';
+
+  var EVENTS = [
+    { label: '请求头快照', en: 'request/header', body: '模型名 · 系统提示词 · 工具清单，整包存档', surface: false,
+      cap: '会话开张。第一条日志先把模型名、系统提示词、工具清单整包存档，这些也是模型会看到的东西。' },
+    { label: '回合开始', en: 'turn/start', body: '第 1 轮对话', surface: false,
+      cap: '这条只是记账，标记一轮对话开始，模型看不到它。' },
+    { label: '步骤开始', en: 'step/start', body: '第 1 轮 · 第 1 次模型调用', surface: false,
+      cap: '标记一次模型调用开始。待会比对时，第一件事就是确认它存在。' },
+    { label: '用户消息', en: 'user/message', body: '「帮我看看 build 为什么挂了」', surface: true, msg: { role: '用户', content: '帮我看看 build 为什么挂了' },
+      cap: '用户说话了。这条要给模型看，右边的消息数组立刻长出一条，请求草稿也跟着长。' },
+    { label: '助手消息', en: 'assistant/message', body: '「我先跑一遍测试」，顺带要求调用 bash', surface: true, msg: { role: '助手', content: '我先跑一遍测试（要求调用 bash）' },
+      cap: '模型回了话，还要求调用 bash 工具。同样先写日志，再进消息数组。' },
+    { label: '工具调用', en: 'tool/call', body: 'bash · 跑一遍测试命令', surface: false,
+      cap: '工具调用的参数记进日志。这条不直接进消息数组。' },
+    { label: '工具结果', en: 'tool/result', body: '退出码 1 · 有 2 个用例失败', surface: true, msg: { role: '工具结果', content: '退出码 1 · 有 2 个用例失败' },
+      cap: '工具跑完了，结果要给模型看，于是又是一条会进消息数组的事件。' },
+    { label: '步骤结束', en: 'step/end', body: '第 1 轮 · 第 1 次调用收尾', surface: false,
+      cap: '这一步收尾。日志播完了，下面轮到你搞破坏。' }
+  ];
+
+  var demo = document.getElementById('demo-invariant');
+  var stage = document.getElementById('inv-stage');
+  var logBox = document.getElementById('invLog');
+  var derivedBox = document.getElementById('invDerived');
+  var reqBox = document.getElementById('invReq');
+  var banner = document.getElementById('invBanner');
+  var captionText = document.getElementById('invCaptionText');
+  var linesSvg = document.getElementById('inv-lines');
+  var btnPlay = document.getElementById('invPlay');
+  var btnStep = document.getElementById('invStep');
+  var btnSend = document.getElementById('invSend');
+  var btnReset = document.getElementById('invReset');
+
+  var state; // { idx, phase: 'stream'|'ready'|'compare'|'done', deleted:[], reqMsgs:[], cmpIdx, timer }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function setCaption(text) { captionText.textContent = text; }
+
+  function init() {
+    if (state && state.timer) clearInterval(state.timer);
+    state = { idx: 0, phase: 'stream', deleted: [], reqMsgs: [], cmpIdx: 0, timer: null };
+    for (var i = 0; i < EVENTS.length; i++) state.deleted.push(false);
+    demo.classList.remove('inv-armed');
+    logBox.innerHTML = '<div class="inv-empty">（空日志）</div>';
+    derivedBox.innerHTML = '<div class="inv-empty">（还没有要给模型看的内容）</div>';
+    reqBox.innerHTML = '<div class="inv-empty">（请求尚未构建）</div>';
+    banner.className = 'inv-banner';
+    banner.textContent = '';
+    setCaption('点「播放」，看事件逐条流入日志。');
+    btnSend.disabled = true;
+    btnPlay.disabled = false;
+    btnStep.disabled = false;
+    clearLines();
+  }
+
+  function clearLines() { while (linesSvg.firstChild) linesSvg.removeChild(linesSvg.firstChild); }
+
+  function drawLines() {
+    clearLines();
+    if (window.innerWidth <= 760) return;
+    var stageRect = stage.getBoundingClientRect();
+    linesSvg.setAttribute('viewBox', '0 0 ' + stageRect.width + ' ' + stageRect.height);
+    var evRows = logBox.querySelectorAll('.ev-row');
+    var dmRows = derivedBox.querySelectorAll('.dm-row');
+    var dIdx = 0;
+    for (var i = 0; i < evRows.length; i++) {
+      var evI = parseInt(evRows[i].getAttribute('data-i'), 10);
+      if (!EVENTS[evI].surface) continue;
+      if (state.deleted[evI]) continue;
+      var dm = dmRows[dIdx];
+      dIdx++;
+      if (!dm) continue;
+      var a = evRows[i].getBoundingClientRect();
+      var b = dm.getBoundingClientRect();
+      var x1 = a.right - stageRect.left, y1 = a.top + a.height / 2 - stageRect.top;
+      var x2 = b.left - stageRect.left, y2 = b.top + b.height / 2 - stageRect.top;
+      var mx = (x1 + x2) / 2;
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ',' + mx + ' ' + y2 + ',' + x2 + ' ' + y2);
+      path.setAttribute('fill', 'none');
+      var active = evRows[i].classList.contains('active') || dm.classList.contains('active');
+      path.setAttribute('stroke', active ? '#4d6bfe' : 'rgba(77,107,254,.3)');
+      path.setAttribute('stroke-width', active ? '2' : '1.2');
+      linesSvg.appendChild(path);
+    }
+  }
+
+  function deactivateAll() {
+    var rows = demo.querySelectorAll('.active');
+    for (var i = 0; i < rows.length; i++) rows[i].classList.remove('active');
+  }
+
+  /* 复刻 deriveMessages()：按顺序投影未删除的 surface 事件 */
+  function derive() {
+    var out = [];
+    for (var i = 0; i < EVENTS.length; i++) {
+      if (i >= state.idx) break;
+      if (!EVENTS[i].surface || state.deleted[i]) continue;
+      out.push({ role: EVENTS[i].msg.role, content: EVENTS[i].msg.content, srcIdx: i });
+    }
+    return out;
+  }
+
+  function renderDerived() {
+    var msgs = derive();
+    if (!msgs.length) { derivedBox.innerHTML = '<div class="inv-empty">（还没有要给模型看的内容）</div>'; return; }
+    var html = '';
+    for (var i = 0; i < msgs.length; i++) {
+      html += '<div class="dm-row in" data-di="' + i + '"><span class="role">' + esc(msgs[i].role) + '</span>' + esc(msgs[i].content) + '</div>';
+    }
+    derivedBox.innerHTML = html;
+  }
+
+  function renderReq() {
+    var html = '';
+    if (state.idx >= 1) {
+      /* 请求快照携带请求头；即使日志中的请求头事件被删，请求侧仍保留它 */
+      html += '<div class="rq-header in">请求头：deepseek-chat · 系统提示词 · 工具清单 · 采样参数</div>';
+    }
+    if (!state.reqMsgs.length) {
+      html += '<div class="inv-empty">（消息列表为空）</div>';
+    } else {
+      for (var i = 0; i < state.reqMsgs.length; i++) {
+        var m = state.reqMsgs[i];
+        html += '<div class="rq-row in' + (m.tampered ? ' tampered' : '') + '" data-ri="' + i + '"><span class="role">' + esc(m.role) + '</span>' + esc(m.content) + '<span class="badge"></span></div>';
+      }
+    }
+    reqBox.innerHTML = html;
+  }
+
+  function renderLogRow(i) {
+    var ev = EVENTS[i];
+    var empty = logBox.querySelector('.inv-empty');
+    if (empty) empty.remove();
+    var row = document.createElement('div');
+    row.className = 'ev-row' + (ev.surface ? '' : ' logonly');
+    row.setAttribute('data-i', i);
+    var acts = '<div class="ev-acts">';
+    if (ev.surface) {
+      acts += '<button class="ev-act" data-act="mutate" data-i="' + i + '">'
+        + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>绕过日志改请求</button>';
+    }
+    acts += '<button class="ev-act danger" data-act="delete" data-i="' + i + '">'
+      + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>删除这条日志</button></div>';
+    row.innerHTML = '<div class="ev-head"><span class="ev-type">' + esc(ev.label) + '</span><span class="ev-en">' + esc(ev.en) + '</span></div><span class="ev-body">' + esc(ev.body) + '</span>' + acts;
+    logBox.appendChild(row);
+    requestAnimationFrame(function () { row.classList.add('in'); });
+  }
+
+  function advanceStream() {
+    if (state.idx >= EVENTS.length) return finishStream();
+    var i = state.idx;
+    var ev = EVENTS[i];
+    state.idx++;
+    renderLogRow(i);
+    if (ev.surface) state.reqMsgs.push({ role: ev.msg.role, content: ev.msg.content, tampered: false });
+    renderDerived();
+    renderReq();
+    deactivateAll();
+    setCaption(ev.cap);
+    var lr = logBox.querySelector('.ev-row[data-i="' + i + '"]');
+    if (lr) lr.classList.add('active');
+    if (ev.surface) {
+      var dRows = derivedBox.querySelectorAll('.dm-row');
+      var rRows = reqBox.querySelectorAll('.rq-row');
+      if (dRows.length) dRows[dRows.length - 1].classList.add('active');
+      if (rRows.length) rRows[rRows.length - 1].classList.add('active');
+    }
+    setTimeout(drawLines, 40);
+    if (state.idx >= EVENTS.length) finishStream();
+  }
+
+  function finishStream() {
+    if (state.phase !== 'stream') return;
+    state.phase = 'ready';
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+    demo.classList.add('inv-armed');
+    btnSend.disabled = false;
+    btnPlay.disabled = true;
+    setCaption('试试当坏人：删掉一条日志，或者绕过日志直接改请求，再点「发起下一次请求」。什么都不改直接发也行，看看正常放行长什么样。');
+    deactivateAll();
+    setTimeout(drawLines, 40);
+  }
+
+  function showFail(msg, crossEl, cap) {
+    banner.className = 'inv-banner fail';
+    banner.textContent = 'InvariantError: ' + FAIL_PREFIX + msg;
+    if (crossEl) crossEl.classList.add(crossEl.classList.contains('ev-row') ? 'crossed' : 'fail-row');
+    demo.classList.remove('inv-shake');
+    void demo.offsetWidth;
+    demo.classList.add('inv-shake');
+    state.phase = 'done';
+    setCaption(cap + ' 红条里保留了源码报错原文。点「重置」重来。');
+  }
+
+  function badge(el, ok) {
+    if (!el) return;
+    var b = el.querySelector('.badge');
+    if (!b) return;
+    b.innerHTML = ok
+      ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>'
+      : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="3"><path d="M5 5l14 14M19 5L5 19"/></svg>';
+    el.classList.add(ok ? 'pass' : 'fail-row');
+  }
+
+  function compareStep() {
+    var expected = derive();
+    var actual = state.reqMsgs;
+    var i = state.cmpIdx;
+    var dRows = derivedBox.querySelectorAll('.dm-row');
+    var rRows = reqBox.querySelectorAll('.rq-row');
+    deactivateAll();
+    if (i >= expected.length && i >= actual.length) {
+      banner.className = 'inv-banner ok';
+      banner.textContent = '比对通过：消息与派生结果逐字节一致，请求头逐字段对上，放行，请求发出。';
+      state.phase = 'done';
+      if (state.timer) { clearInterval(state.timer); state.timer = null; }
+      setCaption('全部对上，请求放行。这次请求可以完全由日志解释。点「重置」可再做一次实验。');
+      drawLines();
+      return;
+    }
+    var e = expected[i], a = actual[i];
+    if (dRows[i]) dRows[i].classList.add('active');
+    if (rRows[i]) rRows[i].classList.add('active');
+    var same = e && a && JSON.stringify({ role: e.role, content: e.content }) === JSON.stringify({ role: a.role, content: a.content });
+    if (same) {
+      badge(rRows[i], true);
+      setCaption('第 ' + (i + 1) + ' 条对上了，打个钩，继续比下一条。');
+      state.cmpIdx++;
+    } else {
+      badge(rRows[i] || null, false);
+      if (!rRows[i] && dRows[i]) dRows[i].classList.add('fail-row');
+      if (state.timer) { clearInterval(state.timer); state.timer = null; }
+      showFail(MSG_DESYNC, null, '比到这里对不上了。请求和日志推出来的结果有分歧，抛 InvariantError，这次请求发不出去。');
+    }
+    drawLines();
+  }
+
+  function startCompare(auto) {
+    if (state.phase !== 'ready' && state.phase !== 'compare') return;
+    banner.className = 'inv-banner';
+    /* 复刻源码检查顺序：step/start → request/header → 消息比对 */
+    if (state.phase === 'ready') {
+      var hasStep = EVENTS.some(function (ev, i) { return ev.en === 'step/start' && i < state.idx && !state.deleted[i]; });
+      if (!hasStep) {
+        var r1 = logBox.querySelector('.ev-row[data-i="2"]');
+        showFail(MSG_NO_STEP, r1, '日志里连「步骤开始」都没有，这个请求来路不明，第一步就被拒收。');
+        return;
+      }
+      var hasHeader = EVENTS.some(function (ev, i) { return ev.en === 'request/header' && i < state.idx && !state.deleted[i]; });
+      if (!hasHeader) {
+        var r0 = logBox.querySelector('.ev-row[data-i="0"]');
+        showFail(MSG_NO_HEADER, r0, '日志里没有请求头快照，系统提示词和模型配置无从对起，直接拒收。');
+        return;
+      }
+      state.phase = 'compare';
+      state.cmpIdx = 0;
+      setCaption('开始比对。两条结构事件都在，接下来逐条核对消息。');
+    }
+    if (auto) {
+      if (state.timer) clearInterval(state.timer);
+      state.timer = setInterval(function () {
+        if (state.phase !== 'compare') { clearInterval(state.timer); state.timer = null; return; }
+        compareStep();
+      }, 650);
+    } else {
+      compareStep();
+    }
+  }
+
+  logBox.addEventListener('click', function (e) {
+    var btn = e.target.closest('.ev-act');
+    if (!btn || state.phase !== 'ready') return;
+    var i = parseInt(btn.getAttribute('data-i'), 10);
+    var act = btn.getAttribute('data-act');
+    if (act === 'delete') {
+      if (state.deleted[i]) return;
+      state.deleted[i] = true;
+      var row = logBox.querySelector('.ev-row[data-i="' + i + '"]');
+      if (row) row.classList.add('deleted');
+      renderDerived();       /* 派生结果实时反映删除；请求快照保持原样 → 分歧 */
+      if (EVENTS[i].surface) {
+        setCaption('删掉了一条日志，右边的重建结果立刻变了，可请求还是老样子。点「发起下一次请求」，看看会发生什么。');
+      } else {
+        setCaption('删掉了一条结构事件。消息数组看起来没变，但比对的第一步就要查它。点「发起下一次请求」试试。');
+      }
+    } else if (act === 'mutate') {
+      /* 模拟恶意插件绕过日志直接改请求 */
+      var seen = 0, ri = -1;
+      for (var k = 0; k < EVENTS.length; k++) {
+        if (EVENTS[k].surface) { if (k === i) { ri = seen; break; } seen++; }
+      }
+      if (ri < 0 || !state.reqMsgs[ri] || state.reqMsgs[ri].tampered) return;
+      state.reqMsgs[ri].content += '（插件偷偷加的，日志不知情）';
+      state.reqMsgs[ri].tampered = true;
+      renderReq();
+      setCaption('请求被偷偷改了，日志里却没有对应事件。这正是不变量要抓的场景，点「发起下一次请求」。');
+    }
+    setTimeout(drawLines, 40);
+  });
+
+  btnPlay.addEventListener('click', function () {
+    if (state.phase !== 'stream') return;
+    if (state.timer) { clearInterval(state.timer); state.timer = null; return; }
+    state.timer = setInterval(function () {
+      if (state.phase !== 'stream') { clearInterval(state.timer); state.timer = null; return; }
+      advanceStream();
+    }, 700);
+  });
+  btnStep.addEventListener('click', function () {
+    if (state.phase === 'stream') advanceStream();
+    else if (state.phase === 'ready' || state.phase === 'compare') startCompare(false);
+  });
+  btnSend.addEventListener('click', function () { startCompare(true); });
+  btnReset.addEventListener('click', init);
+  window.addEventListener('resize', function () { if (state) drawLines(); });
+
+  init();
+  if (typeof window.lessonOnView === 'function') {
+    window.lessonOnView(demo, function () {
+      if (state.phase === 'stream' && !state.timer) btnPlay.click();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

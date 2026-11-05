@@ -1,0 +1,772 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-9",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-9',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 帮我拆开一段看不懂的条款 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+.lesson .clause mark{background:rgba(180,83,9,.24)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl ol{margin:0;padding:0;list-style:none;counter-reset:tpl}
+.tpl li{counter-increment:tpl;position:relative;padding-left:34px;margin-bottom:18px}
+.tpl li:last-child{margin-bottom:0}
+.tpl li:before{content:counter(tpl);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tpl li b{display:block;font-size:12.5px;font-weight:700;color:var(--accent-deep);margin-bottom:5px}
+.tpl li q{display:block;quotes:"「" "」";font-size:13.5px;line-height:1.95;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-pips{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.dm-pip{padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);min-width:0;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.demo.playing .dm-pip{opacity:.4;transform:scale(.98)}
+.demo.playing .dm-pip.on{opacity:1;transform:scale(1);border-color:rgba(180,83,9,.4);background:var(--accent-soft)}
+.dm-pip b{display:block;font-size:13px;color:var(--text);margin-bottom:4px}
+.dm-pip span{display:block;font-size:12px;line-height:1.6;color:var(--sub)}
+.dm-pip.on{border-color:rgba(180,83,9,.4);background:var(--accent-soft)}
+.dm-pip.on b{color:var(--accent-deep)}
+.dm-pip.done{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07)}
+.dm-pip.pop{animation:flashPop .8s ease}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+.dm-track{height:4px;border-radius:99px;background:var(--border);margin:0 0 20px;overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s cubic-bezier(.25,1,.5,1)}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pane{padding:16px 18px;font-size:13.5px;line-height:1.9;color:var(--text);min-height:212px;overflow-wrap:anywhere;word-break:break-word;transition:min-height .5s cubic-bezier(.25,1,.5,1)}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-enter{opacity:0;transform:translateY(10px)}
+.dm-enter.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-body{max-height:0;overflow:hidden;padding:0;transition:max-height .5s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+.dm-body.open{max-height:460px;padding:2px 0 4px}
+.dm-io{display:flex;flex-direction:column;gap:12px}
+.dm-i{padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);opacity:0;transform:translateY(8px)}
+.dm-i.show{opacity:1;transform:none;transition:opacity .45s cubic-bezier(.25,1,.5,1),transform .45s cubic-bezier(.25,1,.5,1)}
+.dm-i i{display:block;font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.5px;color:var(--accent);margin-bottom:5px}
+.dm-i p{margin:0;font-size:13px;line-height:1.85;color:var(--text)}
+.dm-i.back{background:var(--accent-soft);border-color:rgba(180,83,9,.24)}
+.dm-read{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.dm-r{padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);opacity:0;transform:translateY(8px)}
+.dm-r.show{opacity:1;transform:none;transition:opacity .5s cubic-bezier(.25,1,.5,1),transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-r b{display:block;font-size:12.5px;margin-bottom:6px;color:var(--accent-deep)}
+.dm-r p{margin:0;font-size:13px;line-height:1.85;color:var(--text)}
+.dm-r.gap{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.2)}
+.dm-r.gap b{color:var(--danger)}
+.dm-r.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.28)}
+.dm-r.ok b{color:var(--success)}
+.dm-r.ok.glow{animation:fireGlow .9s ease}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+.dm-term{padding:0 3px;border-radius:4px;transition:background .5s cubic-bezier(.25,1,.5,1),color .5s cubic-bezier(.25,1,.5,1)}
+.dm-term.dim{color:var(--faint)}
+.dm-term.wake,.dm-term.lit{background:var(--accent-soft);color:var(--accent-deep);font-weight:700}
+.dm-term.stuck{color:var(--faint);animation:wallPulse 1.2s ease infinite}
+.dm-term.pop{animation:flashPop .8s ease}
+@keyframes wallPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:240px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare,.dm-pips{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}}
+@media(prefers-reduced-motion:reduce){.dm-pip,.dm-enter,.dm-enter.show,.dm-body,.dm-bar,.dm-summary,.dm-term,.dm-i,.dm-i.show,.dm-r,.dm-r.show,.dm-pane{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="先要地图，再定位卡点，补那一层前置，最后回到原文。一段等待期条款走完四步，最后能用一句没有术语的话说出来。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 帮我拆开一段看不懂的条款"><meta property="og:description" content="先要地图，再定位卡点，补那一层前置，最后回到原文。一段等待期条款走完四步，最后能用一句没有术语的话说出来。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-9.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-9.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 啃硬材料</div>
+    <h1>让 AI 帮我拆开一段看不懂的条款</h1>
+    <p class="subtitle">先要地图，再定位卡点，补那一层前置，最后回到原文。四步走完，那一句能用没有术语的话说出来。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>先要地图，再定位卡点，补那一层前置，最后回到原文。四步走完，那一句能用没有术语的话说出来。</p></aside><!--seo:end-->  <p class="reveal">你买过一份重疾险，一年交一次，前两年都按时。</p>
+  <p class="reveal">第三年手头紧，想着晚一个月也没事，<strong>一晃断了三个月</strong>。想起来赶紧打电话，客服说可以补，补完合同接着往下走。钱补上了，确认短信也收到了。这事你觉得翻篇了。</p>
+  <p class="reveal">又过一年多，单位体检查出问题，要住院手术。你翻出保单算了一下：第一年买的，现在第四年，等待期 90 天，<strong>早过了三年多</strong>。材料交上去的时候，你心里是踏实的。</p>
+  <p class="reveal">回复是<strong>拒赔</strong>。理由写着：合同复效之后，90 天等待期从复效那天重新起算，你出险那天<strong>距离复效第 47 天</strong>。</p>
+  <p class="reveal">你把合同翻出来找到那一段。它一直在那儿，签字前你也扫过一眼。</p>
+  <p class="reveal"><span class="clause">本合同等待期为自本合同生效之日或最后一次<mark>复效之日</mark>起 90 日，<mark>以较迟者为准</mark>。</span></p>
+  <p class="reveal">三年多和四十七天的差距，全在这一句里。</p>
+
+  <div class="sec-label">为什么你读了也没看出来</div>
+  <p class="reveal">这句话每个字你都认识，问题出在<strong>复效之日</strong>上。它有一个行业内部的定义，可它长得跟普通词一模一样，不会举手说自己是术语。你扫过去的时候，大脑把它当成了「重新生效那天，大概吧」，就滑过去了。旁边的<strong>以较迟者为准</strong>也一样，它悄悄规定了两个起算点要取靠后的那个。</p>
+  <p class="reveal">所以你读完这一句，收到的信息是「等待期 90 天」。而它真正的意思是「等待期 90 天，<strong>断交补交过的话，这 90 天从补交那天重新数</strong>」。差的那一层，就藏在你以为自己看懂了的那两个词里。</p>
+  <p class="reveal">这是缺前置里最难办的一种：<mark>你不知道自己缺</mark>。碰上明显的生词你会去查，碰上一个伪装成日常词的定义，你连查的念头都不会起。</p>
+
+  <div class="sec-label">这时候 AI 能替你做什么</div>
+  <p class="reveal">把这段贴给 AI，问「帮我讲讲这段什么意思」，它会给你一段通顺的解释。你读完点头，然后照样答不上来 47 天为什么不算数。<strong>它讲的是整段，你缺的是一个词</strong>，整段讲一遍，正好把那个缺口盖了过去。</p>
+  <p class="reveal paywall-locked xa-peek">换一种问法，它能替你做四件你自己做不了的事。</p>
+  <ol class="four reveal paywall-locked">
+    <li><b>说清这段总共讲了几件事</b>，你就知道该盯哪一块。</li>
+    <li><b>把你卡住的那一句拆开</b>，列出它预设了哪几个概念，那张单子上就会出现「复效之日」。</li>
+    <li><b>一个词一个词地补</b>，用你已经懂的事情打比方，补完出道题考你。</li>
+    <li><b>让你合上对话</b>，自己回去读原来那一句。</li>
+  </ol>
+  <p class="reveal paywall-locked">左边是那段原文，右边是每一步你打什么字、它给回来什么。</p>
+
+  <div class="sec-label paywall-locked">先玩一遍 · 四步拆一段等待期条款</div>
+  <div class="demo reveal paywall-locked" id="demo-unpack">
+    <div class="demo-top">
+      <div class="demo-title">同一段等待期条款，按四步走一遍</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-pips" id="dm-pips">
+      <div class="dm-pip" data-step="0"><b>1 · 先要一张地图</b><span>这段总共讲几件事，核心是哪一块</span></div>
+      <div class="dm-pip" data-step="1"><b>2 · 找出挡路的那个词</b><span>这一句预设了你已经懂什么</span></div>
+      <div class="dm-pip" data-step="2"><b>3 · 一次只补一个词</b><span>它出题考你，答对了才往下走</span></div>
+      <div class="dm-pip" data-step="3"><b>4 · 合上对话自己读</b><span>能用大白话说出来才算读过</span></div>
+    </div>
+    <div class="dm-track"><div class="dm-bar" id="dm-bar"></div></div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">合同里的那一段 · 原文照录</div>
+        <div class="dm-pane" id="dm-left"><div class="dm-empty">拒赔依据的那段等待期条款，一个字没改。</div></div>
+      </div>
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h" id="dm-right-h">先别看这边，自己读左边</div>
+        <div class="dm-pane" id="dm-right"><div class="dm-empty">点播放，四步一步一步走给你看。</div></div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>每一步各自解决了什么</b>地图告诉你这段有几块、该盯哪一块，清单告诉你卡在哪个词上，补前置把那个词变成你会用的东西，最后回到原文才算真读过。</div>
+      <div class="dm-s"><b>走完这四步，你能做到的</b>90 天从哪天开始数、断交补交之后为什么要重新数、哪些病过了 90 天也照样不赔，这三件事你都能用大白话说出来。</div>
+    </div>
+    <div class="demo-caption">教学示意：这段条款为演示编写，照着真实条款的绕法，不对应任何一家保险公司的真实产品。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">四句话，换个材料照样能用</div>
+  <p class="reveal paywall-locked">四步的差别全在提问方式上。把下面四句里的材料换成你手上那份，顺序照走，就是刚才演示里的流程。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以直接抄</span>
+    <ol>
+      <li><b>出地图</b><q>这段讲几件事？哪一部分是核心？列一份提纲，先不要展开解释。</q></li>
+      <li><b>定位卡点</b><q>这句我读不懂，预设了哪些我需要先懂的概念？按依赖排序，标出卡住的直接原因。</q></li>
+      <li><b>补前置</b><q>只讲其中一个词。用我已经懂的事情打比方，讲完出一道题考我，我答对之前不要讲下一个。</q></li>
+      <li><b>回到原文</b><q>先别解释了。我自己用大白话说一遍这句的意思，你只指出我哪里说错了。</q></li>
+    </ol>
+    <p class="tpl-note">第三句里的「一个词」，换成第二步那张清单上排最前面的那个，补完再换下一个。</p>
+  </div>
+  <p class="reveal paywall-locked">第一句和第二句是分工：地图告诉你该盯哪一块，清单告诉你缺哪一层。跳过第一句直接问第二句也能走，代价是你不知道这一句在整段里占什么位置，补完了也接不回去。</p>
+  <p class="reveal paywall-locked">第三句里那半句「我答对之前不要讲下一个」是关键。少了它，AI 会一口气把五个词全讲完，你听着都懂，合上就剩最后一个。</p>
+
+  <div class="sec-label paywall-locked">补完之后，怎么算读过了</div>
+  <p class="reveal paywall-locked">补一个词算不算补上，看你能不能答出它出的那道题。开头那 47 天为什么不算数，说得清就是补上了。说不出来就回去再补一遍。</p>
+  <p class="reveal paywall-locked">它给的是地图，目的地是条款本身。合上对话再读一遍卡住的那一句，才算读过。这是使用经验，没有对应的实验文献。</p>
+  <p class="reveal paywall-locked">四十页的东西开工先问什么，见 <a href="/dashboard/learning?lesson=learn-10" data-lesson-id="learn-10">让 AI 先告诉我必须懂哪五个概念</a>。补完之后怎么确认自己会了，见 <a href="/dashboard/learning?view=courses" data-learning-view="courses">让 AI 当那个外行</a>。</p>
+
+  <div class="key-line reveal paywall-locked">读不懂是缺前置，材料不会告诉你缺哪一个。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-unpack');
+  var pips = Array.prototype.slice.call(document.querySelectorAll('#dm-pips .dm-pip'));
+  var leftEl = document.getElementById('dm-left');
+  var rightEl = document.getElementById('dm-right');
+  var rightH = document.getElementById('dm-right-h');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var barEl = document.getElementById('dm-bar');
+  var timers = [];
+  var IDLE = '左边是那段原文。你现在知道卡在哪个词了，可换一份新合同还是会卡在别处。四步走一遍，看的是流程。';
+  var SRC = '本合同等待期为自本合同生效之日或最后一次复效之日起 90 日，以较迟者为准。被保险人于等待期内确诊初次发生本合同附件释义所列重大疾病的，本公司不承担给付保险金责任，无息退还已交保险费，本合同终止。前述初次发生，指被保险人自出生之日起未曾确诊患有该疾病、亦未出现相关症状或体征；因遗传性疾病或投保前已存在体征所致者，本公司不承担给付责任。';
+  var SRC_HI = '本合同等待期为自本合同生效之日或最后一次<span class="dm-term key dim">复效之日</span>起 90 日，<span class="dm-term key dim">以较迟者为准</span>。被保险人于等待期内确诊<span class="dm-term dim">初次发生</span>本合同<span class="dm-term dim">附件释义所列</span>重大疾病的，本公司不承担给付保险金责任，无息退还已交保险费，本合同终止。前述初次发生，指被保险人自出生之日起未曾确诊患有该疾病、亦未出现相关<span class="dm-term dim">症状或体征</span>；因遗传性疾病或投保前已存在体征所致者，本公司不承担给付责任。';
+
+  function ioBox(paste, back){
+    return '<div class="dm-io dm-body">' +
+      '<div class="dm-i"><i>你贴进去</i><p>' + paste + '</p></div>' +
+      '<div class="dm-i back"><i>它给回来</i><p>' + back + '</p></div>' +
+      '</div>';
+  }
+
+  function readBox(){
+    return '<div class="dm-read dm-body">' +
+      '<div class="dm-r gap"><b>没拆之前，你读完记住的</b><p>三行里套了三层限定，读完只剩一个模糊印象：好像有 90 天不赔。</p></div>' +
+      '<div class="dm-r ok"><b>四步走完，这一句能这样说出来</b><p>刚买完保险的头 90 天，查出重病也不赔，只把交进去的钱退给你，合同结束。这 90 天防的是有人已经知道自己有病才来买。中间断交过又补上，断的那几个月保险公司不知道你身体出没出事，所以 90 天从补上那天重新数。出生就带着的病、以前出现过症状的病，过了 90 天也一样不赔。</p></div>' +
+      '</div>';
+  }
+
+  function buildSteps(){
+    return [
+      {
+        pip: 0,
+        cap: '先要一张地图。它只说这段讲几件事、哪一块是核心。地图看完不算读完，下一步才去找你卡住的那一层。',
+        right: ioBox(
+          '整段条款，加一句「这段讲几件事？哪一部分是核心？列一份提纲，先不要展开解释。」',
+          '三件事：90 天从哪天开始数；这 90 天里确诊了怎么处理；哪些病过了 90 天也不赔。核心是第一件，起算点被改过一次。'
+        ),
+        fin: false
+      },
+      {
+        pip: 1,
+        cap: '把读不懂的那一句原样贴进去，问它预设了什么。墙变成一张按依赖排序的清单，闪着的那两个词就是挡路的。',
+        right: ioBox(
+          '读不懂的那一句原样贴上，加一句「这句预设了哪些我需要先懂的概念？按依赖排序，标出卡住的直接原因。」',
+          '直接卡在复效之日和以较迟者为准。往下还预设生效之日、初次发生、症状或体征，五个词按依赖排好。'
+        ),
+        fin: false
+      },
+      {
+        pip: 2,
+        cap: '一次只补一层，用你已经懂的东西打比方，答对之前不往上走。答不出来就停在这一层再补一遍。',
+        right: ioBox(
+          '「只讲复效。用我已经懂的手机停机再复通来打比方。讲完出一道题考我，我答对之前不要讲下一个。」',
+          '断交之后补交、合同重新生效叫复效。它出的题：断交三个月又补上，90 天从哪天数？'
+        ),
+        fin: false
+      },
+      {
+        pip: 3,
+        cap: '同一段条款还在。补过前置之后，原来挡路的词变成能用的零件，那一句可以不带术语地说出来。',
+        right: ioBox(
+          '「我现在这样理解这一句：头 90 天确诊不赔，只退钱。对不对？我漏掉了哪个限定条件？」',
+          '漏了复效之后 90 天重新起算，也漏了出生就带的病过了 90 天照样不赔。'
+        ) + readBox(),
+        fin: true
+      }
+    ];
+  }
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  function termsOf(root, sel){
+    return Array.prototype.slice.call(root.querySelectorAll(sel || '.dm-term'));
+  }
+
+  // 卡住的那两个词维持脉冲，是持续状态，不是一次性事件
+  function stuckTerms(root){
+    termsOf(root, '.dm-term.key').forEach(function(el){
+      el.classList.remove('dim');
+      el.classList.add('stuck');
+    });
+  }
+
+  // 逐个错开唤醒：读者能看清五个词是一层一层补上的
+  function staggerWake(root){
+    termsOf(root).forEach(function(el, i){
+      var t = setTimeout(function(){
+        el.classList.remove('dim', 'stuck');
+        el.classList.add('wake', 'pop');
+      }, reduce ? 0 : i * 80);
+      timers.push(t);
+    });
+  }
+
+  // 收尾整段一起亮：先归零再 double-rAF 放开，否则两次改动会被合并，动画不播
+  function climaxLit(root){
+    var list = termsOf(root);
+    list.forEach(function(el){
+      el.classList.remove('wake', 'pop', 'lit', 'stuck');
+      el.classList.add('dim');
+    });
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        list.forEach(function(el){
+          el.classList.remove('dim');
+          el.classList.add('lit');
+        });
+      });
+    });
+  }
+
+  function enterRight(html){
+    var wrap = document.createElement('div');
+    wrap.className = 'dm-enter';
+    wrap.innerHTML = html;
+    rightEl.innerHTML = '';
+    rightEl.appendChild(wrap);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        wrap.classList.add('show');
+        Array.prototype.forEach.call(wrap.querySelectorAll('.dm-body'), function(b){
+          b.classList.add('open');
+        });
+        var rows = Array.prototype.slice.call(wrap.querySelectorAll('.dm-i, .dm-r'));
+        rows.forEach(function(el, i){
+          var t = setTimeout(function(){
+            requestAnimationFrame(function(){
+              requestAnimationFrame(function(){ el.classList.add('show'); });
+            });
+          }, reduce ? 0 : 120 + i * 150);
+          timers.push(t);
+        });
+        var ok = wrap.querySelector('.dm-r.ok');
+        if (ok) {
+          var g = setTimeout(function(){ ok.classList.add('glow'); }, reduce ? 0 : 700);
+          timers.push(g);
+        }
+      });
+    });
+  }
+
+  function paintPips(active, doneUpTo){
+    pips.forEach(function(el){
+      var n = parseInt(el.getAttribute('data-step'), 10);
+      var wasOn = el.classList.contains('on');
+      el.className = 'dm-pip';
+      if (n === active) {
+        el.classList.add('on');
+        if (!wasOn) el.classList.add('pop');
+      } else if (n <= doneUpTo) el.classList.add('done');
+    });
+  }
+
+  function paint(st){
+    demoEl.classList.add('playing');
+    paintPips(st.pip, st.pip - 1);
+    barEl.style.width = ((st.pip + 1) / 4 * 100) + '%';
+    rightH.textContent = st.pip === 3 ? '你打什么字，它回什么，以及前后对照' : '你打什么字，它回什么';
+    clearTimers();
+    leftEl.innerHTML = SRC_HI;
+    if (st.pip === 1) stuckTerms(leftEl);
+    else if (st.pip === 2) staggerWake(leftEl);
+    else if (st.pip === 3) climaxLit(leftEl);
+    enterRight(st.right);
+    captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx]);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+
+  // 节拍不匀速：定位卡点那一步之后停久一点，收尾再停一次
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= steps.length) { stop(); return; }
+    var st = steps[idx];
+    paint(st);
+    idx++;
+    pauseUntil = ts + (st.fin ? 3200 : (st.pip === 1 ? 2300 : 1500));
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop(); idx = 0; pauseUntil = 0;
+    steps = buildSteps();
+    clearTimers();
+    demoEl.classList.remove('playing');
+    paintPips(-1, -2);
+    barEl.style.width = '0%';
+    rightH.textContent = '先别看这边，自己读左边';
+    leftEl.innerHTML = SRC;
+    rightEl.innerHTML = '<div class="dm-read"><div class="dm-r gap show"><b>先自己试一次</b><p>不照着四步，你能把左边这段拆明白吗？拆不动很正常，点播放看一遍流程怎么走。</p></div></div>';
+    summary.classList.remove('on');
+    captionText.textContent = IDLE;
+  }
+
+  function play(){
+    if (idx >= steps.length) reset();
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+
+  reset();
+  if (window.lessonOnView) {
+    // 自动播放前留一段停顿：读者得先读完左边那段条款、自己撞一次墙，
+    // 四步拆解才有对照。手动点播放的人已经准备好了，不走这个延迟。
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true;
+      if (reduce) { play(); return; }
+      var t = setTimeout(function(){ if (!playing && idx === 0) play(); }, 4000);
+      timers.push(t);
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

@@ -1,0 +1,1165 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-13",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-13',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工具输出契约：值与展示分离 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.24);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.05),0 0 0 52px rgba(77,107,254,.028)}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.prose{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}
+.src-note code{font-size:11.5px}
+.facts{display:grid;grid-template-columns:1fr;gap:20px;margin-top:20px}.fact{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}.fact code{color:var(--accent);font-weight:800}.fact p{font-size:14px;line-height:1.9;color:var(--sub);margin:9px 0 0}
+.core-visual{background:var(--card);border:1px solid rgba(77,107,254,.25);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.core-visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin-top:14px;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text)}
+.doc-quote{margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow-card)}.doc-quote .dq-path{font:700 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);overflow-wrap:anywhere;margin-bottom:8px}.doc-quote blockquote{margin:0;font-size:14px;line-height:1.9;color:var(--text)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#f0f3ff,var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:12px}.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0;color:var(--sub);font-size:14px;line-height:1.9}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.28);color:var(--text);display:flex;gap:14px;line-height:1.9;font-size:14px}.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+/* ── 交互演示 · 双视角展台 ── */
+.demo{background:var(--card);border:1px solid rgba(77,107,254,.25);border-radius:18px;padding:28px;box-shadow:var(--shadow-card)}
+.demo-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.demo-scenarios,.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 15px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:600 13px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.demo button.active,.demo button:hover{border-color:var(--accent)}
+.demo button.active{background:var(--accent);color:#fff}
+.demo button svg{flex:none}
+.rd-value{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg);border:1.5px dashed rgba(77,107,254,.4);border-radius:12px;padding:10px 14px;margin-bottom:12px;transition:opacity .5s}
+.rd-value.fade{opacity:.28}
+.rd-value .vt{font:800 11px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--accent-deep);letter-spacing:.05em;flex:none}
+.rd-value code{font:11.5px/1.5 ui-monospace,Menlo,monospace;color:var(--text);background:none;padding:0;overflow-wrap:anywhere}
+.rd-badge{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 -apple-system,sans-serif;padding:5px 9px;border-radius:999px;border:1px solid var(--border);color:var(--sub);opacity:0;transition:opacity .3s}
+.rd-badge.show{opacity:1}
+.rd-badge.ok{border-color:rgba(22,163,74,.4);color:var(--success)}
+.rd-badge.err{border-color:rgba(220,38,38,.5);color:var(--danger)}
+.rd-stage{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.rd-pane{background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:14px;min-height:230px;transition:border-color .3s,box-shadow .3s}
+.rd-pane.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.rd-pane.err{border-color:rgba(220,38,38,.5)}
+.rd-pane-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.rd-pane-head b{font-size:13px;color:var(--accent-deep)}
+.rd-pane-head span{font:11px ui-monospace,Menlo,monospace;color:var(--sub)}
+.rd-hint{font-size:11px;color:var(--sub);margin-bottom:10px;line-height:1.5}
+.rd-model{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;font:12px/1.7 ui-monospace,Menlo,monospace;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;min-height:130px}
+.rd-card{background:#fff;border:1px solid rgba(77,107,254,.3);border-radius:10px;overflow:hidden;min-height:130px}
+.rd-card-head{display:flex;align-items:center;gap:8px;background:var(--accent-soft);padding:8px 12px;font:700 12px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--accent-deep)}
+.rd-card-head svg{flex:none;color:var(--accent)}
+.rd-card-head .tag{margin-left:auto;font:700 10px/1 ui-monospace,Menlo,monospace;background:#fff;border:1px solid rgba(77,107,254,.3);border-radius:999px;padding:4px 8px;color:var(--accent)}
+.rd-card-body{padding:10px 12px;font-size:12px;line-height:1.7;color:var(--text)}
+.rd-line{display:flex;gap:10px;font:11.5px/1.8 ui-monospace,Menlo,monospace}
+.rd-line .ln{color:#9ca3af;flex:none;width:26px;text-align:right}
+.rd-line.hit{background:var(--accent-soft);border-radius:4px}
+.rd-file{font:700 11.5px/1.8 ui-monospace,Menlo,monospace;color:var(--accent-deep);margin-top:6px}
+.rd-foot{font-size:11px;color:var(--sub);margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rd-foot .pill{border:1px solid rgba(217,119,6,.45);color:var(--amber);border-radius:999px;padding:2px 8px;font-weight:700;font-size:10px}
+.rd-persist{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--sub)}
+.rd-persist b{color:var(--text);font-size:12px}
+.pt{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:999px;padding:4px 10px;font:700 11px/1 ui-monospace,Menlo,monospace;color:var(--sub);transition:border-color .3s,color .3s,opacity .3s}
+.pt.keep{border-color:rgba(22,163,74,.45);color:var(--success)}
+.pt.drop{border-color:rgba(220,38,38,.4);color:var(--danger);text-decoration:line-through;opacity:.75}
+.rd-status{margin-top:16px;min-height:56px;font-size:14px;color:var(--text);line-height:1.8;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.demo-note{font-size:12px;color:var(--sub);margin-top:12px;line-height:1.7}
+@media(max-width:760px){.facts{grid-template-columns:1fr}.rd-stage{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo-bar{flex-direction:column;align-items:stretch}.demo button{flex:1}.source-head{flex-direction:column}}
+</style>
+<meta name="description" content="拆解 DeepSeek Harness 的工具输出契约：execute 返回带 schema 的规范值，render 投影模型内容，presentResult 投影 UI 卡片。同一个结果，模型看的和人看的可以不一样，持久化只存 content 不存 value。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="工具输出契约：值与展示分离"><meta property="og:description" content="拆解 DeepSeek Harness 的工具输出契约：execute 返回带 schema 的规范值，render 投影模型内容，presentResult 投影 UI 卡片。同一个结果，模型看的和人看的可以不一样，持久化只存 content 不存 value。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-13.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 工具系统</div>
+    <h1>工具输出契约：值与展示分离</h1>
+    <p class="subtitle">同一个结果，模型看的和人看的可以不一样。核心源码：<code>packages/core/tools/src/index.ts</code> 与 <code>presentation.ts</code>。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>同一个结果，模型看的和人看的可以不一样</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：工具的返回值在 DSH 里是带 schema 的结构化 JSON 值，模型看到的文本和 UI 画出的卡片都是从这个值投影出来的；UI 靠 card 标签联合类型渲染结果，全程不需要认识工具名；持久化只存投影不存值，所以回放能复现每一张卡片，却永远重建不了中间值。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 双视角展台</div>
+  <div id="demo-render" class="demo reveal">
+    <div class="demo-bar">
+      <div class="demo-scenarios">
+        <button class="scn active" data-scn="A">read 读文件</button>
+        <button class="scn" data-scn="B">grep 搜索</button>
+        <button class="scn" data-scn="C">没写 presentation</button>
+        <button class="scn" data-scn="D">render 抛异常</button>
+      </div>
+      <div class="demo-ctrl">
+        <button id="dr-play"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>播放</button>
+        <button id="dr-step"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4v16l10-8z"></path><path d="M19 4v16"></path></svg>单步</button>
+        <button id="dr-reset"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="rd-value" id="dr-value">
+      <span class="vt">规范值 value</span>
+      <code id="dr-json">等待 execute() 返回…</code>
+      <span class="rd-badge" id="dr-schema">schema 校验</span>
+    </div>
+    <div class="rd-stage">
+      <div class="rd-pane" id="dr-lpane">
+        <div class="rd-pane-head"><b>模型视角</b><span>render(args, value)</span></div>
+        <div class="rd-hint">进入上下文、按 token 计费的那份文本</div>
+        <div class="rd-model" id="dr-model"></div>
+      </div>
+      <div class="rd-pane" id="dr-rpane">
+        <div class="rd-pane-head"><b>UI 视角</b><span>presentResult(args, result)</span></div>
+        <div class="rd-hint">客户端拿到的渲染意图，一张带 card 标签的卡片</div>
+        <div id="dr-card"></div>
+      </div>
+    </div>
+    <div class="rd-persist" id="dr-persist">
+      <b>会话日志落盘：</b>
+      <span class="pt" id="pt-content">content</span>
+      <span class="pt" id="pt-meta">meta</span>
+      <span class="pt" id="pt-value">value</span>
+      <span id="dr-persist-note"></span>
+    </div>
+    <div class="rd-status" id="dr-status">选择场景后点「播放」，或滚动到此处自动播放 read 场景。</div>
+    <div class="demo-note">演示为教学化模拟：值、文本与卡片均为课程化举例，投影关系对应 <code>packages/core/tools/src/index.ts</code> 第 211 至 219 行的输出契约与 <code>presentation.ts</code> 的 card 联合类型。玩的时候对比左右两栏：同一个 value，两份完全不同的呈现。</div>
+  </div>
+
+  <div class="sec-label">机制拆解 · 一个值，三份投影</div>
+  <p class="prose reveal">先回答标题里的问题：工具结果到底是字符串还是结构化值？在 DSH 里两个都是，但地位不同。工具的 <code>execute</code> 只返回一个规范 JSON 值（canonical value），这个值必须通过工具自己声明的 <code>output.schema</code> 校验。字符串是后来才有的：注册表拿着校验过的值调用 <code>render(args, value)</code>，投影出模型看到的内容块。</p>
+  <p class="prose reveal">所以链路是：execute 产出值，schema 把关，render 投影模型内容，可选的 <code>presentationMeta</code> 投影一份可回放的 UI 数据，<code>presentResult</code> 再把它变成一张卡片。render 和 presentResult 都是纯函数，不做 I/O，因为它们在实时流式输出和会话日志回放两条路径上都要跑，跑出来必须一样。</p>
+  <p class="prose reveal">UI 那边拿到的东西叫渲染意图（render intent）：一个带 card 标签的联合类型，值域是 generic、terminal、diff、read、search、web 六种卡片。客户端只需要对 card 做 switch，不需要认识任何工具名。换一个搜索后端 provider，工具实现整个换掉，只要它还产出 search 卡，UI 一行不用改。这就是 UI 契约与工具实现解耦的意思。</p>
+  <div class="facts">
+    <div class="fact reveal"><code>value 只活在执行期</code><p>持久化的 <code>tool/result</code> 事件只存 content、error 和 meta，规范值从不落盘。回放可以重现每一张卡片和每一段模型文本，却重建不了中间值（<code>docs/subsystems/tools.zh.md</code>「结果仅承载产出」一节）。</p></div>
+    <div class="fact reveal"><code>投影坏了不等于崩了</code><p>值没过 schema、render 抛异常、presentationMeta 产出非 JSON，全部转成 JSON 安全的 isError 结果。模型看到一条错误文本，流水线照常走完，出处在 <code>index.ts</code> 第 1793 行起的 <code>createSuccessResult</code>。</p></div>
+    <div class="fact reveal"><code>截断必须亮牌</code><p>search 卡强制携带 <code>truncated</code> 和 <code>total</code> 两个字段，UI 永远不会把砍过的结果当完整结果画出来（<code>presentation.ts</code> 第 223 至 231 行）。read 卡同理带 <code>offset</code> 和 <code>totalLines</code>，能画出「显示 N 行，共 M 行」。</p></div>
+  </div>
+
+  <div class="sec-label">核心视觉 · 投影关系图</div>
+  <div class="core-visual reveal">
+    <svg viewBox="0 0 940 320" role="img" aria-label="值与展示分离结构图">
+      <defs>
+        <linearGradient id="vg" x1="0" x2="1"><stop stop-color="#3450d4"></stop><stop offset="1" stop-color="#4d6bfe"></stop></linearGradient>
+        <marker id="va" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d6bfe"></path></marker>
+      </defs>
+      <rect x="30" y="118" width="190" height="84" rx="14" fill="url(#vg)"></rect>
+      <text x="125" y="152" fill="#fff" text-anchor="middle" font-size="14" font-weight="800">execute() 返回</text>
+      <text x="125" y="174" fill="#dfe6ff" text-anchor="middle" font-size="12">规范值 value（JSON）</text>
+      <rect x="252" y="118" width="140" height="84" rx="14" fill="#fff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="322" y="152" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">output.schema</text>
+      <text x="322" y="174" fill="#6b7280" text-anchor="middle" font-size="11">逐次强制校验</text>
+      <path fill="none" d="M220 160 H250" stroke="#4d6bfe" stroke-width="2" marker-end="url(#va)"></path>
+      <path d="M392 138 C450 100 500 70 560 62" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#va)"></path>
+      <text x="470" y="86" fill="#6b7280" text-anchor="middle" font-size="11">render(args, value)</text>
+      <rect x="562" y="30" width="200" height="62" rx="12" fill="#f0f3ff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="662" y="56" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">content 内容块</text>
+      <text x="662" y="76" fill="#6b7280" text-anchor="middle" font-size="11">模型看的，进上下文</text>
+      <path fill="none" d="M392 160 H560" stroke="#4d6bfe" stroke-width="2" marker-end="url(#va)"></path>
+      <text x="470" y="152" fill="#6b7280" text-anchor="middle" font-size="11">presentationMeta(args, value)</text>
+      <rect x="562" y="130" width="200" height="62" rx="12" fill="#f0f3ff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="662" y="156" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">meta 展示数据</text>
+      <text x="662" y="176" fill="#6b7280" text-anchor="middle" font-size="11">可回放，随日志持久化</text>
+      <path d="M392 182 C450 222 500 250 560 258" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#va)"></path>
+      <text x="470" y="242" fill="#6b7280" text-anchor="middle" font-size="11">presentResult(args, result)</text>
+      <rect x="562" y="230" width="200" height="62" rx="12" fill="#f0f3ff" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="662" y="256" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">card 渲染意图</text>
+      <text x="662" y="276" fill="#6b7280" text-anchor="middle" font-size="11">UI 看的，switch(card)</text>
+      <path fill="none" d="M762 61 H820" stroke="#16a34a" stroke-width="2" marker-end="url(#vok)"></path>
+      <path fill="none" d="M762 161 H820" stroke="#16a34a" stroke-width="2" marker-end="url(#vok)"></path>
+      <defs><marker id="vok" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#16a34a"></path></marker></defs>
+      <rect x="822" y="96" width="96" height="126" rx="12" fill="rgba(22,163,74,.06)" stroke="rgba(22,163,74,.45)"></rect>
+      <text x="870" y="150" fill="#16a34a" text-anchor="middle" font-size="12" font-weight="700">会话日志</text>
+      <text x="870" y="170" fill="#6b7280" text-anchor="middle" font-size="10">content + meta</text>
+      <text x="125" y="238" fill="#dc2626" text-anchor="middle" font-size="11" font-weight="700">value 不落盘</text>
+      <text x="125" y="256" fill="#6b7280" text-anchor="middle" font-size="10">执行结束即丢弃</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：三条投影对应 index.ts 第 211 至 219 行的 ToolOutputDefinition 与第 84 至 92 行的两个 present 回调。</div>
+  </div>
+
+  <div class="sec-label paywall-locked xa-peek">关键证据 · 契约与二选一</div>
+  <p class="prose reveal paywall-locked">输出契约的全部字段就九行。schema 是强制的，render 是强制的，presentationMeta 可选。注意两个投影器的注释都强调 Pure：这是回放确定性的地基。</p>
+  <div class="source reveal paywall-locked">
+    <div class="source-head"><span>packages/core/tools/src/index.ts</span><span>第 211 至 219 行</span></div>
+    <pre><code><span class="cm">/** Tool-owned canonical output contract used after the body returns a JSON value. */</span>
+<span class="kw">export interface</span> <span class="ty">ToolOutputDefinition</span> {
+  <span class="cm">/** Raw supported JSON Schema enforced against every successful canonical value. */</span>
+  <span class="kw">readonly</span> schema: <span class="ty">JsonSchemaNode</span>
+  <span class="cm">/** Pure projection from validated arguments and value to Native/model content. */</span>
+  <span class="fn">render</span>(args: <span class="ty">unknown</span>, value: <span class="ty">JsonValue</span>): <span class="ty">ContentBlock</span>[]
+  <span class="cm">/** Pure replayable presentation projection, computed only for top-level calls. */</span>
+  <span class="fn">presentationMeta</span>?(args: <span class="ty">unknown</span>, value: <span class="ty">JsonValue</span>): <span class="ty">JsonValue</span>
+}</code></pre>
+  </div>
+  <div class="snapshot paywall-locked"><b>源码快照说明：</b>依据本地仓库 deepseek-harness-master，核对文件 <code>packages/core/tools/src/index.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+  <p class="prose reveal paywall-locked">值与展示分离还解释了 post-execute 插件的一条怪规矩：accept 的时候，换 content 和换 value 只能二选一。这条规矩不是靠文档约定，是写死在类型定义里的。<code>PostToolDecision</code> 的 accept 有两个分支：一个分支允许带 content，同时把 value 字段的类型标成 <code>never</code>；另一个分支反过来，允许带 value，把 content 标成 <code>never</code>。TypeScript 里 <code>never</code> 类型没有任何合法取值，谁想在一个决定里同时塞两个字段，编译器直接报错。第三个分支是 block，把纠正性反馈变成错误结果。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>packages/core/tools/src/index.ts</code> 第 593 至 600 行的 PostToolDecision 类型定义，核对日期 2026-08-13。</p>
+  <p class="prose reveal paywall-locked">为什么不许同时换？因为两边语义不一样。换 content 是展示层的动作：值保持原样，只改模型看到的文本。换 value 是数据层的动作：注册表会拿新值重新过一遍 schema，再重新算 content 和 meta，保证三份投影出自同一个源头。允许同时换，就可能出现文本说 A、值是 B 的分裂结果。文档还补了一句要害提醒：内容替换是展示策略，想对程序隐藏值的插件必须换值或者 block，光改文本瞒不住 Code Mode 里拿值的程序（<code>docs/subsystems/tools.zh.md</code>「后置策略」一节）。</p>
+  <p class="prose reveal paywall-locked">两个兜底问题也有了答案。render 抛异常，注册表把它转成 JSON 安全的 isError，模型看到错误文本。第三方工具没写 presentCall / presentResult，客户端回退到 generic 卡：标题就是工具名，原始参数当输入展示（<code>index.ts</code> 第 79 至 83 行的注释写明了这条回退）。都不崩，都有着落。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 渲染长在哪</div>
+  <p class="prose reveal paywall-locked"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg><b>Claude Code</b> 的渲染直接长在工具接口上。Tool 接口里有 <code>renderToolResultMessage()</code> 负责 UI 渲染、<code>mapToolResultToToolResultBlockParam()</code> 负责格式转换（书稿 study/chapters/02-tool-system.md 第 96 至 98 行的接口分类图），工具文件本身是 .tsx，渲染逻辑是工具自带的 React 组件。这条路线的好处是工具作者掌控每个像素，代价是换一个客户端（比如从终端换到编辑器插件）就要重写渲染层，回放也需要重新执行渲染代码。DSH 把这层翻译成了数据：工具只声明渲染意图，六种卡片词汇是 host 和 client 之间的中立协议，谁来渲染都行。</p>
+  <p class="prose reveal paywall-locked">结果超限的处理也能对上：CC 用 <code>maxResultSizeChars</code>，超了就落盘、给模型留预览加路径（study/chapters/02-tool-system.md 第 463 至 496 行）；DSH 的对应机制是 spill 策略，在 <a href="/dashboard/learning?lesson=dsh-4" data-lesson-id="dsh-4">Compaction 双路径</a> 一课讲过。两家都想清楚了同一件事：工具结果的体量必须有人管，不能放任它撑爆上下文。</p>
+  <p class="prose reveal paywall-locked"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg><b>Grok Build</b> 用 Rust 枚举给工具输出做类型化：比如 search_replace 的输出是 <code>SearchReplaceOutput</code> 枚举，InvalidInput、NoMatchesFound 这些失败形态在编译期就定死了（<code>crates/codegen/xai-grok-tools/src/implementations/grok_build/search_replace/mod.rs</code>）。输入侧同样讲究，面向模型的 canonical input 做成稳定投影，站内 <a href="/dashboard/learning?lesson=12-10" data-lesson-id="12-10">Canonical input 是稳定投影</a> 有完整拆解。至于输出的 UI 呈现与模型文本是否像 DSH 这样走统一的卡片词汇，已核对的 Grok 材料里未见等价机制，这条结论基于已公开证据保留。</p>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div><h3>给一个 SQL 查询工具设计输出契约</h3><p>你要接入一个第三方 <code>sql_query</code> 工具，查询返回 1200 行但只保留前 50 行。请写出：value 的 schema 大致长什么样（提示：rows、total、truncated 三个字段少不了）；render 给模型的文本要不要包含全部 50 行；presentResult 选六种卡片里的哪一种，截断信息放哪。最后一问：安全插件想对模型隐藏其中的手机号列，在 post-execute 里该换 content 还是换 value？想想 Code Mode 里程序拿到的是什么。</p></div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>工具产出一个带 schema 的值，模型文本和 UI 卡片都是它的纯函数投影，改哪份投影就走哪个通道，二选一不许混。UI 只认 card 标签不认工具名，换实现不动界面。持久化只存投影不存值：回放能复现所有展示，值本身随执行结束消失。</span>
+  </div>
+</article>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var cur = 'A';
+  var steps = [];
+  var idx = 0;
+  var timer = null;
+  var playing = false;
+  var runId = 0;
+
+  var ICON_READ = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+  var ICON_SEARCH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+  var ICON_BOX = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
+  var ICON_ERR = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
+
+  var DATA = {
+    A: {
+      json: '{ "path": "src/config.ts", "offset": 12, "totalLines": 128, "lines": [{ "number": 12, "text": "export const PORT = 8443" }, …] }',
+      model: '&lt;file path="src/config.ts" lines="12-14 of 128"&gt;\n    12→export const PORT = 8443\n    13→export const HOST = \'0.0.0.0\'\n    14→export const RETRIES = 3\n&lt;/file&gt;',
+      card: function () {
+        return '<div class="rd-card"><div class="rd-card-head">' + ICON_READ + 'src/config.ts<span class="tag">card: read</span></div><div class="rd-card-body">'
+          + '<div class="rd-line"><span class="ln">12</span><span>export const PORT = 8443</span></div>'
+          + '<div class="rd-line"><span class="ln">13</span><span>export const HOST = \'0.0.0.0\'</span></div>'
+          + '<div class="rd-line"><span class="ln">14</span><span>export const RETRIES = 3</span></div>'
+          + '<div class="rd-foot">显示第 12 至 14 行，共 128 行 · 语法高亮提示 lang: ts</div>'
+          + '</div></div>';
+      }
+    },
+    B: {
+      json: '{ "shape": "matches", "total": 48, "truncated": true, "files": [{ "path": "src/agent.ts", "matches": [{ "lineNumber": 116, "line": "send(steer)" }] }, …] }',
+      model: 'src/agent.ts:116: send(steer)\nsrc/agent.ts:119: send(fallback)\nsrc/loop.ts:88: send(retry)\n… 45 more matches (result truncated)',
+      card: function () {
+        return '<div class="rd-card"><div class="rd-card-head">' + ICON_SEARCH + 'grep: send(<span class="tag">card: search</span></div><div class="rd-card-body">'
+          + '<div class="rd-file">src/agent.ts</div>'
+          + '<div class="rd-line hit"><span class="ln">116</span><span>send(steer)</span></div>'
+          + '<div class="rd-line hit"><span class="ln">119</span><span>send(fallback)</span></div>'
+          + '<div class="rd-file">src/loop.ts</div>'
+          + '<div class="rd-line hit"><span class="ln">88</span><span>send(retry)</span></div>'
+          + '<div class="rd-foot"><span class="pill">已截断</span>内联保留 3 条，total: 48。UI 永远不把部分结果画成完整结果。</div>'
+          + '</div></div>';
+      }
+    },
+    C: {
+      json: '{ "ok": true, "deployId": "dp-2081", "region": "cn-south" }',
+      model: 'Deployed dp-2081 to cn-south.',
+      card: function () {
+        return '<div class="rd-card"><div class="rd-card-head">' + ICON_BOX + 'deploy_service<span class="tag">card: generic</span></div><div class="rd-card-body">'
+          + '<div style="font:11.5px/1.7 ui-monospace,Menlo,monospace">Deployed dp-2081 to cn-south.</div>'
+          + '<div class="rd-foot">兜底卡：标题 = 工具名，正文 = 原始结果内容。不好看，但不缺席。</div>'
+          + '</div></div>';
+      }
+    },
+    D: {
+      json: '{ "path": "src/config.ts", "lines": [ … ] }',
+      model: 'Error: tool result rendering failed',
+      card: function () {
+        return '<div class="rd-card" style="border-color:rgba(220,38,38,.5)"><div class="rd-card-head" style="background:rgba(220,38,38,.07);color:var(--danger)">' + ICON_ERR + 'read 调用失败<span class="tag" style="border-color:rgba(220,38,38,.4);color:var(--danger)">isError</span></div><div class="rd-card-body">'
+          + '<div style="font:11.5px/1.7 ui-monospace,Menlo,monospace;color:var(--danger)">Error: tool result rendering failed</div>'
+          + '<div class="rd-foot">渲染器崩了被注册表接住，转成 JSON 安全的错误结果，进程不崩。</div>'
+          + '</div></div>';
+      }
+    }
+  };
+
+  function setStatus(t) { $('dr-status').textContent = t; }
+  function setPersist(state, note) {
+    var c = $('pt-content'), m = $('pt-meta'), v = $('pt-value');
+    [c, m, v].forEach(function (el) { el.classList.remove('keep', 'drop'); });
+    if (state === 'done') {
+      c.classList.add('keep'); m.classList.add('keep'); v.classList.add('drop');
+    }
+    $('dr-persist-note').textContent = note || '';
+  }
+  function schemaBadge(ok, text) {
+    var b = $('dr-schema');
+    b.className = 'rd-badge show ' + (ok ? 'ok' : 'err');
+    b.textContent = text;
+  }
+
+  function build() {
+    var d = DATA[cur];
+    var list = [];
+    list.push({ cap: '工具本体执行完毕，execute() 返回规范值 value。注意它是结构化 JSON，还没有任何一个字是给模型看的。', run: function () { $('dr-json').textContent = d.json.replace(/&lt;/g, '<').replace(/&gt;/g, '>'); } });
+    if (cur === 'D') {
+      list.push({ cap: '注册表拿 value 过 output.schema：通过。', run: function () { schemaBadge(true, 'schema 通过'); } });
+      list.push({ cap: '调用 render(args, value) 投影模型内容。这个工具的渲染器写了个 bug，抛了异常。', run: function () { $('dr-lpane').classList.add('on'); } });
+      list.push({ cap: '注册表接住异常，把结果转成 JSON 安全的 isError。模型看到一条错误文本，知道这次调用废了。', run: function () { $('dr-lpane').classList.remove('on'); $('dr-lpane').classList.add('err'); $('dr-model').innerHTML = 'Error: tool result rendering failed'; $('dr-model').style.color = 'var(--danger)'; } });
+      list.push({ cap: 'UI 侧同样拿到错误结果，画一张错误卡。投影坏了不等于进程崩了。', run: function () { $('dr-rpane').classList.add('err'); $('dr-card').innerHTML = d.card(); } });
+      list.push({ cap: '错误结果照常持久化 content 和 error，value 本来就不落盘。回放时这条失败记录原样复现。', run: function () { setPersist('done', 'isError 结果同样只存投影。'); $('dr-value').classList.add('fade'); } });
+      return list;
+    }
+    list.push({ cap: '注册表拿 value 过 output.schema 校验：字段、类型逐一核对，通过。不合格的值到不了下一步。', run: function () { schemaBadge(true, 'schema 通过'); } });
+    list.push({ cap: '第一份投影：render(args, value) 算出模型看到的内容块。这份文本进上下文、按 token 计费。', run: function () { $('dr-lpane').classList.add('on'); $('dr-model').innerHTML = d.model; } });
+    if (cur === 'C') {
+      list.push({ cap: '第二份投影轮到 UI。这个第三方工具没写 presentResult，客户端回退到 generic 兜底卡：标题用工具名，正文用原始结果。', run: function () { $('dr-lpane').classList.remove('on'); $('dr-rpane').classList.add('on'); $('dr-card').innerHTML = d.card(); } });
+    } else {
+      list.push({ cap: '第二份投影：presentResult 把结果变成一张带 card 标签的卡片。UI 只对 card 做 switch，全程不认识工具名。', run: function () { $('dr-lpane').classList.remove('on'); $('dr-rpane').classList.add('on'); $('dr-card').innerHTML = d.card(); } });
+    }
+    list.push({ cap: '对比左右两栏：同一个 value，模型拿到的是省 token 的紧凑文本，人拿到的是带结构的卡片。谁也不迁就谁。', run: function () { $('dr-rpane').classList.remove('on'); } });
+    list.push({ cap: '落盘时刻：会话日志只存 content 和 meta，value 随执行结束丢弃。回放能复现两份投影，重建不了值。', run: function () { setPersist('done', '回放从日志读回投影，从不重算。'); $('dr-value').classList.add('fade'); } });
+    return list;
+  }
+
+  function reset() {
+    runId++;
+    playing = false;
+    clearTimeout(timer);
+    idx = 0;
+    $('dr-json').textContent = '等待 execute() 返回…';
+    $('dr-schema').className = 'rd-badge';
+    $('dr-model').innerHTML = '';
+    $('dr-model').style.color = '';
+    $('dr-card').innerHTML = '';
+    $('dr-lpane').className = 'rd-pane';
+    $('dr-rpane').className = 'rd-pane';
+    $('dr-value').classList.remove('fade');
+    setPersist('idle', '');
+    setStatus('已重置。点「播放」运行当前场景，或点「单步」逐帧推进。');
+    steps = build();
+  }
+
+  function doStep() {
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    if (s.cap) setStatus(s.cap);
+    if (s.run) s.run();
+    if (playing) timer = setTimeout(doStep, s.dur || 2000);
+  }
+  function play() {
+    if (playing) return;
+    if (idx >= steps.length) reset();
+    playing = true;
+    doStep();
+  }
+  function stepOnce() {
+    playing = false;
+    clearTimeout(timer);
+    if (idx >= steps.length) { reset(); return; }
+    doStep();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#demo-render .scn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#demo-render .scn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      cur = btn.getAttribute('data-scn');
+      reset();
+    });
+  });
+  $('dr-play').addEventListener('click', play);
+  $('dr-step').addEventListener('click', stepOnce);
+  $('dr-reset').addEventListener('click', reset);
+
+  reset();
+  (function hookAutoplay(tries) {
+    if (typeof window.lessonOnView === 'function') {
+      window.lessonOnView(document.getElementById('demo-render'), play);
+    } else if (tries > 0) {
+      setTimeout(function () { hookAutoplay(tries - 1); }, 120);
+    }
+  })(50);
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

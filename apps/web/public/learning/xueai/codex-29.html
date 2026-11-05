@@ -1,0 +1,1336 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-29",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-29',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>对外协议是投影 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson code{overflow-wrap:anywhere;word-break:break-all}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25);overflow-wrap:anywhere;word-break:break-all}
+.idea-list{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0 24px}
+.idea-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.idea-card b{display:block;font-size:14px;color:var(--accent-deep);margin-bottom:8px}
+.idea-card p{margin:0;font-size:14px;line-height:1.9;color:var(--sub)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-input{display:flex;align-items:center;gap:10px;flex:1;min-width:220px}
+.dm-input label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-input input{flex:1;min-width:0;min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-phase{position:relative;margin-bottom:16px;padding:12px 16px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border);font-size:13px;line-height:1.8;color:var(--sub);transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1)}
+.dm-phase:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-phase b{color:var(--accent-deep)}
+.dm-phase.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+#dm-phase-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-height:220px}
+.dm-head{position:relative;padding:14px 16px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head .dm-name{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--text)}
+.dm-head .dm-badge{flex:0 0 auto;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--sub);transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-head .dm-badge.on{color:var(--accent-deep);border-color:rgba(65,75,90,.4);background:var(--accent-soft)}
+.dm-head .dm-badge.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-head .dm-sub{display:block;margin-top:4px;font-size:11.5px;color:var(--sub);line-height:1.6}
+.dm-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.dm-chip{padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);font-size:12.5px;line-height:1.6;color:var(--faint);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-body.is-live .dm-chip{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-chip.on,.dm-body.is-live .dm-chip.hold,.dm-body.is-live .dm-chip.warn{opacity:1;transform:scale(1)}
+.dm-chip b{display:block;font-size:13px;color:inherit;margin-bottom:2px;word-break:break-all}
+.dm-chip span{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-chip.on{border-color:rgba(65,75,90,.5);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-chip.done{color:var(--text)}
+.dm-chip.warn{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-chip.hold{border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-chip.is-enter,.dm-body.is-live .dm-chip.is-enter{opacity:0;transform:translateY(8px)}
+.dm-chip.is-enter.in,.dm-body.is-live .dm-chip.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-empty{padding:18px 8px;text-align:center;font-size:12.5px;color:var(--faint);line-height:1.7;max-height:80px;overflow:hidden;opacity:1;transition:max-height .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1),padding .4s ease}
+.dm-empty.off{max-height:0;opacity:0;padding-top:0;padding-bottom:0}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){
+  .lesson{overflow-x:hidden}
+  .compare{grid-template-columns:1fr}
+  .idea-list{grid-template-columns:1fr}
+  .objective{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .demo{padding:18px}
+  .demo-ctrl{width:100%}
+  .demo-ctrl button{flex:1}
+  .dm-cols{grid-template-columns:1fr}
+  .dm-col{min-height:0}
+  .dm-body{min-height:0}
+  .visual{padding:14px}
+  .dm-trace li{flex-direction:column;gap:4px}
+  .dm-input{width:100%;min-width:0}
+  .dm-summary.on{max-height:560px}
+  .demo,.visual,.cmp-card{max-width:100%;min-width:0}
+}
+</style>
+<meta name="description" content="Codex 的对外协议是投影：一次 turn/start 先回响应再推事件流，审批是反向请求，两个官方 SDK 走的不是同一条协议面">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="对外协议是投影"><meta property="og:description" content="Codex 的对外协议是投影：一次 turn/start 先回响应再推事件流，审批是反向请求，两个官方 SDK 走的不是同一条协议面"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-29.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 对外协议</div>
+    <h1>对外协议是投影</h1>
+    <p class="subtitle">IDE 看见的是 Thread / Turn / Item，不是内核 EventMsg。一次 <code>turn/start</code> 先回响应，再推事件流；审批是反向请求，不回包这一轮就停住。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>IDE 看见的是 Thread / Turn / Item，不是内核 EventMsg。一次 turn/start 先回响应，再推事件流；审批是反向请求，不回包这一轮就停住。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事：对外协议是投影，内核事件会改名、丢掉或拆开之后才上线；<code>turn/start</code> 的回包只表示请求被接受，真正开跑看 <code>turn/started</code>；Python SDK 和 TypeScript SDK 走的不是同一条协议面。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 一次请求怎么往返</div>
+  <div class="demo reveal" id="demo-rpc">
+    <div class="demo-top">
+      <div class="demo-title">同一句话送进三种入口：看请求、事件流、响应怎么排</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">入口</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-face="python" class="on">Python stdio</button>
+        <button type="button" data-face="tui">TUI 内嵌</button>
+        <button type="button" data-face="ts">TS exec</button>
+      </div>
+      <div class="dm-input">
+        <label for="dm-prompt">用户输入</label>
+        <input id="dm-prompt" type="text" value="列出当前目录" autocomplete="off">
+      </div>
+      <span class="dm-b-hint">这句话会写进 <code>turn/start</code> 的 params。回车即播放。</span>
+    </div>
+    <div class="dm-phase" id="dm-phase">当前阶段：还没发出请求。</div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">请求</span><span class="dm-sub" id="dm-req-sub">客户端发出，带 id 的等人回包</span></div>
+        <div class="dm-body" id="dm-req"></div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">事件流</span><span class="dm-sub" id="dm-ev-sub">服务端推送，没有 id</span></div>
+        <div class="dm-body" id="dm-ev"></div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">响应</span><span class="dm-sub" id="dm-res-sub">对得上请求 id 的回包</span></div>
+        <div class="dm-body" id="dm-res"></div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace"></ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一句话在三种入口里怎么走完请求、事件流和响应。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>回包不是开跑</b><code>turn/start</code> 的响应立刻回来，只表示请求被接受。真正开始转圈，要等后面那条 <code>turn/started</code> 通知。</div>
+      <div class="dm-s"><b>审批是反向请求</b>app-server 面上，命令审批以 ServerRequest 出现，客户端必须回包。TS exec 这条路上没有这套回函，人不在 JSONL 环里。</div>
+      <div class="dm-s"><b>载体可以换，合同尽量不换</b>Python 走 stdio，TUI 走内存通道，消息形状仍是同一套斜杠加 camelCase。TS SDK 走的是另一条更窄的点号事件面。</div>
+    </div>
+    <div class="demo-caption">教学示意：消息条数与时机按协议形状编排，用于看清三路时序。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 对外协议是投影</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你在给编辑器写插件。调试器里已经能看到内核往外抛事件：<code>turn_started</code>、<code>exec_command_begin</code>，字段是 snake_case。第一包数据过来，对不上。方法名是 <code>turn/started</code>，中间是斜杠。字段是 <code>threadId</code>、<code>startedAt</code>。</p>
+  <p class="reveal">命令开始时你等的 <code>exec_command_begin</code> 没出现，来的是 <code>item/started</code>，里面塞着一个 <code>type: "commandExecution"</code> 的 item。审批更怪：服务端反向发来一条 request，你得回 response，否则这一轮卡在那儿。</p>
+  <p class="reveal">如果编辑器按 81 种 <code>EventMsg</code> 写 switch，每加一种内部事件都是一次客户端升级。deprecated 别名也会从仓内兼容问题变成对外合同。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">调度函数 <code>apply_bespoke_event_handling</code> 吃一条内核 Event，按四条规则收成对外消息。</p>
+  <div class="idea-list reveal">
+    <div class="idea-card"><b>1. 改名</b><p><code>EventMsg</code> 的 snake_case type 变成 <code>turn/started</code>、<code>item/agentMessage/delta</code> 这种资源路径，字段改成 camelCase。</p></div>
+    <div class="idea-card"><b>2. 换容器</b><p>delta 和工具生命周期被收进 <code>ThreadItem</code>，再塞进 <code>item/started</code> 或 <code>item/completed</code>。IDE 按 item 的 <code>type</code> 画卡片。</p></div>
+    <div class="idea-card"><b>3. 丢掉</b><p><code>ExecCommandBegin</code>、<code>ViewImageToolCall</code>、以及 match 末尾的通配臂，线上没有对应通知。旧事件还在给 rollout 扇出。</p></div>
+    <div class="idea-card"><b>4. 拆开</b><p>一条 <code>ItemStarted(DynamicToolCall)</code> 既发通知，又发 <code>item/tool/call</code> 这条 ServerRequest，等客户端执行。</p></div>
+  </div>
+  <p class="src-note reveal">出处：<code>codex-rs/app-server/src/bespoke_event_handling.rs</code> 第 159 至 188 行；<code>codex-rs/app-server/src/bespoke_event_handling.rs</code> 第 880 至 918 行；<code>codex-rs/app-server/src/bespoke_event_handling.rs</code> 第 996 至 1036 行</p>
+  <p class="reveal"><code>item_event_to_server_notification</code> 只覆盖一对一、无状态的投影。函数名像总入口，调用点才知道它是助手。<code>ExecCommandBegin</code> 在助手里还能变成 <code>item/started</code>，在调度里却走进 deprecated 空分支。现场命令卡片来自后面的 <code>ItemStarted</code>。以调度为准。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/app-server-protocol/src/protocol/event_mapping.rs</code> 第 25 至 37 行；<code>codex-rs/app-server-protocol/src/protocol/item_builders.rs</code> 第 1 至 11 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 300" role="img" aria-label="内核事件经过调度后改名、丢掉或拆开">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="36" y="110" width="168" height="80" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="120" y="146" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">EventMsg</text>
+      <text x="120" y="170" text-anchor="middle" fill="#6b7280" font-size="13">内核 81 个变体</text>
+      <path fill="none" d="M212 150H292" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="300" y="96" width="220" height="108" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="410" y="138" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">调度函数</text>
+      <text x="410" y="164" text-anchor="middle" fill="#6b7280" font-size="13">改名 / 丢掉 / 拆开</text>
+      <text x="410" y="186" text-anchor="middle" fill="#6b7280" font-size="12">通配臂默认吞掉</text>
+      <path fill="none" d="M528 124H608" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M528 150H608" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M528 176H608" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="616" y="36" width="288" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="760" y="70" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">通知 turn/started</text>
+      <rect x="616" y="108" width="288" height="56" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="760" y="142" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">通知 + 反向 request</text>
+      <rect x="616" y="180" width="288" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.35)"></rect>
+      <text x="760" y="214" text-anchor="middle" fill="#6b7280" font-size="13" font-weight="700">丢掉，线上什么都没有</text>
+      <text x="470" y="274" text-anchor="middle" fill="#6b7280" font-size="13">输入是内核事件，输出是 IDE 画卡片用的 Thread / Turn / Item</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：同一条 EventMsg，柜台决定留下、改名、丢掉还是拆成通知加回函。</div>
+  </div>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal paywall-locked xa-peek">内核按发生了什么命名，对外按用户看见什么命名。内部还可以继续发 deprecated 事件给 rollout，调度写一句注释丢掉即可。换语言重写，这张表还在：左边内部 type，右边写清留下、改名、丢掉还是拆开。</p>
+  <p class="reveal paywall-locked">未知行必须失败。空默认等于通配臂，新事件能通过编译，IDE 的 stdout 上什么都没有。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server/src/bespoke_event_handling.rs</code> 第 1238 至 1245 行</p>
+
+  <div class="sec-label paywall-locked">思路二 · 请求立刻回，事件随后到</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">同事把 <code>turn/start</code> 的响应当成一轮已经开始。响应立刻回来，里面是一份空 items 的 turn。模型还没开口。真正开跑是后面那条 <code>turn/started</code> 通知。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server/README.md</code> 第 81 至 81 行</p>
+  <p class="reveal paywall-locked">审批做成普通 notification，客户端可以不理。turn 会停在等待上，直到超时或中断。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">线上能解出来的对象只有四种：带 id 的 request、不带 id 的 notification、成功 response、错误 response。看起来像 JSON-RPC，结构体里没有 <code>jsonrpc</code> 字段。常量 <code>JSONRPC_VERSION</code> 还在，线上不带这个键。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server-protocol/src/rpc.rs</code> 第 1 至 11 行；<code>codex-rs/app-server-protocol/src/rpc.rs</code> 第 34 至 72 行</p>
+  <p class="reveal paywall-locked">对外消息是四套，而且不对称。</p>
+  <p class="reveal paywall-locked">1. <code>ClientRequest</code>：客户端问，等人回包。<code>initialize</code>、<code>turn/start</code> 是稳定面主干。</p>
+  <p class="reveal paywall-locked">2. <code>ServerNotification</code>：服务端推，不等回包。<code>turn/started</code>、<code>item/started</code> 在这里。</p>
+  <p class="reveal paywall-locked">3. <code>ServerRequest</code>：服务端问人。第一条稳定方法是 <code>item/commandExecution/requestApproval</code>。</p>
+  <p class="reveal paywall-locked">4. <code>ClientNotification</code>：展开之后只有 <code>Initialized</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server-protocol/src/protocol/common.rs</code> 第 1663 至 1670 行；<code>codex-rs/app-server-protocol/src/protocol/common.rs</code> 第 1954 至 1956 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="请求、响应与事件流的时序">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="48" y="36" fill="#262d38" font-size="14" font-weight="800">时间从左到右</text>
+      <rect x="48" y="56" width="200" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="148" y="88" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">turn/start 请求</text>
+      <path fill="none" d="M256 82H318" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="326" y="56" width="200" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="426" y="78" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">立刻回 turn 对象</text>
+      <text x="426" y="96" text-anchor="middle" fill="#6b7280" font-size="12">items 仍是空的</text>
+      <path fill="none" d="M534 82H596" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="604" y="56" width="288" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="748" y="78" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">turn/started 通知</text>
+      <text x="748" y="96" text-anchor="middle" fill="#6b7280" font-size="12">内核真的开始跑</text>
+      <rect x="48" y="148" width="364" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.35)"></rect>
+      <text x="230" y="180" text-anchor="middle" fill="#6b7280" font-size="13">随后是 item/started 与 delta</text>
+      <path fill="none" d="M420 174H482" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="490" y="148" width="200" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="590" y="180" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">反向审批 request</text>
+      <path fill="none" d="M698 174H760" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="768" y="148" width="124" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="830" y="180" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">客户端回包</text>
+      <text x="470" y="244" text-anchor="middle" fill="#6b7280" font-size="13">通知没有 id。反向请求有 id，不回包这一轮就停住</text>
+    </svg>
+    <div class="visual-caption">教学化时序图：回包、通知、反向请求是三件不同的事，落在三个不同的时刻。</div>
+  </div>
+  <div class="key-line reveal paywall-locked">回包只表示请求被接受，开跑看通知。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">请求要回执，通知是广播，反向请求把人拉进环。这三件事混成一种，编辑器要么空转等开跑，要么漏画审批按钮。id 对得上，过载时还能把 request 失败回给调用方，避免审批悬挂。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 实验面一次握手，进程内也不另造合同</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">实验方法有 57 个方法级标记。如果靠第二端口，稳定客户和冒险客户要连两个地方。TUI 如果因为同进程就改收 <code>EventMsg</code>，现场通知和远端 IDE 会各写一份 item。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">实验面靠 <code>initialize</code> 时一个布尔 <code>experimentalApi</code>，缺省 <code>false</code>。再 <code>initialize</code> 会收到 <code>Already initialized</code>。没开开关就打 <code>server/diagnostics</code>，错误码 <code>-32600</code>，句子是固定的 <code>server/diagnostics requires experimentalApi capability</code>。Python SDK 把这个默认改成 <code>True</code>，官方脚本已经站在实验合同上。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server/src/message_processor.rs</code> 第 891 至 895 行；<code>sdk/python/src/openai_codex/client.py</code> 第 209 至 209 行</p>
+  <p class="reveal paywall-locked">TUI 不直连 core。内嵌只换载体：socket 和 stdio 换成内存通道，<code>MessageProcessor</code> 还在。请求仍是 <code>ClientRequest</code>，响应仍走同一套 envelope。进程内是 transport-local，不是 protocol-free。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/app-server/src/in_process.rs</code> 第 1 至 24 行</p>
+  <p class="reveal paywall-locked">TypeScript SDK 不走这条路。它拼的是 <code>exec --experimental-json</code>，事件 type 是点号，字段是 snake_case，完整枚举只有 8 个变体。没有 <code>initialize</code>，没有审批 request。能力差在协议面，不差在语言。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>sdk/typescript/src/exec.ts</code> 第 89 至 90 行；<code>codex-rs/exec/src/exec_events.rs</code> 第 8 至 37 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">远程和本机的差别应落在网络，不落在语义。实验面用 capability，比文档里写一句实验更硬。一个布尔把稳定面和实验面切开，schema 生成出两份，默认那份不含实验字段。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 共用类型，还是投影类型</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness：内核类型就是协议类型</h4>
+      <p>DSH 五个入口共用同一棵插件树。headless 的入口配置把自己写成 composition base：负责拼插件，不另写一套事件类型。跨进程时 Typert 从 TypeScript 类型图生成 stub，<code>@Remote('create')</code> 返回的是 identity，不是另一套展示模型。</p>
+      <p>改一个事件字段，五张脸一起变。收益是不会出现 Python 看见 <code>thread/started</code>、TypeScript 看见 <code>thread.started</code> 这种分裂。Codex 反过来，内部可以标 deprecated 继续扇给 rollout，对外合同按投影层冻结。漏改投影，客户也看不见，只是功能丢了。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · examples/headless-agent/cordis.yml 第 1 至 4 行 · packages/goal/goal/src/index.ts 第 579 至 589 行 · <a href="/dashboard/learning?lesson=dsh-25" data-lesson-id="dsh-25">DSH · 一个内核，五张面孔</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：入口标记，没有第二协议面</h4>
+      <p>还原源码里能找到的是入口判断：<code>CLAUDE_CODE_ENTRYPOINT === 'claude-vscode'</code> 时返回 <code>claude-vscode</code>。没有对位的对外 IDE 协议 crate。扩展靠 MCP 和进程入口嵌进来，第三方 IDE 没有一份带 schema 的双向 RPC 可以对。</p>
+      <p>Codex 付了投影层的维护成本，换来 VS Code 扩展、Python SDK 和本机 TUI 共用同一份 v2。</p>
+      <span class="cmp-tag">已核对源码 · 2026-08-22 · restored-src/src/main.tsx 第 823 至 823 行</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>回包到了，该不该转圈</h3>
+      <p><code>turn/start</code> 的响应已经回来，<code>items</code> 是空的。编辑器现在该转圈，还是该等 <code>turn/started</code>？如果内核新加一个 <code>EventMsg</code> 变体，投影没跟上，stdout 上会出现什么？</p>
+      <p>进阶一问：同一轮对话里模型要跑一条需要提问的命令。Python 客户端可以弹窗并回包，TypeScript 的 <code>Thread.run()</code> 为什么做不到？</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>对外协议是一张投影表，不是内核枚举的 JSON 导出。请求立刻回，事件随后到，审批是反向请求。两个官方 SDK 走的不是同一条协议面。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var face = 'python';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false, prevTrace = null;
+  var reqBox = document.getElementById('dm-req');
+  var evBox = document.getElementById('dm-ev');
+  var resBox = document.getElementById('dm-res');
+  var phaseEl = document.getElementById('dm-phase');
+  var reqSub = document.getElementById('dm-req-sub');
+  var evSub = document.getElementById('dm-ev-sub');
+  var resSub = document.getElementById('dm-res-sub');
+  var traceOl = document.getElementById('dm-trace');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var promptEl = document.getElementById('dm-prompt');
+  var reqCol = reqBox.closest('.dm-col');
+  var evCol = evBox.closest('.dm-col');
+  var resCol = resBox.closest('.dm-col');
+  var reqN, evN, resN, phaseText;
+  var IDLE = '点播放，看同一句话在三种入口里怎么走完请求、事件流和响应。';
+
+  var TRACES = {
+    app: [
+      ['Python 发出 initialize，带上 experimentalApi', 'client.py L293'],
+      ['握手后再发 initialized 通知，没有回包', 'client.py L308'],
+      ['turn/start 立刻返回 turn 对象', 'README.md L81'],
+      ['内核 TurnStarted 走进调度', 'bespoke_event_handling.rs L159'],
+      ['清空 items，发出 turn/started', 'bespoke_event_handling.rs L181'],
+      ['delta 组转交给一对一助手', 'bespoke_event_handling.rs L907'],
+      ['AgentMessageContentDelta 改名为 item/agentMessage/delta', 'event_mapping.rs L362'],
+      ['ItemStarted 先做命令去重再下发', 'bespoke_event_handling.rs L997'],
+      ['审批走 ServerRequest，等客户端回包', 'common.rs L1663'],
+      ['发出去的通知打上 emittedAtMs', 'outgoing_message.rs L734']
+    ],
+    tui: [
+      ['内嵌 start 在内部做完 initialize / initialized', 'in_process.rs L11'],
+      ['请求仍是 ClientRequest，响应走同一套 envelope', 'in_process.rs L20'],
+      ['turn/start 立刻返回 turn 对象', 'README.md L81'],
+      ['内核 TurnStarted 走进调度', 'bespoke_event_handling.rs L159'],
+      ['清空 items，发出 turn/started', 'bespoke_event_handling.rs L181'],
+      ['delta 组转交给一对一助手', 'bespoke_event_handling.rs L907'],
+      ['改名为 item/agentMessage/delta', 'event_mapping.rs L362'],
+      ['ItemStarted 去重后再下发', 'bespoke_event_handling.rs L997'],
+      ['动态工具再拆出一条 ServerRequest', 'bespoke_event_handling.rs L1028'],
+      ['通知打上 emittedAtMs 再扇出', 'outgoing_message.rs L734']
+    ],
+    ts: [
+      ['CodexExec 拼的参数是 exec --experimental-json', 'exec.ts L89'],
+      ['事件 type 是点号 thread.started', 'exec_events.rs L13'],
+      ['接着是 turn.started', 'exec_events.rs L17'],
+      ['item.started 表示卡片出现', 'exec_events.rs L26'],
+      ['item.completed 收成 finalResponse', 'thread.ts L124'],
+      ['turn.completed 带上 usage', 'exec_events.rs L20'],
+      ['Thread.run 只认 completed / failed', 'thread.ts L116'],
+      ['完整枚举只有 8 个变体', 'exec_events.rs L8']
+    ]
+  };
+
+  function promptText(){
+    var t = (promptEl.value || '').trim();
+    return t || '列出当前目录';
+  }
+
+  function chip(method, detail, state, kind){
+    return { method: method, detail: detail, state: state || '', kind: kind || '' };
+  }
+
+  function canAnimate(){
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function ensureCount(nameEl, id){
+    var el = document.getElementById(id);
+    if (el) return el;
+    el = document.createElement('span');
+    el.id = id;
+    el.className = 'dm-badge';
+    el.textContent = '0';
+    el.setAttribute('data-text', '0');
+    nameEl.appendChild(el);
+    return el;
+  }
+
+  function ensurePhaseText(){
+    var el = document.getElementById('dm-phase-text');
+    if (el) return el;
+    el = document.createElement('span');
+    el.id = 'dm-phase-text';
+    el.textContent = phaseEl.textContent;
+    phaseEl.textContent = '';
+    phaseEl.appendChild(el);
+    return el;
+  }
+
+  function ensureEmpty(host){
+    var empty = host.querySelector('.dm-empty');
+    if (empty) return empty;
+    empty = document.createElement('div');
+    empty.className = 'dm-empty';
+    empty.textContent = '还没有消息。';
+    host.insertBefore(empty, host.firstChild);
+    return empty;
+  }
+
+  function fadeText(el, text, animate){
+    if (!el) return;
+    if (!animate || el.textContent === text) {
+      el.style.opacity = '1';
+      el.textContent = text;
+      return;
+    }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function rollBadge(el, text, animate){
+    var prev = el.getAttribute('data-text') || el.textContent;
+    el.setAttribute('data-text', text);
+    var numRe = /(\d+)/;
+    var m0 = prev.match(numRe);
+    var m1 = text.match(numRe);
+    var sameShape = m0 && m1 && prev.replace(numRe, '#') === text.replace(numRe, '#');
+    if (!animate || !sameShape) { el.textContent = text; return; }
+    var from = parseInt(m0[1], 10);
+    var to = parseInt(m1[1], 10);
+    if (from === to) { el.textContent = text; return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      var n = Math.round(from + (to - from) * eased);
+      el.textContent = text.replace(numRe, String(n));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function setBar(col, n, max){
+    if (col) col.style.setProperty('--bar', String(max ? n / max : 0));
+  }
+
+  function paintChips(host, list, animate){
+    var oldRects = {};
+    var nodes = {};
+    Array.prototype.slice.call(host.querySelectorAll('.dm-chip')).forEach(function(el){
+      var id = el.getAttribute('data-k');
+      nodes[id] = el;
+      oldRects[id] = el.getBoundingClientRect();
+    });
+    var empty = ensureEmpty(host);
+    if (!list || !list.length) {
+      Object.keys(nodes).forEach(function(id){ nodes[id].remove(); });
+      empty.classList.remove('off');
+      host.classList.remove('is-live');
+      return;
+    }
+    host.classList.add('is-live');
+    empty.classList.add('off');
+    var keep = {};
+    list.forEach(function(item){
+      var key = item.method;
+      keep[key] = true;
+      var d = nodes[key];
+      var isNew = !d;
+      if (!d) {
+        d = document.createElement('div');
+        d.setAttribute('data-k', key);
+        d.innerHTML = '<b></b><span></span>';
+        d.querySelector('b').textContent = item.method;
+        d.querySelector('span').textContent = item.detail;
+        host.appendChild(d);
+      } else {
+        var span = d.querySelector('span');
+        if (span.textContent !== item.detail) {
+          if (animate) {
+            span.style.opacity = '0';
+            requestAnimationFrame(function(){
+              span.textContent = item.detail;
+              requestAnimationFrame(function(){ span.style.opacity = '1'; });
+            });
+          } else {
+            span.textContent = item.detail;
+          }
+        }
+      }
+      var prevState = d.getAttribute('data-st') || '';
+      d.className = 'dm-chip' + (item.state ? ' ' + item.state : '');
+      d.setAttribute('data-st', item.state || '');
+      if (animate && isNew) {
+        d.classList.add('is-enter');
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ d.classList.add('in'); });
+        });
+      }
+      if (animate && !isNew && prevState !== (item.state || '') && (item.state === 'on' || item.state === 'hold' || item.state === 'warn')) {
+        bump(d, 'firing');
+      }
+    });
+    Object.keys(nodes).forEach(function(id){
+      if (!keep[id]) nodes[id].remove();
+    });
+    if (animate) {
+      Array.prototype.slice.call(host.querySelectorAll('.dm-chip')).forEach(function(el){
+        var id = el.getAttribute('data-k');
+        var old = oldRects[id];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function setTrace(kind){
+    var rows = TRACES[kind] || TRACES.app;
+    traceOl.innerHTML = '';
+    rows.forEach(function(row){
+      var li = document.createElement('li');
+      var span = document.createElement('span');
+      span.textContent = row[0];
+      var ln = document.createElement('span');
+      ln.className = 'ln';
+      ln.textContent = row[1];
+      li.appendChild(span);
+      li.appendChild(ln);
+      traceOl.appendChild(li);
+    });
+  }
+
+  function highlightTrace(n, animate){
+    var rows = traceOl.querySelectorAll('li');
+    if (n === null || n === undefined || n < 0) {
+      traceOl.classList.remove('is-live');
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].classList.remove('on');
+        rows[i].classList.remove('firing');
+      }
+      prevTrace = null;
+      return;
+    }
+    traceOl.classList.add('is-live');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].classList.toggle('on', i === n);
+      if (animate && i === n && n !== prevTrace) bump(rows[i], 'firing');
+    }
+    prevTrace = n;
+  }
+
+  function handshakeReq(kind){
+    if (kind === 'python') {
+      return [
+        chip('initialize', 'id=1 · 已完成', 'done'),
+        chip('initialized', '通知 · 无 id', 'done')
+      ];
+    }
+    return [chip('InProcess start', '内部握手完成', 'done')];
+  }
+
+  function handshakeRes(kind){
+    if (kind === 'python') return [chip('initialize result', 'id=1 · 已完成', 'done')];
+    return [chip('ready handle', 'initialize 已在内部走完', 'done')];
+  }
+
+  function buildAppSteps(kind){
+    var text = promptText();
+    var wire = kind === 'tui' ? '内存通道' : 'stdio JSONL';
+    var out = [];
+
+    if (kind === 'python') {
+      out.push({
+        cap: 'Python SDK 拉起 codex app-server --listen stdio://，先发 initialize，capabilities.experimentalApi 默认是 True。',
+        phase: '当前阶段：握手请求已发出，还在等回包。载体是 ' + wire + '。',
+        trace: 0,
+        req: [chip('initialize', 'id=1 · experimentalApi: true', 'on')],
+        ev: [],
+        res: []
+      });
+      out.push({
+        cap: '服务端回 initialize 响应，带上 platformFamily 和 platformOs。回包对得上 id=1，事件流仍是空的。',
+        phase: '当前阶段：握手响应已到，协议面已经谈妥。',
+        trace: 0,
+        req: [chip('initialize', 'id=1 · 已发出', 'done')],
+        ev: [],
+        res: [chip('initialize result', 'id=1 · 平台信息已带回', 'on')]
+      });
+      out.push({
+        cap: '客户端再发 initialized 通知。通知没有 id，服务端不会再回一包。握手到此结束。',
+        phase: '当前阶段：initialized 已发出，可以开始业务请求。',
+        trace: 1,
+        req: [chip('initialize', 'id=1 · 已完成', 'done'), chip('initialized', '通知 · 无 id，不等回包', 'on')],
+        ev: [],
+        res: [chip('initialize result', 'id=1 · 已完成', 'done')]
+      });
+    } else {
+      out.push({
+        cap: 'TUI 走 app-server-client。start 在内部做完 initialize / initialized，调用方拿到的已经是就绪句柄。',
+        phase: '当前阶段：内嵌运行时已就绪。载体是 ' + wire + '，协议没换。',
+        trace: 0,
+        req: [chip('InProcess start', '内部握手 · 调用方看不见这两步', 'on')],
+        ev: [],
+        res: []
+      });
+      out.push({
+        cap: '请求仍是类型化的 ClientRequest，响应仍走 JSON-RPC result envelope。换掉的是 socket，不是合同。',
+        phase: '当前阶段：句柄可用，准备发 turn/start。',
+        trace: 1,
+        req: [chip('InProcess start', '内部握手完成', 'done')],
+        ev: [],
+        res: [chip('ready handle', 'initialize 已在内部走完', 'on')]
+      });
+    }
+
+    out.push({
+      cap: '客户端发出 turn/start，params 里是用户那句「' + text + '」。这是一条带 id 的请求，必须等人回包。',
+      phase: '当前阶段：turn/start 已发出，响应还没到。',
+      trace: 2,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · ' + text, 'on')]),
+      ev: [],
+      res: handshakeRes(kind)
+    });
+    out.push({
+      cap: '响应立刻回来，里面是一份 turn 对象，items 是空的。回包只表示请求被接受，模型还没开口。',
+      phase: '当前阶段：请求已被接受，内核还没发出 TurnStarted。',
+      trace: 2,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · 已发出', 'done')]),
+      ev: [],
+      res: handshakeRes(kind).concat([chip('turn object', 'id=2 · items: [] · 尚未开跑', 'on')])
+    });
+    out.push({
+      cap: '内核发出 EventMsg::TurnStarted。调度清空 items，对外落下 turn/started。编辑器现在才该转圈。',
+      phase: '当前阶段：事件流开始。turn/started 才是真正开跑。',
+      trace: 4,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · 已发出', 'done')]),
+      ev: [chip('turn/started', 'threadId + 空 items 的 turn', 'on')],
+      res: handshakeRes(kind).concat([chip('turn object', 'id=2 · 请求已被接受', 'done')])
+    });
+    out.push({
+      cap: '内核还在流式吐字：AgentMessageContentDelta。助手把它改名为 item/agentMessage/delta，字段变成 camelCase。',
+      phase: '当前阶段：delta 在事件流里走，请求列和响应列都安静。',
+      trace: 6,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · 已发出', 'done')]),
+      ev: [chip('turn/started', '一轮已经开始', 'done'), chip('item/agentMessage/delta', 'delta 仍在流', 'on')],
+      res: handshakeRes(kind).concat([chip('turn object', 'id=2 · 请求已被接受', 'done')])
+    });
+    out.push({
+      cap: 'ItemStarted 带着 CommandExecution item 到来。调度先做去重，再发 item/started。你等的 exec_command_begin 不会出现。',
+      phase: '当前阶段：命令卡片按 item 画出来，不是按内核事件名。',
+      trace: 7,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · 已发出', 'done')]),
+      ev: [
+        chip('turn/started', '一轮已经开始', 'done'),
+        chip('item/agentMessage/delta', 'delta 已发出', 'done'),
+        chip('item/started', 'type: commandExecution', 'on')
+      ],
+      res: handshakeRes(kind).concat([chip('turn object', 'id=2 · 请求已被接受', 'done')])
+    });
+    out.push({
+      cap: '服务端反向发来 item/commandExecution/requestApproval。这是 ServerRequest，有 id。事件流里的通知可以不理，这条必须回。',
+      phase: '当前阶段：审批悬挂，等客户端回包。',
+      trace: 8,
+      req: handshakeReq(kind).concat([chip('turn/start', 'id=2 · 已发出', 'done')]),
+      ev: [
+        chip('turn/started', '一轮已经开始', 'done'),
+        chip('item/agentMessage/delta', 'delta 已发出', 'done'),
+        chip('item/started', 'type: commandExecution', 'done'),
+        chip('item/commandExecution/requestApproval', '反向请求 id=s1 · 等回函', 'hold')
+      ],
+      res: handshakeRes(kind).concat([chip('turn object', 'id=2 · 请求已被接受', 'done')])
+    });
+    out.push({
+      cap: '客户端回审批 response，id 对上 s1。turn 从悬挂里走出来，命令才真正往下跑。',
+      phase: '当前阶段：审批已回，命令继续执行。',
+      trace: 8,
+      req: handshakeReq(kind).concat([
+        chip('turn/start', 'id=2 · 已发出', 'done'),
+        chip('approval response', 'id=s1 · 同意执行', 'on')
+      ]),
+      ev: [
+        chip('turn/started', '一轮已经开始', 'done'),
+        chip('item/agentMessage/delta', 'delta 已发出', 'done'),
+        chip('item/started', 'type: commandExecution', 'done'),
+        chip('item/commandExecution/requestApproval', '反向请求已发出', 'done')
+      ],
+      res: handshakeRes(kind).concat([
+        chip('turn object', 'id=2 · 请求已被接受', 'done'),
+        chip('approval accepted', 'id=s1 · 客户端已签字', 'on')
+      ])
+    });
+    out.push({
+      cap: 'turn/completed 落到事件流。一次往返看完了：请求立刻回，事件随后到，审批是反向请求。',
+      phase: '当前阶段：这一轮结束。通知打上 emittedAtMs 再扇出。',
+      trace: 9,
+      req: handshakeReq(kind).concat([
+        chip('turn/start', 'id=2 · 已发出', 'done'),
+        chip('approval response', 'id=s1 · 同意执行', 'done')
+      ]),
+      ev: [
+        chip('turn/started', '一轮已经开始', 'done'),
+        chip('item/agentMessage/delta', 'delta 已发出', 'done'),
+        chip('item/started', 'type: commandExecution', 'done'),
+        chip('item/commandExecution/requestApproval', '反向请求已发出', 'done'),
+        chip('turn/completed', '终态 turn + token usage', 'on')
+      ],
+      res: handshakeRes(kind).concat([
+        chip('turn object', 'id=2 · 请求已被接受', 'done'),
+        chip('approval accepted', 'id=s1 · 客户端已签字', 'done')
+      ]),
+      fin: true
+    });
+    return out;
+  }
+
+  function buildTsSteps(){
+    var text = promptText();
+    return [
+      {
+        cap: 'TypeScript SDK 不拉 app-server。CodexExec 拼的参数是 exec --experimental-json，没有 initialize。',
+        phase: '当前阶段：exec 进程已拉起，协议面是 8 个点号事件。',
+        trace: 0,
+        req: [chip('exec --experimental-json', text, 'on')],
+        ev: [],
+        res: []
+      },
+      {
+        cap: '第一包是 thread.started。type 用点号，字段是 snake_case。和 app-server 的 thread/started 对不上。',
+        phase: '当前阶段：线程已建立，还没有 turn。',
+        trace: 1,
+        req: [chip('exec --experimental-json', text, 'done')],
+        ev: [chip('thread.started', 'thread_id', 'on')],
+        res: []
+      },
+      {
+        cap: '接着是 turn.started。这里没有「先回 turn 对象、再推 turn/started」那两拍，请求和开跑叠在同一条流里。',
+        phase: '当前阶段：turn 已开始，仍是单向 JSONL。',
+        trace: 2,
+        req: [chip('exec --experimental-json', text, 'done')],
+        ev: [chip('thread.started', 'thread_id', 'done'), chip('turn.started', '一轮开始', 'on')],
+        res: []
+      },
+      {
+        cap: 'item.started 出现。完整枚举只有 8 个变体，没有 hook，没有 reasoning delta，也没有审批 request。',
+        phase: '当前阶段：item 出现。审批不在这条 JSONL 环里。',
+        trace: 3,
+        req: [chip('exec --experimental-json', text, 'done')],
+        ev: [
+          chip('thread.started', 'thread_id', 'done'),
+          chip('turn.started', '一轮开始', 'done'),
+          chip('item.started', 'type: agent_message', 'on')
+        ],
+        res: []
+      },
+      {
+        cap: 'item.completed 到来。Thread.run 把 agent_message 的 text 收成 finalResponse。',
+        phase: '当前阶段：item 定稿，还在等 turn.completed。',
+        trace: 4,
+        req: [chip('exec --experimental-json', text, 'done')],
+        ev: [
+          chip('thread.started', 'thread_id', 'done'),
+          chip('turn.started', '一轮开始', 'done'),
+          chip('item.started', 'type: agent_message', 'done'),
+          chip('item.completed', '收成 finalResponse', 'on')
+        ],
+        res: []
+      },
+      {
+        cap: 'turn.completed 带上 usage。Thread.run 收齐后返回一个 Turn。人要审批的命令，只能交给 exec 自己的 approval_policy。',
+        phase: '当前阶段：这一轮在 JSONL 里结束。没有反向请求。',
+        trace: 5,
+        req: [chip('exec --experimental-json', text, 'done')],
+        ev: [
+          chip('thread.started', 'thread_id', 'done'),
+          chip('turn.started', '一轮开始', 'done'),
+          chip('item.started', 'type: agent_message', 'done'),
+          chip('item.completed', '收成 finalResponse', 'done'),
+          chip('turn.completed', 'usage 已带回', 'on')
+        ],
+        res: [chip('Turn', 'items + finalResponse + usage', 'on')],
+        fin: true
+      }
+    ];
+  }
+
+  function buildSteps(){
+    if (face === 'ts') return buildTsSteps();
+    return buildAppSteps(face);
+  }
+
+  function hasChip(list, method, state){
+    return (list || []).some(function(x){ return x.method === method && x.state === state; });
+  }
+
+  function paint(st, animate){
+    animate = !!animate && canAnimate();
+    paintChips(reqBox, st.req, animate);
+    paintChips(evBox, st.ev, animate);
+    paintChips(resBox, st.res, animate);
+    var reqMax = face === 'ts' ? 1 : (face === 'tui' ? 3 : 4);
+    var resMax = face === 'ts' ? 1 : 3;
+    setBar(reqCol, (st.req || []).length, reqMax);
+    setBar(evCol, (st.ev || []).length, 5);
+    setBar(resCol, (st.res || []).length, resMax);
+    phaseEl.style.setProperty('--bar', String((idx + 1) / Math.max(steps.length, 1)));
+    var reqCount = String((st.req || []).length);
+    var evCount = String((st.ev || []).length);
+    var resCount = String((st.res || []).length);
+    var prevReq = reqN.getAttribute('data-text') || reqN.textContent;
+    var prevEv = evN.getAttribute('data-text') || evN.textContent;
+    var prevRes = resN.getAttribute('data-text') || resN.textContent;
+    rollBadge(reqN, reqCount, animate);
+    rollBadge(evN, evCount, animate);
+    rollBadge(resN, resCount, animate);
+    reqN.classList.toggle('on', (st.req || []).some(function(x){ return x.state === 'on' || x.state === 'hold'; }));
+    evN.classList.toggle('on', (st.ev || []).some(function(x){ return x.state === 'on' || x.state === 'hold'; }));
+    resN.classList.toggle('on', (st.res || []).some(function(x){ return x.state === 'on' || x.state === 'hold'; }));
+    if (animate && prevReq !== reqCount) bump(reqN, 'pop');
+    if (animate && prevEv !== evCount) bump(evN, 'pop');
+    if (animate && prevRes !== resCount) bump(resN, 'pop');
+    fadeText(phaseText, st.phase, animate);
+    if (st.trace !== null && st.trace !== undefined) highlightTrace(st.trace, animate);
+    fadeText(captionText, st.cap, animate);
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+    if (animate && hasChip(st.ev, 'item/commandExecution/requestApproval', 'hold')) bump(phaseEl, 'firing');
+    if (animate && hasChip(st.res, 'turn object', 'on')) bump(resBox.querySelector('.dm-chip.on'), 'firing');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (hasChip(st.ev, 'item/commandExecution/requestApproval', 'hold')) return 2200;
+    if (hasChip(st.req, 'approval response', 'on')) return 2000;
+    if (hasChip(st.ev, 'turn/started', 'on') || hasChip(st.ev, 'turn.started', 'on')) return 2000;
+    if (hasChip(st.res, 'turn object', 'on')) return 2000;
+    if (hasChip(st.ev, 'item/started', 'on') || hasChip(st.ev, 'item.started', 'on')) return 1900;
+    if (hasChip(st.ev, 'item.completed', 'on')) return 1600;
+    if (st.trace === 0) return 1100;
+    return 1400;
+  }
+
+  function applyFaceCopy(){
+    if (face === 'ts') {
+      reqSub.textContent = '一条命令，没有 initialize';
+      evSub.textContent = '点号事件，单向 JSONL';
+      resSub.textContent = 'Thread.run 收齐后的 Turn';
+    } else if (face === 'tui') {
+      reqSub.textContent = '内存通道上的 ClientRequest';
+      evSub.textContent = '同一套斜杠通知';
+      resSub.textContent = '同一套 JSON-RPC envelope';
+    } else {
+      reqSub.textContent = '客户端发出，带 id 的等人回包';
+      evSub.textContent = '服务端推送，没有 id';
+      resSub.textContent = '对得上请求 id 的回包';
+    }
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop();
+    idx = 0;
+    prevTrace = null;
+    applyFaceCopy();
+    setTrace(face === 'ts' ? 'ts' : (face === 'tui' ? 'tui' : 'app'));
+    steps = buildSteps();
+    paintChips(reqBox, [], false);
+    paintChips(evBox, [], false);
+    paintChips(resBox, [], false);
+    setBar(reqCol, 0, 1);
+    setBar(evCol, 0, 1);
+    setBar(resCol, 0, 1);
+    phaseEl.style.setProperty('--bar', '0');
+    phaseEl.classList.remove('firing');
+    reqN.textContent = '0';
+    evN.textContent = '0';
+    resN.textContent = '0';
+    reqN.setAttribute('data-text', '0');
+    evN.setAttribute('data-text', '0');
+    resN.setAttribute('data-text', '0');
+    reqN.className = 'dm-badge';
+    evN.className = 'dm-badge';
+    resN.className = 'dm-badge';
+    phaseText.style.opacity = '1';
+    phaseText.textContent = '当前阶段：还没发出请求。';
+    highlightTrace(-1, false);
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    face = b.getAttribute('data-face');
+    reset();
+  });
+  promptEl.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    reset();
+    play();
+  });
+
+  reqN = ensureCount(reqCol.querySelector('.dm-name'), 'dm-req-n');
+  evN = ensureCount(evCol.querySelector('.dm-name'), 'dm-ev-n');
+  resN = ensureCount(resCol.querySelector('.dm-name'), 'dm-res-n');
+  phaseText = ensurePhaseText();
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-rpc'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+</body></html>

@@ -1,0 +1,1316 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-interview",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-interview',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 产品心理学 · 40 道灵魂拷问 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="AI 产品心理学考察实战：面试官、老板、技术同事会怎样考你用户体验与心理设计？40 道真实场景问题，每题附考察意图、答题框架与加分点：感知性能、等待设计、峰终定律、信任校准、防御心理、算法厌恶、AI 标签折扣、情感依恋、付费与定价心理、反馈设计。">
+<meta name="keywords" content="AI产品经理面试,用户体验面试题,感知性能,信任校准,峰终定律,AI产品心理学,体验设计">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="AI 产品心理学 · 40 道灵魂拷问">
+<meta property="og:description" content="面试官、老板、技术同事会怎样考你 AI 产品的心理设计？40 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-interview.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-interview.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI 产品心理学 · 40 道灵魂拷问">
+<meta name="twitter:description" content="40 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--psy:#0d9488}
+.lesson-header .kicker{color:var(--psy)}
+
+/* ── 开场说明 ── */
+.iq-intro{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px}
+.iq-intro-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px}
+.iq-intro-lead{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:12px}
+.iq-role-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.iq-role-row{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border-radius:9px;font-size:14px;line-height:1.6}
+.iq-role-row .rr-name{font-weight:800;flex-shrink:0;white-space:nowrap}
+.iq-role-row .rr-desc{color:var(--sub)}
+.iq-intro-foot{font-size:14px;color:var(--sub);line-height:1.7}
+.iq-intro-foot strong{color:var(--text)}
+
+/* ── 题目卡片 ── */
+.iq-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.iq-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.iq-num{font-size:13px;font-weight:900;color:var(--sub);letter-spacing:.5px;font-family:"SF Mono","Fira Code",Menlo,monospace}
+.iq-who{font-size:12px;font-weight:800;padding:3px 11px;border-radius:99px;letter-spacing:.3px}
+.iq-q{font-size:17.5px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:16px}
+
+.iq-block{margin-bottom:14px}
+.iq-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.iq-intent .iq-label{color:var(--amber)}
+.iq-intent .iq-body{font-size:14px;color:var(--sub);line-height:1.75;background:rgba(217,119,6,.05);border:1px solid rgba(217,119,6,.14);border-radius:9px;padding:10px 14px}
+.iq-intent .iq-body strong{color:var(--text)}
+
+.iq-frame .iq-label{color:var(--accent)}
+.iq-frame ol{margin:0;padding-left:0;list-style:none;counter-reset:iqstep;display:flex;flex-direction:column;gap:7px}
+.iq-frame li{counter-increment:iqstep;position:relative;padding:9px 13px 9px 40px;background:rgba(0,102,255,.04);border:1px solid rgba(0,102,255,.1);border-radius:9px;font-size:14px;color:var(--sub);line-height:1.65}
+.iq-frame li::before{content:counter(iqstep);position:absolute;left:12px;top:10px;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.iq-frame li strong{color:var(--text)}
+
+.iq-bonus{font-size:13.5px;color:var(--text);line-height:1.7;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.18);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.iq-bonus b{color:var(--success);font-weight:800;margin-right:4px}
+
+.iq-refs{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--border)}
+.iq-refs-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0}
+.iq-refs a{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;background:rgba(0,102,255,.07);padding:4px 11px;border-radius:99px;transition:background .15s}
+.iq-refs a:hover{background:rgba(0,102,255,.14)}
+
+/* 角色配色 */
+.who-hr{background:rgba(0,102,255,.1);color:var(--accent)}
+.who-boss{background:rgba(217,119,6,.12);color:var(--amber)}
+.who-dev{background:rgba(124,58,237,.1);color:var(--purple)}
+
+@media (max-width:768px){
+  .iq-card{padding:18px 16px}
+  .iq-q{font-size:16px}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+  <header class="lesson-header">
+    <div class="kicker">他们会这样考你</div>
+    <h1>AI 产品心理学 · 40 道灵魂拷问</h1>
+    <p class="subtitle">心理学章学完了，能不能把「用户为什么这样反应」讲成可执行的方案，一问便知。这 40 个问题来自三个真实场景，先自己开口回答，再看框架。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每题附考察意图、答题框架与加分点：感知性能 / 峰终取舍 / 信任校准 / 防御拆除 / 算法厌恶 / 标签折扣 / 情感依恋 / 付费与定价 / 沉默偏差 / 体验指标怎么写进 OKR</p></aside><!--seo:end-->  <div class="iq-intro paywall-locked xa-peek">
+    <div class="iq-intro-title">怎么用这一页</div>
+    <div class="iq-intro-lead">每道题都标注了提问者。他们问同一块知识，想听的东西却不一样。</div>
+    <div class="iq-role-rows">
+      <div class="iq-role-row" style="background:rgba(0,102,255,.05)"><span class="rr-name" style="color:var(--accent)">🎙 面试官</span><span class="rr-desc">想验证你是真懂，还是在背效应名词</span></div>
+      <div class="iq-role-row" style="background:rgba(217,119,6,.06)"><span class="rr-name" style="color:var(--amber)">👔 老板</span><span class="rr-desc">要的是投入产出的解释和可承诺的数字</span></div>
+      <div class="iq-role-row" style="background:rgba(124,58,237,.05)"><span class="rr-name" style="color:var(--purple)">🛠 技术同事</span><span class="rr-desc">在试探你的需求有没有想过实现代价</span></div>
+    </div>
+    <div class="iq-intro-foot">每题给出三层：<strong>对方在考察什么 → 答题框架 → 加分点</strong>。答不上来的环节，点末尾的课程页回去补。</div>
+  </div>
+
+  <div id="iqList" class="paywall-locked"></div>
+</article>
+
+<script>
+const QUESTIONS = [
+  // ── 感知性能与等待（5 题）──
+  {who:'hr',
+   q:'「你们做 AI 产品的总说『感知性能』。它和真实性能到底差在哪？为什么值得单独拿出来讲？」',
+   intent:'开场热身题，考你有没有把这个概念<strong>内化成产品直觉</strong>。背名词的人会说「就是用户觉得快不快」然后卡住；真懂的人能讲出感知时间的形成机制（首字停表、反馈加速、情绪追记），并且说清它为什么在 AI 产品里格外重要。',
+   frame:['<strong>先给定义：</strong>真实性能是服务器秒表量出来的，感知性能是用户脑子里那块秒表量出来的，两者误差能到两三倍，而打分、续费、卸载全看后者。',
+     '<strong>拆开机制：</strong>用户的秒表从发送走到首字出现，之后边读边等几乎不计时；有反馈的等待被压缩，没反馈的被放大；结果不好，时间还会被追记得更长。',
+     '<strong>说清为什么 AI 特殊：</strong>大模型推理天生秒级起步，靠硬件把延迟压到无感知在成本上不现实，所以感知层的设计从可选项变成了必选项。',
+     '<strong>给一个实例：</strong>同样 5 秒的请求，空白冻结和流式输出的体感差两三倍，工程上只是改了一个 stream 参数。'],
+   bonus:'主动说一句「感知性能的修复成本通常比真实性能低一个数量级：大部分『太慢』的差评，模型一行都不用动」。把体验问题翻译成成本结构，面试官立刻知道你做过产品。',
+   refs:[{href:'psy-1.html',label:'感知性能开篇'},{href:'psy-2.html',label:'等待心理学'}]},
+
+  {who:'boss',
+   q:'「用户调研里一堆人骂我们 AI 慢。要不要换个更快的模型？听说换模型要重新评测，成本不小。」',
+   intent:'老板把体验问题直接映射成了采购问题，考你<strong>能不能先诊断再开药</strong>。顺着说换的人会花一笔冤枉钱；真懂的人会先问「骂的是哪一段慢」，把 TTFT、总时长、呈现方式拆开归因。',
+   frame:['<strong>先拆问题：</strong>「慢」有三种病灶：首字出得慢（TTFT 高）、总时长真的长、呈现方式让人觉得慢。三种病，只有第二种要动模型。',
+     '<strong>给低成本方案：</strong>先查线上有没有开流式：没开的话打开它，首字时间直接从数秒变亚秒，这是配置级改动，当周可上线。',
+     '<strong>再查呈现：</strong>长任务有没有进度反馈和预估时长？没有的话补上阶段汇报，等待体感还能再降一档，同样零模型成本。',
+     '<strong>最后谈换模型：</strong>做完这两步再看数据：如果骂声集中在总时长且流式已开，那才进入换模型或模型路由的评估，此时投入才有明确对象。'],
+   bonus:'给一个可承诺的验证方式：「先在 10% 流量上开流式加进度外显，两周后对比这批用户的『慢』相关差评率」。用小流量实验代替拍脑袋，老板要的安全感就是这个。',
+   refs:[{href:'psy-1.html',label:'四种呈现体验器'},{href:'psy-2.html',label:'三档呈现决策'}]},
+
+  {who:'dev',
+   q:'「你 PRD 里写『所有 AI 输出必须流式』。批量后台任务也流式吗？流式对我们的网关、重试逻辑、Token 统计都有影响，你知道吗？」',
+   intent:'技术同事在试探你<strong>是不是把流式当成了万金油</strong>。背名词的人以为流式永远更好；真懂的人知道流式是给「有人在看」的场景准备的，后台任务不需要，而且说得出流式在工程上的真实代价。',
+   frame:['<strong>先收窄范围：</strong>这条要求写宽了，我改成「用户实时等待的输出必须流式」。后台批量任务没有观众，流式没有意义，非流式还更好做重试和落盘。',
+     '<strong>接住工程代价：</strong>知道流式有成本：长连接占用、断流重连的兜底、按 chunk 统计 Token 的复杂度。这些换来的是 TTFT 从秒级到亚秒级，实时场景里这笔账是划算的。',
+     '<strong>给出分级：</strong>同步对话全流式；10 秒以上的任务转异步加通知，那条链路用非流式；内部服务间调用一律非流式。',
+     '<strong>留一个口子：</strong>断流场景的降级体验我来定义：已输出的内容保留并标注「已中断，点击继续」，别整段消失。'],
+   bonus:'能主动说出「流式还改变了错误处理的语义：错误可能发生在输出一半的时候，产品要定义半截输出怎么办」。想到这一层的 PM，技术同事会直接把你当自己人。',
+   refs:[{href:'psy-2.html',label:'三档呈现决策'},{href:'1-2-api.html',label:'chat/completions 之谜'}]},
+
+  {who:'hr',
+   q:'「TTFT 和总时长，资源有限只能优化一个，你选哪个？说说理由。」',
+   intent:'典型的取舍题，考你<strong>有没有把指标和心理机制挂上钩</strong>。凭感觉选的人说不出理由；真懂的人知道用户的秒表在首字附近就基本停了，所以 TTFT 的心理杠杆率远高于总时长。',
+   frame:['<strong>先给结论：</strong>绝大多数场景选 TTFT。用户的等待焦虑集中在「按下发送到第一个字出现」这一段，首字一出，注意力转入阅读，秒表就停了大半。',
+     '<strong>量化对比：</strong>把 TTFT 从 3 秒压到 0.5 秒，体验跨档；把总时长从 10 秒压到 8 秒，用户几乎无感，因为后 8 秒他在边读边等。',
+     '<strong>说出例外：</strong>两种情况反过来：输出很短（总时长本来就秒级），和结果被程序消费（没人在读，只看总时长）。',
+     '<strong>补上手段：</strong>压 TTFT 的手段也更便宜：流式、语义缓存、模型路由先给确认句，都到不了改架构的深度。'],
+   bonus:'提一句「阅读速度是个天然掩体：只要生成速度快过人的阅读速度（中文每秒十几个字），总时长在心理上就不存在」。能说出这个阈值，说明你真的想过流式的原理。',
+   refs:[{href:'psy-1.html',label:'用户的秒表'},{href:'psy-2.html',label:'等待心理学'}]},
+
+  {who:'boss',
+   q:'「竞品的 AI 是秒回，我们的要三秒。销售说客户演示时总被比下去。这差距是不是致命的？」',
+   intent:'老板在焦虑一个单点对比，考你<strong>能不能把「快」放回完整的体验框架里</strong>。慌着承诺提速的人会掉进军备竞赛；真懂的人先问秒回的代价（可能是小模型、可能是缓存命中），再决定跟不跟。',
+   frame:['<strong>先冷静归因：</strong>秒回通常有三种来源：用了更小的模型、缓存命中了高频问题、或者只是先吐了一句「正在为您分析」。三种里两种我们当周就能对齐。',
+     '<strong>对齐低成本项：</strong>高频问题上语义缓存，命中即秒回；所有回答开流式加即时确认句，演示观感立刻从「三秒沉默」变成「即时响应」。',
+     '<strong>不跟的部分说清楚：</strong>如果对方是用小模型换速度，答案质量会露怯，演示环节建议销售主动问几个深问题，把战场从速度切到质量。',
+     '<strong>给演示专项：</strong>销售演示是峰终定律的主场：准备一组预热过缓存的高频问题保证开场秒回，结尾放一个展示深度的案例，观感就赢了。'],
+   bonus:'点破一个行业事实：「演示环境的秒回和生产环境的秒回是两回事，对方给客户演示的多半也是调优过的路径」。帮老板把焦虑还原成对手的常规操作，比盲目跟进值钱。',
+   refs:[{href:'psy-4.html',label:'峰终定律'},{href:'ds-6.html',label:'语义缓存'}]},
+
+  // ── 劳动错觉（3 题）──
+  {who:'hr',
+   q:'「推理模型把思考过程摊开给用户看，很多人根本不读，但产品还是要显示。为什么？」',
+   intent:'考你知不知道<strong>劳动错觉</strong>这个机制。只会说「透明度」的人答了一半；真懂的人知道展示努力的过程本身就在提升对结果的信任评价，读不读内容反而次要。',
+   frame:['<strong>先给机制名字：</strong>这是劳动错觉：人们用看得见的努力推断看不见的质量。哈佛的实验里，展示「正在逐家检查航司」的搜索网站，让用户等更久满意度反而更高。',
+     '<strong>解释「不读也有效」：</strong>思考过程的价值大头在「存在」而非「内容」：滚动的推理文字持续发出「它在认真干活」的信号，这个信号不需要被逐字阅读。',
+     '<strong>补上第二层收益：</strong>对少数会读的用户，思考过程还提供了检查入口：推理跑偏了当场能看出来，这是信任校准的贡献。',
+     '<strong>说清边界：</strong>前提是过程必须真实。摆动画不摆事实的「假思考」被识破一次，补偿效应会反转成欺骗感。'],
+   bonus:'补一句「同样的机制解释了 RAG 产品为什么把『已检索 8 篇文档』亮出来、Coding Agent 为什么把工具调用日志摊开：等待填充、劳动展示、信任建设，一鱼三吃」。能把三个产品现象归到一个机制，就是面试官想听的抽象能力。',
+   refs:[{href:'psy-3.html',label:'劳动错觉'},{href:'zero-q-reasoning.html',label:'推理模型是什么'}]},
+
+  {who:'dev',
+   q:'「你要求任务处理时显示『正在深度分析』的动画，但那一步实际上就是个 200 毫秒的分类调用。你这是让我做假进度，出了事算谁的？」',
+   intent:'技术同事在用道德压力测你<strong>懂不懂劳动错觉的红线</strong>。含糊说「行业都这么做」的人会失去信任；真懂的人立刻区分「放慢真实过程的呈现」和「无中生有编造过程」，并且承认后者是雷。',
+   frame:['<strong>先认账：</strong>你提醒得对，无中生有的「深度分析」是假劳动，用户从耗时规律里能识破（比如断网了动画还在走），识破一次信任清零，这个需求我撤回。',
+     '<strong>给出替代：</strong>改成展示真实步骤：这个环节真实发生的是意图分类，那就显示「已识别问题类型：报销咨询」，真实、具体、还顺带给了用户确认入口。',
+     '<strong>放慢可以，编造不行：</strong>如果真实过程快到闪一下就没，可以把已发生步骤的呈现节奏放慢到可读，这是排版问题；但列表里的每一项必须真实发生过。',
+     '<strong>定一条团队规则：</strong>过程展示的每一条都要能对应到日志里的真实事件，做不到就不展示。'],
+   bonus:'主动说「假进度还有个工程副作用：它把呈现和真实状态解耦了，之后每次改流程都要记得同步改动画，迟早穿帮」。用工程维护性反对假进度，比用道德反对更有说服力。',
+   refs:[{href:'psy-3.html',label:'三条边界'}]},
+
+  {who:'boss',
+   q:'「我看年轻人都爱用那个显示思考过程的模型，说『看它想问题很过瘾』。这东西对我们这种严肃的企业产品有用吗？」',
+   intent:'老板在问一个趋势能不能迁移，考你<strong>能不能把消费级现象翻译成企业级价值</strong>。说「跟风加上」和「企业用户不吃这套」都轻率；真懂的人会把「过瘾」拆成可迁移的信任机制和不可迁移的娱乐成分。',
+   frame:['<strong>先拆现象：</strong>「看它想问题」的价值有两层：娱乐性（看个新鲜）和信任性（亲眼看到结论是推出来的而非蒙的）。前者会腻，后者恰恰是企业场景最缺的。',
+     '<strong>给企业版方案：</strong>企业产品不需要展示大段思维链，需要展示决策依据：引用了哪份文档、用了哪个数据源、关键判断的依据是什么，这是思考外显的严肃版本。',
+     '<strong>点出审计价值：</strong>企业场景多一层收益：过程可见等于过程可审计，合规和复盘都用得上，这是消费级产品没有的刚需。',
+     '<strong>给试点建议：</strong>挑一个高价值低频场景（比如合同审查）先上过程展示，看用户的复核时间和采纳率变化，用数据决定推不推全。'],
+   bonus:'补一句「严肃场景的过程展示还有个隐藏作用：它把『AI 替你判断』悄悄变成了『AI 陪你判断』，责任界面清晰了，用户的防御心理也小了」。能串到防御心理，说明整章学通了。',
+   refs:[{href:'psy-3.html',label:'劳动错觉'},{href:'psy-6.html',label:'防御心理'}]},
+
+  // ── 峰终定律（3 题）──
+  {who:'hr',
+   q:'「峰终定律在 AI 产品里怎么用？别背定义，直接给我三个能落地的设计决策。」',
+   intent:'考你能不能把心理学定律<strong>翻译成资源分配方案</strong>。背「峰值和结尾决定记忆」的人过不了这题；真懂的人手里有现成的三板斧：造峰、护终、中段省钱。',
+   frame:['<strong>决策一（造峰）：</strong>新用户前三次交互路由到旗舰模型：第一印象是权重最高的峰值时刻，这里的模型降级是最贵的省钱。',
+     '<strong>决策二（护终）：</strong>把校验挪到流程最前面、中间产物随做随落盘，保证最后一步只做最不可能失败的动作：Agent 干完 9 步最后导出崩了，用户记住的就是崩了。',
+     '<strong>决策三（中段省）：</strong>会话中段用走量模型：用户对中间过程的记忆最浅，这里的体验预算可以让给峰和终，正好和成本优化的分层路由互相成全。',
+     '<strong>补一个收尾动作：</strong>任务完成后用便宜模型生成一段交付总结（做了什么、哪里需要确认），把结尾从戛然而止变成圆满交付。'],
+   bonus:'提一句冷水实验：客观上多受 30 秒罪、但结尾舒缓的那组，多数人愿意再来一次。「记忆中的体验和实际经历是两个东西，续费基于前者」，一句话把定律的分量讲透。',
+   refs:[{href:'psy-4.html',label:'峰终定律'},{href:'cost-3.html',label:'模型三大梯队'}]},
+
+  {who:'dev',
+   q:'「你要求『Agent 最后一步不允许失败』。工程上没有不会失败的步骤，你这需求怎么验收？」',
+   intent:'技术同事在敲打你的<strong>需求表述是否可实现</strong>。真懂的人会把「不允许失败」翻译成「失败概率最小化 + 失败后果前置化」两个可验收的动作，嘴硬没有用。',
+   frame:['<strong>先修正表述：</strong>你说得对，准确的说法是：把高失败率的动作往前挪，让流程末端只剩低失败率动作。验收标准从「零失败」改成「失败分布」。',
+     '<strong>给具体做法：</strong>权限、配额、格式校验全部前置到任务开始时；中间产物每步落盘；最后一步只做「把已生成的结果交给用户」这类幂等动作。',
+     '<strong>兜底也要设计：</strong>末端万一还是失败，降级方案是交付已完成的部分并说明缺口，好过整体报错：用户拿到 90% 的结果和拿到 0%，记忆评价天差地别。',
+     '<strong>给验收口径：</strong>看两个数：任务失败中「发生在最后 20% 进度」的占比，和失败任务的部分交付率。前者要压低，后者要拉高。'],
+   bonus:'能主动提「重试逻辑也要分位置：前段失败可以静默重试，末端失败要立刻交付部分结果再后台补」，说明你对失败的理解到了时序层面，这已经是资深工程师的思维。',
+   refs:[{href:'psy-4.html',label:'护终'},{href:'7-3.html',label:'ReAct 完整链路'}]},
+
+  {who:'boss',
+   q:'「预算只够做一个体验优化项目。全流程每个环节都平均提升 10%，和把开头结尾做到惊艳，你选哪个？」',
+   intent:'老板在做资源分配决策，考你<strong>敢不敢用心理学结论反对平均主义</strong>。选平均提升的人输在不懂记忆机制；真懂的人知道均匀发力在记忆里几乎不留痕迹。',
+   frame:['<strong>先给结论：</strong>选开头结尾。用户的记忆评分由峰值和结尾决定，每环节平均提升 10% 在记忆里接近无感，钱花了、口碑不动。',
+     '<strong>解释机制：</strong>「稳定的平庸」和「低开高走」两条体验曲线，平均分可以一样，记忆分差出三分：用户复述产品时讲的是峰值时刻和最后印象，没人复述平均值。',
+     '<strong>给执行方案：</strong>开头：新手期三次交互上旗舰模型加精心设计的示例；结尾：失败前置、交付总结、完成通知。两头加起来的工程量比全链路平均优化还小。',
+     '<strong>保住底线：</strong>前提是中段没有灾难级短板：峰终定律优化的是记忆，不豁免硬故障。中段的底线是「不出可感知的错」，达标即可。'],
+   bonus:'补一个类比：「餐厅提升口碑，是每道菜咸淡都调 5%，还是把招牌菜和送客体验做到位？消费决策的记忆入口从来只有几个」。老板会用这个类比去说服他的老板。',
+   refs:[{href:'psy-4.html',label:'体验曲线对比'}]},
+
+  // ── 信任校准（4 题）──
+  {who:'hr',
+   q:'「大家都说要提升用户对 AI 的信任。你同意吗？信任是越高越好的指标吗？」',
+   intent:'埋着陷阱的判断题，考你知不知道<strong>信任校准</strong>。顺着说「当然要提升」的人掉坑里；真懂的人知道 AI 会错是物理现实，信任的目标是对齐真实能力，两个方向的偏差都要付学费。',
+   frame:['<strong>先破题：</strong>不同意「越高越好」。AI 的输出有真实的错误率，用户信任超过这个水平就是过度信任：把幻觉当真相用，纽约律师引用 6 个编造判例被罚就是教科书案例。',
+     '<strong>补另一头：</strong>信任不足同样烧钱：每条输出都完整复核，复核成本超过自己干，工具沦为摆设，钱照付效率零增长。',
+     '<strong>给出目标态：</strong>健康状态是校准：可靠的部分被放心用，不可靠的部分被警惕。产品设计的任务是把用户从两个极端往对角线上拉。',
+     '<strong>给两个抓手：</strong>拉过度信任的手段是可点开的来源引用和有条件的警告；拉信任不足的手段是展示过程、风险分级放行低危操作。'],
+   bonus:'点出一个反直觉细节：「AI 输出的流畅和自信是它最危险的特征，因为这两个表面信号和内容真伪零相关，但人类的直觉恰恰拿它们判断可信度」。这句话能让面试官记住你。',
+   refs:[{href:'psy-5.html',label:'信任校准'},{href:'1-2-hallucination.html',label:'大模型幻觉'}]},
+
+  {who:'boss',
+   q:'「客户全盘采纳了我们 AI 给的建议，结果出了错，现在要追责。你说这种事以后怎么防？总不能每个答案都写『仅供参考』吧？」',
+   intent:'事故驱动的问题，老板要的是<strong>制度性防线</strong>，免责话术过不了这一关。答「加强免责声明」的人不合格；真懂的人知道恒定的警告会隐形，防线要建在流程和呈现里。',
+   frame:['<strong>先说免责声明为什么没用：</strong>恒定出现的「仅供参考」三天后就被大脑过滤成背景纹理（横幅盲视），出了事它保护法务，保护不了客户，更保护不了口碑。',
+     '<strong>给第一道防线：</strong>按风险分级：低风险建议直接给；高风险建议（涉及金额、法律、健康）强制带依据展示，并要求用户确认关键前提后才输出结论。',
+     '<strong>给第二道防线：</strong>有条件的警告代替恒定警告：检索置信度低、多来源冲突、知识过期时才弹提醒，弹就带具体原因，狼来了只在真有狼时喊。',
+     '<strong>给责任界面：</strong>产品明确「AI 起草、用户确认」的动作序列，确认动作留痕，让每一步的决策人清晰可查，这和甩锅给用户是两回事。'],
+   bonus:'补一句「事后还有一招：把这次事故的具体错误类型做成回归评测集，同类问题上线前自动拦截」。把追责会开成评测体系的立项会，这是把坏事变成资产的思路。',
+   refs:[{href:'psy-5.html',label:'四个工程杠杆'},{href:'1-2-mitigation-eval.html',label:'评测 + 人工审核'}]},
+
+  {who:'dev',
+   q:'「你 PRD 里要求『答案旁边显示置信度百分比』。模型自己都不知道自己对不对，这个数我从哪给你变出来？」',
+   intent:'技术同事在戳一个常见的天真需求，考你<strong>知不知道模型的自知边界</strong>。坚持要百分比的人暴露了不懂原理；真懂的人立刻改用代理信号方案。',
+   frame:['<strong>先认账：</strong>这个需求写错了。模型不知道自己不知道什么，让它自报把握，报出来的数字本身就是生成的，可信度存疑，你的质疑成立。',
+     '<strong>改成代理信号：</strong>产品层有诚实的替代品：检索命中了几篇文档、最高相似度多少、多来源结论是否一致、问题是否超出知识截止日期，这些都是系统真实可测的。',
+     '<strong>改呈现方式：</strong>不显示百分比，显示事实陈述：「基于 3 篇高相关文档」「未检索到直接依据，以下为模型推断」。用户对事实的理解比对数字健康。',
+     '<strong>留高阶选项：</strong>如果以后真要量化置信度，路径是对同一问题多次采样看答案一致性，那是有真实成本的功能，值不值得单独立项评估。'],
+   bonus:'能报出「多次采样测一致性」这个方案的名字（Self-Consistency）并知道它费 Token，技术同事会意识到你不光懂心理学，第一篇章也没白学。',
+   refs:[{href:'psy-5.html',label:'置信度代理信号'},{href:'1-2-mitigation-prompt.html',label:'模型不知道自己不知道'}]},
+
+  {who:'hr',
+   q:'「产品里加一行『AI 生成内容可能有误』的固定提示，能起到多大作用？说说你的判断和依据。」',
+   intent:'小切口考<strong>横幅盲视</strong>，顺带看你能不能给出替代方案。答「聊胜于无」的人只值及格分；真懂的人知道恒定提示的有效期以天计，并且知道警告设计的正确姿势。',
+   frame:['<strong>先给判断：</strong>作用趋近于零，法务价值大于用户价值。恒定出现的警告会被大脑归类为界面装饰，几天后彻底隐形，心理学叫横幅盲视。',
+     '<strong>给证据逻辑：</strong>警告的有效性靠稀缺性维持：每条消息都带的提示，信息量等于零，用户无法从中区分「这条要小心」和「这条没事」。',
+     '<strong>给正确姿势：</strong>改成条件触发：低置信、高风险类目、知识过期、多来源冲突时才出现，并且说明具体原因。出现率越低，出现时的分量越重。',
+     '<strong>补一个设计细节：</strong>高风险场景的警告可以要求轻量交互（点击「已知悉」才展开答案），交互成本筛选注意力，比纯展示强一个量级。'],
+   bonus:'举一个反面教材：「Cookie 授权弹窗训练了全人类闭眼点同意，这就是恒定警告的终局」。用一个人人有体感的例子收尾，比引用论文更有说服力。',
+   refs:[{href:'psy-5.html',label:'别指望免责声明'}]},
+
+  // ── 防御心理（4 题）──
+  {who:'boss',
+   q:'「公司花大价钱买的 AI 工具，员工活跃率 8%。培训也做了，邮件也发了，就是没人用。你怎么看这个问题？」',
+   intent:'企业 AI 落地的经典死局，考你<strong>会不会跳出「用户教育」的惯性归因</strong>。再提一轮培训的人和之前的人一样会失败；真懂的人先排查三种防御心理。',
+   frame:['<strong>先换归因：</strong>活跃率 8% 且培训无效，大概率是防御问题：员工看懂了工具，然后决定不碰。防御拆三种查：数据防御、能力防御、责任防御。',
+     '<strong>逐个排查：</strong>数据防御：他们敢把工作内容贴进去吗？能力防御：用 AI 会不会被解读成「可被替代」？使用数据是不是被拿去考核了？责任防御：AI 出错谁背锅有没有说法？',
+     '<strong>给对症药：</strong>数据防御靠一句人话的数据说明加「已删除」状态；能力防御靠撤掉个人使用率排名、把指标上移到团队；责任防御靠明确「AI 起草、人确认、责任照旧」。',
+     '<strong>给验证路径：</strong>挑防御最重的一个部门做拆防御试点，四周看活跃率变化。培训解决「不会用」，拆防御解决「不敢用」，先确诊再开药。'],
+   bonus:'补一刀现实观察：「员工嘴上说的永远是『不太好用』，因为『我怕被裁』说不出口。问卷测不出防御，要看行为数据：打开过一次再也不来的比例」。老板会意识到你懂组织。',
+   refs:[{href:'psy-6.html',label:'三种防御'}]},
+
+  {who:'hr',
+   q:'「AI 客服把『转人工』入口藏得越深，人工成本越省。这个逻辑哪里有问题？」',
+   intent:'考<strong>安全阀悖论</strong>，AI 客服设计最反直觉的一课。顺着省成本逻辑走的人没摸过真实数据；真懂的人知道藏出口反而推高转人工率。',
+   frame:['<strong>先给结论：</strong>逻辑的问题在于把「出口的存在」和「出口的使用」混为一谈。找不到退路的用户，从第一句话就开始喊人工，因为他必须先确保自己不会被机器人困住。',
+     '<strong>讲机制：</strong>这是控制感在起作用：看得见的出口降低了使用出口的需求。用户确认随时能跑，才敢坐下来跟 AI 聊；反之防御拉满，AI 连表现的机会都没有。',
+     '<strong>给数据口径：</strong>衡量指标选「AI 独立解决率」，别盯「转人工按钮的点击率」：把按钮藏起来，点击率好看了，独立解决率和满意度双降，投诉换个渠道爆发。',
+     '<strong>给正确设计：</strong>出口常驻可见，但 AI 先给一次高质量响应；转人工时把已收集的上下文完整交接过去，别让用户重复一遍问题，否则等于罚他用过 AI。'],
+   bonus:'补一句「转人工交接质量是第二个隐藏杠杆：交接顺滑的用户下次还愿意先试 AI，交接要重讲一遍的用户从此直奔人工」。能看到二阶效应，这题就答穿了。',
+   refs:[{href:'psy-6.html',label:'转人工悖论'},{href:'zero-q-ai-customer-service.html',label:'AI 客服为什么蠢'}]},
+
+  {who:'dev',
+   q:'「你要求上传的文件『处理完立即删除并显示已删除』。我们的日志、缓存、向量库里都有中间产物，你说的删除到底删到哪一层？」',
+   intent:'技术同事在逼你把<strong>体验承诺和数据现实对齐</strong>。说「界面显示删了就行」的人在埋雷；真懂的人知道「已删除」是个必须能兑现的承诺，要和工程一起定义删除的边界。',
+   frame:['<strong>先接住严肃性：</strong>这个状态是给用户的承诺，说了就要真删，被发现「显示已删除但缓存还在」是防御心理的核爆级事故，我需要和你把删除范围逐层定义清楚。',
+     '<strong>逐层过：</strong>原文件、解析产物、向量索引：承诺范围内，任务结束即删；请求日志：脱敏后保留排障必需的元数据（时间、状态码），不留内容明文。',
+     '<strong>说清例外：</strong>如果有合规要求必须留存的部分，界面话术就不能写「已删除」，改成「已从工作区移除，审计副本 30 天后销毁」，宁可说得复杂，不能说得虚假。',
+     '<strong>补验证机制：</strong>给「已删除」状态配一个可验证动作：用户点开能看到删除时间和范围说明。承诺可验证，防御才真的降。'],
+   bonus:'主动说一句「这类承诺要写进数据处理的技术文档并加回归测试，防止半年后新功能顺手开始留存」。把体验承诺工程化、测试化，技术同事对 PM 的最高评价就是这种。',
+   refs:[{href:'psy-6.html',label:'透明与可验证'},{href:'zero-q-privacy.html',label:'聊天记录会被拿去训练吗'}]},
+
+  {who:'hr',
+   q:'「为什么说『可逆性』是 AI 功能采用率的关键？举一个把不可逆设计改成可逆之后起飞的例子。」',
+   intent:'考你能不能把抽象原则<strong>落到具体设计</strong>。只会说「用户怕出错」的人浮在面上；真懂的人能讲出「勇气到好奇心」的门槛变化，例子信手拈来。',
+   frame:['<strong>先给机制：</strong>不可逆的动作需要勇气，可逆的动作只需要好奇心。同一个功能，把尝试门槛从勇气降到好奇心，敢试的人群直接扩大一个量级。',
+     '<strong>给经典例子：</strong>邮件助手从「AI 自动发送」改成「AI 写好放草稿箱、用户点发送」：功能价值几乎没变（省的是写的时间），采用率天壤之别，因为砍掉了「替我做不可逆动作」的恐惧。',
+     '<strong>再给一个：</strong>Coding Agent 的每次修改走 git diff、一键回滚：开发者敢放手让它大改，因为知道最坏情况是 revert。可逆性是 Agent 能被信任干大活的前提。',
+     '<strong>落到方法论：</strong>设计 AI 功能先问：这个动作能撤销吗？不能的话，能不能插入一个草稿态或确认点？默认可逆，例外才申请不可逆。'],
+   bonus:'补一句「可逆性还改变了错误的性质：可逆系统里 AI 的错误是『草稿质量问题』，不可逆系统里是『事故』，同样的错误率，两种定性，两种舆论」。',
+   refs:[{href:'psy-6.html',label:'三板斧'},{href:'vibe-9.html',label:'破坏性操作的三道闸'}]},
+
+  // ── 心智模型（3 题）──
+  {who:'hr',
+   q:'「用户投诉：『我上周就告诉过它我是素食者，今天推荐餐厅又给我推烤肉。』这个投诉背后是什么问题？产品该怎么改？」',
+   intent:'考你能不能从一条投诉<strong>反推心智模型错配</strong>。答「加个记忆功能」只对一半；真懂的人先解释错配（用户以为它在学习），再给「记忆要外显」的完整方案。',
+   frame:['<strong>先诊断：</strong>用户拿的是「学徒说明书」：以为说过一次就永久记住。实际上参数冻结，对话内容出了会话就丢，「越聊越懂我」只是上下文没断。',
+     '<strong>指出深层问题：</strong>责任在产品：界面上「好的，我记住了」的回复亲手喂养了这个误解，承诺了系统兑现不了的东西。',
+     '<strong>给完整方案：</strong>上显式记忆系统（第三篇章的长期记忆工程），并且把记忆做成看得见的：用户说偏好时界面出现「已记住：素食」的可管理标记，能看、能改、能删。',
+     '<strong>补话术修正：</strong>没有记忆系统兜底的场景，回复话术改成「本次对话内有效，长期偏好可在设置中固定」，诚实的边界声明好过温柔的空头支票。'],
+   bonus:'点出外显的双重作用：「『已记住』标记既让被记住的可信，也让没标记的诚实：用户学会了『没看到标记就是没记住』，心智模型被产品自己教对了」。',
+   refs:[{href:'psy-7.html',label:'心智模型'},{href:'7-3c.html',label:'长期记忆'},{href:'zero-q-ai-learning.html',label:'AI 是在学习吗'}]},
+
+  {who:'boss',
+   q:'「用户问我们的 AI『今年行业增速多少』，它张口报了个数，其实是编的。客户拿去写了报告，找上门来了。这种事技术说没法根治，真没法治吗？」',
+   intent:'考你能不能<strong>区分「根治幻觉」和「治理幻觉体验」</strong>。跟着说没法治的人放弃了产品层的全部工具；真懂的人知道技术上压不到零，但产品上可以让编造无法伪装成事实。',
+   frame:['<strong>先校准预期：</strong>技术说的没错：幻觉源于生成机制，压得低但到不了零。可治理的是另一件事：不让编造的数字穿着权威的外衣出门。',
+     '<strong>给产品三件套：</strong>数据类问题强制走 RAG，答案带可点开的来源；检索无命中时明确说「无相关数据」，不给模型自由发挥的机会；识别到「精确数字 + 无出处」的输出模式时自动加标注。',
+     '<strong>教育在现场：</strong>在用户问出这类问题的当口做边界声明（「我无法获取实时行业数据，以下为截至 X 月的公开信息」），比任何用户手册都有效。',
+     '<strong>给兜底：</strong>高风险输出类目（数字、法条、医疗）进评测集持续监控，错误案例回流、当季修复。给老板一条可以汇报的治理曲线，别只留一句没法治。'],
+   bonus:'补一句「这次事故值得复盘的还有客户侧：他没核实就写进报告，说明我们的来源展示做得太弱，核实的成本太高。把『点一下就能查』做出来，用户自然会查」。',
+   refs:[{href:'psy-7.html',label:'数据库说明书'},{href:'1-2-mitigation-rag.html',label:'RAG 检索增强'}]},
+
+  {who:'dev',
+   q:'「你要在空状态放六个示例提示词，还要按用户角色变。这些示例谁来写？产品改版了谁来更新？放着放着就过时了算谁的？」',
+   intent:'技术同事在问<strong>内容资产的维护责任</strong>，顺带试探你是不是「提需求不管养需求」的 PM。真懂的人把示例提示词当成有 Owner、有数据、有生命周期的产品资产。',
+   frame:['<strong>先认领：</strong>示例提示词是产品内容资产，Owner 是我。初版我来写，每条示例对应一个我们希望用户建立的心智（给背景、提要求、让 AI 反问）。',
+     '<strong>给数据闭环：</strong>每条示例埋点：点击率、点击后的会话轮次和留存。数据差的示例季度轮换，这套指标同时回答「过时了没有」。',
+     '<strong>降低维护成本：</strong>示例文案配置化，不进代码：运营后台可改，改版不占开发排期。角色化版本先只做两档（新手、专业），别一上来做六档。',
+     '<strong>说清价值：</strong>空状态是纠正心智最便宜的位置：用户点一次示例，等于上了一堂「原来要这么问」的课，比引导弹窗的完读率高一个量级。'],
+   bonus:'补一句「示例提示词还是最便宜的 A/B 试验场：想知道用户吃不吃『让 AI 反问』这套，换一条示例一周就有数据」。把维护负担讲成实验资产，工程师的抵触自然消解。',
+   refs:[{href:'psy-7.html',label:'空状态是最好的教室'},{href:'zero-5.html',label:'万能开场白'}]},
+
+  // ── 拟人化与道歉（3 题）──
+  {who:'hr',
+   q:'「有的 AI 产品有名字有性格，有的连『我』都不说。拟人化程度是怎么决定的？给我一个判断框架。」',
+   intent:'考你用的是<strong>档位思维</strong>还是站队思维。答「看产品调性」的人在打太极；真懂的人给出「任务严肃度 × 出错代价 × 交互频率」的判断维度和五档谱系。',
+   frame:['<strong>先给谱系：</strong>拟人度是连续旋钮：纯工具、克制人格、友好助手、角色化、全拟人五档，Coding 工具在最左，情感陪伴在最右。',
+     '<strong>给判断维度：</strong>三个变量定档位：任务越严肃、出错代价越高，档位越低（报税助手卖萌是灾难）；交互越高频越工具化（天天用的东西，寒暄是噪音）；陪伴本身是卖点时才开高档。',
+     '<strong>说清代价：</strong>档位越高，预期通胀越重：越像人，用户越拿人的标准要求它，出错时的迁怒也越重。工具出错是故障，「人」出错是态度。',
+     '<strong>补上底线：</strong>全拟人档必须配安全阀：定期声明 AI 身份、危机话题转介真人资源。档位是产品选择，底线是伦理义务。'],
+   bonus:'提 CASA 范式镇场：「斯坦福九十年代就证明人会对电脑讲礼貌。拟人化不是你要不要做的决定，用户单方面已经做了，你只能决定引导到哪一档」。',
+   refs:[{href:'psy-8.html',label:'拟人化的度'},{href:'ai-safety-redlines.html',label:'AI 安全红线'}]},
+
+  {who:'dev',
+   q:'「错误提示文案你要求『按道歉三要素动态生成』。静态文案零成本零风险，动态生成又花 Token 又可能二次出错。值得吗？」',
+   intent:'技术同事在做<strong>成本收益质询</strong>，这次他有道理的成分很大。无脑坚持动态的人不懂工程；真懂的人给出静态骨架加动态填充的混合方案。',
+   frame:['<strong>先承认合理性：</strong>你的顾虑成立：道歉的场景本来就是系统刚出过错的场景，这时候再叫一次模型，二次翻车等于错上加错。',
+     '<strong>给混合方案：</strong>三要素里「承认错误」和「补救动作」的骨架用静态模板（错误类型枚举得出来），只有「具体错在哪」这个槽位用系统数据填充（哪张发票、差多少），不需要模型参与。',
+     '<strong>划出动态的边界：</strong>真正需要生成的只有复杂场景的补救说明，这部分用最稳的小模型加输出校验，生成失败就回退到静态兜底文案，链路上永远有保底。',
+     '<strong>给收益口径：</strong>衡量指标是错误后的会话存活率：用户遇错后是修正重试还是直接流失。三要素文案赌的是这个数，值不值上线后看它。'],
+   bonus:'补一句「三要素里最贵的其实是『重新核对了其余项』这个动作：真复查比真道歉难，但那才是信任修复的主力」。能分清话术和动作的权重，说明你没被心理学绕晕。',
+   refs:[{href:'psy-8.html',label:'道歉三要素'}]},
+
+  {who:'boss',
+   q:'「市场部提议给我们的 AI 助手起个名字、做个形象，说这样有记忆点。你支持吗？」',
+   intent:'考你能不能把品牌决策放进<strong>拟人化的代价框架</strong>里评估。直接支持或反对都轻率；真懂的人按产品档位判断，并把隐性成本摆上桌。',
+   frame:['<strong>先问档位：</strong>取决于我们的产品在拟人谱系的哪一档。客服、陪伴类，名字和形象是资产；专业工具类（合同审查、数据分析），拟人形象反而稀释专业感。',
+     '<strong>摆出隐性成本：</strong>起了名字，用户就会拿「人」的标准要求它：出错从「系统故障」变成「小 X 骗我」，迁怒效应实打实反映在客诉措辞和舆情烈度上。',
+     '<strong>给折中方案：</strong>品牌记忆点和产品拟人度可以解耦：对外营销用形象 IP，产品内保持克制人格。很多大厂就是这么做的：吉祥物归吉祥物，界面归界面。',
+     '<strong>给决策依据：</strong>让市场部回答一个问题：这个形象出现在「AI 算错客户报销单」的投诉现场时，是减震器还是放大器？答案取决于我们的错误率和场景严肃度。'],
+   bonus:'补一句「如果做形象，同步立一条文案红线：错误场景禁用卖萌话术。『人家算错了嘛』出现在事故现场，公关成本比形象带来的全部好感都贵」。',
+   refs:[{href:'psy-8.html',label:'档位选择器'},{href:'psy-5.html',label:'信任校准'}]},
+
+  // ── 算法厌恶与期望管理（3 题）──
+  {who:'boss',
+   q:'「评测数据摆在这：我们 AI 的判断准确率比人工高 8 个百分点。可客户就是不肯把单子交给它，宁愿排队等人工。用户是不是不理性？」',
+   intent:'考你知不知道<strong>算法厌恶</strong>这个机制。答「加强用户教育」的人没读过 Dietvorst 的实验；真懂的人知道用户不是没看到数据，是看到算法犯错之后惩罚它比惩罚人狠得多，而解药是给用户一点控制权。',
+   frame:['<strong>先正名：</strong>这不是不理性，是有名字的规律：算法厌恶。宾大的实验里，被试亲眼看到算法比人准，但只要看过算法犯一次错，就再也不选它了：人对算法犯错的容忍度远低于对人。',
+     '<strong>讲机制：</strong>人犯错会被解读成「会吸取教训」，算法犯错被解读成「它就是这样，还会再犯」。所以问题不在准确率数字，在第一次犯错之后的心理清算。',
+     '<strong>给解药：</strong>同一组研究者找到了逆转开关：允许用户对算法输出做哪怕一点微调，弃用率大幅下降。落到产品：AI 给判断，用户可以改阈值、可以 override、改动被尊重。',
+     '<strong>给铺垫：</strong>第一次犯错前主动打预防针：「它在 X 类单据上准确率 96%，Y 类边缘情况建议复核」。用户带着校准过的预期看到第一个错误，清算就轻得多。'],
+   bonus:'补一句「让客户的资深员工参与定 AI 的规则（哪些单据自动过、哪些必须人审），弃用率会再降一截：他微调过的系统，心理上已经是『我们的系统』而不是『那个算法』了」。宜家效应和算法厌恶打配合，这是读透了两章的人才说得出的方案。',
+   refs:[{href:'psy-9.html',label:'算法厌恶'},{href:'psy-3.html',label:'劳动错觉'}]},
+
+  {who:'hr',
+   q:'「一个 AI 产品上线首周好评如潮，第四周留存跳水，功能没改、质量没降。你先查什么？」',
+   intent:'考你知不知道<strong>蜜月悬崖</strong>：新鲜感消退加期望确认的双杀。答「肯定是竞品出新款了」的人在向外归因；真懂的人知道首周的惊艳本身就在透支第四周的评价基准。',
+   frame:['<strong>先给诊断方向：</strong>功能没变、体验跳水，第一嫌疑是期望侧出了问题：用期望确认理论看，满意度不等于体验好坏，等于体验减去期望。首周的「哇」把期望抬上去了，第四周同样的输出就成了「也就这样」。',
+     '<strong>查宣传链路：</strong>回看获客素材和 onboarding 有没有过度承诺：「全能助手」「秒懂你」这类文案带来的用户，期望起点就是失望的起点。',
+     '<strong>查新鲜感结构：</strong>看用户前四周的使用任务分布：如果前两周在「玩」（尝鲜类 prompt 占大头）、后两周该转「用」（固定工作流）却没转成，说明产品只设计了惊艳没设计习惯。',
+     '<strong>给处方：</strong>宣传降半档，把省出来的惊喜做成渐进解锁：能力分批亮相、改进攒着按节奏发。让体验曲线是缓升的，而不是首日峰值后一路阴跌。'],
+   bonus:'补一句「Changelog 也是心理设施：把十个小改进攒成一次有感知的发布，好过每天悄悄挤牙膏。用户感知到的不是改进总量，是改进的节奏感」。',
+   refs:[{href:'psy-10.html',label:'蜜月悬崖'},{href:'psy-4.html',label:'峰终定律'}]},
+
+  {who:'hr',
+   q:'「实验里同一篇文案，标注『AI 生成』的评分显著低于不标注的。合规又要求必须标。这个死结你怎么解？」',
+   intent:'考<strong>AI 标签折扣</strong>的应对功力。答「那就不标」的人踩合规红线，答「标了认命」的人不动脑子；真懂的人知道折扣的大小取决于措辞和功劳归属，红线之内全是设计空间。',
+   frame:['<strong>先立底线：</strong>标是必须的，深度合成类内容不标违规，被扒出来隐瞒的信任崩塌比标签折扣贵一百倍。要设计的是怎么标。',
+     '<strong>措辞分档：</strong>「AI 生成」「AI 协助创作」「由 X 编辑、AI 参与起草」，三种措辞的评分折扣依次递减，而且后两种往往更接近事实：真实工作流里本来就有人在选题、修改、把关。',
+     '<strong>功劳归属设计：</strong>标签折扣的镜像是署名羞耻：用户不敢把 AI 产出署自己的名。产品要把人的贡献显性化：展示用户改了哪里、定了什么方向，让「这是我的作品」立得住。',
+     '<strong>分场景执行：</strong>标注策略按内容风险分级：新闻、医疗类从严从显；营销文案、内部草稿类合规底线之上从简。一刀切的大水印是偷懒。'],
+   bonus:'补一句「标签折扣正在随时间衰减：用户对 AI 参与的接受度逐年上移。策略要留出重估节奏，今年的折扣数据别写进明年的决策」。',
+   refs:[{href:'psy-11.html',label:'AI 标签折扣'},{href:'ai-safety-redlines.html',label:'AI 安全红线'}]},
+
+  // ── 认知卸载与情感依恋（2 题）──
+  {who:'dev',
+   q:'「你要求所有答案带『思路解释』，还要做一个『学习模式』让 AI 先追问再回答。Token 翻倍，用户明明只想要答案，这是不是你的自我感动？」',
+   intent:'技术同事在质询<strong>认知卸载对策的成本</strong>。说「为了用户好」的人会被追杀到底；真懂的人分清哪些用户需要防卸载、哪些不需要，把全量需求改成分层需求。',
+   frame:['<strong>先收窄：</strong>你说得对，全量上是浪费。认知卸载的风险分人群：把 AI 当计算器的效率用户不需要防，正在建立专业能力的用户（新员工、学生、初级从业者）才是卸载高危人群。',
+     '<strong>改成分层：</strong>默认模式直接给答案，零额外成本；「学习模式」做成显式开关，谁需要谁打开，Token 成本只花在开了开关的会话上。',
+     '<strong>思路解释降配：</strong>不用完整思维链，用三行式摘要（关键假设、主要依据、薄弱环节），成本远低于全量解释，还顺带服务了信任校准。',
+     '<strong>给数据口径：</strong>学习模式看两个数：开启率和开启用户的三十天留存。如果开的人更长情，这个功能就是留存资产，不是我的自我感动。'],
+   bonus:'补一句「防认知卸载还有个商业理由：用户能力退化到离开 AI 就不会干活时，他对产品的情绪不是感激是怨恨，『它把我变废了』的叙事一旦成型，流失时连挽留话术都没得讲」。',
+   refs:[{href:'psy-12.html',label:'认知卸载'},{href:'psy-5.html',label:'信任校准'}]},
+
+  {who:'boss',
+   q:'「我们升级了模型，性格更稳重了，结果一批老用户在社区骂我们『杀死了他们的朋友』，还有人发起联名。一次模型升级而已，至于吗？」',
+   intent:'考你对<strong>情感依恋</strong>的严肃程度。觉得「用户太夸张」的人会把公关事故处理成用户教育；真懂的人知道 Replika 事件的先例，对高依恋用户来说人格突变体验上等同于丧失。',
+   frame:['<strong>先校准严肃度：</strong>至于。Replika 2023 年砍掉亲密功能后，社区出现了真实的哀伤反应，版主甚至置顶了心理危机干预资源。对高依恋用户，AI 的人格是关系的一部分，突变等于单方面撕毁关系。',
+     '<strong>给止血方案：</strong>提供「经典人格」选项让老用户可以切回去；做不到的话至少给过渡期和提前告知，人格变更的公告规格要按「重要关系变动」写，不能按「功能更新」写。',
+     '<strong>给制度修正：</strong>把「人格稳定性」列入模型升级的评审项：升级前用旧对话回放测语气漂移，漂移超阈值就要么调回来、要么走告知流程。',
+     '<strong>划长期边界：</strong>依恋是留存资产也是责任负债。产品要设安全阀：身份提醒、连续长时使用的提示、脆弱话题转介真人资源。赚陪伴的钱，就要背陪伴的责任。'],
+   bonus:'补一句「联名骂你的用户是最不该流失的用户：依恋深到会抗议，说明产品在他生活里有位置。处理得体，这批人是终身用户；处理成『系统升级恕不另行通知』，他们会带着叙事离开，而叙事会上热搜」。',
+   refs:[{href:'psy-13.html',label:'情感依恋'},{href:'psy-8.html',label:'拟人化档位'}]},
+
+  // ── 付费与定价（4 题）──
+  {who:'boss',
+   q:'「按量计费明明对轻度用户更便宜，可用户就是涌向包月，还有人骂按量是『打表坑人』。用户不会算账吗？」',
+   intent:'考<strong>心理账户和支付疼痛</strong>。答「用户数学不好」的人不懂行为经济学；真懂的人知道按量计费的每一次扣费都是一次疼痛触发，用户买包月买的是「不用一直疼」。',
+   frame:['<strong>先讲机制：</strong>用户会算账，但账本不一样。经济账上按量便宜；心理账上，按量计费让每次提问都触发一次支付疼痛，像坐着跳表的出租车，肉疼是按次结算的。包月把全年的疼痛压缩成十二次。',
+     '<strong>点出行为后果：</strong>打表焦虑不只影响付费页，它改变使用行为：用户开始省着用、不敢问、问之前先自我审查「这个问题值不值一次扣费」。产品的价值感知被计费方式亲手掐死。',
+     '<strong>给设计方案：</strong>主推包月/包年，按量留给开发者和企业（他们有预算心理账户，不疼）；包内额度的展示做钝化：显示「本月还很充裕」而不是精确到分的余额跳动。',
+     '<strong>处理用尽时刻：</strong>额度用尽是付费转化的黄金现场也是口碑事故现场：给降档继续用（换个便宜模型）而不是硬弹付费墙，用户记住的是「它没把我晾在半路」。'],
+   bonus:'补一句「Token 计价对用户是外语：把『还剩 120 万 Token』翻译成『大约还能处理 40 份合同』，账户的余额焦虑立刻降一档。计价单位要说用户的母语」。',
+   refs:[{href:'psy-14.html',label:'付费心理'},{href:'cost-1.html',label:'Token 经济学'}]},
+
+  {who:'dev',
+   q:'「你要求免费额度用尽时不弹付费墙，还自动降档让用户白嫖便宜模型。我们养这些白嫖党的推理成本，图什么？」',
+   intent:'技术同事在算<strong>免费用户的成本账</strong>，考你能不能把免费额度讲成获客资产而不是善心。答「体验第一」的人在回避成本问题；真懂的人把降档的成本和它买到的东西算给他看。',
+   frame:['<strong>先算成本真相：</strong>降档模型的推理成本是旗舰的几十分之一，白嫖党用降档模型的月成本大概率低于我们买一次广告点击的价格。问题不是养不养得起，是这笔钱买到了什么。',
+     '<strong>买到的第一样：</strong>付费墙弹出的瞬间，用户的心理账户从「体验产品」切换成「被收费」，防御拉满、流失即走；降档继续用保住了使用习惯，而习惯是付费转化的最大前置变量。',
+     '<strong>买到的第二样：</strong>降档本身就是产品演示：用户亲身对比出旗舰模型好在哪，「升级」从抽象口号变成了具体的体感差距，这比任何付费引导文案都硬。',
+     '<strong>给止损边界：</strong>白嫖也有边界设计：降档额度同样有上限、重度白嫖的高成本功能（长文档、图像生成）不降档直接锁。放水是策略，不是不设堤坝。'],
+   bonus:'补一句「监控一个指标：降档期间的用户主动点『试试旗舰模型』的比例。这个数就是免费额度作为销售员的业绩，它会替我说服你」。',
+   refs:[{href:'psy-14.html',label:'免费额度设计'},{href:'cost-3.html',label:'模型分层'}]},
+
+  {who:'hr',
+   q:'「AI 产品的定价页几乎全是三档，中间那档卖得最好。给我讲清楚这背后的心理机制，以及 AI 产品做三档比传统 SaaS 多了什么便利。」',
+   intent:'考<strong>锚定和诱饵效应</strong>的理解深度，外加一个 AI 特有的洞察点。背「金发姑娘效应」四个字的人拿不到后半题的分；真懂的人知道模型分层天然就是版本化的原料。',
+   frame:['<strong>先讲锚定：</strong>人对价格没有绝对感受，只有相对比较。顶档的存在不为卖出，为把中档衬托成「理性之选」：¥399 站在那里，¥99 就从贵变成了划算。',
+     '<strong>再讲诱饵：</strong>经济学人的经典实验：加一个明显更差的选项（单订印刷版 125 美元），旁边「印刷 + 电子同价 125」的套餐选择率从 32% 翻到 84%。选项本身没变，参照系变了。',
+     '<strong>答 AI 的便利：</strong>传统 SaaS 做版本要开发功能差异，AI 产品的版本差异天然存在：模型档位（快速/标准/旗舰）、额度、上下文长度，全是现成的分层原料，三档结构几乎是从成本结构里自己长出来的。',
+     '<strong>给一个纪律：</strong>档位差异要诚实：顶档要真的有人买有人用（它同时是重度用户的正经选择），纯摆设的假档位被识破后，整张定价页的可信度一起塌。'],
+   bonus:'补一句「三档的命名也是心理设计：Free / Pro / Max 的语义阶梯让用户自我归类，『我是 Pro 用户』是身份认同，身份比功能列表更能抵抗降级」。',
+   refs:[{href:'psy-15.html',label:'定价心理'},{href:'psy-books.html',label:'怪诞行为学'}]},
+
+  {who:'dev',
+   q:'「你要给学生半价、给老用户涨价时保原价、新客首月三折。同一个服务卖四个价，用户之间一比价就炸，这锅谁背？」',
+   intent:'技术同事在戳<strong>价格歧视的公平感红线</strong>。答「大家都这么干」的人没想过翻车路径；真懂的人知道价格歧视本身合理，炸不炸取决于差价有没有一个用户认可的「理由」。',
+   frame:['<strong>先给原则：</strong>价格歧视的安全线是公平感：用户能接受「不同的人不同价」，不能接受「被当成冤大头」。差价必须挂在一个可被讲述的理由上，理由站得住，比价就不炸。',
+     '<strong>逐个过理由：</strong>学生半价：身份理由，公认合理；老用户保价：祖父条款，是忠诚回报的叙事，主动宣传都可以；新客首月三折：试用理由，但必须写清「首月」，到期涨价前要提醒，静默恢复原价是投诉的头号来源。',
+     '<strong>指出真雷区：</strong>会炸的是没有理由的歧视：同一时刻同一身份，因为设备型号或访问频次给不同价（大数据杀熟）。那个不是定价策略，是舆情事故排期表。',
+     '<strong>给工程约束：</strong>价格规则要可解释可追溯：任何用户问「为什么我是这个价」，客服系统能给出准确理由。给不出理由的价格差异，一律不上线。'],
+   bonus:'补一句「塞勒的雪铲实验说透了这件事：雪天涨价的铲子商家被恨，不是因为涨价本身，是因为『趁人之危』的叙事。定价可以歧视，叙事必须公平」。',
+   refs:[{href:'psy-15.html',label:'价格歧视'},{href:'psy-books.html',label:'错误的行为'}]},
+
+  // ── 反馈心理（1 题）──
+  {who:'boss',
+   q:'「后台数据：点踩率只有 0.3%。团队说这证明用户对答案质量很满意。这个结论能信吗？」',
+   intent:'考<strong>沉默偏差</strong>的警觉性。信这个结论的人会在虚假的安全感里错过质量滑坡；真懂的人知道点踩率低的第一解释是反馈漏斗漏得厉害，不是质量高。',
+   frame:['<strong>先泼冷水：</strong>不能信。点踩要经过一条漏斗：用户得注意到答案有问题、得在意、得找到按钮、还得愿意承认「我刚才信了个错答案」：最后这步有自我否定成本，大多数人选择默默关页面。0.3% measured 的是漏斗的漏，不是质量的好。',
+     '<strong>给替代信号：</strong>真实的不满写在行为里：重新生成率、用户手动大幅编辑输出的比例、追问「不对，我是说……」的频次、会话中途放弃率。这些隐性信号的量级通常是显式点踩的几十倍。',
+     '<strong>修漏斗本身：</strong>降低反馈成本（点踩后不弹五连问卷，一次点击即完成）；给反馈即时回报（点踩立刻重新生成一个改进版），让反馈从「给平台做慈善」变成「马上对我有用」。',
+     '<strong>给正确口径：</strong>质量监控的主指标换成隐性信号组合加定期人工抽评，点踩数据降级为辅助。同时接受一个现实：沉默的不满永远测不全，所以要主动抽样，不能守株待兔。'],
+   bonus:'补一句「重新生成按钮是被低估的负反馈金矿：每次点击都在说『这个不行』，还自带对照样本（用户最终采纳了哪一版）。把它接进评测数据管线，比求用户点踩高效得多」。',
+   refs:[{href:'psy-16.html',label:'反馈心理'},{href:'10-8.html',label:'评测方法论'}]},
+
+  // ── 综合与元问题（5 题）──
+  {who:'hr',
+   q:'「AI 产品的体验设计，和传统互联网产品的体验设计，最本质的区别是什么？」',
+   intent:'收官大题，考你能不能<strong>一句话抓住范式差异</strong>再展开。罗列功能差异的人格局小了；真懂的人从「确定性」这个根上讲起。',
+   frame:['<strong>先给根本差异：</strong>传统产品是确定性系统：同样操作同样结果，体验设计的任务是让路径顺滑。AI 是概率系统：会慢、会错、每次还不一样，体验设计多了一个任务：管理不确定性带来的心理成本。',
+     '<strong>展开三个新课题：</strong>等待设计（推理天生秒级，等待成为常态而非异常）、信任校准（输出可能错，不能让用户全信也不能吓得不敢用）、心智纠正（用户拿旧说明书用新物种）。',
+     '<strong>指出角色变化：</strong>传统产品里心理学是锦上添花，AI 产品里是及格线的一部分：同样的模型，呈现设计的差距能让「能用」和「好用」差出一个产品世代。',
+     '<strong>落到方法：</strong>工程指标（TTFT、幻觉率）之外必须并行追感知指标（体感速度、信任校准度、错误后存活率），两套仪表盘一起看。'],
+   bonus:'补一句「传统产品的 Loading 是要消灭的 Bug，AI 产品的等待是要设计的界面：一个是羞耻，一个是舞台。一句话能讲清这个转变，这章就算学成了」。',
+   refs:[{href:'psy-1.html',label:'感知性能开篇'},{href:'psy-final.html',label:'全章对照表'}]},
+
+  {who:'boss',
+   q:'「你说的这些体验优化都很好，但都不好量化。下个季度 OKR 怎么写？别给我写『提升用户幸福感』这种。」',
+   intent:'老板在逼你把心理学<strong>翻译成可考核的指标</strong>。写不出数的人这章白学；真懂的人手里有一套感知指标的度量方案。',
+   frame:['<strong>等待类指标：</strong>TTFT P90 压到 1 秒内；超 10 秒任务的异步化覆盖率 100%；长任务预估时长的兑现率（实际不超预估的比例）95% 以上。',
+     '<strong>信任类指标：</strong>来源引用的点击核实率（健康区间而非越高越好）；高风险输出的有条件警告触发精确率；错误后会话存活率（遇错用户继续用而非流失的比例）。',
+     '<strong>防御类指标：</strong>敏感功能的首次使用转化率（上传页流失率）；AI 独立解决率与转人工满意度并列追踪；内部工具看周活跃留存而非累计注册。',
+     '<strong>兜底一条北极星：</strong>「体验修复比」：每季度被差评的体验问题里，靠呈现层修复（不动模型）的占比。这个数高，说明团队真的掌握了这章的杠杆。'],
+   bonus:'主动把一个指标标成「反向警戒」：「来源点击率突然掉到零，未必是信任建成了，更可能是横幅盲视发作，引用形同虚设」。会给指标装刹车的人，老板才放心让他定 OKR。',
+   refs:[{href:'psy-final.html',label:'上线前十问'},{href:'psy-5.html',label:'信任校准'}]},
+
+  {who:'dev',
+   q:'「你张口劳动错觉闭口峰终定律，这些几十年前的实验，样本几十人，搬到我们产品上真的成立吗？」',
+   intent:'技术同事在做<strong>科学性的压力测试</strong>，这是好问题。硬捍卫心理学的人输了；真懂的人承认外推风险，然后亮出「假设、实验、数据说话」的姿态。',
+   frame:['<strong>先承认边界：</strong>你的怀疑有道理：经典实验的场景和样本都有局限，心理学还有可复现性危机的前科。这些定律在我这里的地位是假设生成器，不是免检结论。',
+     '<strong>给验证姿态：</strong>所以每条心理学结论落地都配 A/B：劳动错觉就测「过程展示开关」对信任评分和采纳率的影响，峰终就测「结尾交付总结」对次日留存的影响，我们自己的数据说了算。',
+     '<strong>说清价值所在：</strong>定律的价值是把实验空间从无限收窄到几个高概率方向：没有它们，体验优化是无头苍蝇；有了它们，是带着假设跑实验，命中率高得多。',
+     '<strong>给一个已验证的锚点：</strong>「展示思考过程提升信任」这条在大规模真实产品上反复得到过验证，推理模型的产品形态就是活证据。不是所有结论都停留在 1985 年的实验室。'],
+   bonus:'补一句「与其争论定律真不真，不如感谢它们便宜：心理学假设的验证成本是一个 A/B 开关，比重训模型的验证便宜一万倍，试错型知识就该这么用」。',
+   refs:[{href:'psy-3.html',label:'劳动错觉研究'},{href:'10-8.html',label:'评测方法论'}]},
+
+  {who:'hr',
+   q:'「给你一个体验很差的 AI 产品，你只有一周时间做诊断。说说你的排查框架。」',
+   intent:'方法论落地题，考你能不能把八课内容<strong>组织成一套可执行的诊断流程</strong>。想到哪说到哪的人没有框架；真懂的人按用户旅程分段排查，每段有明确的检查项。',
+   frame:['<strong>第一天定位病灶：</strong>拉差评和流失数据分类：骂慢的、骂蠢的、用一次就走的、根本不敢用的。四类分别对应等待、信任、心智、防御四个病区，占比决定排查优先级。',
+     '<strong>中间三天按旅程走查：</strong>首触段查空状态和第一印象（心智 + 峰值）；使用段查等待反馈链路（三档呈现有没有配齐、过程可不可见）；出错段查错误响应（三要素、来源、警告设计）；离场段查结尾（最后一步失败率、交付感）。',
+     '<strong>第五天上对照表：</strong>用全章检查清单（上线前十问）逐项打分，缺口按「修复成本 × 心理杠杆」排序：通常流式、进度外显、草稿态这几个低成本高杠杆项先动。',
+     '<strong>交付物：</strong>一页诊断报告：四个病区的占比、十问的得分、前三个动手项和各自的验证指标。一周给不了根治，给得了一张准确的病历加处方。'],
+   bonus:'补一句「诊断时我会亲自当一天新用户，全程录屏：数据告诉你哪里在流血，录屏告诉你为什么。感知问题必须亲自感知一遍」。',
+   refs:[{href:'psy-final.html',label:'上线前十问'},{href:'psy-1.html',label:'感知性能'}]},
+
+  {who:'boss',
+   q:'「下个版本资源只够做一件事：接更强的新模型，或者把这章说的体验设计做一遍。你选哪个？」',
+   intent:'终极取舍题，考你<strong>敢不敢下判断、判断有没有条件意识</strong>。无条件选任何一边都扣分；真懂的人先看产品处在哪个瓶颈，再给出带判断条件的答案。',
+   frame:['<strong>先给判断条件：</strong>看差评结构。如果核心任务的成功率不达标（答案质量被普遍质疑），换模型：呈现救不了不合格的内核，劳动错觉在结果不行时会失效。',
+     '<strong>给另一边的条件：</strong>如果任务成功率尚可、但活跃和留存上不去，差评集中在慢、不敢用、说了不听：选体验设计。这些病换模型一个都治不好，再强的模型裸奔照样挨骂。',
+     '<strong>报出两边的成本真相：</strong>换模型的成本常被低估：全量评测、提示词迁移、成本结构变化；体验包的成本常被高估：流式、进度、草稿态、来源展示多数是呈现层改动。同样预算，体验包能做完，换模型只够做评测。',
+     '<strong>给我的默认倾向：</strong>行业现状下模型能力普遍溢出而体验普遍粗糙，多数产品的瓶颈在后者。所以同分情况下我默认选体验，让现有模型的能力先被完整地感知到。'],
+   bonus:'一句话收束全章：「模型决定产品的上限，感知决定用户承认的上限。中间的差距，就是这一章的全部价值」。面试的最后一题，值得留一句让人记住的话。',
+   refs:[{href:'psy-final.html',label:'收官对照表'},{href:'cost-3.html',label:'模型选型'}]}
+];
+
+const WHO = {
+  hr:  {label:'面试官',   cls:'who-hr',   card:''},
+  boss:{label:'老板',     cls:'who-boss', card:' c-boss'},
+  dev: {label:'技术同事', cls:'who-dev',  card:' c-dev'}
+};
+
+document.getElementById('iqList').innerHTML = QUESTIONS.map(function(it, i){
+  const w = WHO[it.who];
+  return '<div class="iq-card' + w.card + '">'
+    + '<div class="iq-head"><span class="iq-num">Q' + (i + 1) + '</span><span class="iq-who ' + w.cls + '">' + w.label + '</span></div>'
+    + '<div class="iq-q">' + it.q + '</div>'
+    + '<div class="iq-block iq-intent"><div class="iq-label">🎯 对方在考察什么</div><div class="iq-body">' + it.intent + '</div></div>'
+    + '<div class="iq-block iq-frame"><div class="iq-label">🧭 答题框架</div><ol>'
+    + it.frame.map(function(f){ return '<li>' + f + '</li>'; }).join('')
+    + '</ol></div>'
+    + '<div class="iq-bonus"><b>⭐ 加分点</b>' + it.bonus + '</div>'
+    + '<div class="iq-refs"><span class="iq-refs-label">用这些课程页组织答案 →</span>'
+    + it.refs.map(function(r){ return '<a href="' + r.href + '">' + r.label + '</a>'; }).join('')
+    + '</div></div>';
+}).join('');
+</script>
+
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

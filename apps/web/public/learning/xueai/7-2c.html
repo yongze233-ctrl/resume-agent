@@ -1,0 +1,1210 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"7-2c",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=7-2c',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>多工具编排：并发还是串行？ | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}} body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 布局：场景侧栏 + 甘特图 ── */
+.orch{display:grid;grid-template-columns:290px 1fr;gap:20px;align-items:start}
+
+/* 左：场景 */
+.scene-panel{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card)}
+.l-label{padding:10px 16px;font-size:13px;font-weight:800;color:var(--sub);letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.user-req{padding:14px 16px;font-size:15px;line-height:1.7;color:var(--text);background:rgba(8,145,178,.04);border-bottom:1px solid var(--border)}
+.user-req b{color:var(--cyan)}
+
+.tool-list{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.tool-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1.5px solid var(--border);transition:border-color .3s,box-shadow .3s}
+.tool-chip.active{border-color:rgba(0,102,255,.35);box-shadow:0 0 0 3px rgba(0,102,255,.08)}
+.tool-chip.done{border-color:rgba(22,163,74,.3);box-shadow:0 0 0 3px rgba(22,163,74,.06)}
+.tc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tc-info{flex:1;min-width:0}
+.tc-name{font-size:14px;font-weight:700;color:var(--text)}
+.tc-time{font-size:12px;color:var(--sub);margin-top:2px}
+.tc-badge{padding:3px 8px;border-radius:5px;font-size:11px;font-weight:800;flex-shrink:0}
+
+.decision{margin:8px 12px 12px}
+.dec-card{background:rgba(0,102,255,.04);border:1.5px solid rgba(0,102,255,.2);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);line-height:1.6;opacity:0;transform:translateY(4px);transition:all .35s}
+.dec-card.show{opacity:1;transform:translateY(0)}
+.dec-card b{color:var(--accent)}
+
+/* 右：模式切换 + 甘特图 */
+.gantt-panel{min-width:0}
+.r-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.r-title{font-size:14px;font-weight:800;color:var(--text)}
+.mode-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.mode-tab{padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;font-size:14px;font-weight:700;color:var(--sub);font-family:inherit;transition:all .15s;min-height:40px}
+.mode-tab.active{border-color:var(--accent);background:rgba(0,102,255,.06);color:var(--accent)}
+
+.gantt-area{display:flex;flex-direction:column;gap:14px}
+
+/* 甘特图 */
+.gantt-container{display:flex;flex-direction:column;gap:12px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-card)}
+.gantt-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.gantt-title{font-size:15px;font-weight:700;color:var(--text)}
+.gantt-total{padding:5px 14px;border-radius:8px;font-size:15px;font-weight:800}
+
+.gantt-scroll{overflow-x:auto}
+.gantt-timeline{position:relative;display:flex;flex-direction:column;gap:6px;min-width:560px}
+.gantt-axis{display:flex;align-items:center;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:4px}
+.gantt-axis-label{font-size:12px;color:var(--sub);font-weight:600;position:absolute}
+
+.gantt-row{display:flex;align-items:center;gap:12px;height:44px}
+.gantt-row-label{width:120px;flex-shrink:0;font-size:13px;font-weight:700;color:var(--text);text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.gantt-row-label .emoji{font-size:16px}
+.gantt-row-track{flex:1;height:36px;position:relative;border-radius:8px;background:rgba(0,0,0,.02);border:1px solid var(--border)}
+.gantt-bar{position:absolute;top:4px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;opacity:0;transform:scaleX(0);transform-origin:left;transition:all .6s cubic-bezier(.4,0,.2,1)}
+.gantt-bar.show{opacity:1;transform:scaleX(1)}
+.gantt-bar-time{position:absolute;right:-40px;font-size:11px;font-weight:700;color:var(--sub);white-space:nowrap}
+
+.batch-label{position:absolute;top:-18px;font-size:11px;font-weight:800;color:var(--accent);white-space:nowrap}
+
+/* 说明卡 + 对比卡 */
+.desc-section{display:flex;flex-direction:column;gap:8px}
+.desc-card{padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.6;color:var(--text);opacity:0;transform:translateY(6px);transition:all .4s}
+.desc-card.show{opacity:1;transform:translateY(0)}
+.desc-card b{color:var(--accent)}
+
+.compare-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.compare-card{padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);text-align:center;opacity:0;transform:translateY(6px);transition:all .4s}
+.compare-card.show{opacity:1;transform:translateY(0)}
+.compare-card.highlight{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.04)}
+.cc-label{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:4px}
+.cc-value{font-size:22px;font-weight:800}
+.cc-sub{font-size:12px;color:var(--sub);margin-top:2px}
+
+/* 控制 */
+.ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.btn{padding:10px 20px;border-radius:8px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .15s;min-height:44px}
+.btn-p{background:var(--accent);color:white}
+.btn-p:hover{filter:brightness(1.1)}
+.btn-p:disabled{opacity:.3;cursor:not-allowed}
+.btn-r{background:rgba(0,0,0,.04);color:var(--sub);border:1px solid var(--border)}
+.ctrl-hint{font-size:13px;color:var(--sub)}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pulse{animation:pulse 1s ease infinite}
+
+@media (max-width:768px){
+  .orch{grid-template-columns:1fr}
+  .compare-row{grid-template-columns:1fr}
+}
+</style>
+<meta name="description" content="多工具编排：并发还是串行？通过甘特图可视化对比串行、并发、智能分批三种工具编排策略的执行时间差异，帮助产品经理理解框架层面的关键设计决策。">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="多工具编排：并发还是串行？">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/7-2c.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/7-2c.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:description" content="多工具编排：并发还是串行？通过甘特图可视化对比串行、并发、智能分批三种工具编排策略的执行时间差异，帮助产品经理理解框架层面的关键设计决策。"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker">Agent 工程</div>
+    <h1>多工具编排：并发 vs 串行</h1>
+    <p class="subtitle">同一轮返回 3 个工具调用，执行顺序怎么选？选择模式，点击演示，观察时间差异。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>isConcurrencySafe 决定工具能否并行，调度策略可视化</p></aside><!--seo:end-->  <div class="orch paywall-locked xa-peek">
+    <!-- 左：场景 -->
+    <aside class="scene-panel">
+      <div class="l-label">用户场景</div>
+      <div class="user-req">
+        <b>用户说：</b><br>「帮我订明天北京到上海的机票，顺便查一下上海的天气和推荐酒店」
+      </div>
+      <div class="l-label">模型返回 3 个工具调用</div>
+      <div class="tool-list" id="toolList">
+        <div class="tool-chip" id="chip-flight">
+          <div class="tc-icon" style="background:rgba(124,58,237,.08)">✈️</div>
+          <div class="tc-info">
+            <div class="tc-name">search_flights</div>
+            <div class="tc-time">预计耗时 1.5 秒</div>
+          </div>
+          <span class="tc-badge" id="badge-flight" style="background:rgba(0,0,0,.04);color:var(--sub)">等待中</span>
+        </div>
+        <div class="tool-chip" id="chip-weather">
+          <div class="tc-icon" style="background:rgba(8,145,178,.08)">🌤️</div>
+          <div class="tc-info">
+            <div class="tc-name">get_weather</div>
+            <div class="tc-time">预计耗时 0.8 秒</div>
+          </div>
+          <span class="tc-badge" id="badge-weather" style="background:rgba(0,0,0,.04);color:var(--sub)">等待中</span>
+        </div>
+        <div class="tool-chip" id="chip-hotel">
+          <div class="tc-icon" style="background:rgba(22,163,74,.08)">🏨</div>
+          <div class="tc-info">
+            <div class="tc-name">search_hotels</div>
+            <div class="tc-time">预计耗时 1.2 秒</div>
+          </div>
+          <span class="tc-badge" id="badge-hotel" style="background:rgba(0,0,0,.04);color:var(--sub)">等待中</span>
+        </div>
+      </div>
+      <div class="decision" id="decArea"></div>
+    </aside>
+
+    <!-- 右：甘特图 -->
+    <div class="gantt-panel">
+      <div class="r-bar">
+        <div class="r-title">执行时序对比</div>
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab active" onclick="pickMode(0)">串行执行</button>
+          <button class="mode-tab" onclick="pickMode(1)">并发执行</button>
+          <button class="mode-tab" onclick="pickMode(2)">智能分批</button>
+        </div>
+      </div>
+
+      <div class="gantt-area" id="ganttArea"></div>
+
+      <div class="ctrl">
+        <button class="btn btn-p" id="btnRun" onclick="runDemo()">▶ 开始演示</button>
+        <button class="btn btn-r" onclick="resetDemo()">重置</button>
+        <span class="ctrl-hint" id="hint">选择模式 → 点击演示 → 观察时间差异</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">Takeaway</div>
+  <div class="l-callout paywall-locked">
+    <b>Takeaway</b>　同一轮模型返回多个工具调用时，框架需要决定：全部串行（最安全）、全部并发（最快）、还是按安全性智能分批（Alice 的做法）。这个决定直接影响用户等待时间。
+  </div>
+</article>
+
+<script>
+var TOOLS = [
+  {id:'flight', name:'search_flights', emoji:'✈️', color:'var(--purple)', bg:'rgba(124,58,237,.75)', time:1.5, safe:false},
+  {id:'weather', name:'get_weather', emoji:'🌤️', color:'var(--cyan)', bg:'rgba(8,145,178,.8)', time:0.8, safe:true},
+  {id:'hotel', name:'search_hotels', emoji:'🏨', color:'var(--success)', bg:'rgba(22,163,74,.75)', time:1.2, safe:true}
+];
+
+var MODES = [
+  {
+    key:'serial',
+    title:'串行执行',
+    subtitle:'一个接一个，最安全',
+    totalTime:3.5,
+    batches:[[0],[1],[2]],
+    decision:'<b>📌 设计决策：</b>串行 = 绝对安全，但用户等 3.5 秒。每个工具执行完才运行下一个，不会产生任何数据竞争。<br><b>代价：</b>如果工具之间其实没有依赖关系，白白浪费了并行的机会。',
+    descText:'每个工具依次执行：先查机票 → 再查天气 → 最后查酒店。总耗时 = 所有工具时间之和。'
+  },
+  {
+    key:'parallel',
+    title:'并发执行',
+    subtitle:'全部同时跑，最快',
+    totalTime:1.5,
+    batches:[[0,1,2]],
+    decision:'<b>📌 设计决策：</b>并发 = 最快体验，但有风险。如果机票预订会改变用户状态（比如扣款），而酒店搜索依赖机票结果（比如按航班到达时间筛选），同时运行可能产生<b>数据竞争</b>。<br><b>追问：</b>你的产品里，这 3 个工具之间有没有依赖？',
+    descText:'三个工具同时启动，总耗时 = 最慢的那个（1.5 秒）。速度提升 57%。'
+  },
+  {
+    key:'smart',
+    title:'智能分批（Alice 方案）',
+    subtitle:'按安全性自动分组',
+    totalTime:2.7,
+    batches:[[0],[1,2]],
+    decision:'<b>📌 设计决策：</b>框架给每个工具标记是否可以并发。机票搜索可能涉及状态变更 → 单独执行；天气和酒店是纯查询 → 安全合并。<br><b>关键：</b>产品经理需要告诉工程师每个工具的安全等级。这是业务判断。',
+    descText:'第 1 批：机票搜索（可能改状态，单独跑）→ 第 2 批：天气 + 酒店（纯查询，一起跑）。'
+  }
+];
+
+var curMode = 0;
+var running = false;
+var animTimers = [];
+
+function pickMode(i) {
+  if (running) return;
+  curMode = i;
+  var tabs = document.querySelectorAll('.mode-tab');
+  for (var t = 0; t < tabs.length; t++) tabs[t].classList.toggle('active', t === i);
+  resetDemo();
+}
+
+function buildGantt() {
+  var m = MODES[curMode];
+  var maxTime = 4.0;
+  var pxPerSec = 100;
+
+  var html = '';
+  html += '<div class="gantt-container">';
+  html += '<div class="gantt-header"><div class="gantt-title">' + m.title + '<span style="font-weight:400;color:var(--sub);font-size:13px;margin-left:8px">' + m.subtitle + '</span></div>';
+
+  var totalColor = m.totalTime <= 2 ? 'var(--success)' : m.totalTime <= 3 ? 'var(--amber)' : 'var(--danger)';
+  html += '<div class="gantt-total" style="background:' + totalColor + '15;color:' + totalColor + '">总耗时 <span id="totalDisplay">—</span> 秒</div></div>';
+
+  html += '<div class="gantt-scroll"><div class="gantt-timeline" style="padding-left:132px">';
+
+  var axisHtml = '<div class="gantt-axis" style="position:relative;height:20px">';
+  for (var s = 0; s <= maxTime; s += 0.5) {
+    axisHtml += '<span class="gantt-axis-label" style="left:' + (s * pxPerSec) + 'px">' + s.toFixed(1) + 's</span>';
+  }
+  axisHtml += '</div>';
+  html += axisHtml;
+
+  var batchStartTimes = [];
+  var currentStart = 0;
+  for (var bi = 0; bi < m.batches.length; bi++) {
+    batchStartTimes.push(currentStart);
+    var batchMax = 0;
+    for (var bj = 0; bj < m.batches[bi].length; bj++) {
+      var toolTime = TOOLS[m.batches[bi][bj]].time;
+      if (toolTime > batchMax) batchMax = toolTime;
+    }
+    currentStart += batchMax;
+  }
+
+  for (var ti = 0; ti < TOOLS.length; ti++) {
+    var tool = TOOLS[ti];
+    var batchIdx = -1;
+    var posInBatch = -1;
+    for (var b = 0; b < m.batches.length; b++) {
+      for (var p = 0; p < m.batches[b].length; p++) {
+        if (m.batches[b][p] === ti) { batchIdx = b; posInBatch = p; }
+      }
+    }
+    var startSec = batchStartTimes[batchIdx];
+    var leftPx = startSec * pxPerSec;
+    var widthPx = tool.time * pxPerSec;
+
+    html += '<div class="gantt-row">';
+    html += '<div class="gantt-row-label" style="position:absolute;left:0;width:120px"><span class="emoji">' + tool.emoji + '</span>' + tool.name.replace('search_','').replace('get_','') + '</div>';
+    html += '<div class="gantt-row-track">';
+
+    if (m.key === 'smart' && posInBatch === 0 && m.batches[batchIdx].length > 0) {
+      var bLabel = m.batches[batchIdx].length > 1 ? '批次 ' + (batchIdx + 1) + '（并发）' : '批次 ' + (batchIdx + 1) + '（单独）';
+      html += '<span class="batch-label" style="left:' + leftPx + 'px" id="blabel-' + batchIdx + '">' + bLabel + '</span>';
+    }
+
+    html += '<div class="gantt-bar" id="bar-' + tool.id + '" style="left:' + leftPx + 'px;width:' + widthPx + 'px;background:' + tool.bg + '">' + tool.time + 's</div>';
+    html += '</div></div>';
+  }
+
+  html += '</div></div></div>';
+
+  html += '<div class="desc-section">';
+  html += '<div class="desc-card" id="descCard" style="background:rgba(0,102,255,.04);border:1.5px solid rgba(0,102,255,.15);border-radius:10px">' + m.descText + '</div>';
+  html += '</div>';
+
+  html += '<div class="compare-row" id="compareRow">';
+  for (var ci = 0; ci < MODES.length; ci++) {
+    var isActive = ci === curMode;
+    var cColor = MODES[ci].totalTime <= 2 ? 'var(--success)' : MODES[ci].totalTime <= 3 ? 'var(--amber)' : 'var(--danger)';
+    html += '<div class="compare-card' + (isActive ? ' highlight' : '') + '" id="cc-' + ci + '">';
+    html += '<div class="cc-label">' + MODES[ci].title + '</div>';
+    html += '<div class="cc-value" style="color:' + cColor + '">' + MODES[ci].totalTime + 's</div>';
+    html += '<div class="cc-sub">' + (ci === 0 ? '最安全' : ci === 1 ? '最快' : '平衡方案') + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  document.getElementById('ganttArea').innerHTML = html;
+}
+
+function resetChips() {
+  for (var i = 0; i < TOOLS.length; i++) {
+    var chip = document.getElementById('chip-' + TOOLS[i].id);
+    var badge = document.getElementById('badge-' + TOOLS[i].id);
+    chip.className = 'tool-chip';
+    badge.style.background = 'rgba(0,0,0,.04)';
+    badge.style.color = 'var(--sub)';
+    badge.textContent = '等待中';
+  }
+}
+
+function setChipState(id, state) {
+  var chip = document.getElementById('chip-' + id);
+  var badge = document.getElementById('badge-' + id);
+  if (state === 'running') {
+    chip.className = 'tool-chip active';
+    badge.style.background = 'rgba(0,102,255,.1)';
+    badge.style.color = 'var(--accent)';
+    badge.textContent = '执行中';
+    badge.classList.add('pulse');
+  } else if (state === 'done') {
+    chip.className = 'tool-chip done';
+    badge.style.background = 'rgba(22,163,74,.1)';
+    badge.style.color = 'var(--success)';
+    badge.textContent = '完成 ✓';
+    badge.classList.remove('pulse');
+  }
+}
+
+function runDemo() {
+  if (running) return;
+  running = true;
+  document.getElementById('btnRun').disabled = true;
+  resetChips();
+  buildGantt();
+
+  var m = MODES[curMode];
+  var pxPerSec = 100;
+  var batchStartTimes = [];
+  var currentStart = 0;
+
+  for (var bi = 0; bi < m.batches.length; bi++) {
+    batchStartTimes.push(currentStart);
+    var batchMax = 0;
+    for (var bj = 0; bj < m.batches[bi].length; bj++) {
+      if (TOOLS[m.batches[bi][bj]].time > batchMax) batchMax = TOOLS[m.batches[bi][bj]].time;
+    }
+    currentStart += batchMax;
+  }
+
+  var speedFactor = 600;
+  var elapsed = 0;
+
+  for (var b = 0; b < m.batches.length; b++) {
+    (function(batchIdx) {
+      var batchStart = batchStartTimes[batchIdx];
+      var batchTools = m.batches[batchIdx];
+      var batchMaxTime = 0;
+
+      var startTimer = setTimeout(function() {
+        for (var t = 0; t < batchTools.length; t++) {
+          var tool = TOOLS[batchTools[t]];
+          setChipState(tool.id, 'running');
+          var bar = document.getElementById('bar-' + tool.id);
+          if (bar) {
+            bar.classList.add('show');
+          }
+          if (tool.time > batchMaxTime) batchMaxTime = tool.time;
+        }
+
+        for (var t2 = 0; t2 < batchTools.length; t2++) {
+          (function(toolIdx) {
+            var tool = TOOLS[toolIdx];
+            var doneTimer = setTimeout(function() {
+              setChipState(tool.id, 'done');
+            }, tool.time * speedFactor);
+            animTimers.push(doneTimer);
+          })(batchTools[t2]);
+        }
+      }, batchStart * speedFactor);
+      animTimers.push(startTimer);
+
+    })(b);
+  }
+
+  var totalTimer = setTimeout(function() {
+    document.getElementById('totalDisplay').textContent = m.totalTime;
+    var desc = document.getElementById('descCard');
+    if (desc) desc.classList.add('show');
+    var cards = document.querySelectorAll('.compare-card');
+    for (var c = 0; c < cards.length; c++) {
+      (function(card, delay) {
+        var t = setTimeout(function() { card.classList.add('show'); }, delay);
+        animTimers.push(t);
+      })(cards[c], c * 120);
+    }
+
+    var da = document.getElementById('decArea');
+    da.innerHTML = '<div class="dec-card">' + m.decision + '</div>';
+    requestAnimationFrame(function() { requestAnimationFrame(function() {
+      var dc = da.querySelector('.dec-card');
+      if (dc) dc.classList.add('show');
+    })});
+
+    running = false;
+    document.getElementById('btnRun').disabled = true;
+    document.getElementById('btnRun').textContent = '✓ 演示完成';
+    document.getElementById('hint').textContent = '切换模式对比不同策略 → 点击重置可再次演示';
+  }, m.totalTime * speedFactor + 300);
+  animTimers.push(totalTimer);
+}
+
+function resetDemo() {
+  for (var i = 0; i < animTimers.length; i++) clearTimeout(animTimers[i]);
+  animTimers = [];
+  running = false;
+  resetChips();
+  buildGantt();
+  document.getElementById('btnRun').disabled = false;
+  document.getElementById('btnRun').textContent = '▶ 开始演示';
+  document.getElementById('hint').textContent = '选择模式 → 点击演示 → 观察时间差异';
+  document.getElementById('decArea').innerHTML = '';
+}
+
+buildGantt();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

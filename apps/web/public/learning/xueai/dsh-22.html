@@ -1,0 +1,1147 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-22",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-22',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LLM 适配层：单次尝试、显式重试、双流持久 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.04),0 0 0 52px rgba(77,107,254,.025)}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.facts{display:grid;grid-template-columns:1fr;gap:20px;margin-top:20px}
+.fact{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.fact code{color:var(--accent);font-weight:800}.fact p{font-size:14px;line-height:1.9;color:var(--sub);margin:9px 0 0}
+.doc-quote{background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:10px;padding:20px 22px;margin:12px 0 20px;font-size:14px;line-height:1.9;color:var(--text)}
+.doc-quote .q-src{display:block;margin-top:8px;font-size:12px;color:var(--sub)}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}
+.source code{color:var(--text);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin-top:14px;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}
+.src-note code{font-size:11.5px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow-card);margin-top:12px}
+.cmp-card h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;color:var(--text)}
+.cmp-card h3 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:9px 0 0}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eef1ff,var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0;color:var(--sub);font-size:14px;line-height:1.9}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--text);display:flex;gap:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+p.body{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+
+/* ── 交互演示：请求生命周期播放器 ── */
+#demo-llm{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card);margin-top:12px}
+.d-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.d-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(77,107,254,.4);background:var(--accent-soft);color:var(--accent-deep);border-radius:11px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;min-height:48px}
+.d-btn svg{flex:0 0 auto}
+.d-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.d-btn.scn{padding:10px 14px;font-size:13px;min-height:44px}
+.d-btn.scn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.llm-ui{border:1px solid var(--border);border-radius:12px;background:var(--bg);padding:12px;margin-bottom:14px}
+.llm-ui .ui-label{font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--sub);margin-bottom:7px}
+.bubble{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 13px;min-height:44px;font-size:13px;line-height:1.7;color:var(--text);transition:opacity .4s,border-color .3s}
+.bubble .rsn{display:block;font-size:12px;color:var(--purple);background:rgba(124,58,237,.06);border-radius:7px;padding:5px 9px;margin-bottom:6px}
+.bubble.withdrawn{opacity:.35;border-color:rgba(220,38,38,.4)}
+.bubble.withdrawn .txt{text-decoration:line-through}
+.llm-stage{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.llm-pane{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:0}
+.llm-pane-title{font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.llm-pane-title svg{color:var(--accent)}
+.wire{position:relative;min-height:180px}
+.wire.broken:after{content:"连接中断";position:absolute;inset:auto 0 0 0;text-align:center;font:700 11px/1 ui-monospace,Menlo,monospace;color:var(--danger);background:rgba(220,38,38,.07);border:1px dashed rgba(220,38,38,.5);border-radius:8px;padding:8px 0}
+.chunk{display:flex;justify-content:space-between;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin-bottom:5px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);opacity:0;transform:translateX(-8px);transition:opacity .3s,transform .3s}
+.chunk.in{opacity:1;transform:translateX(0)}
+.chunk .t{font-weight:800;color:var(--accent)}
+.chunk.rsn .t{color:var(--purple)}
+.chunk.err .t{color:var(--danger)}
+.chunk.err{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.05)}
+.logrow{display:flex;gap:8px;align-items:baseline;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin-bottom:5px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);opacity:0;transform:translateY(5px);transition:opacity .3s,transform .3s}
+.logrow.in{opacity:1;transform:translateY(0)}
+.logrow .et{font-weight:800;color:var(--sub);flex:0 0 auto}
+.logrow.msg{border-color:rgba(77,107,254,.45);background:var(--accent-soft);color:var(--text)}
+.logrow.msg .et{color:var(--accent-deep)}
+.logrow.retry{border-color:rgba(217,119,6,.5);background:rgba(217,119,6,.06);color:var(--text)}
+.logrow.retry .et{color:var(--amber)}
+.llm-empty{font-size:12px;color:var(--sub);padding:4px 2px}
+.d-caption{display:flex;gap:9px;align-items:flex-start;margin-top:16px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.8;color:var(--text)}
+.d-caption svg{flex:0 0 auto;color:var(--accent);margin-top:2px}
+@media(max-width:760px){
+  .facts{grid-template-columns:1fr}
+  .llm-stage{grid-template-columns:1fr}
+  .source-head{flex-direction:column}
+  .objective{grid-template-columns:1fr}.lesson-header:after{display:none}
+  .d-btn{flex:1 1 auto;justify-content:center}
+}
+</style>
+<meta name="description" content="DSH 的 LLM 适配层：一次适配器调用就是一次提供方尝试，重试是持久日志里的显式事件，原始分片流与派生消息流分开落盘。基于 assembler.ts 与 agent.ts 真实源码讲解。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="LLM 适配层：单次尝试、显式重试、双流持久"><meta property="og:description" content="DSH 的 LLM 适配层：一次适配器调用就是一次提供方尝试，重试是持久日志里的显式事件，原始分片流与派生消息流分开落盘。基于 assembler.ts 与 agent.ts 真实源码讲解。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-22.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 模型与外部接入</div>
+    <h1>LLM 适配层：单次尝试、显式重试、双流持久</h1>
+    <p class="subtitle">推理流与正文流分开存，重试是显式事件。核心源码：<code>packages/llm/llm/src/assembler.ts</code> 与 <code>packages/core/agent-loop/src/agent.ts</code>。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>推理流与正文流分开存，重试是显式事件</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：DSH 为什么规定一次适配器调用就是一次提供方尝试、连 SDK 自带的重试都要禁用；一次流式响应怎么以两种形态落盘，原始分片流管回放保真、派生消息流管对话历史，失败的半截输出为什么进得了前者进不了后者；以及重试为什么被做成持久日志里的显式事件，UI 靠它撤回半截输出，事后靠它解释每一秒都花在了哪。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 请求生命周期播放器</div>
+  <p class="reveal body">先玩再讲。左边是网线上的 SSE 分片（provider 逐帧吐出来的原始数据），右边是会话日志（每个分片立刻落一条 <code>assistant/chunk</code>，流结束再派生一条 <code>assistant/message</code>），上方是用户看到的 UI。三个情景：A 是一次顺利的双流落盘；B 中途断线，看重试怎么以显式事件出现在时间线上；C 是反面教材，SDK 静默重试模式，同一个故障，日志里无迹可查。</p>
+  <div id="demo-llm" class="reveal">
+    <div class="d-toolbar">
+      <button class="d-btn scn active" data-scn="A">情景 A · 双流落盘</button>
+      <button class="d-btn scn" data-scn="B">情景 B · 断线与显式重试</button>
+      <button class="d-btn scn" data-scn="C">情景 C · SDK 静默重试</button>
+    </div>
+    <div class="d-toolbar">
+      <button class="d-btn primary" id="lPlay"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"></path></svg>播放</button>
+      <button class="d-btn" id="lStep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8z" fill="currentColor" stroke="none"></path><path d="M19 5v14"></path></svg>单步</button>
+      <button class="d-btn" id="lReset"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+    </div>
+    <div class="llm-ui">
+      <div class="ui-label">用户看到的 UI</div>
+      <div class="bubble" id="lBubble"><span class="txt" id="lBubbleText">（等待模型回复…）</span></div>
+    </div>
+    <div class="llm-stage">
+      <div class="llm-pane">
+        <div class="llm-pane-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h6l2-7 4 14 2-7h6"></path></svg>网线 · provider 吐出的 StreamChunk</div>
+        <div class="wire" id="lWire"><div class="llm-empty">（尚无分片）</div></div>
+      </div>
+      <div class="llm-pane">
+        <div class="llm-pane-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>会话日志 · 持久事件（append-only）</div>
+        <div id="lLog"><div class="llm-empty">（空日志）</div></div>
+      </div>
+    </div>
+    <div class="d-caption">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2"></path></svg>
+      <span id="lCaption">选择情景后点「播放」，或滚动到此处自动播放情景 A。</span>
+    </div>
+  </div>
+
+  <div class="sec-label">逻辑拆解 · 一次调用就是一次尝试</div>
+  <p class="reveal body">先立规矩。DSH 的适配器约定里有一条写得很硬：一次适配器调用就是一次提供方尝试，适配器必须禁用库自带的重试（<code>docs/subsystems/llm-streaming.zh.md</code> 适配器约定一节）。HTTP 库们都爱替你悄悄重试，看起来是贴心，实际是把信息藏起来了：请求为什么慢、重试了几次、每次因为什么失败，全部消失在库的内部循环里。DSH 把这层全部剥掉，适配器只干一件事：发一次请求，把响应转成统一的 <code>StreamChunk</code> 分片吐出来，失败就规范化成一个可序列化的 <code>LlmFailure</code>（带稳定的错误 code），别的不管。</p>
+  <p class="reveal body">防挂起也在这层解决：两个交付的远程适配器都带 <code>streamIdleTimeoutMs</code> 看门狗，默认五分钟，provider 停顿超时就映射成 <code>TIMEOUT</code> 错误。还有一条容易漏的：空回复算错误。模型返回一个不带任何内容块的 stop，适配器把它映射成 <code>EMPTY_RESPONSE</code> 错误而非静默的成功，这样重试层才有机会救它。</p>
+
+  <div class="sec-label">逻辑拆解 · 双流持久：分片流和消息流分开存</div>
+  <p class="reveal body">然后看落盘。agent loop 消费分片流的时候干两件事：每个分片原样追加一条 <code>assistant/chunk</code> 事件进会话日志，同时把分片喂给 <code>BlockAssembler</code>（组装器）。流成功结束，组装结果作为一条 <code>assistant/message</code> 事件再落一次盘。这就是双流：chunk 流是原始录像，回放测试靠它逐帧重建当年的响应；message 流是派生历史，下一次请求的对话上下文从它派生。推理块（reasoning，模型的思考过程）和正文块（text）在分片协议里就是不同类型，各自独立组装、各自落盘。</p>
+  <div class="source reveal">
+    <div class="source-head"><span>packages/core/agent-loop/src/agent.ts</span><span>第 343 至 351 行</span></div>
+    <pre><code>      <span class="kw">const</span> assembler = <span class="kw">new</span> <span class="ty">BlockAssembler</span>()
+      <span class="kw">const</span> chunkSeqs: <span class="ty">number</span>[] = []
+      <span class="kw">const</span> stream = preparedCall?.<span class="fn">stream</span>(request) ?? <span class="kw">this</span>.loopCtx.llm.<span class="fn">stream</span>(request)
+      signal.<span class="fn">throwIfAborted</span>()
+      <span class="kw">for await</span> (<span class="kw">const</span> chunk <span class="kw">of</span> stream) {
+        signal.<span class="fn">throwIfAborted</span>()
+        chunkSeqs.<span class="fn">push</span>(<span class="kw">this</span>.session.<span class="fn">append</span>(<span class="str">'assistant/chunk'</span>, { turn, step, chunk }).seq)
+        assembler.<span class="fn">push</span>(chunk)
+      }</code></pre>
+  </div>
+  <div class="snapshot"><b>源码快照说明：</b>依据本地仓库 deepseek-harness-master，核对文件 <code>packages/core/agent-loop/src/agent.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+  <p class="reveal body paywall-locked xa-peek">这九行是双流的心脏：先落盘，再组装，一个分片都不例外。流结束后走分岔：finish 是错误或中止，就把失败交给 <code>agent/request-error</code> 事件去决定重不重试（第 354 到 371 行）；成功才在第 381 行追加 <code>assistant/message</code>，并把这批 chunk 的序号写进 <code>sourceEventSeqs</code>，标明这条消息是从哪些分片派生的。所以失败的半截输出有明确的归宿：留在 chunk 流里作证，绝不进派生历史。下一次请求重建上下文时，那半截就像没发生过。</p>
+  <p class="reveal body paywall-locked">组装器本身也值得停一下。<code>BlockAssembler</code> 是全仓库唯一的分片折叠实现，适配器只要按 index 吐格式正确的分片，块重组不用每家自己写。它对畸形流有明确态度：处理 <code>block-end</code> 分片时，先看这个块是不是已经关闭过，关过就直接返回，后面再来的重复关闭一律忽略。注释里管这叫「First close wins」，理由是只有第一次关闭说了算，流式输出和最终组装出的块才能保持一致。这一行防御恰好是性质测试抓过真 bug 的地方（复盘见 <a href="/dashboard/learning?lesson=dsh-26" data-lesson-id="dsh-26">测试一个非确定性系统</a>）。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>packages/llm/llm/src/assembler.ts</code> 第 75 至 82 行的 block-end 分支，核对日期 2026-08-13。</p>
+
+  <div class="sec-label paywall-locked">逻辑拆解 · 重试是持久日志里的显式事件</div>
+  <p class="reveal body paywall-locked">重试住在更高一层。<code>dsh-llm-retry</code> 插件监听 <code>agent/request-error</code>，按每条 provider 路由注册时捕获的策略决定救不救。默认的 normal 策略：只对 <code>EMPTY_RESPONSE</code>、<code>RATE_LIMIT</code>、<code>SERVER</code>、<code>TIMEOUT</code>、<code>TRANSPORT</code> 五种 code 重试，最多两次，退避从 500 毫秒到 10 秒，带 10% 抖动；provider 用 Retry-After 指定的合法延迟会替换本地退避（<code>packages/llm/llm-retry/README.zh.md</code>）。</p>
+  <p class="reveal body paywall-locked">关键在于它怎么记账。等待退避之前，插件先往会话日志追加一条 <code>llm/retry</code> 事件，里面装着重试 id、提供方、策略 mode、完整的失败信息和计划延迟；退避结束真要动手了，再追加一条 <code>llm/retry-started</code>。这两条事件不进模型可见的表层，模型对重试一无所知，但 UI 和事后分析全靠它们：UI 据此撤回失败的半截输出、显示「第 1/2 次重试，3 秒后」；排查问题时，日志里每一次尝试、每一段等待都有时间戳。重试本身则开一个新的编号轮次，从持久历史重建同样的请求重发，旧轮次的记录一个字不改。</p>
+  <p class="reveal body paywall-locked">还有一个跨适配器的细节：replayState。成功的 finish 分片可以携带适配器私有的回放状态（比如 DeepSeek 推理内容的原生表示），跟着 <code>assistant/message</code> 一起存。下次请求把历史发给适配器前，<code>LlmRuntime.forAdapter()</code> 检查每条历史消息：历史 provider 和目标 provider 归同一个适配器实例，状态才透传；换了适配器，状态被剥离，对方只拿到提供方无关的内容（<code>packages/llm/llm/src/index.ts</code> 第 822 至 836 行）。一家的私货绝不喂给另一家。</p>
+  <div class="facts paywall-locked">
+    <div class="fact reveal"><code>重试开新轮次</code><p>失败轮次正常关闭，重试轮次带新编号从头开始。没有任何记录被改写，两次尝试在日志里各自完整，时间线永远向前。</p></div>
+    <div class="fact reveal"><code>半截输出进 chunk 不进 message</code><p>失败前收到的分片都留在 <code>assistant/chunk</code> 流里，回放能精确复现事故现场；但派生历史里没有这半截，模型下一步看到的上下文是干净的。</p></div>
+    <div class="fact reveal"><code>空回复是可重试错误</code><p>不带内容块的 stop 被映射成 <code>EMPTY_RESPONSE</code> 错误，默认策略会重试它。静默接受一个空成功，等于把退化响应写进对话历史。</p></div>
+  </div>
+
+  <div class="sec-label paywall-locked">横向对比 · 重试藏在哪一层</div>
+  <div class="cmp-card reveal paywall-locked">
+    <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build：重试内建在采样器里</h3>
+    <p>Grok Build 把流式与重试一起放进 <code>xai-grok-sampler</code>：<code>retry.rs</code> 是纯逻辑的分类与退避模块，actor 层包重试循环。预算给得很足：默认最多重试 15 次（<code>DEFAULT_MAX_RETRIES = 15</code>，30 秒退避上限下约 6 分钟），429 限流单独降到 2 次就上报（<code>RATE_LIMIT_RETRY_THRESHOLD = 2</code>），413 图片超限走特殊通道，剥掉图片再试一次且不占预算，服务端还能用 <code>x-should-retry</code> 头一票否决（<code>crates/codegen/xai-grok-sampler/src/retry.rs</code> 第 1 至 34 行的行为总结注释）。分类做得细，但重试循环发生在采样器内部，对上层就是一次格外慢的调用。</p>
+  </div>
+  <div class="cmp-card reveal paywall-locked">
+    <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：API 客户端层的重试包装器</h3>
+    <p>还原源码里，重试住在 <code>restored-src/src/services/api/withRetry.ts</code>：一个包在 Anthropic SDK 外面的应用层包装器，默认最多 10 次（第 52 行 <code>DEFAULT_MAX_RETRIES = 10</code>），带 Retry-After 感知和 fast mode 的冷却处理。重试发生在 API 客户端内部的 for 循环里，会打调试日志，但基于已公开证据，没有看到把每次重试作为持久会话事件落盘的机制。</p>
+    <p>三家对齐来看，差别就一句话：Grok 和 Claude Code 的重试是函数内部的循环，DSH 的重试是日志里的一等公民。前两家省事，后者可审计：策略、延迟、失败原因、第几次尝试，全部持久化，UI 和回放测试都能拿它当事实依据。代价是 DSH 的重试边界只有 agent 轮次这一层，绕过 loop 直接调 <code>ctx.llm.stream()</code> 的调用方就是一次裸尝试。</p>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div><h3>推演一次断在 block 中间的流</h3><p>模型正在输出第 2 个 text 块，吐了 3 个 <code>text-delta</code> 之后连接被重置，适配器以 <code>finish {kind:'error', TRANSPORT}</code> 收尾。请回答：日志里此刻有几类事件、各多少条？<code>assistant/message</code> 会不会出现？UI 上那半句话怎么被撤回，依据是哪条事件？重试成功后，模型重建上下文时能看到那 3 个 delta 吗？再想一层：如果把这段历史发给另一家 provider 的适配器，上一条成功消息里的 <code>replayState</code> 去哪了？</p></div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>适配器只负责一次诚实的尝试，重试住在 agent 层并作为 <code>llm/retry</code> 事件落进持久日志，每一次等待都可审计。一次响应存两份：chunk 流保回放保真，message 流保历史干净，失败的半截进前者不进后者。把重试藏进 SDK 省的是代码，丢的是证据。</span>
+  </div>
+</article>
+
+
+<script>
+(function () {
+  'use strict';
+  var demo = document.getElementById('demo-llm');
+  var wire = document.getElementById('lWire');
+  var log = document.getElementById('lLog');
+  var bubble = document.getElementById('lBubble');
+  var bubbleText = document.getElementById('lBubbleText');
+  var caption = document.getElementById('lCaption');
+  var idx = 0, timer = null, playing = false, cur = 'A', runId = 0;
+  var steps = [];
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function clearEmpty(box) {
+    var e = box.querySelector('.llm-empty');
+    if (e) box.removeChild(e);
+  }
+  function addChunk(label, detail, cls) {
+    clearEmpty(wire);
+    var d = document.createElement('div');
+    d.className = 'chunk' + (cls ? ' ' + cls : '');
+    d.innerHTML = '<span class="t">' + esc(label) + '</span><span>' + esc(detail || '') + '</span>';
+    wire.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('in');
+  }
+  function addLog(type, body, cls) {
+    clearEmpty(log);
+    var d = document.createElement('div');
+    d.className = 'logrow' + (cls ? ' ' + cls : '');
+    d.innerHTML = '<span class="et">' + esc(type) + '</span><span>' + esc(body || '') + '</span>';
+    log.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('in');
+  }
+  /* 一个分片：既上网线，也落日志（assistant/chunk） */
+  function chunkStep(label, detail, cls, capText, uiFn) {
+    return {
+      cap: capText || '',
+      dur: capText ? 1900 : 620,
+      run: function () {
+        addChunk(label, detail, cls);
+        addLog('assistant/chunk', label + (detail ? ' ' + detail : ''));
+        if (uiFn) uiFn();
+      }
+    };
+  }
+
+  var uiRsn = '', uiTxt = '';
+  function renderUi() {
+    var h = '';
+    if (uiRsn) h += '<span class="rsn">推理中：' + esc(uiRsn) + '</span>';
+    h += '<span class="txt">' + esc(uiTxt || '…') + '</span>';
+    bubble.innerHTML = h;
+  }
+
+  function buildA() {
+    return [
+      { cap: '用户提问后，agent loop 组装好请求，调用 ctx.llm.stream()。适配器发出一次、也只发出这一次 HTTP 请求。', dur: 2300 },
+      chunkStep('block-start', '#0 reasoning', 'rsn', '第一个块是推理块（reasoning）。注意右边：分片刚到就落了一条 assistant/chunk，先记账再消化。'),
+      chunkStep('reasoning-delta', '「先查 CI 日志」', 'rsn', '', function () { uiRsn = '先查 CI 日志'; renderUi(); }),
+      chunkStep('reasoning-delta', '「定位失败用例」', 'rsn', '推理流逐帧落盘。UI 把它渲染成折叠的思考区，正文区还是空的。', function () { uiRsn = '先查 CI 日志，定位失败用例'; renderUi(); }),
+      chunkStep('block-end', '#0（完整推理块）', 'rsn'),
+      chunkStep('block-start', '#1 text', '', '推理块关闭，正文块开始。两条流靠 index 区分，各自独立组装。'),
+      chunkStep('text-delta', '「构建失败是因为」', '', '', function () { uiTxt = '构建失败是因为'; renderUi(); }),
+      chunkStep('text-delta', '「快照过期了」', '', '', function () { uiTxt = '构建失败是因为快照过期了。'; renderUi(); }),
+      chunkStep('block-end', '#1（完整正文块）', ''),
+      chunkStep('usage', 'in 1204 / out 87', '', 'usage 在 finish 之前到，这是适配器约定，顺序错了组装器不认。'),
+      chunkStep('finish', 'stop', ''),
+      { cap: '流正常结束。BlockAssembler 把分片折叠成完整消息，追加一条 assistant/message，并记下它派生自哪些 chunk 的序号。一次响应，两种形态，各管各的用途。', dur: 3000,
+        run: function () { addLog('assistant/message', 'reasoning + text · usage · sourceEventSeqs=[…]', 'msg'); } }
+    ];
+  }
+
+  function buildB() {
+    return [
+      { cap: '同样的请求发出。这次网络不太平。', dur: 1700 },
+      chunkStep('block-start', '#0 text', ''),
+      chunkStep('text-delta', '「正在分析构建」', '', '', function () { uiTxt = '正在分析构建'; renderUi(); }),
+      chunkStep('text-delta', '「日志，初步」', '', '半句话已经上了屏幕，也已经落了盘。', function () { uiTxt = '正在分析构建日志，初步'; renderUi(); }),
+      { cap: '连接被重置。适配器不自己重试，把失败规范化成 finish 错误分片：code 是 TRANSPORT，可序列化，带得走。', dur: 2600,
+        run: function () {
+          wire.classList.add('broken');
+          addChunk('finish', 'error · TRANSPORT', 'err');
+          addLog('assistant/chunk', 'finish error TRANSPORT');
+        } },
+      { cap: '注意日志：半截分片都在，但没有 assistant/message。失败的流绝不派生消息，这是恢复语义的地基。', dur: 2700 },
+      { cap: 'agent/request-error 触发，dsh-llm-retry 查策略：TRANSPORT 可重试，第 1/2 次。等待之前，先落一条 llm/retry 事件：策略、延迟、完整失败信息，全在里面。', dur: 3100,
+        run: function () { addLog('llm/retry', 'retryId r1 · normal · TRANSPORT · delay 512ms', 'retry'); } },
+      { cap: 'UI 拿到 llm/retry 事件，撤回那半句话。用户看到的是「正在重试」，而非一句说到一半的鬼话。', dur: 2500,
+        run: function () { bubble.classList.add('withdrawn'); } },
+      { cap: '退避结束，llm/retry-started 落盘，重试轮次开一个新编号，从持久历史重建同样的请求重发。', dur: 2500,
+        run: function () {
+          addLog('llm/retry-started', 'retryId r1 · 新轮次 turn 2', 'retry');
+          wire.classList.remove('broken');
+          bubble.classList.remove('withdrawn');
+          uiTxt = ''; renderUi();
+        } },
+      chunkStep('block-start', '#0 text', '', '新尝试开始，这次网络正常。'),
+      chunkStep('text-delta', '「快照过期，需要重录」', '', '', function () { uiTxt = '快照过期，需要重录。'; renderUi(); }),
+      chunkStep('block-end', '#0', ''),
+      chunkStep('finish', 'stop', ''),
+      { cap: '成功。日志读下来是一部完整的事故报告：半截分片、显式重试、第二次尝试，每一步都有据可查。派生历史里只有这条干净的最终消息。', dur: 3200,
+        run: function () { addLog('assistant/message', 'text · turn 2 派生', 'msg'); } }
+    ];
+  }
+
+  function buildC() {
+    return [
+      { cap: '反面教材：假设我们不禁用 SDK 重试，让 HTTP 库自己兜底。同样的请求、同样的故障。', dur: 2400 },
+      chunkStep('block-start', '#0 text', ''),
+      chunkStep('text-delta', '「正在分析构建」', '', '', function () { uiTxt = '正在分析构建'; renderUi(); }),
+      { cap: '连接断了。但这次 harness 什么都不知道：SDK 在自己的循环里吞掉了错误，静默重发。', dur: 2600,
+        run: function () { wire.classList.add('broken'); } },
+      { cap: '等待中… 右边的日志一片安静。没有 llm/retry，没有失败记录，UI 上半句话僵在屏幕上。', dur: 2800 },
+      { cap: 'SDK 第二次尝试成功了，新分片和旧的半截拼在同一次调用里继续流。', dur: 2400,
+        run: function () {
+          wire.classList.remove('broken');
+          addChunk('text-delta', '「日志…快照过期」', '');
+          addLog('assistant/chunk', 'text-delta 「日志…快照过期」');
+          uiTxt = '正在分析构建日志…快照过期。'; renderUi();
+        } },
+      chunkStep('finish', 'stop', ''),
+      { cap: '事后看日志：一次格外慢的请求，分片衔接诡异，中间发生过什么无从知晓。要是 agent 层也配了重试，两层预算相乘，最坏情况的请求数是乘法。这就是 DSH 禁用 SDK 重试的原因：省下的不是代码，是证据。', dur: 3600,
+        run: function () { addLog('assistant/message', 'text ·（看起来一切正常）', 'msg'); } }
+    ];
+  }
+
+  function build(k) { return k === 'A' ? buildA() : k === 'B' ? buildB() : buildC(); }
+
+  function reset() {
+    runId++; playing = false; clearTimeout(timer); idx = 0;
+    wire.innerHTML = '<div class="llm-empty">（尚无分片）</div>';
+    wire.classList.remove('broken');
+    log.innerHTML = '<div class="llm-empty">（空日志）</div>';
+    bubble.classList.remove('withdrawn');
+    uiRsn = ''; uiTxt = '';
+    bubble.innerHTML = '<span class="txt" id="lBubbleText">（等待模型回复…）</span>';
+    bubbleText = bubble.querySelector('.txt');
+    caption.textContent = '已重置。点「播放」运行情景 ' + cur + '，或点「单步」逐帧推进。';
+    steps = build(cur);
+  }
+  function doStep() {
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    if (s.cap) caption.textContent = s.cap;
+    if (s.run) s.run();
+    if (playing) timer = setTimeout(doStep, s.dur || 900);
+  }
+  function play() {
+    if (playing) return;
+    if (idx >= steps.length) reset();
+    playing = true; doStep();
+  }
+  function stepOnce() {
+    playing = false; clearTimeout(timer);
+    if (idx >= steps.length) { reset(); return; }
+    doStep();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#demo-llm .scn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#demo-llm .scn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      cur = btn.getAttribute('data-scn');
+      reset();
+    });
+  });
+  document.getElementById('lPlay').addEventListener('click', play);
+  document.getElementById('lStep').addEventListener('click', stepOnce);
+  document.getElementById('lReset').addEventListener('click', reset);
+  reset();
+  if (typeof window.lessonOnView === 'function') {
+    window.lessonOnView(demo, function () { if (idx === 0 && !playing) play(); });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

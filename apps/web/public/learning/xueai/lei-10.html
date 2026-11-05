@@ -1,0 +1,1107 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"lei-10",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=lei-10',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="雷军创业课第 10 节：创业者唯一的资产就是 100% 的股份，创业就是一场分享梦想的拼图游戏。极左贱卖、极右独占、四人均分的死局，以及 50/50 的关键一问：争执不下时听谁的。">
+<meta name="author" content="洛小山">
+<title>股权就是拼图：切忌均分 | 雷军创业课</title>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+<style>
+:root{--lei:#f97316;--lei-deep:#c2410c;--lei-soft:rgba(249,115,22,.08)}
+.lesson-header .kicker{color:var(--lei)}
+.l-callout{background:rgba(249,115,22,.05);border-color:rgba(249,115,22,.25)}
+.l-callout b{color:var(--lei-deep)}
+code{color:var(--lei-deep);background:rgba(249,115,22,.08)}
+.desc{font-size:16px;color:var(--sub);line-height:1.8}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:12.5px;font-weight:700;color:var(--lei-deep);background:rgba(249,115,22,.1);border-radius:999px;padding:5px 13px}
+
+.btn{padding:11px 22px;border-radius:9px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px}
+.btn-p{background:var(--lei);color:#fff}
+.btn-p:hover{filter:brightness(1.06)}
+.btn-r{background:rgba(0,0,0,.05);color:var(--sub);border:1px solid var(--border)}
+.ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.hint{font-size:13px;color:var(--sub)}
+.src-note{margin-top:28px;font-size:13px;color:var(--sub)}
+
+/* ── 交互一：股权拼图 ── */
+.pz-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:12px;box-shadow:var(--shadow-card)}
+.pz-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.pz-own{font-size:15px;font-weight:800}
+.pz-own b{font-size:26px;color:var(--lei-deep)}
+.pz-grid{display:grid;grid-template-columns:repeat(20,1fr);gap:3px}
+.pz-cell{aspect-ratio:1;border-radius:3px;background:rgba(249,115,22,.85);transition:background .4s ease,transform .3s ease}
+.pz-cell.taken{transform:scale(.92)}
+.pz-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--sub)}
+.pz-legend span{display:inline-flex;align-items:center;gap:6px}
+.pz-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.pz-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.pz-btn{display:flex;flex-direction:column;gap:3px;padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit;text-align:left;min-height:44px}
+.pz-btn:hover:not(:disabled){border-color:var(--lei)}
+.pz-btn:disabled{opacity:.45;cursor:not-allowed}
+.pz-btn h4{font-size:15px;font-weight:800;color:var(--text)}
+.pz-btn h4 em{font-style:normal;color:var(--lei-deep)}
+.pz-btn p{font-size:13px;color:var(--sub);line-height:1.5}
+.pz-say{margin-top:14px;font-size:14.5px;line-height:1.8;color:var(--text);background:rgba(249,115,22,.05);border:1.5px solid rgba(249,115,22,.2);border-radius:12px;padding:13px 17px}
+.pz-say b{color:var(--lei-deep)}
+
+/* ── 极左极右 ── */
+.pole-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.pole-tag{display:inline-block;font-size:12px;font-weight:800;color:#fff;border-radius:6px;padding:3px 10px;margin-bottom:8px}
+.pole-grid h3{font-size:16px;font-weight:800;margin-bottom:6px}
+.pole-grid p{font-size:14px;color:var(--sub);line-height:1.75}
+.pole-grid p+p{margin-top:8px}
+
+/* ── 均分陷阱案例 ── */
+.trap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.trap-grid h3{font-size:16px;font-weight:800;margin-bottom:6px}
+.trap-grid p{font-size:14px;color:var(--sub);line-height:1.75}
+.trap-num{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:rgba(249,115,22,.1);color:var(--lei-deep);font-size:13px;font-weight:800;margin-bottom:8px;padding:0 8px}
+
+/* ── 交互二：股权体检 ── */
+.dx-list{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.dx-btn{display:flex;flex-direction:column;gap:4px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;font-family:inherit;text-align:left;min-height:44px;box-shadow:var(--shadow-card)}
+.dx-btn:hover{border-color:rgba(0,0,0,.15)}
+.dx-btn.active{border-color:var(--lei);background:rgba(249,115,22,.05)}
+.dx-btn h4{font-size:14.5px;font-weight:800;color:var(--text)}
+.dx-btn.active h4{color:var(--lei-deep)}
+.dx-btn small{font-size:12px;color:var(--sub);line-height:1.5}
+.dx-report{margin-top:14px;background:var(--card);border:1.5px solid rgba(249,115,22,.3);border-radius:14px;padding:18px 20px}
+.dx-bar{display:flex;height:34px;border-radius:9px;overflow:hidden;margin-bottom:14px}
+.dx-seg{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;transition:width .4s ease}
+.dx-verdict{display:inline-block;font-size:13px;font-weight:800;color:#fff;border-radius:7px;padding:4px 12px;margin-bottom:10px}
+.dx-verdict.bad{background:var(--danger)}
+.dx-verdict.warn{background:var(--amber)}
+.dx-verdict.ok{background:var(--success)}
+.dx-report p{font-size:14.5px;color:var(--text);line-height:1.8}
+.dx-report p+p{margin-top:8px}
+.dx-report p b{color:var(--lei-deep)}
+
+@media (max-width:768px){
+  .pz-acts,.pole-grid,.trap-grid{grid-template-columns:1fr}
+  .dx-list{grid-template-columns:1fr 1fr}
+  .pz-grid{grid-template-columns:repeat(10,1fr)}
+}
+
+/* OPC 视角卡片组 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--lei-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--lei)}
+/* 本节要点清单 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--lei-soft);color:var(--lei);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--lei-deep)}
+@media(max-width:768px){.opc-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="股权就是拼图：切忌均分"><meta property="og:description" content="雷军创业课第 10 节：创业者唯一的资产就是 100% 的股份，创业就是一场分享梦想的拼图游戏。极左贱卖、极右独占、四人均分的死局，以及 50/50 的关键一问：争执不下时听谁的。"><meta property="og:url" content="https://xueai.miyang.cn/slides/lei-10.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/lei-10.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson wide">
+
+  <header class="lesson-header">
+    <div class="kicker">雷军创业课 · 10 / 14</div>
+    <h1>股权就是拼图：切忌均分</h1>
+    <p class="subtitle">刚开始创业的时候，那 100% 的股份其实是个梦想。创业的过程，就是拿这 100% 的梦想去跟钱 share、跟最优秀的工程师 share、跟最好的 marketing 和资源 share。雷军的原话：创业就是拼图。这一节看拼图怎么拼，以及极左、极右、均分这三种拼法为什么都会死。</p>
+    <div class="chips"><span class="chip">创业就是拼图</span><span class="chip">切忌均分</span><span class="chip">必须有权威</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>50/50 的隐患、三人各 1/3 的死局；极左极右都不行，团队里必须有权威</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">唯一的资产</div>
+    <div class="l-callout">
+      <p style="font-size:15px;line-height:1.9"><b>在初期创业的时候，创业者唯一的资产就是那 100% 的股份。</b>它值多少钱，取决于有没有人信。雷军的算法很直接：你真的想办一个伟大的公司，就要想「我要办一个十亿美金的公司，我的 1% 就是一千万美元，我能换多少东西」。你要不相信自己的公司能做大，公司怎么可能成功呢？</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 股权拼图</div>
+    <p class="desc">下面这 100 个格子就是你 100% 的梦想。按雷军举的例子，把股份一块一块分出去，看每一块换回了什么。这就是拼图游戏。</p>
+    <div class="pz-wrap" id="pzWrap">
+      <div class="pz-top">
+        <span class="pz-own">你还持有 <b id="pzPct">100</b>%</span>
+        <span class="hint" id="pzHint">点击下方卡片开始分享</span>
+      </div>
+      <div class="pz-grid" id="pzGrid"></div>
+      <div class="pz-legend" id="pzLegend"></div>
+      <div class="pz-acts" id="pzActs"></div>
+      <div class="pz-say" id="pzSay"><b>开局：</b>此刻你拥有 100%，但它只是一个还没人信的梦想。没有钱、没有工程师、没有市场，这张图一块都没拼上。</div>
+      <div class="ctrl-row"><button class="btn btn-r" onclick="pzReset()">↺ 重新开始</button></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">极左与极右，都是死路</div>
+    <p class="desc">雷军见过的创业者，在股权问题上「要不是极左，要不就极右」。两个真实例子。</p>
+    <div class="pole-grid">
+      <div class="l-card">
+        <span class="pole-tag" style="background:var(--danger)">极左 · 贱卖梦想</span>
+        <h3>50/50 给一个挂名合伙人</h3>
+        <p>有朋友找了个「很厉害」的人合伙，对半分。雷军认识那个人：自己有五家公司、三五百人规模的 CEO，怎么可能全职来跟你创业？「他至多起到一个 Angel investor 的作用，甚至我经常觉得他还不掏钱。那哪个投资者敢投你这个五十对五十？」</p>
+        <p>还有个海归博士，注册公司五万块，一个「有点社会资源」的人掏三万占 30%。问他那人能帮什么？「他帮我注册公司。」还能帮什么？说不出来了。<b style="color:var(--lei-deep)">你一上来把 50% 的梦想贱卖了，换到的资源不够，后面就没得拼了。</b></p>
+      </div>
+      <div class="l-card">
+        <span class="pole-tag" style="background:var(--danger)">极右 · 独占梦想</span>
+        <h3>100% 全是我的，我一个人干</h3>
+        <p>「公司未来七嘴八舌的，还是我一个人做决定就好。」雷军的判断毫不留情：在今天的互联网创业里，你 100% 持有股权，想把公司做成的概率<b style="color:var(--lei-deep)">近乎等于零</b>。</p>
+        <p>看看过去五年所有成功的创业公司，都是很好地完成了这场拼图的。像陈天桥、丁磊那样股权高度集中的成功，今天已经很难很难，他们也都有 partner 一起干。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">均分的陷阱</div>
+    <p class="desc">股份「分」出去是对的，「均分」就掉进另一个坑。雷军自己就踩过。</p>
+    <div class="trap-grid">
+      <div class="l-card">
+        <span class="trap-num">亲身教训</span>
+        <h3>四个人，每人 25%</h3>
+        <p>雷军大学创业时「被绑票拉去创业」，四个人一人 25%。结果六个月之内选了两次谁当董事长、谁当总经理。还有一次，一家公司的几个合伙人来见他，递上名片一看：全是 CEO。四个人，每人 25%。第一个问题就来了：你们公司到底谁负责？</p>
+      </div>
+      <div class="l-card">
+        <span class="trap-num">50/50 的关键一问</span>
+        <h3>争执不下的时候，听谁的？</h3>
+        <p>两人对半在美国有很成功的先例：Google、Yahoo、HP 当年都是一人一半。好处是不用比贡献、不用讲制衡。坏处是出现原则性争执时没有人调解。美国大家都按规则来，所以成得多；在中国，初期一人一半的很多，最后成功的不多。要用这个结构，「意见不同时听谁的」必须在创业之初就说清楚。</p>
+      </div>
+    </div>
+    <div class="l-callout" style="margin-top:14px">
+      <p style="font-size:15px;line-height:1.9"><b>三个人或四个人均分，这个不用谈了，三个和尚肯定没水吃。</b>一定要有人在股份上、在整个小组里有领导力、有说话权、声音比较大。必须有权威存在，才能组织好这个团队。</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示二 · 股权体检</div>
+    <p class="desc">四种常见的股权方案，点击任意一种，看雷军会怎么诊断。</p>
+    <div class="dx-list">
+      <button class="dx-btn" id="dx0" onclick="pickDx(0)"><h4>50 / 50</h4><small>两人对半，一个还是挂名的</small></button>
+      <button class="dx-btn" id="dx1" onclick="pickDx(1)"><h4>25 × 4</h4><small>四个好兄弟，人人平等</small></button>
+      <button class="dx-btn" id="dx2" onclick="pickDx(2)"><h4>100% 独占</h4><small>全是我的，我一个人干</small></button>
+      <button class="dx-btn" id="dx3" onclick="pickDx(3)"><h4>65 + 25 + 10</h4><small>创始人 65、合伙人 25、期权池 10</small></button>
+    </div>
+    <div class="dx-report" id="dxReport"><p style="color:var(--sub)">点击上方任意方案，开始体检。</p></div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">股权拼图 · 五五开三问</span>
+        <p><b>一人公司的「100%」，是你的时间和产品收入，拼图逻辑一模一样。</b>有人找你联合做 AI 产品、开口就是「五五开」时，先问雷军那三个问题：</p>
+        <ul class="opc-list" style="margin-top:9px">
+          <li><b>全职还是挂名</b>：他是真投入进来干，还是只出一个名字？</li>
+          <li><b>听谁的</b>：争执不下的时候，谁说了算？</li>
+          <li><b>拼上哪块图</b>：他补的是你缺的哪一块？如果答案是「我认识很多人、能帮你介绍资源」，那是渠道分成或顾问费的价钱，不是一半。</li>
+        </ul>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">极右陷阱 · 该分就分</span>
+        <p><b>独立开发者最容易犯的是极右：</b>设计、增长、渠道全自己扛，什么都不肯分。你完全可以拿收入的 15% 换一个真正带流量的发行渠道，拿 10% 换一个把产品体验拉高一档的设计师。但不要拿 50% 换一句「我看好你」。</p>
+        <p style="margin-top:8px"><b>分出去的每一个百分点，都要能指着它说清换回了什么。</b></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>创业就是拼图</b>：100% 的股份是你唯一的资产，也只是个梦想。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>每一块都要换回真东西</b>：拿 15% 换钱、10% 换最优秀的工程师、5% 换最好的设计师。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>极左贱卖、极右独占，成功概率都近乎为零</b>，三四人均分更是三个和尚没水吃。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>必须有权威</b>：两人对半要先回答：争执不下时听谁的。</p></div>
+    </div>
+    <p class="src-note">素材来源：雷军创业公开课口述整理</p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ═══════════ 交互一：股权拼图 ═══════════ */
+var PZ_ACTS = [
+  { id:'angel',  who:'Angel Investor', pct:15, color:'#0891b2', gain:'换来第一笔钱',
+    say:'<b>分给天使投资人 15%：</b>「我有一个百分之百的梦想，我愿意一上来跟 Angel investor 拿百分之十五跟你分享。」钱到账了，公司能开工资、能活下去了。' },
+  { id:'eng',    who:'最优秀的工程师', pct:10, color:'#16a34a', gain:'换来能做出产品的人',
+    say:'<b>分给最优秀的工程师 10%：</b>「我愿意再拿百分之十跟最优秀的工程师去分享。」他放弃了大厂的高薪来跟你干，产品终于有人能做出来了。' },
+  { id:'des',    who:'最优秀的设计师', pct:5,  color:'#7c3aed', gain:'换来产品的体验',
+    say:'<b>分给最优秀的设计师 5%：</b>「我再拿百分之五跟一个最优秀的设计师去分享。」体验上了一个档次，用户第一眼就愿意留下来。' },
+  { id:'mkt',    who:'最好的 Marketing', pct:5, color:'#d97706', gain:'换来市场和资源',
+    say:'<b>分给最好的 Marketing 5%：</b>跟最好的 marketing 去 share、跟最好的资源去 share。产品做出来了，还得有人把它送到用户面前。' }
+];
+var pzDone = {};
+
+function pzInit() {
+  var grid = document.getElementById('pzGrid');
+  var h = '';
+  for (var i = 0; i < 100; i++) h += '<div class="pz-cell" id="pzc' + i + '"></div>';
+  grid.innerHTML = h;
+  document.getElementById('pzLegend').innerHTML =
+    '<span><span class="pz-dot" style="background:rgba(249,115,22,.85)"></span>你（创始人）</span>'
+    + PZ_ACTS.map(function(a){ return '<span><span class="pz-dot" style="background:' + a.color + '"></span>' + a.who + ' ' + a.pct + '%</span>'; }).join('');
+  document.getElementById('pzActs').innerHTML = PZ_ACTS.map(function(a, i){
+    return '<button class="pz-btn" id="pzb' + i + '" onclick="pzShare(' + i + ')"><h4>分 <em>' + a.pct + '%</em> 给' + a.who + '</h4><p>' + a.gain + '</p></button>';
+  }).join('');
+}
+
+function pzShare(idx) {
+  if (pzDone[idx]) return;
+  pzDone[idx] = true;
+  document.getElementById('pzb' + idx).disabled = true;
+  var a = PZ_ACTS[idx];
+  var taken = 0;
+  for (var k in pzDone) if (k != idx) taken += PZ_ACTS[k].pct;
+  for (var i = 0; i < a.pct; i++) {
+    (function(cell, delay){
+      setTimeout(function(){
+        cell.style.background = a.color;
+        cell.classList.add('taken');
+      }, delay);
+    })(document.getElementById('pzc' + (99 - taken - i)), i * 35);
+  }
+  var left = 100;
+  for (var k2 in pzDone) left -= PZ_ACTS[k2].pct;
+  document.getElementById('pzPct').textContent = left;
+  var doneCount = Object.keys(pzDone).length;
+  if (doneCount === PZ_ACTS.length) {
+    document.getElementById('pzSay').innerHTML = a.say
+      + '<br><br><b>拼图完成：你还持有 65%，依然是说了算的那个权威。</b>但钱、工程师、设计师、市场这四块图全拼上了。对照另一条路：100% 攥在手里一块不分，做成的概率近乎等于零。创业就是一个分享 100% 梦想的过程。';
+    document.getElementById('pzHint').textContent = '拼图完成';
+  } else {
+    document.getElementById('pzSay').innerHTML = a.say;
+    document.getElementById('pzHint').textContent = '还有 ' + (PZ_ACTS.length - doneCount) + ' 块图没拼';
+  }
+}
+
+function pzReset() {
+  pzDone = {};
+  document.getElementById('pzPct').textContent = '100';
+  document.getElementById('pzHint').textContent = '点击下方卡片开始分享';
+  document.getElementById('pzSay').innerHTML = '<b>开局：</b>此刻你拥有 100%，但它只是一个还没人信的梦想。没有钱、没有工程师、没有市场，这张图一块都没拼上。';
+  pzInit();
+}
+
+/* ═══════════ 交互二：股权体检 ═══════════ */
+var DX = [
+  {
+    segs: [{p:50,c:'#f97316',t:'你 50%'},{p:50,c:'#0891b2',t:'合伙人 50%'}],
+    level:'warn', label:'诊断：高危',
+    body:'<p><b>先问一句：他是真干还是挂名？</b>如果对方自己还有公司、至多起个 Angel investor 的作用甚至不掏钱，那这 50% 就是把梦想贱卖了：「那哪个投资者敢投你这个五十对五十？」股权分配不合理，后面的投资人是不敢投的。</p><p><b>就算两人都全职，也要回答关键一问：争执不下时听谁的？</b>Google、Yahoo、HP 都是一人一半做成的，但那是在按规则来的美国。在中国，初期一人一半的很多，最后成功的不多。这一条不在创业之初说清楚，方案就不及格。</p>'
+  },
+  {
+    segs: [{p:25,c:'#f97316',t:'25%'},{p:25,c:'#0891b2',t:'25%'},{p:25,c:'#16a34a',t:'25%'},{p:25,c:'#7c3aed',t:'25%'}],
+    level:'bad', label:'诊断：不用谈了',
+    body:'<p><b>「三个人或者四个人均分，这个不用谈了，三个和尚肯定没水吃。」</b>雷军自己就是这么栽的：大学创业四人各 25%，六个月之内选了两次董事长和总经理。还有那家递来一把名片全是 CEO 的公司：第一个问题就是，你们公司到底谁负责？</p><p>没有人有权威，每个决定都要吵一轮，这不是团队，是过家家。必须有人声音比较大、有说话权，才能把队伍组织起来。</p>'
+  },
+  {
+    segs: [{p:100,c:'#f97316',t:'你 100%'}],
+    level:'bad', label:'诊断：近乎等于零',
+    body:'<p><b>「你百分之百持有股权，想把公司做成的概率近乎等于零。」</b>没有拿股份换钱，就没有跑道；没有换最优秀的工程师，就没有产品；没有换 marketing 和资源，就没有市场。这张拼图一块都没拼上。</p><p>过去五年所有成功的创业公司，都是很好地完成了这场拼图的。「公司还是我一个人做决定就好」听起来干脆，代价是你多半等不到做决定的那天。</p>'
+  },
+  {
+    segs: [{p:65,c:'#f97316',t:'创始人 65%'},{p:25,c:'#0891b2',t:'合伙人 25%'},{p:10,c:'#16a34a',t:'期权池 10%'}],
+    level:'ok', label:'诊断：像样的拼图',
+    body:'<p><b>有权威，有伙伴，还给未来的人留了位置。</b>创始人 65%，争执不下时听谁的一目了然；合伙人 25%，份额大到值得他押上全部；10% 的期权池，留给还没遇到的那几个最优秀的工程师和设计师。</p><p>比例本身不是圣经，雷军真正在意的是结构：分出去的每一块都换回了真东西，而且有一个人对结果负全责。做到这两条，这张图就拼得下去。</p>'
+  }
+];
+
+function pickDx(idx) {
+  for (var i = 0; i < 4; i++) document.getElementById('dx' + i).classList.toggle('active', i === idx);
+  var d = DX[idx];
+  document.getElementById('dxReport').innerHTML =
+    '<div class="dx-bar">' + d.segs.map(function(s){
+      return '<div class="dx-seg" style="width:' + s.p + '%;background:' + s.c + '">' + s.t + '</div>';
+    }).join('') + '</div>'
+    + '<span class="dx-verdict ' + d.level + '">' + d.label + '</span>'
+    + d.body;
+}
+
+/* 初始化 */
+pzInit();
+lessonOnView(document.getElementById('pzWrap'), function(){
+  if (!Object.keys(pzDone).length) pzShare(0);
+});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

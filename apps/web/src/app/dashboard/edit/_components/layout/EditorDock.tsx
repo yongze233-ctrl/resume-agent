@@ -1,0 +1,130 @@
+import { useMemo, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import { ZoomIn, ZoomOut, RotateCcw, Download, FileJson, Loader2 } from '@magic-resume-kit/icons';
+import { useTranslation } from "react-i18next";
+import { preloadResumePdfExport } from "@/lib/utils/pdf-export";
+import ExportModal from "../modals/ExportModal";
+import { useResumeExport } from "../modals/useResumeExport";
+import { Resume } from "@/types/frontend/resume";
+
+import { EASE_ENTER } from '@magic-resume-kit/utils';
+import { HoverSurface, useHoverSurface } from '@/components/ui/hover-surface';
+type EditorDockProps = {
+  zoomIn: (step?: number) => void;
+  zoomOut: (step?: number) => void;
+  resetTransform: (step?: number) => void;
+  resume: Resume;
+  onJsonClick: () => void;
+};
+
+type DockEntry =
+  | { type: "divider"; id: string }
+  | { type?: "item"; id: string; title: string; icon: ReactNode; onClick?: () => void; disabled?: boolean };
+
+/**
+ * 桌面端底部居中工具坞(参考 Reactive Resume):画布缩放 + 文档导出类高频动作。
+ * 透明磨砂条,图标静止安静(neutral-400),hover/触摸时仅做 transform 上浮 + 点亮 sky——
+ * 纯合成层动画,无 width/height 抖动,顺滑不卡。放在预览 section 内(relative),
+ * `absolute … left-1/2` 自动避开右侧模板栏。
+ */
+export function EditorDock({ zoomIn, zoomOut, resetTransform, resume, onJsonClick }: EditorDockProps) {
+  const { t } = useTranslation();
+  const [exportOpen, setExportOpen] = useState(false);
+  const { isExporting, runExport } = useResumeExport(resume, 'dock');
+  // Match the locale the preview renders with so the export reuses its cached blob.
+
+  const warmupPdfExport = () => {
+    // Lightweight: only warms the template + fonts. The full blob is produced
+    // (and cached) by the live preview, so the click-to-export stays instant.
+    void preloadResumePdfExport(resume).catch(() => {
+      // Best-effort warmup only; export handles real failures.
+    });
+  };
+
+  /* 工具坞高亮：一块共享的面在图标之间滑动。没有选中项，指针离开整条坞就淡出。 */
+  const dockSurface = useHoverSurface();
+
+  const items: DockEntry[] = useMemo(() => {
+    const list: DockEntry[] = [
+      { id: "zoom-out", title: t("tools.zoomOut"), icon: <ZoomOut size={16} />, onClick: () => zoomOut() },
+      { id: "zoom-reset", title: t("tools.resetZoom"), icon: <RotateCcw size={16} />, onClick: () => resetTransform() },
+      { id: "zoom-in", title: t("tools.zoomIn"), icon: <ZoomIn size={16} />, onClick: () => zoomIn() },
+      { type: "divider", id: "divider-1" },
+      {
+        id: "export-pdf",
+        title: isExporting ? t("tools.exportingPDF") : t("modals.export.title"),
+        icon: isExporting ? <Loader2 size={16} className="animate-spin text-sky-300" /> : <Download size={16} />,
+        onClick: () => setExportOpen(true),
+        disabled: isExporting,
+      },
+      { id: "view-json", title: t("resumeContent.viewJson"), icon: <FileJson size={16} />, onClick: onJsonClick },
+    ];
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, isExporting, onJsonClick]);
+
+  return (
+    // 居中 translate 留在静态外层(framer 会覆写 transform,不能同元素混用)。
+    // 入场与悬停分离:中层 tween 负责登台 —— 与舞台入场同曲线、略滞后半拍,读作"工作台
+    // 就位后工具坞浮上来";内层 spring 只管 hover 上浮。旧版把 y:24 弹簧弹入直接放在
+    // 胶囊上,面板异步挂载时它会在空黑画布上独自弹出,正是"工具栏出现不优雅"的来源。
+    <div className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
+      <motion.div
+        initial={{ y: 14, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.45, ease: EASE_ENTER, delay: 0.3 }}
+      >
+        <motion.div
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 380, damping: 18, mass: 0.9 }}
+          className="relative flex items-center gap-0.5 rounded-full border border-white/10 bg-neutral-900/70 px-1.5 py-1 shadow-xl shadow-black/40 backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-200 hover:border-sky-400/30 hover:bg-neutral-900/85 hover:shadow-2xl hover:shadow-black/50"
+          {...dockSurface.containerProps}
+        >
+          <HoverSurface {...dockSurface.surfaceProps} className="rounded-xl bg-mr-surface-soft" />
+          {items.map((item) => {
+            if (item.type === "divider") {
+              return <div key={item.id} className="mx-1 h-4 w-px bg-white/10" />;
+            }
+            // 一次取全：ref、标记属性、接管点。标记属性不能漏——容器靠它判断指针
+            // 此刻是不是还落在某一项上。
+            const bound = dockSurface.bind(item.id);
+            const warmup = item.id === "export-pdf" ? warmupPdfExport : undefined;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                {...bound}
+                onClick={item.onClick}
+                // 覆盖掉 bound 的同名接管点，把这一颗自己的预热副作用并进去。
+                onFocus={() => {
+                  bound.onFocus();
+                  warmup?.();
+                }}
+                onPointerEnter={() => {
+                  bound.onPointerEnter();
+                  warmup?.();
+                }}
+                disabled={item.disabled}
+                title={item.title}
+                aria-label={item.title}
+                className="group/dock relative flex h-8 w-8 items-center justify-center rounded-xl text-neutral-400 transition-colors duration-150 ease-out hover:text-sky-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-sky-400/50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {item.icon}
+                <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-xs text-neutral-100 opacity-0 transition-opacity duration-150 group-hover/dock:opacity-100">
+                  {item.title}
+                </span>
+              </button>
+            );
+          })}
+        </motion.div>
+      </motion.div>
+
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        onExport={runExport}
+        resume={resume}
+      />
+    </div>
+  );
+}

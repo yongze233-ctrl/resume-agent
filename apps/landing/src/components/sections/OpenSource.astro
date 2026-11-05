@@ -1,0 +1,42 @@
+---
+import type { Copy } from '@/i18n/ui';
+import { GITHUB } from '@/consts';
+import Icon from '@/components/Icon.astro';
+interface Props { copy: Copy; stars: number | null; }
+const { copy, stars } = Astro.props;
+const t = copy.landing.trust;
+const icons = ['shield', 'github', 'zap', 'braces'] as const;
+// 第二枚标记拿真实 star 数;取不到就退回「公开开发」,不编一个数字出来。
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const marks = t.marks.map((item, i) =>
+  i === 1 && stars !== null ? { ...item, mark: compact.format(stars), suffix: t.starsSuffix } : item,
+);
+---
+<section id="open-source" class="be-section" data-beui="trust-compliance-marks">
+  <div class="be-container">
+    <div class="be-marks-head reveal" style="--reveal-delay:0">
+      <div>
+        <span class="be-marks-eyebrow">{t.eyebrow}</span>
+        <h2>{t.title.split('\n').map((line) => <span>{line}</span>)}</h2>
+        <p>{t.subtitle}</p>
+      </div>
+      <a class="be-marks-cta" href={GITHUB.repo} target="_blank" rel="noopener noreferrer">
+        <Icon name="github" size={16}/>{t.source}<Icon name="arrow-right" size={16}/>
+      </a>
+    </div>
+
+    <div class="be-marks-band">
+      {marks.map((item, i) => (
+        <article class="reveal" style={`--reveal-delay:${i + 1}`}>
+          <Icon name={icons[i]} size={20}/>
+          <div class="be-mark-line"><h3>{item.mark}</h3><p>{item.suffix}</p></div>
+          <p class="be-mark-desc">{item.desc}</p>
+        </article>
+      ))}
+    </div>
+
+    <div class="be-marks-checks reveal" style="--reveal-delay:4">
+      {t.checks.map((check) => <span><Icon name="check" size={16}/>{check}</span>)}
+    </div>
+  </div>
+</section>

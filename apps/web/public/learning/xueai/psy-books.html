@@ -1,0 +1,1185 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-books",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-books',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>九本书，把这一章读厚 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="AI 产品经理心理学书单：思考快与慢、设计心理学、影响力、怪诞行为学、错误的行为、媒体等同、点石成金、行为设计学、上瘾。九本书拆出十九条 PM 必须懂的心理学原理，每条标注 AI 产品落点与本章回看课节，支持按困惑选书。">
+<meta name="keywords" content="产品经理书单,心理学书单,思考快与慢,设计心理学,影响力,AI产品经理,峰终定律,损失厌恶">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="九本书，把这一章读厚">
+<meta property="og:description" content="九本书拆出十九条 PM 必须懂的心理学原理，每条标注 AI 产品落点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-books.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-books.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="九本书，把这一章读厚">
+<meta name="twitter:description" content="PM 心理学书单：十九条原理，每条都有 AI 产品落点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--psy:#0d9488;--psy-deep:#115e59;--psy-soft:rgba(13,148,136,.08);--psy-line:rgba(13,148,136,.28)}
+.lesson-header .kicker{color:var(--psy)}
+.l-callout b{color:var(--psy)}
+
+/* ── 按困惑选书 ── */
+.pick-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.pick-chip{font-size:12.5px;font-weight:700;color:var(--sub);background:var(--card);border:1.5px solid var(--border);border-radius:99px;padding:7px 15px;cursor:pointer;transition:all .15s;user-select:none}
+.pick-chip:hover{border-color:var(--psy-line)}
+.pick-chip.on{background:var(--psy);border-color:var(--psy);color:#fff}
+.pick-hint{font-size:12px;color:var(--sub);margin:8px 0 0;min-height:20px}
+.pick-hint b{color:var(--psy-deep)}
+
+/* ── 书卡 ── */
+.book-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.book-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);padding:18px 20px;transition:all .2s}
+.book-card.hl{border-color:var(--psy);background:var(--psy-soft)}
+.book-card.dim{opacity:.35}
+.book-tag{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.5px;padding:2px 9px;border-radius:99px;background:var(--psy-soft);color:var(--psy-deep);margin-bottom:7px}
+.book-card h5{font-size:14.5px;font-weight:800;color:var(--text);line-height:1.5}
+.book-card .book-author{font-size:11.5px;color:var(--sub);margin:2px 0 8px}
+.book-card .book-why{font-size:12.5px;color:var(--sub);line-height:1.7;padding-bottom:9px;border-bottom:1px dashed var(--border);margin-bottom:9px}
+.book-card ul{list-style:none;padding:0;margin:0}
+.book-card li{font-size:12px;color:var(--sub);line-height:1.65;padding:2.5px 0 2.5px 16px;position:relative}
+.book-card li::before{content:'';position:absolute;left:2px;top:11px;width:6px;height:6px;border-radius:50%;background:var(--psy)}
+.book-card li b{color:var(--text)}
+.book-read{font-size:11.5px;color:var(--psy-deep);background:var(--psy-soft);border-radius:8px;padding:7px 11px;margin-top:10px;line-height:1.6}
+.book-read b{font-weight:800}
+
+/* ── 原理速查表 ── */
+.pr-head{display:grid;grid-template-columns:130px 1fr 1fr 118px;gap:14px;padding:0 18px 4px;font-size:11px;font-weight:900;letter-spacing:.5px;color:var(--sub)}
+.pr-table{display:flex;flex-direction:column;gap:9px}
+.pr-row{background:var(--card);border:1.5px solid var(--border);border-radius:12px;box-shadow:var(--shadow-card);padding:13px 18px;display:grid;grid-template-columns:130px 1fr 1fr 118px;gap:14px;align-items:center;transition:all .2s}
+.pr-row.hl{border-color:var(--psy);background:var(--psy-soft)}
+.pr-row.dim{opacity:.35}
+.pr-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.5}
+.pr-name .pr-book{display:block;font-size:10.5px;font-weight:700;color:var(--psy);margin-top:2px}
+.pr-law{font-size:12px;color:var(--sub);line-height:1.65}
+.pr-use{font-size:12px;color:var(--sub);line-height:1.65}
+.pr-use b{color:var(--psy-deep)}
+.pr-link{text-align:right}
+.pr-link a{font-size:11.5px;font-weight:700;color:var(--psy);text-decoration:none;background:var(--psy-soft);padding:4px 11px;border-radius:99px;white-space:nowrap}
+.pr-link a:hover{background:rgba(13,148,136,.16)}
+.pr-link .pr-none{font-size:11px;color:var(--sub);white-space:nowrap}
+
+/* ── 原理连线小测 ── */
+.mq-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);padding:18px 20px;margin-bottom:12px}
+.mq-scene{font-size:13.5px;color:var(--text);line-height:1.75;margin-bottom:11px}
+.mq-scene b{color:var(--psy-deep)}
+.mq-opts{display:flex;flex-wrap:wrap;gap:8px}
+.mq-opt{font-size:12.5px;font-weight:700;color:var(--sub);background:var(--bg);border:1.5px solid var(--border);border-radius:99px;padding:6px 14px;cursor:pointer;transition:all .18s;user-select:none}
+.mq-opt:hover{border-color:var(--psy-line)}
+.mq-card.done .mq-opt{cursor:default;opacity:.45}
+.mq-card.done .mq-opt.right{opacity:1;background:var(--psy);border-color:var(--psy);color:#fff}
+.mq-card.done .mq-opt.wrong-pick{opacity:1;background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.4);color:#b91c1c;text-decoration:line-through}
+.mq-fb{font-size:12.5px;line-height:1.7;color:var(--sub);margin-top:10px;padding:9px 13px;border-radius:9px;background:var(--psy-soft);display:none;animation:mqIn .25s ease}
+.mq-fb b{color:var(--psy-deep)}
+.mq-card.done .mq-fb{display:block}
+@keyframes mqIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.mq-score{font-size:13px;font-weight:800;color:var(--psy-deep);margin-top:4px;min-height:22px}
+
+/* ── takeaway ── */
+.takeaway-box{background:linear-gradient(135deg,#f0fdfa,#ccfbf1);border:1.5px solid #99f6e4;border-radius:var(--radius);padding:24px 28px;margin-top:36px}
+.takeaway-box h3{font-size:17px;font-weight:800;color:var(--psy-deep);margin-bottom:10px}
+.takeaway-box ul{list-style:none;padding:0;margin:0}
+.takeaway-box li{font-size:14.5px;color:#134e4a;line-height:1.8;padding:4px 0 4px 22px;position:relative}
+.takeaway-box li::before{content:'';position:absolute;left:0;top:13px;width:8px;height:8px;border-radius:50%;background:var(--psy)}
+
+@media (max-width:768px){
+  .book-grid{grid-template-columns:1fr}
+  .pr-head{display:none}
+  .pr-row{grid-template-columns:1fr;gap:7px}
+  .pr-link{text-align:left}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">专题篇章 · AI 产品心理学 · 延伸书单</div>
+    <h1>九本书，把这一章读厚</h1>
+    <p class="subtitle">这一章的每个结论都有出处，课里只给了你压缩版。这一节把原书排上书架：九本书，拆出<b>十九条 PM 必须懂的心理学原理</b>，每条都标注它在 AI 产品上的落点。别按顺序啃，先选你现在最头疼的问题。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>卡尼曼、诺曼、西奥迪尼、塞勒到《媒体等同》，九本书拆出十九条 PM 必须懂的心理学原理，每条标注 AI 产品落点与回看课节；按你产品当前的困惑选书，读完做一轮原理连线小测</p></aside><!--seo:end-->  <div class="l-callout">
+    <b>这份书单怎么用。</b>九本全读完大概要三个月，多数 PM 撑不到第二本。更实际的用法：下面先选一个你产品当前的困惑，书架和速查表会亮出对应的书和原理，先读亮着的那几条。每本书卡底部标了从哪读起，都可以跳读。
+  </div>
+
+  <div class="sec-label">第一步 · 选你现在的困惑</div>
+
+  <div class="pick-chips" id="pickChips"></div>
+  <p class="pick-hint" id="pickHint">点一个困惑试试，书架和下面的速查表会一起变。</p>
+
+  <div class="sec-label">书架 · 九本书</div>
+
+  <div class="book-grid paywall-locked" id="bookGrid"></div>
+
+  <div class="l-callout paywall-locked xa-peek" style="margin-top:18px;">
+    <b>一条边界要先说清。</b>《上瘾》教的那套多变奖励和投入机制，威力和争议一样大。这一章讲的心理学都用在<b>消除摩擦</b>上：让等待不难受、让信任对得上能力、让用户敢用。拿同一套知识去制造焦虑、诱导停留，是另一回事，那条路上的产品最后都在跟监管和用户口碑打仗。读它是为了识别这些机制，用不用、用到什么程度，你要自己把关。
+  </div>
+
+  <div class="sec-label paywall-locked">原理速查表 · 十九条，每条都有 AI 落点</div>
+
+  <div class="pr-head paywall-locked"><span>原理 · 出处</span><span>一句话规律</span><span>AI 产品落点</span><span style="text-align:right">回看</span></div>
+  <div class="pr-table paywall-locked" id="prTable"></div>
+
+  <div class="sec-label paywall-locked">原理连线小测 · 看场景，认原理</div>
+
+  <div class="l-callout paywall-locked">
+    <b>读完速查表先别走。</b>下面四个场景都来自真实的 AI 产品评审，每个场景背后站着速查表里的一条原理。认得出来，说明这张表已经进你脑子了；认不出来，回去再扫一眼。
+  </div>
+
+  <div id="mqWrap" class="paywall-locked"></div>
+  <p class="mq-score paywall-locked" id="mqScore"></p>
+
+  <div class="takeaway-box paywall-locked">
+    <h3>✅ 这一节想和你分享的</h3>
+    <ul>
+      <li><b>课是压缩版，书是原浆</b>：说服工程师和老板时，引原书比引课件硬气</li>
+      <li><b>按困惑读，别按书单顺序读</b>：每本书对你有用的往往就两三章</li>
+      <li><b>十九条原理是工具箱</b>：设计评审前扫一遍速查表，比临时翻书快</li>
+      <li><b>心理学用来消除摩擦</b>：制造成瘾是同一把刀的另一面，别碰</li>
+    </ul>
+  </div>
+
+</main>
+<script>
+/* ── 困惑与标签 ── */
+const PICKS = [
+  { id: 'slow',  label: '用户嫌慢、等不住',       hint: '先读<b>《设计心理学》</b>讲反馈的部分，再看<b>《思考，快与慢》</b>的峰终定律。等待的体感能设计，第 1、2 课讲过工程开关。' },
+  { id: 'fear',  label: '用户不敢用、防着 AI',     hint: '<b>《思考，快与慢》</b>的损失厌恶解释了为什么用户怕点错，<b>《设计心理学》</b>的容错设计给了答案：可逆、草稿态、出口摆明面。' },
+  { id: 'trust', label: '用户太信 AI，照单全收',   hint: '<b>《思考，快与慢》</b>的认知放松加上<b>《影响力》</b>的权威偏差，合起来就是幻觉最危险的原因：流畅又笃定的输出天生可信。' },
+  { id: 'wrong', label: '用户用错了、问错了',      hint: '<b>《设计心理学》</b>的心智模型是根源，<b>《点石成金》</b>提醒你用户根本不读说明，<b>《影响力》</b>的社会认同给了纠正手段：让用户看别人怎么问。' },
+  { id: 'peak',  label: '差评集中在一次失败',      hint: '<b>《思考，快与慢》</b>的峰终定律解释了为什么一次失败盖过十次成功，<b>《行为设计学》</b>教你反过来主动制造峰值，<b>《媒体等同》</b>管道歉那部分。' },
+  { id: 'stick', label: '想让用户留下来',          hint: '<b>《怪诞行为学》</b>的宜家效应、<b>《上瘾》</b>的投入机制、<b>《影响力》</b>的承诺一致，都指向同一件事：让用户在产品里存下自己的东西。' },
+  { id: 'pay',   label: '不知道怎么收钱、怎么定价', hint: '<b>《错误的行为》</b>的心理账户和公平感知管怎么收钱不疼，<b>《怪诞行为学》</b>的相对性、免费和诱饵管定价页怎么摆；第 14、15 课有全部工程落点。' },
+];
+
+/* ── 书架 ── */
+const BOOKS = [
+  {
+    tags: 'slow fear trust peak',
+    tag: '行为经济学 · 地基',
+    title: '《思考，快与慢》',
+    author: 'Daniel Kahneman 卡尼曼 · 2011',
+    why: '本章一半的结论出自这本书。诺奖得主把人的判断拆成快思考和慢思考两套系统，几乎所有体验设计的规律都能追到这里。',
+    points: [
+      '<b>峰终定律</b>：记忆只存峰值和结尾，第 4 课的预算分配依据',
+      '<b>损失厌恶</b>：丢的痛远大于得的爽，用户防御心理的根',
+      '<b>认知放松</b>：读着顺的更容易被当成真的，幻觉危险的放大器',
+      '<b>锚定效应</b>：先报的数定基准，预估时长要报偏高的那个',
+    ],
+    read: '<b>从哪读起</b>：全书 38 章别硬啃，先读第 1 部分（双系统）和第 35～38 章（体验效用与峰终），够用了。',
+  },
+  {
+    tags: 'slow fear wrong',
+    tag: '交互设计 · 地基',
+    title: '《设计心理学 1：日常的设计》',
+    author: 'Don Norman 诺曼 · 1988 / 2013 修订',
+    why: '心智模型、反馈、容错，这三个词的出处。写的是门把手和水龙头，讲的规律在对话框时代一条没过时。',
+    points: [
+      '<b>心智模型</b>：用户按自己的想象操作产品，第 8 课整课的理论地基',
+      '<b>反馈</b>：每个动作都要有响应，流式输出的心理学依据',
+      '<b>容错与可逆</b>：好设计假设人会犯错，草稿态和撤销的出处',
+    ],
+    read: '<b>从哪读起</b>：第 1、2 章（心智模型与日常操作的心理学）和第 5 章（人为差错），修订版有专门聊自动化系统的段落。',
+  },
+  {
+    tags: 'trust wrong stick',
+    tag: '说服心理学',
+    title: '《影响力》',
+    author: 'Robert Cialdini 西奥迪尼 · 1984',
+    why: '六大影响力武器：互惠、承诺一致、社会认同、权威、稀缺、喜好。既是设计工具，也是识别工具，看懂别的产品在对你用哪招。',
+    points: [
+      '<b>权威偏差</b>：像专家的声音更容易被信，AI 的笃定口吻自带权威 buff',
+      '<b>社会认同</b>：别人都这么问，我也这么问，空状态示例好使的原因',
+      '<b>承诺一致</b>：先答应小事就会答应大事，onboarding 第一个小任务的设计依据',
+    ],
+    read: '<b>从哪读起</b>：按需查阅即可，每章讲一个武器，互相独立。做 AI 产品优先看权威和社会认同两章。',
+  },
+  {
+    tags: 'stick pay',
+    tag: '行为经济学',
+    title: '《怪诞行为学》',
+    author: 'Dan Ariely 艾瑞里 · 2008',
+    why: '一本用实验讲人有多不理性的书，读起来最轻松。定价、免费策略、所有权感，全是产品每天要碰的题。第 15 课复刻的经济学人诱饵实验就是它的开篇。',
+    points: [
+      '<b>宜家效应</b>：自己出过力的东西更值钱，劳动错觉的镜像：让用户也出点力',
+      '<b>免费的魔力</b>：免费改变行为逻辑，免费额度怎么设的心理学依据',
+      '<b>相对性与诱饵</b>：人只会比较，不会绝对估值，定价页三档套餐的原理',
+    ],
+    read: '<b>从哪读起</b>：第 1 章（相对论的真相，含经济学人实验）、第 3 章（免费）、第 8 章（所有权）。',
+  },
+  {
+    tags: 'pay',
+    tag: '行为经济学 · 诺奖',
+    title: '《错误的行为》',
+    author: 'Richard Thaler 塞勒 · 2015（Misbehaving）',
+    why: '行为经济学的创始人自述学科怎么建起来的，心理账户和公平感知的原产地。做商业化的 PM 该把它当收费设计的说明书读。',
+    points: [
+      '<b>心理账户</b>：钱被记在不同账户里，从哪个账户扣痛感不同，第 14 课的地基',
+      '<b>公平感知</b>：雪天涨价的铲子商家被恨，涨价的正当性看理由不看成本',
+      '<b>禀赋效应</b>：到手的东西估值翻倍，免费试用到期为什么难受的原因',
+    ],
+    read: '<b>从哪读起</b>：第 7～10 章（心理账户）和第 14 章（公平），故事性强，比想象中好读。',
+  },
+  {
+    tags: 'peak',
+    tag: '人机关系 · CASA 源头',
+    title: '《媒体等同》',
+    author: 'Byron Reeves &amp; Clifford Nass · 1996',
+    why: '第 9 课 CASA 范式的原书：人会不自觉地把电脑当社交对象，礼貌、恭维、性别刻板印象照单全收。三十年前的实验，精准预言了大模型时代。',
+    points: [
+      '<b>CASA 范式</b>：用户必然把 AI 当某种人，你只能选档位，没法退出',
+      '<b>礼貌效应</b>：人会对电脑客气，也期待电脑对自己客气，道歉设计的依据',
+    ],
+    read: '<b>从哪读起</b>：第 1、2 章立论，后面全是分主题的实验，挑标题感兴趣的看。中译本可能要淘二手。',
+  },
+  {
+    tags: 'wrong',
+    tag: '可用性',
+    title: '《点石成金》',
+    author: 'Steve Krug · 2000（Don\'t Make Me Think）',
+    why: '薄到一个下午能翻完。核心就一句：用户是扫描页面，你写的说明他根本没读。对话式产品的空状态、示例、边界声明，全要按这个前提设计。',
+    points: [
+      '<b>扫描不阅读</b>：用户不读你写的字，边界声明要出现在出错的现场',
+      '<b>自明性</b>：好界面不需要想，输入框旁边的示例比帮助文档有用十倍',
+    ],
+    read: '<b>从哪读起</b>：整本，真的很薄。',
+  },
+  {
+    tags: 'peak slow',
+    tag: '体验设计 · 实操',
+    title: '《行为设计学：打造峰值体验》',
+    author: 'Chip Heath &amp; Dan Heath 希思兄弟 · 2017',
+    why: '卡尼曼说记忆只存峰值和结尾，这本书接着回答：峰值怎么主动造。欣喜、认知、荣耀、连接，四种原料都给了配方。',
+    points: [
+      '<b>峰值时刻可制造</b>：第 4 课说旗舰模型花在第一印象，这本书给了更多造峰手法',
+      '<b>转折时刻要标记</b>：第一次成功、第一百次对话，值得被产品记住并庆祝',
+    ],
+    read: '<b>从哪读起</b>：第 1 章立论加第 2～5 章（欣喜），后面按需要翻。',
+  },
+  {
+    tags: 'stick',
+    tag: '习惯设计 · 带刺',
+    title: '《上瘾》',
+    author: 'Nir Eyal · 2014（Hooked）',
+    why: '触发、行动、多变奖励、投入，四步上瘾循环的教科书。生成式产品天生带抽卡感，这本书能解释你的产品为什么让人一直点重新生成。读它，然后决定哪些手法不用。',
+    points: [
+      '<b>多变奖励</b>：不确定的奖励更上头，AI 生成结果的随机性天生是老虎机',
+      '<b>投入机制</b>：用户存进产品的东西越多越难走，记忆和个性化是最强的投入',
+    ],
+    read: '<b>从哪读起</b>：整本很快，重点是第 4 章（多变奖励）和第 5 章（投入），以及最后一章的道德讨论，别跳过。',
+  },
+];
+
+/* ── 原理速查表 ── */
+const PR = [
+  { tags: 'peak',       name: '峰终定律',   book: '思考，快与慢', law: '记忆只保留体验的峰值和结尾，时长和平均值几乎不计入', use: '<b>旗舰模型造峰</b>，校验前置护住结尾，中段放心省钱', href: 'psy-4.html', lk: '第 4 课' },
+  { tags: 'fear',       name: '损失厌恶',   book: '思考，快与慢', law: '损失的痛感约是同等收益快感的两倍', use: '<b>可逆性</b>是拆防御的第一板斧：草稿态、撤销、改前预览', href: 'psy-6.html', lk: '第 7 课' },
+  { tags: 'trust',      name: '认知放松',   book: '思考，快与慢', law: '流畅的、读着顺的信息更容易被判定为真', use: '幻觉的放大器：AI 输出天生流畅，<b>可信度要靠引用兜底</b>', href: 'psy-5.html', lk: '第 5 课' },
+  { tags: 'slow',       name: '锚定效应',   book: '思考，快与慢', law: '最先出现的数字成为后续判断的基准', use: '预估时长<b>报偏高的数</b>：提前完成是惊喜，超时是二次伤害', href: 'psy-2.html', lk: '第 2 课' },
+  { tags: 'wrong trust',name: '双系统',     book: '思考，快与慢', law: '人默认用快思考，慢思考又懒又贵，能不动就不动', use: '用户不会推理你的产品逻辑，<b>界面要在快思考层面就对</b>', href: 'psy-7.html', lk: '第 8 课' },
+  { tags: 'wrong',      name: '心智模型',   book: '设计心理学', law: '用户按自己脑中的模型操作，模型和系统不符就出错', use: '把 AI 当搜索、当数据库、当学徒，<b>四种错配四类差评</b>', href: 'psy-7.html', lk: '第 8 课' },
+  { tags: 'slow',       name: '反馈原则',   book: '设计心理学', law: '每个动作都需要及时、明确的响应', use: '<b>流式输出、进度外显</b>的理论地基，静止的屏幕是设计事故', href: 'psy-1.html', lk: '第 1 课' },
+  { tags: 'fear',       name: '容错设计',   book: '设计心理学', law: '好设计假设人一定会犯错，把代价压到最低', use: '高风险动作加闸门，低风险放行，<b>错了能一键回退</b>', href: 'psy-6.html', lk: '第 7 课' },
+  { tags: 'trust',      name: '权威偏差',   book: '影响力', law: '带专家信号的信息被系统性高估', use: 'AI 的笃定口吻自带权威，<b>置信度要有代理信号</b>拉回校准', href: 'psy-5.html', lk: '第 5 课' },
+  { tags: 'wrong',      name: '社会认同',   book: '影响力', law: '不确定时，人参照别人的行为决定自己怎么做', use: '<b>空状态放真实的好问题</b>，比教程更能教会用户怎么问', href: 'psy-7.html', lk: '第 8 课' },
+  { tags: 'stick',      name: '承诺一致',   book: '影响力', law: '人会维护自己已经做出的承诺，小承诺引出大投入', use: 'onboarding 先要一个<b>小而成功的首次任务</b>，别上来就要大的', href: 'psy-4.html', lk: '第 4 课' },
+  { tags: 'stick',      name: '宜家效应',   book: '怪诞行为学', law: '自己参与制作的东西，估值显著更高', use: '让用户<b>参与调整 AI 产出</b>：选方向、改措辞，成果就成了他的', href: 'psy-3.html', lk: '第 3 课' },
+  { tags: 'peak',       name: 'CASA 范式',  book: '媒体等同', law: '人自动把媒介当社交对象，礼貌规则照常生效', use: '拟人化只能<b>选档位</b>不能退出；道歉三要素：错、因、补救', href: 'psy-8.html', lk: '第 9 课' },
+  { tags: 'wrong',      name: '扫描不阅读', book: '点石成金', law: '用户扫视界面抓关键词，成段的说明基本没人读', use: '边界声明和免责写成段落等于没写，<b>要出现在出错现场</b>', href: 'psy-7.html', lk: '第 8 课' },
+  { tags: 'peak slow',  name: '峰值制造',   book: '行为设计学', law: '峰值时刻有配方：欣喜、认知、荣耀、连接', use: '首次成功给仪式感，第一百次对话值得被记住，<b>峰值可以排期</b>', href: 'psy-4.html', lk: '第 4 课' },
+  { tags: 'stick',      name: '多变奖励',   book: '上瘾', law: '不确定的奖励比确定的奖励更能驱动重复行为', use: '重新生成就是抽卡。识别它，<b>克制地用</b>，别把产品做成老虎机', href: '', lk: '本课边界' },
+  { tags: 'pay',        name: '心理账户',   book: '错误的行为', law: '钱被记在不同的心理账户里，从哪个账户扣，痛感不一样', use: '订阅要说进「工作投资」账户；<b>按量计费的打表焦虑</b>就是账户被反复戳', href: 'psy-14.html', lk: '第 14 课' },
+  { tags: 'pay',        name: '公平感知',   book: '错误的行为', law: '雪天涨价的铲子商家被恨：涨价正当性看理由，不看成本', use: '涨价要给<b>价值增量 + 老用户祖父条款</b>，成本上涨不是用户认的理由', href: 'psy-15.html', lk: '第 15 课' },
+  { tags: 'pay',        name: '诱饵效应',   book: '怪诞行为学', law: '加一个明显更差的选项，会改变其他选项的吸引力', use: '定价页<b>顶档做锚</b>：没人买的 Max 档是店里最勤劳的售货员', href: 'psy-15.html', lk: '第 15 课' },
+];
+
+/* ── 渲染 ── */
+const chipsEl = document.getElementById('pickChips');
+const hintEl = document.getElementById('pickHint');
+const gridEl = document.getElementById('bookGrid');
+const prEl = document.getElementById('prTable');
+
+chipsEl.innerHTML = PICKS.map(p => `<span class="pick-chip" data-id="${p.id}">${p.label}</span>`).join('');
+gridEl.innerHTML = BOOKS.map(b => `
+  <div class="book-card" data-tags="${b.tags}">
+    <span class="book-tag">${b.tag}</span>
+    <h5>${b.title}</h5>
+    <div class="book-author">${b.author}</div>
+    <div class="book-why">${b.why}</div>
+    <ul>${b.points.map(p => `<li>${p}</li>`).join('')}</ul>
+    <div class="book-read">${b.read}</div>
+  </div>`).join('');
+prEl.innerHTML = PR.map(r => `
+  <div class="pr-row" data-tags="${r.tags}">
+    <div class="pr-name">${r.name}<span class="pr-book">《${r.book}》</span></div>
+    <div class="pr-law">${r.law}</div>
+    <div class="pr-use">${r.use}</div>
+    <div class="pr-link">${r.href ? `<a href="${r.href}">${r.lk}</a>` : `<span class="pr-none">${r.lk}</span>`}</div>
+  </div>`).join('');
+
+/* ── 原理连线小测 ── */
+const MQ = [
+  {
+    scene: '评审会上，设计师提议：生成报告平均要 40 秒，预估文案写「约 30 秒」，显得快一点。',
+    opts: ['锚定效应', '峰终定律', '认知放松'],
+    right: 0,
+    fb: '<b>锚定效应</b>。30 秒的锚定下去，40 秒完成就是超时，是二次伤害；报 60 秒，40 秒完成反而是惊喜。预估时长永远报偏高的那个数。',
+  },
+  {
+    scene: '数据显示用户十次会话九次顺利，可应用商店差评全在骂「关键时刻掉链子」。老板问：满意度均值明明不低，差评哪来的？',
+    opts: ['双系统', '峰终定律', '社会认同'],
+    right: 1,
+    fb: '<b>峰终定律</b>。记忆不算平均分，只存峰值和结尾。一次关键失败就是负峰，盖过九次顺利。预算要花在护住峰值和结尾上。',
+  },
+  {
+    scene: '定价页本来只有 ¥29 和 ¥99 两档，运营想加一个几乎没人会买的 ¥399 团队档。你判断这个提案：',
+    opts: ['心理账户', '免费的魔力', '诱饵效应'],
+    right: 2,
+    fb: '<b>诱饵效应</b>。¥399 档不指望卖，它站在那里，¥99 就从「贵」变成了「划算」。经济学人实验的产品版，第 15 课有完整复刻。',
+  },
+  {
+    scene: '按量计费的用户流失率是包月用户的三倍，访谈里高频出现一句话：「每问一次都感觉在扣钱，不敢随便用了。」',
+    opts: ['损失厌恶', '心理账户', '承诺一致'],
+    right: 1,
+    fb: '<b>心理账户</b>（损失厌恶也在场，但主犯是它）。按量计费让每次提问都从钱包账户现扣一笔，痛感反复触发；包月把痛感压缩成每月一次。第 14 课的打表焦虑模拟就是这题。',
+  },
+];
+
+const mqWrap = document.getElementById('mqWrap');
+const mqScore = document.getElementById('mqScore');
+mqWrap.innerHTML = MQ.map((q, i) => `
+  <div class="mq-card" data-i="${i}">
+    <div class="mq-scene"><b>场景 ${i + 1}</b> · ${q.scene}</div>
+    <div class="mq-opts">${q.opts.map((o, j) => `<span class="mq-opt" data-j="${j}">${o}</span>`).join('')}</div>
+    <div class="mq-fb">${q.fb}</div>
+  </div>`).join('');
+
+let mqDone = 0, mqHit = 0;
+mqWrap.addEventListener('click', e => {
+  const opt = e.target.closest('.mq-opt');
+  if (!opt) return;
+  const card = opt.closest('.mq-card');
+  if (card.classList.contains('done')) return;
+  const q = MQ[+card.dataset.i];
+  card.classList.add('done');
+  [...card.querySelectorAll('.mq-opt')].forEach((o, j) => {
+    if (j === q.right) o.classList.add('right');
+    else if (o === opt) o.classList.add('wrong-pick');
+  });
+  mqDone++;
+  if (+opt.dataset.j === q.right) mqHit++;
+  if (mqDone === MQ.length) {
+    mqScore.textContent = mqHit === MQ.length
+      ? `${mqHit} / ${MQ.length}，全对。这张速查表可以合上了，评审会上见。`
+      : `${mqHit} / ${MQ.length}。错的那几条，顺着反馈里的课号回去看一眼，比重读整张表快。`;
+  }
+});
+
+let active = null;
+chipsEl.addEventListener('click', e => {
+  const chip = e.target.closest('.pick-chip');
+  if (!chip) return;
+  const id = chip.dataset.id;
+  active = active === id ? null : id;
+  [...chipsEl.children].forEach(c => c.classList.toggle('on', c.dataset.id === active));
+  const apply = el => {
+    const hit = active && el.dataset.tags.split(' ').includes(active);
+    el.classList.toggle('hl', !!hit);
+    el.classList.toggle('dim', !!active && !hit);
+  };
+  [...gridEl.children].forEach(apply);
+  [...prEl.children].forEach(apply);
+  hintEl.innerHTML = active
+    ? PICKS.find(p => p.id === active).hint
+    : '点一个困惑试试，书架和下面的速查表会一起变。';
+});
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

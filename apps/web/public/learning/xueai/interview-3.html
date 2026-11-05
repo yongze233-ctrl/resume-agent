@@ -1,0 +1,1637 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"interview-3",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=interview-3',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>他们会这样考你 · 从 Demo 到产品 30 问 | xueai.miyang.cn</title>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 开场说明 ── */
+.iq-intro{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px}
+.iq-intro-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px}
+.iq-intro-lead{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:12px}
+.iq-role-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.iq-role-row{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border-radius:9px;font-size:14px;line-height:1.6}
+.iq-role-row .rr-name{font-weight:800;flex-shrink:0;white-space:nowrap}
+.iq-role-row .rr-desc{color:var(--sub)}
+.iq-intro-foot{font-size:14px;color:var(--sub);line-height:1.7}
+.iq-intro-foot strong{color:var(--text)}
+
+/* ── 题目卡片 ── */
+.iq-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.iq-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.iq-num{font-size:13px;font-weight:900;color:var(--sub);letter-spacing:.5px;font-family:"SF Mono","Fira Code",Menlo,monospace}
+.iq-who{font-size:12px;font-weight:800;padding:3px 11px;border-radius:99px;letter-spacing:.3px}
+.iq-q{font-size:17.5px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:16px}
+
+.iq-block{margin-bottom:14px}
+.iq-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.iq-intent .iq-label{color:var(--amber)}
+.iq-intent .iq-body{font-size:14px;color:var(--sub);line-height:1.75;background:rgba(217,119,6,.05);border:1px solid rgba(217,119,6,.14);border-radius:9px;padding:10px 14px}
+.iq-intent .iq-body strong{color:var(--text)}
+
+.iq-frame .iq-label{color:var(--accent)}
+.iq-frame ol{margin:0;padding-left:0;list-style:none;counter-reset:iqstep;display:flex;flex-direction:column;gap:7px}
+.iq-frame li{counter-increment:iqstep;position:relative;padding:9px 13px 9px 40px;background:rgba(0,102,255,.04);border:1px solid rgba(0,102,255,.1);border-radius:9px;font-size:14px;color:var(--sub);line-height:1.65}
+.iq-frame li::before{content:counter(iqstep);position:absolute;left:12px;top:10px;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.iq-frame li strong{color:var(--text)}
+
+.iq-bonus{font-size:13.5px;color:var(--text);line-height:1.7;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.18);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.iq-bonus b{color:var(--success);font-weight:800;margin-right:4px}
+
+.iq-refs{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--border)}
+.iq-refs-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0}
+.iq-refs a{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;background:rgba(0,102,255,.07);padding:4px 11px;border-radius:99px;transition:background .15s}
+.iq-refs a:hover{background:rgba(0,102,255,.14)}
+
+/* 角色配色 */
+.who-hr{background:rgba(0,102,255,.1);color:var(--accent)}
+.who-boss{background:rgba(217,119,6,.12);color:var(--amber)}
+.who-dev{background:rgba(124,58,237,.1);color:var(--purple)}
+
+@media (max-width:768px){
+  .iq-card{padding:18px 16px}
+  .iq-q{font-size:16px}
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style><!-- SEO Start -->
+<meta name="description" content="动手实战篇考察实战：面试官、老板、技术同事会怎样考你 AI Agent 产品化？30 道真实场景问题，每题附考察意图、答题框架与加分点：Demo 到产品的差距、生图产品化、Agent 卡死控制、上下文压缩、长期记忆、Prompt Harness、多 Agent 协作、权限安全、MCP 生态、成本控制。">
+<meta name="keywords" content="AI产品经理面试题,Agent产品化,Agent卡死,上下文压缩,长期记忆,多Agent,MCP,AI PM面试">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="他们会这样考你 · 从 Demo 到产品 30 问">
+<meta property="og:description" content="面试官、老板、技术同事会怎样考你 AI Agent 产品化？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/interview-3.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/interview-3.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="他们会这样考你 · 从 Demo 到产品 30 问">
+<meta name="twitter:description" content="面试官、老板、技术同事会怎样考你 AI Agent 产品化？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+  <header class="lesson-header">
+    <div class="kicker">他们会这样考你</div>
+    <h1>实战 · 从 Demo 到产品 · 30 道灵魂拷问</h1>
+    <p class="subtitle">动手实战篇学完了，你已经知道 Demo 和产品之间隔着什么。这 30 个问题来自三个真实场景，先自己开口回答，再看框架。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每题附考察意图、答题框架与加分点：Demo 到上线的差距 / Agent 卡死 / 上下文压缩 / 记忆设计 / 多 Agent / MCP / 成本账单</p></aside><!--seo:end-->  <section>
+    <div class="iq-intro">
+      <div class="iq-intro-title">怎么用这一页</div>
+      <div class="iq-intro-lead">每道题都标注了提问者。他们问同一块知识，想听的东西却不一样。</div>
+      <div class="iq-role-rows">
+        <div class="iq-role-row" style="background:rgba(0,102,255,.05)"><span class="rr-name" style="color:var(--accent)">🎙 面试官</span><span class="rr-desc">想验证你是真做过，还是只看过 Demo</span></div>
+        <div class="iq-role-row" style="background:rgba(217,119,6,.06)"><span class="rr-name" style="color:var(--amber)">👔 老板</span><span class="rr-desc">要的是解释、方案和一个能兑现的承诺</span></div>
+        <div class="iq-role-row" style="background:rgba(124,58,237,.05)"><span class="rr-name" style="color:var(--purple)">🛠 技术同事</span><span class="rr-desc">在试探你会画多大的饼、懂多少代价</span></div>
+      </div>
+      <div class="iq-intro-foot">每题给出三层：<strong>对方在考察什么 → 答题框架 → 加分点</strong>。答不上来的环节，点末尾的课程页回去补。</div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q1</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「假设你们团队一天就调通了生图 API，Demo 演示效果很好。你觉得离真正上线还差多远？差在哪？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">这是判断你<strong>有没有真的把 AI 功能推上线过</strong>的分水岭题。只玩过 Demo 的人会说「再打磨一下就能上」；上过线的人知道，调通 API 只是 10%，剩下 90% 全是产品化工作，能一条条数出来。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给结论：</strong>调通 API 只是 10%。真实案例里从调通到上线花了三个月，差的东西可以按四个维度盘点。</li>
+          <li><strong>体验层：</strong>生成进度反馈、失败一键重试、多张结果供选择、历史记录可回看。Demo 里用户干等 30 秒没人管，产品里不行。</li>
+          <li><strong>质量层与工程层：</strong>质量靠 Prompt 优化（用 LLM 把用户的人话翻译成生图模型能懂的描述）加角色一致性锚定；工程靠多模型降级链、超时重试、成本限额、结果持久化。模型一定会挂，挂了之后的体验才是产品。</li>
+          <li><strong>安全层：</strong>输入输出双重内容审核、版权风险、用户参考图的隐私策略。Demo 可以裸奔，产品裸奔会出事故。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点一句这张清单的通用性：换成任何 AI 功能，从 Demo 到 Production 都是体验、质量、工程、安全四个维度。面试官听到你有方法论，比听到你背清单印象深得多。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-5" data-lesson-id="9-5">生图的产品化清单</a>
+        <a href="/dashboard/learning?lesson=9-2" data-lesson-id="9-2">用 AI 给 AI 写 Prompt</a>
+        <a href="/dashboard/learning?lesson=9-4" data-lesson-id="9-4">模型会挂，然后呢？</a>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q2</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「用户反馈说 Agent 转了半个小时还没停，最后啥也没给出来。怎么回事？你打算怎么让这种事以后别再发生？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板要的是<strong>根因解释加防护承诺</strong>，两样都要。只会说「模型抽风了」的人露馅：说明你既讲不清卡死的模式，也拿不出让它自己停下来的机制。答「我让技术加个超时」也只算半分，那只是最粗的一层。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先解释根因：</strong>生产环境的 Agent 卡死有四种典型模式：同参数死循环（反复用相同参数调同一工具）、收益递减（跑了 50 轮全是边缘动作）、文本复读（上下文过长后开始车轱辘话）、工具连续失败雪崩（一个工具挂了拖垮整条链路）。先定位这次是哪种。</li>
+          <li><strong>给防护方案：</strong>防呆是三层网。硬限制兜底：迭代上限、总超时、单工具调用次数上限，无条件刹车。检测预警：同参数检测、同工具名检测、收益递减检测，发现异常模式就上报。</li>
+          <li><strong>降级续命：</strong>检测到异常先温柔纠正，注入一条「你已经重复了 3 次，请换一种方法」的提示、暂时禁用故障工具、强制总结当前进度带着半成品返回。对用户来说，带着半成品回来比空手而归好得多。</li>
+          <li><strong>补体验层承诺：</strong>就算 Agent 在跑长任务，用户也要看到进度感，展示当前在做什么，可以随时手动停止。用户骂的其实是「等了半小时还不知道它在干嘛」。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句「用户从来不会报告 Agent 死循环了，他只会说这 AI 怎么这么慢、这么蠢」。能把技术故障翻译成用户视角，老板会觉得你是能兜住这件事的人。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-7" data-lesson-id="9-7">为什么 Agent 会卡死</a>
+        <a href="/dashboard/learning?lesson=9-8" data-lesson-id="9-8">防呆设计：怎么让循环自己停下来</a>
+        <a href="/dashboard/learning?lesson=9-9" data-lesson-id="9-9">流式体验：别让用户干等</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="paywall-locked xa-peek">
+    <!-- Q3 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q3</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们的 AI 助手对话越长越贵、越长越笨。上下文压缩你会怎么设计？什么能删、什么绝对能不动？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你<strong>有没有一套压缩的决策框架</strong>，以及知不知道那条红线。答「找个模型做摘要就行」的人露馅了：既没算过摘要本身的成本，也没意识到删错东西的后果是用户当场发现「我明明说过，你怎么忘了」。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先说为什么必须压：</strong>每一轮对话都要把全部历史重新发给模型。对话越长，费用越高、注意力越分散、离窗口上限越近，三个问题逼着你管理上下文。</li>
+          <li><strong>给分级框架：</strong>可以删的：旧的工具调用结果、已处理完的中间步骤。可以压缩的：AI 的长篇回复、搜索结果，压成一句摘要。绝对能不动的：用户的原始消息、System Prompt、关键偏好设定。</li>
+          <li><strong>点出红线：</strong>用户的话是圣物。宁可删 AI 自己说的 1000 字，也别动用户说的 10 个字。压缩优先级从高到低：工具输出、AI 回复、用户消息永不触碰。</li>
+          <li><strong>说清手段的成本：</strong>本地压缩（截断、规则替换）零成本但粗糙，LLM 摘要精准但本身要花钱。正确顺序是先免费后花钱：先用本地手段砍掉明显的废话，剩下的再考虑 LLM 摘要。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动提用户体感：压缩做得好用户毫无感知，做得差用户会觉得 AI「失忆」了。把压缩当成一个体验指标去做评测，超越纯粹的省钱视角，这个角度很少有人给。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-11" data-lesson-id="9-11">对话越长越贵、越长越笨</a>
+        <a href="/dashboard/learning?lesson=9-12" data-lesson-id="9-12">压缩是一门取舍的艺术</a>
+        <a href="/dashboard/learning?lesson=9-13" data-lesson-id="9-13">用户说的话能不能删？</a>
+        <a href="/dashboard/learning?lesson=9-14" data-lesson-id="9-14">本地压缩 vs LLM 压缩</a>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q4</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「产品要做『让 AI 记住用户』。你打算怎么设计这套记忆系统？所有对话都存下来吗？用户改了主意怎么办？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">连环三问，考你对记忆系统的<strong>完整设计能力</strong>：存什么、怎么更新、怎么用。把「记忆」和「上下文」混为一谈的人第一句就露馅；说「全存下来慢慢查」的人，在成本和噪声这关也过不去。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先分清两套系统：</strong>上下文窗口是白板，写满就擦、对话结束就清空；长期记忆是笔记本，写下的东西下次打开还在。做记忆功能的前提是承认白板靠不住。</li>
+          <li><strong>设计守门员：</strong>用户每天几十上百条消息，「嗯」「好的」「哈哈」占大半，值得记的偏好和事实只有几条。写入前要有一层筛选逻辑，判断这条信息有没有长期价值。</li>
+          <li><strong>处理记忆冲突：</strong>用户上月说喜欢咖啡、这月说改喝茶了，四种策略按场景选：明确替换就覆盖更新；信息互补就合并扩展；无法确定谁对就标记冲突待确认；临时状态（最近太累总睡懒觉）直接跳过不存。</li>
+          <li><strong>算注入的账：</strong>记了 1000 条，每次全塞进 System Prompt 简单但贵且噪声多，按需检索省钱但可能漏。要按记忆规模和场景选注入策略，这是个成本决策。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出「记忆系统的核心能力是更新，光会追加的记忆系统用两个月就变成谣言库」。大部分人只设计了写入，没设计过期和纠错。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-15" data-lesson-id="9-15">上下文 ≠ 记忆</a>
+        <a href="/dashboard/learning?lesson=9-16" data-lesson-id="9-16">什么值得记、什么不值得记</a>
+        <a href="/dashboard/learning?lesson=9-17" data-lesson-id="9-17">记忆冲突：用户改了主意怎么办</a>
+        <a href="/dashboard/learning?lesson=9-18" data-lesson-id="9-18">记忆注入的成本问题</a>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q5</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你 PRD 里写了要上多 Agent 协作，还画了个挺酷的架构图。咱们真需要这么多 Agent 吗？一个搞不定吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术同事在试探你是<strong>真想清楚了还是在追热点</strong>。多 Agent 意味着更多协调成本、更多出错可能，他们要为这些复杂度买单。答不出「为什么一个 Agent 做不到」，这个需求大概率会被打回来。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先认账：</strong>默认立场就是一个 Agent 够用，很多所谓需要多 Agent 的场景，其实是 Prompt 没写好。加第二个 Agent 之前要过三问：一个真做不到吗？复杂度值得吗？有没有更简单的方案（比如工具并行调用）？</li>
+          <li><strong>给三种真需要的场景：</strong>并行加速，5 个来源同时搜比串行快 5 倍；角色分工，Writer 写、Reviewer 审，角色隔离让审查真正有效；风险隔离，子 Agent 解析 PDF 失败了只汇报「这个文件有问题」，主任务不受影响。</li>
+          <li><strong>对号入座：</strong>回到 PRD 里的具体场景，说清它命中的是哪一种。命中了就保留，没命中就当场砍掉，这比守着架构图硬辩好看得多。</li>
+          <li><strong>展示并发常识：</strong>就算上了多 Agent，也要懂「看」可以并行、「改」必须排队。判断一个操作能否并发，关键就一条：它是只读的吗？</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动说「如果这三种场景一个都不命中，我就改回单 Agent」。技术同事最怕的是为 PPT 架构买单的 PM，你先把退路说出来，信任立刻就建立了。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-23" data-lesson-id="9-23">什么时候需要多个 Agent</a>
+        <a href="/dashboard/learning?lesson=9-24" data-lesson-id="9-24">并发的代价：谁能同时跑</a>
+        <a href="/dashboard/learning?lesson=9-25" data-lesson-id="9-25">脑暴：让多个 AI 吵架</a>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q6</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「MCP 现在很火，你说说它和普通的 API 调用有什么区别？对你们产品来说意味着什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对 MCP 的理解<strong>停在哪一层</strong>。只答「让 AI 调外部工具的协议」的人，和看了一篇科普文的人没区别。真正理解的人会讲双向：你的产品既能消费别人的能力，也能把自己变成别人的工具。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给一层理解：</strong>作为 Client，产品通过 MCP 消费外部能力：日历、邮件、数据库、浏览器，接入一个协议就能用一片生态，省掉逐个对接 API 的成本。</li>
+          <li><strong>再给关键的第二层：</strong>MCP 是双向的。产品也能作为 Server 把自身能力暴露出去，让 Cursor、Claude Desktop、自动化脚本来调用你。单向集成只是工具调用，双向意味着你的 AI 能成为别人的工具。</li>
+          <li><strong>说产品含义：</strong>当多个 Agent 能互相调用，生态就自然形成了。这是从工具到平台的关键跨越，也是产品定位层面的决策，得由 PM 来拍。</li>
+          <li><strong>补工程常识：</strong>接了 10 个 MCP 服务，启动时全连一遍？3 个挂了启动就卡住。注册和连接要分开，用到再连（懒连接）。更进一步，Agent 运行时发现缺工具，可以自己发现并配置新的 MCP 连接。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>用一句话收尾：「MCP 对 AI 产品的意义，类似当年开放平台对移动互联网的意义，先想清楚自己是接入方还是被接入方。」把协议问题抬到生态站位问题，面试官会记住你。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-30" data-lesson-id="9-30">MCP 不只是「调工具」</a>
+        <a href="/dashboard/learning?lesson=9-31" data-lesson-id="9-31">懒连接：不用别连</a>
+        <a href="/dashboard/learning?lesson=9-32" data-lesson-id="9-32">AI 自己加工具</a>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q7</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「这个月 API 账单比上个月翻了三倍，用户量才涨了 20%。钱都烧哪去了？下个月能降下来吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你<strong>懂不懂 Agent 产品的成本结构</strong>。以为成本和消息条数成正比的人，解释不了账单为什么跑得比用户量快。能把账单拆到轮次和上下文长度这一层的人，才有资格谈怎么降。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先纠正计量单位：</strong>用户发一句话，底层可能跑 10+ 轮循环、几十条 API 消息，而且每一轮都要重发全部历史。成本跟任务复杂度挂钩，随复杂度指数增长，所以账单跑得比用户量快是正常现象，失控才是问题。</li>
+          <li><strong>排查典型的成本刺客：</strong>定时任务复用旧会话，上下文越滚越长，一个选择就能让月账单差 10 倍；卡死的循环空转烧钱；长对话没做压缩，每轮都在为陈年历史付费。</li>
+          <li><strong>给降本组合拳：</strong>定时任务改成每次新建会话；上线循环防呆掐掉空转；上下文压缩砍掉不该重发的 token；按用户和时段设成本限额，监控异常调用。</li>
+          <li><strong>给量化承诺方式：</strong>建立单次任务平均成本的监控看板，把「下个月能不能降」转化成「单任务成本降到多少、异常调用清零」，按周汇报。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句「涨价的另一面是省着用会变笨，压缩过头体验会掉」，主动把成本和体验的权衡摆到桌面上，说明你在做产品决策，没有单纯当会计。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-10" data-lesson-id="9-10">一条消息背后的真实成本</a>
+        <a href="/dashboard/learning?lesson=9-26" data-lesson-id="9-26">定时任务的成本陷阱</a>
+        <a href="/dashboard/learning?lesson=9-11" data-lesson-id="9-11">对话越长越贵、越长越笨</a>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q8</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「我们产品要加生图功能。文生图和垫图你打算怎么选？别说都试试，给我几个具体场景。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你知不知道<strong>这是生图产品的第一个分岔口</strong>。文生图和垫图是两种完全不同的产品策略，答「哪个效果好用哪个」的人，说明没在真实产品里做过生图决策。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲核心区别：</strong>文生图是从无到有，模型每次对角色的想象都不一样；垫图是拿参考图当锚，外貌锁死，只变场景和动作。</li>
+          <li><strong>给场景对照：</strong>纯背景图、食物物品特写、创意发散，用文生图，自由度高还便宜；角色出镜、角色换装（脸不变衣服变）、多场景系列图，必须垫图，否则用户会发现「怎么每张长得都不一样」。</li>
+          <li><strong>给判断口径：</strong>就问一句「这张图有没有『必须还是同一个人』的约束」。有，走垫图；没有，文生图更灵活。</li>
+          <li><strong>补产品含义：</strong>选垫图意味着要先建标准参考图这套素材资产，这是排期里要算进去的产品侧工作量。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点破「有没有参考图，决定的是两条完全不同的产品策略」，差的不只是出图效果，是整条素材管线和成本结构。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-1" data-lesson-id="9-1">文生图 vs 垫图</a>
+        <a href="/dashboard/learning?lesson=9-3" data-lesson-id="9-3">角色一致性</a>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q9</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「用户输入『画个夕阳下的猫』，直接把这句话发给生图模型不行吗？为什么你们中间还要过一道 LLM，多花一次钱？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你理不理解生图产品的<strong>核心架构：Prompt 二次翻译层</strong>。这一层看起来多余，其实是出图质量的命门。答不出「为什么必须翻译」的人，做出来的生图功能就是抽卡机。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给结论：</strong>用户想的和生图模型需要的是两种语言，中间必须有一层 LLM 做翻译，把一句话扩写成几百 token 的精确视觉描述。</li>
+          <li><strong>给三个理由：</strong>用户不会写生图 Prompt，没人会主动打出 golden hour lighting 这种词；模型理解不了模糊意图，「发呆」对它来说根本没画面；每个生图模型方言还不同，Midjourney、DALL-E、Stable Diffusion 偏好各异，得按目标模型定制。</li>
+          <li><strong>举个例子：</strong>「Alice 在阳台发呆」经过翻译层，会变成站姿、神态、灯光、发型、标志性项链、构图俱全的英文长描述，出图才稳定。</li>
+          <li><strong>给架构定位：</strong>这层翻译写进生图的产品化清单里，是固定架构，省掉它省的是小钱，赔的是出图质量。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句：翻译层还是统一注入角色特征（发型、项链这些锚点）的地方，它和角色一致性策略天然长在一起。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-2" data-lesson-id="9-2">用 AI 给 AI 写 Prompt</a>
+        <a href="/dashboard/learning?lesson=9-5" data-lesson-id="9-5">生图的产品化清单</a>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q10</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你提的这个 bug『IP 形象每次生成都长得不一样』，我调调温度、固定一下种子就行了吧？没多大事。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术在试探你是把角色一致性当<strong>调参问题还是产品设计问题</strong>。你要是点头说好，过两周这个 bug 会原样回来，还多了一句「参数已经调过了」。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先定性：</strong>这是生图产品最难的问题之一，调参数解决不了。纯文字描述连续生成四次，脸型、发型、体态、画风全在漂，文字锁不住视觉身份。</li>
+          <li><strong>给方案：</strong>为 IP 制作标准化角色参考表（Character Reference Sheet），每次生图把参考图一起发给模型，让模型「看着画」，用垫图锚定。</li>
+          <li><strong>说锚定什么：</strong>脸型体型（五官比例、身材轮廓）、表情风格（预先备好多种表情变体）、穿搭（标志性服装，换装场景只换衣服不换脸）。</li>
+          <li><strong>补边界：</strong>降级链里有的备选模型不支持垫图，切过去会退化成纯文生图，一致性会掉，这个损失要在降级方案里预先声明，别到时候当事故处理。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动认领产品侧工作量：参考图资产的制作和维护是 PM 要推动的事，别让技术觉得你只会提要求。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-3" data-lesson-id="9-3">角色一致性</a>
+        <a href="/dashboard/learning?lesson=9-1" data-lesson-id="9-1">文生图 vs 垫图</a>
+        <a href="/dashboard/learning?lesson=9-4" data-lesson-id="9-4">模型会挂，然后呢</a>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q11</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们生图依赖第三方模型。哪天 Gemini 超时了、Seedream 又限流了，你的产品怎么办？讲讲你的降级设计。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你有没有<strong>「模型一定会挂」的工程兜底思维</strong>。答「等它恢复」或者「弹个错误提示」的人，没被凌晨的告警电话叫醒过。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先走一遍链路：</strong>模型 A 超时 15 秒触发熔断，自动切模型 B；B 限流，继续切 C；C 成功出图。全程用户只看到「正在画」，感知不到后面换了三个模型。</li>
+          <li><strong>给三个机制：</strong>优先级加白名单，角色出镜用一致性最好的模型，纯背景用便宜快的；探活，定时检测各模型健康状态，确认宕机的直接跳过，恢复了自动回来；垫图降级，备选模型不支持垫图就退化成文生图，质量降一档但图能出。</li>
+          <li><strong>给全挂兜底：</strong>所有模型都挂时，给友好文案「服务繁忙，已加入队列，完成后通知你」，永远不给冷冰冰的报错页。</li>
+          <li><strong>收一句原则：</strong>用户不关心哪个模型挂了，只关心图能不能出来。降级设计的目标是把故障翻译成体验损耗最小的等待。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说降级链的验收标准是「最差体验」：设计得好，最差也只是多等几秒或收到一句友好提示，这才叫产品化。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-4" data-lesson-id="9-4">模型会挂，然后呢</a>
+        <a href="/dashboard/learning?lesson=9-5" data-lesson-id="9-5">生图的产品化清单</a>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q12</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你简历上写熟悉 Agent。那你说说 Agent 循环呗，就是『想、做、看』三步转圈，对吧？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">这是道陷阱题，考你<strong>是背过教科书还是见过生产环境</strong>。顺着点头说「对」的人直接掉坑里，面试官等的是你把教科书省略的部分讲出来。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先接住：</strong>教科书的 ReAct 确实是 Think、Act、Observe 三步，这是骨架，没错但远远不全。</li>
+          <li><strong>再展开：</strong>生产环境里一轮循环实际要跑 11 步左右，多出来的包括上下文裁剪和 token 预算检查、系统指令注入、权限校验和参数合规、并发调度、超时监控和错误兜底、结果回写、安全审计日志。</li>
+          <li><strong>点本质：</strong>多出来的这些步骤才是工程量大头，Agent 能不能稳定、安全、可用，靠的正是教科书里没有的部分。</li>
+          <li><strong>举一个说透：</strong>权限校验这一步决定这个工具当前用户能不能调、参数合不合法，缺了它，Agent 上线第一天就是安全事故。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句排期视角：真实 Agent 每转一圈要做的事比教科书多 5 倍，评估工作量时要按 11 步算，按 3 步算的排期一定爆。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-6" data-lesson-id="9-6">教科书的 3 步 vs 真实的 N 步</a>
+        <a href="/dashboard/learning?lesson=9-8" data-lesson-id="9-8">防呆设计</a>
+      </div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q13</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「一个工具调用要在后台跑 30 秒。这 30 秒，用户屏幕上应该有什么？给我讲讲你的方案。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你的<strong>AI 产品交互功底</strong>。只答「加个 loading 动画」的人，没琢磨过等待体验。面试官想听的是一套完整的进度感设计。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给原则：</strong>用户能忍受等待，不能忍受不知道在等什么。进度感三原则：让用户看见过程、让进度可感知、让输出渐进出现。</li>
+          <li><strong>给手段清单：</strong>状态文案（「正在搜索」「正在分析」）；把正在调用的工具名直接展示出来；逐 token 流式输出；阶段标记（第 1 步 / 共 3 步）；先给中间产物，比如先出大纲再填细节。</li>
+          <li><strong>给对比画面：</strong>同样等 30 秒，一边只有转圈动画，用户在怀疑卡死；另一边是滚动的状态流「找到 3 条结果」「已分析 2/5 个文件」，用户在阅读。体感完全是两个产品。</li>
+          <li><strong>补一层控制感：</strong>长任务要给随时可点的停止按钮，能叫停的等待才不焦虑。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点破「进度感 ≠ 进度条」：AI 任务时长本来就没法精确预估，核心是让用户觉得 AI 在认真干活，流式输出本身就是最好的进度条。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-9" data-lesson-id="9-9">流式体验：别让用户干等</a>
+        <a href="/dashboard/learning?lesson=9-8" data-lesson-id="9-8">防呆设计</a>
+      </div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q14</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你 PRD 里写着『单次任务成本控制在 5 美分以内』。你知道用户发一句『帮我重构这个模块』，底层实际烧掉多少 token 吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术在试探你 PRD 里的成本数字<strong>是算过账还是拍脑袋</strong>。报不出量级的 PM，写的成本指标没人当真。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>直接报量级：</strong>查天气这种简单任务，2 轮循环 6 条消息，约 1000 token，成本 $0.003；分析 PDF 要 6 轮，约 5700 token，$0.02；重构代码要 12 轮、二十多条消息、近 8000 token，$0.08。任务复杂度不同，成本差几十倍。</li>
+          <li><strong>指出成本大头：</strong>System Prompt 每一轮都重发；工具返回的长文本（整个文件内容、整页搜索结果）是隐形大户；上下文滚雪球，后面每一轮都要带上前面所有消息。</li>
+          <li><strong>修正指标写法：</strong>成本上限按任务类型分档设定，配上单任务成本监控，别一刀切一个数。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出 Agent 成本最反直觉的地方：它随轮次滚雪球，增长超越线性，和传统「一次调用一次计费」的 API 直觉完全不同。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-10" data-lesson-id="9-10">一条消息背后的真实成本</a>
+        <a href="/dashboard/learning?lesson=9-11" data-lesson-id="9-11">对话越长越贵、越长越笨</a>
+      </div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q15</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「用户反馈你们的 AI 聊到后面越来越蠢，之前说过的要求老是忘。这是用户的错觉，还是真有机制上的原因？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你懂不懂<strong>长上下文的三重代价</strong>。答「可能是模型不稳定」的人，说明没理解上下文机制，这个锅模型不背。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给结论：</strong>不是错觉，是三个机制叠加。费用递增：每轮要重发全部历史，第 8 轮的单次成本能到第 1 轮的 20 倍；注意力衰减：模型对上下文两头热中间冷，第 3 轮提的重要需求到第 8 轮很可能被忽略；窗口溢出：128K 窗口写满后，最早的消息直接被丢掉，AI 是真的看不到了。</li>
+          <li><strong>区分表现：</strong>「变蠢」主要来自注意力衰减和窗口溢出，「变贵」来自费用递增，两个症状一个根因：上下文无节制变长。</li>
+          <li><strong>给动作：</strong>上下文管理是必答题，上压缩策略，同时把用户偏好这类关键信息单独保全，不跟着长对话一起稀释。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出最反直觉的一条：用户以为 AI 忘的是最早说的话，其实注意力最低的是对话中段，中间那轮提的需求才是最危险的。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-11" data-lesson-id="9-11">对话越长越贵、越长越笨</a>
+        <a href="/dashboard/learning?lesson=9-12" data-lesson-id="9-12">压缩是一门取舍的艺术</a>
+      </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q16</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「上下文压缩我打算直接调个模型来做摘要，反正效果好。每轮都压一遍，你看行吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">他拿着锤子看什么都是钉子。考你知不知道<strong>压缩是条流水线，先免费后花钱</strong>，顺序反了就是拿钱换懒。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>摆两种手段的账：</strong>本地压缩靠正则、截断、模板替换，零成本、延迟不到 1 毫秒，但粗糙；LLM 压缩让另一个模型读一遍写摘要，精准保语义，但每次都是一笔 API 钱、1 到 5 秒延迟。</li>
+          <li><strong>给正确顺序：</strong>四步流水线。先本地截断，删工具输出、砍超长 JSON；再模板替换，重复结构换占位符；然后检查还超不超窗口；实在压不下去，最后一步才请 LLM 精炼。</li>
+          <li><strong>按内容分工：</strong>工具输出、JSON 结果、重复内容交给本地压缩就够了；多轮对话摘要、复杂上下文浓缩才值得花 LLM 的钱。</li>
+          <li><strong>下结论：</strong>每轮都跑 LLM 摘要，等于给每次对话加一笔固定税。两种手段是流水线上的先后环节，用不着二选一。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>提醒他压缩优先级：先删工具原始输出，再压 AI 自己的回复，用户的原话永远不碰。压缩手段再省钱，删了用户的话就是负分。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-14" data-lesson-id="9-14">本地压缩 vs LLM 压缩</a>
+        <a href="/dashboard/learning?lesson=9-13" data-lesson-id="9-13">用户说的话能不能删？</a>
+      </div>
+    </div>
+
+    <!-- Q17 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q17</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们的记忆系统存了 1000 条用户记忆。每次对话，这 1000 条是全塞给模型，还是怎么处理？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你有没有算过<strong>记忆注入的成本账</strong>。答「全塞进去保险」的人没算过钱，也不知道噪声会把模型淹死。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先否掉全量注入：</strong>它只在记忆很少时可行。1000 条全塞进 system prompt，每次调用都为这堆 Token 付费，绝大多数还和当前问题无关，纯噪声，AI 反而找不到重点。</li>
+          <li><strong>给推荐链路：</strong>用户发消息后先做语义检索，从记忆库里捞出最相关的 3 到 10 条，只把这几条注入 system prompt，再让模型回复。</li>
+          <li><strong>点出核心原则：</strong>记忆的价值在于每次能拿出最相关的几条，存了多少条本身不重要。随着记忆增长，按需检索是唯一可扩展的方案。</li>
+          <li><strong>用类比收尾：</strong>好的记忆系统像称职的秘书，从不把整个档案柜搬进会议室，只提前把今天要用的三份文件放在桌上。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句取舍：按需检索的代价是可能漏召回，所以检索参数要留给产品调，宁可多召回两条，也别让用户发现「我上次明明说过」。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-18" data-lesson-id="9-18">记忆注入的成本问题</a>
+        <a href="/dashboard/learning?lesson=9-16" data-lesson-id="9-16">什么值得记、什么不值得记</a>
+      </div>
+    </div>
+
+    <!-- Q18 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q18</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们的 System Prompt 现在多长？谁在维护？改一句话要不要全量回归测试？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">三连问全指向一个点：<strong>你的 System Prompt 是一坨文本还是一个工程</strong>。说不出结构的人，产品稍微复杂一点就会陷进「改一处坏三处」的泥潭。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给结构：</strong>生产级 System Prompt 分四层管理。身份层管我是谁，名字、性格、能力边界，几乎不变；环境层管现在什么情况，用户语言、系统状态，每次会话可能不同；工具层管能用什么，随功能迭代增删；行为层管怎么行动，输出格式、决策优先级、安全护栏，迭代最频繁。</li>
+          <li><strong>讲分层的收益：</strong>改一层不影响其他层，加工具只动工具层，调风格只动行为层；产品、工程、运营各改各的文件，Git 合并不冲突。</li>
+          <li><strong>回答回归问题：</strong>A/B 测试只替换行为层，其他三层不动，变量单一；出问题按层排查，是人设错了、环境过时、工具描述有误还是规则冲突，一层层看。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出频率差异是分层依据：身份层几年不动，行为层每周在改。变化频率不同的东西混在一个文件里，就是把稳定的东西反复暴露在手抖风险下。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-19" data-lesson-id="9-19">System Prompt 不是一坨文本</a>
+      </div>
+    </div>
+
+    <!-- Q19 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q19</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「咱们工具越加越多，马上到 100 个了。工具描述全在 System Prompt 里，一次请求光描述就几万 Token，你说怎么办？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你知不知道<strong>按需加载</strong>这个解法，以及它省的远不只是钱。工具一多，全量塞的不止是 Token 账单，还有模型选错工具的概率。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先确认账单：</strong>课程里的估算，100 个工具全量加载约 3.4 万 Token，按需加载只要约 2800，省 90% 以上。这笔钱是每次请求都在花的。</li>
+          <li><strong>给三步方案：</strong>首轮只给名字列表，工具名加一句话说明，让 AI 知道有这个能力；AI 决定调用时，系统再动态注入完整描述和参数格式；用完就收回，下一轮回到只有名字的状态。</li>
+          <li><strong>点出第二重收益：</strong>AI 和人一样，给太多信息反而找不到重点。按需加载在省钱之外还提高了选工具的准确率。</li>
+          <li><strong>用类比讲给团队听：</strong>公司通讯录不放每个人的完整简历，只放名字和职位，真要合作再看详细资料。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>把这题和缓存串起来：工具描述如果放在 System Prompt 前缀里频繁增删，还会把 KV Cache 一起打废，按需加载等于一石三鸟。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-20" data-lesson-id="9-20">不用的东西别给 AI 看</a>
+        <a href="/dashboard/learning?lesson=9-22" data-lesson-id="9-22">提示词和缓存的微妙关系</a>
+      </div>
+    </div>
+
+    <!-- Q20 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q20</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「System Prompt、Tool、Skill，这三样东西分别管什么？为什么不把 Skill 的内容直接写进 System Prompt？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能不能把 Prompt 体系讲出<strong>职责边界</strong>。这三样混着用的产品，行为没法迭代也没法追溯，考官在看你有没有把 Prompt 当资产管理的意识。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>一句话分工：</strong>System Prompt 管我是谁，全局身份，很少改；Tool 管我能做什么，能力菜单，中频改；Skill 管遇到某件事怎么一步步做好，特定任务的流程指引，高频迭代、独立版本。</li>
+          <li><strong>拆 Skill 的结构：</strong>触发条件定什么时候加载；允许的工具列表用白名单控风险；执行流程写清从确认需求到交付的每一步；输出格式要求保证每次产出质量一致。</li>
+          <li><strong>回答为什么不进 System Prompt：</strong>System Prompt 是全局的，改了影响所有场景；Skill 按需加载，只在匹配任务时注入，不污染其他任务。而且文件即配置，谁改了什么 Git 里一目了然。</li>
+          <li><strong>落到运营价值：</strong>Skill 让 Prompt 可复用、可迭代、可追溯，改文件就是改行为，这是把 Prompt 当代码管的起点。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一个生命周期视角：编写、注册、触发、迭代四步，每个任务一个文件。面试时能画出这个闭环，比背三个名词强得多。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-21" data-lesson-id="9-21">Skill：可运营的 Prompt 模块</a>
+        <a href="/dashboard/learning?lesson=9-19" data-lesson-id="9-19">System Prompt 不是一坨文本</a>
+      </div>
+    </div>
+
+    <!-- Q21 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q21</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「我把 Skill 的内容直接拼进 System Prompt 了，实现最简单。最近账单有点涨，跟这个有关系吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你懂不懂 <strong>KV Cache 的前缀命中规则</strong>，以及能不能把一个实现细节和账单涨幅挂上钩。这是产品经理少有的能直接指出工程省钱点的机会。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲规则：</strong>缓存对 System Prompt 算指纹，前缀一模一样才命中，差一个字全部重算。这不只是时间戳的问题，任何动态内容插进前缀都一样。</li>
+          <li><strong>指出问题：</strong>Skill 拼进 System Prompt，切换 Skill 就是换前缀，缓存立刻作废。课程里的模拟，这种注入方式命中率只有 20% 左右。</li>
+          <li><strong>给修法：</strong>Skill 作为独立消息追加在 System Prompt 之后，前缀永远不变，命中率能到 90% 左右。用户 ID、Session 标记这些变化的东西同理，全部后置。</li>
+          <li><strong>给原则：</strong>别动前缀。所有可能变化的内容放到 System Prompt 之后，让前缀永远稳定。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>接上Harness 核心篇的经典反例：动态时间戳毁缓存只是特例，这一课的结论更广，所有动态注入前缀的内容都是缓存杀手。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-22" data-lesson-id="9-22">提示词和缓存的微妙关系</a>
+        <a href="/dashboard/learning?lesson=9-21" data-lesson-id="9-21">Skill：可运营的 Prompt 模块</a>
+      </div>
+    </div>
+
+    <!-- Q22 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q22</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「多 Agent 系统里，哪些操作可以同时跑、哪些必须排队？给我一条能落地的判断规则。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能不能把并发这个工程概念<strong>压缩成一条产品可执行的规则</strong>。答得出规则还能说出例外，才算真理解。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给出那条规则：</strong>这个操作执行完，世界有没有变？没变就可以并行，变了就必须排队。搜索、读文件、查 API 是只读，10 个一起跑互不影响；写文件、发邮件、支付会改变外部状态，两个同时改一个文件就是数据覆盖。</li>
+          <li><strong>算收益：</strong>课程里的例子，3 次搜索加 1 次写入，并行编排约 4 秒，全串行约 8 秒。搜索并行跑、写入排最后，时间省一半。</li>
+          <li><strong>补上例外：</strong>两个写操作改的是不同的东西，不同文件、不同表，也可以并行。冲突只发生在多个操作改同一个资源时。</li>
+          <li><strong>落到设计动作：</strong>设计多 Agent 系统的第一步，就是把工具分成读和写两类，这个分类是产品要给工程的输入。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>把规则说成一句话记忆点：看可以一起看，改必须排队改。面试官记住的往往就是这一句。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-24" data-lesson-id="9-24">并发的代价：谁能同时跑</a>
+        <a href="/dashboard/learning?lesson=9-23" data-lesson-id="9-23">什么时候需要多个 Agent</a>
+      </div>
+    </div>
+
+    <!-- Q23 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q23</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「让三个 AI 讨论同一个问题，和把问题问三遍，有区别吗？你要是做脑暴功能，怎么保证它不是自欺欺人？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你懂不懂<strong>脑暴模式的关键机制</strong>。做错了，三个 Agent 互相附和，产出和问一遍没区别，还多花三倍钱。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给机制：</strong>同一个问题扔给多个 Agent，各自从不同角色出发独立回答，比如产品视角、数据视角、用户视角，最后由主持人 Agent 整合。</li>
+          <li><strong>点出铁律：</strong>每个 Agent 必须独立思考，不能看到别人的答案。和人类脑暴「先各自写，再一起讨论」同一个道理，B 看了 A 的答案就会被带偏，脑暴就废了。这就是和问三遍的本质区别，问三遍是同一个上下文里的三次采样，视角没变。</li>
+          <li><strong>讲产出物：</strong>主持人汇总的不只是共识，还要标注分歧。三个 Agent 意见一致说明方向明确；有分歧说明这个问题值得更深入讨论，分歧本身就是价值。</li>
+          <li><strong>补效率账：</strong>思考类任务天然可并行，三个 Agent 同时想，总耗时等于最慢那个，时间不会翻三倍，钱会，所以只把它用在值得多视角的问题上。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出角色设定是产品活：给三个 Agent 分别写什么人设，决定了视角差异的质量，这比「多跑几个」重要得多。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-25" data-lesson-id="9-25">脑暴：让多个 AI 吵架</a>
+        <a href="/dashboard/learning?lesson=9-23" data-lesson-id="9-23">什么时候需要多个 Agent</a>
+      </div>
+    </div>
+
+    <!-- Q24 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q24</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「咱们让 AI 每小时整理一次舆情，功能挺好，但我看这项的成本一天比一天高，月底账单吓我一跳。这是怎么回事？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">「一天比一天高」是关键线索，指向<strong>定时任务复用会话的成本雪球</strong>。你要能从账单形状反推出实现问题，并给一个立刻见效的修法。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>说出根因：</strong>定时任务复用了旧会话，上下文每次都在累积。第 1 次执行约 2000 Token，第 10 次约 2 万，第 24 次约 4.8 万，每次请求都在为全部历史付费，所以账单逐日爬坡。</li>
+          <li><strong>给修法：</strong>每次执行新建会话，从零开始。第 24 次的成本和第 1 次一模一样。课程里的对比，跑 7 天每天 24 次，复用会话约 50 美元，新建会话约 5 美元，差 10 倍。</li>
+          <li><strong>回答为什么可以这么改：</strong>大多数定时任务不需要记忆，每次整理当前的舆情就够了，用不着知道昨天整理过什么。真需要延续的信息，摘要存外部、下次带进去，别拖着完整历史。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给老板一个巡检习惯：凡是成本曲线随时间上翘的 AI 功能，先查是不是上下文在累积。这个模式一眼能认。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-26" data-lesson-id="9-26">定时任务的成本陷阱</a>
+        <a href="/dashboard/learning?lesson=9-11" data-lesson-id="9-11">对话越长越贵、越长越笨</a>
+      </div>
+    </div>
+
+    <!-- Q25 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q25</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们产品里的 AI，权限是怎么定的？所有功能一个标准，还是分开定？依据是什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你有没有把权限当成<strong>一条光谱来设计，别当成一个开关</strong>。答「我们要求都确认」或「我们信任 AI」的人，都还没入门。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先立光谱观：</strong>从完全自主到每步审批是一条光谱，中间还有多档。全部放权 AI 可能搞砸一切，每步审批用户会疯掉，产品要做的是给每类操作找到光谱上的位置。</li>
+          <li><strong>给三个定位维度：</strong>操作的可逆性，发消息不可逆、读文件可逆；出错的代价，删数据代价高、搜索代价低；用户的信任度，新用户谨慎、老用户放权。</li>
+          <li><strong>回答分不分开：</strong>同一个产品里，不同功能用不同的权限模式。读日历自动执行，发邮件要确认，这才是正常形态，一刀切才是偷懒。</li>
+          <li><strong>收到本质：</strong>给 AI 多大自由，本质是在回答一个产品问题：这件事出错了，谁来负责？</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句动态性：权限位置可以随信任演化，用户用了三个月、确认了一百次没出过事，可以给他一个「以后这类不用问我」的选项。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-27" data-lesson-id="9-27">AI 该有多大的自由</a>
+        <a href="/dashboard/learning?lesson=9-28" data-lesson-id="9-28">弹窗太多用户烦，不弹又不安全</a>
+      </div>
+    </div>
+
+    <!-- Q26 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q26</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「用户投诉确认弹窗太多，砍掉之后又出了误删事故。弹窗这个度，你怎么拿捏？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你会不会用<strong>风险分级</strong>跳出「弹与不弹」的二选一。这是 Agent 产品最常见的体验与安全冲突，几乎每场面试都会换个皮问一遍。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>破题：</strong>问题出在无分级。每步都弹，用户点 5 次允许就想卸载；全不弹，删错文件没人兜底。答案是低风险自动执行、高风险必须确认。</li>
+          <li><strong>给分级线：</strong>读文件、搜索、查日历这类不改变状态的操作不弹窗；删除文件、发送消息、支付、改权限这类不可逆或影响大的操作必须确认。</li>
+          <li><strong>回答谁来定级：</strong>三个选项。产品经理在设计阶段预定义每个工具的风险等级，最常见；让 AI 根据上下文判断这件事要不要问人，更灵活但不一定准；用户自定义，最灵活但有配置成本。可以组合用，底线档永远人工定。</li>
+          <li><strong>升华一层：</strong>好的权限设计不是要不要弹窗的二选一，是对什么时候弹、弹什么的精细控制。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>提到弹窗文案也是分级的一部分：高危弹窗要说清这个操作不可逆、影响什么，让用户做的是知情决策，而点掉一个烦人的框不算。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-28" data-lesson-id="9-28">弹窗太多用户烦，不弹又不安全</a>
+        <a href="/dashboard/learning?lesson=9-27" data-lesson-id="9-27">AI 该有多大的自由</a>
+      </div>
+    </div>
+
+    <!-- Q27 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q27</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「用户说 Agent 在后台跑了三分钟才出结果。这三分钟它到底在干什么，你能给我说清楚吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板问的是一次，背后要的是<strong>随时都能回答这类问题的能力</strong>。答不上来，说明产品是个黑盒，黑盒没法优化成本、排查故障、改善体验。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>诚实定性：</strong>今天答不精确，说明缺可观测性。要能回答这三分钟调了几个工具、跑了几轮循环、花了多少 Token、中间有没有出错，靠的是事件流和执行报告，不是猜。</li>
+          <li><strong>说清要建什么：</strong>给 Agent 装仪表盘。执行时间线、工具调用统计、Token 消耗分布，每次任务一份执行报告。</li>
+          <li><strong>讲对两边的价值：</strong>对开发，定位哪一步出问题、发现无效循环和浪费的 Token；对产品，理解用户真实使用路径、量化每个功能的成本、给下一版迭代提供数据。</li>
+          <li><strong>给类比：</strong>没有仪表盘的 Agent 像没有仪表盘的车，不知道油量、不知道转速、不知道什么时候抛锚。这是产品化的基本功，不是锦上添花。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>把这次投诉转成立项理由：这三分钟里哪怕只有 30 秒是无效循环，乘上调用量就是实打实的账单，可观测性的建设费用自己就能挣回来。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-29" data-lesson-id="9-29">Agent 干了什么你知道吗</a>
+        <a href="/dashboard/learning?lesson=9-10" data-lesson-id="9-10">一条消息背后的真实成本</a>
+      </div>
+    </div>
+
+    <!-- Q28 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q28</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「产品要接 10 个 MCP 服务，我打算启动时全连一遍，保证随时可用。最近用户反馈启动变慢了，跟这个有关吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你知不知道<strong>懒连接</strong>这个设计，以及能不能看出「全连一遍」在可用性上的隐患。启动慢只是表象，真正的问题是故障会传染。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先确认因果：</strong>10 个服务启动全连，只要有几个超时，启动就被拖住。课程里的真实数据，启动时全连要 30 秒，改懒连接后 0.2 秒，用户感受是秒开。</li>
+          <li><strong>给三个原则：</strong>注册不等于连接，启动时只声明有哪些工具可用，不建网络连接；首次使用时才连，大多数工具可能一整天都用不到；故障隔离，某个服务挂了只影响那一个工具，其他照常。</li>
+          <li><strong>点出产品含义：</strong>这不只是技术优化，是稳定性的基本设计。全连模式下任何一个第三方服务出问题都会拖累整个产品，懒连接把爆炸半径锁在单个工具里。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一个体验细节：连不上的工具要在用户真正用到时给出清晰提示加重试入口，别在启动时就把失败摊给所有用户看。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-31" data-lesson-id="9-31">懒连接：不用别连</a>
+        <a href="/dashboard/learning?lesson=9-30" data-lesson-id="9-30">MCP 不只是「调工具」</a>
+      </div>
+    </div>
+
+    <!-- Q29 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q29</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「我看到个演示，用户说帮我查日历，AI 发现没配日历工具，自己就去装了一个。这也太智能了，咱们能做吗？会不会有风险？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板一半兴奋一半担心，你要两头都接住：讲清<strong>自配置的机制和它必须配的四道安全设计</strong>，既不泼冷水也不无脑吹。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲机制：</strong>传统做法是报错说不支持，用户得自己去设置页找 MCP 配置项、填参数、测连通，大多数人根本不会。自配置是 Agent 根据需求匹配到候选工具，问用户一声，同意后自动完成配置，门槛从会配置降到会说话。</li>
+          <li><strong>给四道安全设计：</strong>能力发现，Agent 只能从工具注册中心或预定义候选列表里挑，来路不明的不装；用户授权，必须告知要连接什么服务、等明确同意，AI 不能偷偷连，这是信任底线；即时生效，配置完热加载，当前对话无缝继续；安全边界，敏感工具比如数据库必须管理员手动配，不进自配置范围。</li>
+          <li><strong>给结论：</strong>能做，而且值得做。自配置不是让 AI 随意装插件，是把复杂的配置过程自动化，决定权留在用户手里。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>一句话总结给老板：最好的工具管理是 AI 自己管理自己的工具箱，但要用户点头才行。风险的答案就在后半句里。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-32" data-lesson-id="9-32">AI 自己加工具</a>
+        <a href="/dashboard/learning?lesson=9-31" data-lesson-id="9-31">懒连接：不用别连</a>
+      </div>
+    </div>
+
+    <!-- Q30 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q30</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「竞品两周就上了个 AI 助手，咱们做了俩月还没上线。人家不也是接个模型加个聊天框吗，咱们慢在哪？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板在拿<strong>套壳的速度</strong>逼问你产品化的价值。答不好就是效率低，答好了这是一次把整章内容打包讲给老板听的机会。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先承认表象：</strong>接个模型加聊天框确实两周能上。用户看到的就是冰山水面上那一角：聊天界面、智能回复。</li>
+          <li><strong>再讲水面之下：</strong>卡死了怎么停、上下文怎么压、用户的话删不删、记忆怎么筛、权限怎么分级、Agent 干了什么看不看得见、第三方服务挂了怎么办。这些是水面下的产品决策，套壳产品一个都没做。</li>
+          <li><strong>给出差距的量纲：</strong>聊天套壳和真正的 Agent 产品之间，差的是用户看不见的地方上百个正确的产品决策。同一个 Loop 支撑 N 种场景，差异不在代码，在决策。</li>
+          <li><strong>把时间换算成风险：</strong>竞品省掉的两个月，会在上线后以卡死、账单失控、误删事故的形式一笔笔还回来。我们可以砍范围先上核心场景，但水面下的底线决策不能省。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动给一个折中方案：列出哪些决策是上线前必须做完的（安全、成本、兜底），哪些可以上线后迭代（记忆、多 Agent），把「慢」变成一张有优先级的清单。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=9-final" data-lesson-id="9-final">聊天套壳 vs 真正的 Agent 产品</a>
+        <a href="/dashboard/learning?lesson=9-5" data-lesson-id="9-5">生图的产品化清单</a>
+      </div>
+    </div>
+
+    <div class="l-callout">
+      <div style="font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:8px">最后一个建议</div>
+      <div style="font-size:15px;color:var(--text);line-height:1.7">这 30 题的共同底色是<strong>算账和兜底</strong>：卡死了怎么停、上下文怎么压、账单怎么控。能把这些讲顺，说明你真的走过了从 Demo 到产品这段路。讲不顺的地方，点关联课程页回去补上。</div>
+    </div>
+  </section>
+</article>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

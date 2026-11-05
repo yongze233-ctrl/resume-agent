@@ -1,0 +1,1623 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"interview-5",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=interview-5',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>他们会这样考你 · Harness 与自我改进 30 问 | xueai.miyang.cn</title>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 开场说明 ── */
+.iq-intro{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px}
+.iq-intro-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px}
+.iq-intro-lead{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:12px}
+.iq-role-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.iq-role-row{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border-radius:9px;font-size:14px;line-height:1.6}
+.iq-role-row .rr-name{font-weight:800;flex-shrink:0;white-space:nowrap}
+.iq-role-row .rr-desc{color:var(--sub)}
+.iq-intro-foot{font-size:14px;color:var(--sub);line-height:1.7}
+.iq-intro-foot strong{color:var(--text)}
+
+/* ── 题目卡片 ── */
+.iq-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.iq-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.iq-num{font-size:13px;font-weight:900;color:var(--sub);letter-spacing:.5px;font-family:"SF Mono","Fira Code",Menlo,monospace}
+.iq-who{font-size:12px;font-weight:800;padding:3px 11px;border-radius:99px;letter-spacing:.3px}
+.iq-q{font-size:17.5px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:16px}
+
+.iq-block{margin-bottom:14px}
+.iq-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.iq-intent .iq-label{color:var(--amber)}
+.iq-intent .iq-body{font-size:14px;color:var(--sub);line-height:1.75;background:rgba(217,119,6,.05);border:1px solid rgba(217,119,6,.14);border-radius:9px;padding:10px 14px}
+.iq-intent .iq-body strong{color:var(--text)}
+
+.iq-frame .iq-label{color:var(--accent)}
+.iq-frame ol{margin:0;padding-left:0;list-style:none;counter-reset:iqstep;display:flex;flex-direction:column;gap:7px}
+.iq-frame li{counter-increment:iqstep;position:relative;padding:9px 13px 9px 40px;background:rgba(0,102,255,.04);border:1px solid rgba(0,102,255,.1);border-radius:9px;font-size:14px;color:var(--sub);line-height:1.65}
+.iq-frame li::before{content:counter(iqstep);position:absolute;left:12px;top:10px;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.iq-frame li strong{color:var(--text)}
+
+.iq-bonus{font-size:13.5px;color:var(--text);line-height:1.7;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.18);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.iq-bonus b{color:var(--success);font-weight:800;margin-right:4px}
+
+.iq-refs{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--border)}
+.iq-refs-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0}
+.iq-refs a{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;background:rgba(0,102,255,.07);padding:4px 11px;border-radius:99px;transition:background .15s}
+.iq-refs a:hover{background:rgba(0,102,255,.14)}
+
+/* 角色配色 */
+.who-hr{background:rgba(0,102,255,.1);color:var(--accent)}
+.who-boss{background:rgba(217,119,6,.12);color:var(--amber)}
+.who-dev{background:rgba(124,58,237,.1);color:var(--purple)}
+
+@media (max-width:768px){
+  .iq-card{padding:18px 16px}
+  .iq-q{font-size:16px}
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style><!-- SEO Start -->
+<meta name="description" content="自我改进篇考察实战：面试官、老板、技术同事会怎样考你 Harness 与自我改进？30 道真实场景问题，每题附考察意图、答题框架与加分点：Harness 定义、三大设计模式、上下文工程自动进化、递归自我改进的原理与风险。">
+<meta name="keywords" content="AI产品经理面试题,Harness,Agent架构,上下文工程,ACE,MCE,递归自我改进,RSI,奖励黑客,AI PM面试">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="他们会这样考你 · Harness 与自我改进 30 问">
+<meta property="og:description" content="面试官、老板、技术同事会怎样考你 Harness 与自我改进？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/interview-5.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/interview-5.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="他们会这样考你 · Harness 与自我改进 30 问">
+<meta name="twitter:description" content="面试官、老板、技术同事会怎样考你 Harness 与自我改进？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+  <header class="lesson-header">
+    <div class="kicker">他们会这样考你</div>
+    <h1>Harness 与自我改进 · 30 道灵魂拷问</h1>
+    <p class="subtitle">这一章讲的是最前沿的东西，考它的人也最容易分出真假。这 30 个问题来自三个真实场景，先自己开口回答，再看框架。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每题附考察意图、答题框架与加分点：Harness 本质 / 设计模式 / 上下文自动进化 / 奖励黑客 / RSI 进展与风险</p></aside><!--seo:end-->  <section>
+    <div class="iq-intro">
+      <div class="iq-intro-title">怎么用这一页</div>
+      <div class="iq-intro-lead">每道题都标注了提问者。他们问同一块知识，想听的东西却不一样。</div>
+      <div class="iq-role-rows">
+        <div class="iq-role-row" style="background:rgba(0,102,255,.05)"><span class="rr-name" style="color:var(--accent)">🎙 面试官</span><span class="rr-desc">想验证你是真懂，还是在背名词</span></div>
+        <div class="iq-role-row" style="background:rgba(217,119,6,.06)"><span class="rr-name" style="color:var(--amber)">👔 老板</span><span class="rr-desc">要的是解释和承诺</span></div>
+        <div class="iq-role-row" style="background:rgba(124,58,237,.05)"><span class="rr-name" style="color:var(--purple)">🛠 技术同事</span><span class="rr-desc">在试探你值不值得信任</span></div>
+      </div>
+      <div class="iq-intro-foot">每题给出三层：<strong>对方在考察什么 → 答题框架 → 加分点</strong>。答不上来的环节，点末尾的课程页回去补。</div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q1</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「最近大家都在聊 Harness，你说说它到底是什么？为什么有人说它跟模型本身一样重要？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">这是本章的开场检验题。考的是你能把 Harness <strong>讲成一个清晰的系统概念</strong>，还是只会含糊地说「就是套壳」「就是 Agent 框架」。真懂的人能说清它管什么、为什么它决定产品成败。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给定义：</strong>Harness 是围绕基座模型的运行时系统，决定模型如何思考与规划、调用工具与行动、感知与管理上下文、存储制品、评估结果。模型负责智能，Harness 负责让智能落地干活。</li>
+          <li><strong>给证据：</strong>Claude Code、Codex、Cursor 这些成功产品已经证明，Harness 层与原始模型智能同等重要。一个平庸的模型加上优秀的 Harness，往往胜过裸露的更强模型。</li>
+          <li><strong>说清 PM 视角的含义：</strong>换模型很容易，Harness 才是产品真正的护城河。同一个模型，Harness 设计得好坏，用户体验差几个量级。</li>
+          <li><strong>拔高一层：</strong>Harness 正在从工程配角变成优化目标本身。前沿研究让模型改进围绕自己的 Harness，这是递归自我改进的现实路径。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动做 Prompt Engineering 的类比：当年手动 Prompt 技巧随模型变强逐渐淡化，但指定目标、约束、上下文和评估的需求一直都在。Harness 很多改进最终会被内化进模型，但与外部上下文和工具的接口会永远存在。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-1" data-lesson-id="11-1">从脚手架到自我改进系统</a>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">Harness 三大设计模式</a>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q2</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「如果让你设计一个生产级 Agent 的架构，你会遵循哪些设计模式？为什么现在最强的编码 Agent 长得都差不多？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你有没有<strong>架构语言</strong>。露馅的回答是罗列一堆工具名和框架名。对方想听的是模式层面的抽象：为什么这些系统会收敛到相似的结构，每个模式各解决什么问题。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>报出三大模式：</strong>工作流自动化、文件系统做持久记忆、子 Agent 与后台任务。它们覆盖了当前最强 Agent 系统 90% 的架构决策，是结构性需求，没有可选余地。</li>
+          <li><strong>模式一讲循环：</strong>Agent 是目标导向的循环，Plan → Execute → Observe → Improve → 再执行。失败是自我纠正的触发信号：测试不通过、命令报错，Agent 回头分析轨迹再调整。</li>
+          <li><strong>模式二讲记忆：</strong>长任务的制品会迅速超出上下文窗口。正确做法是把持久状态存进文件系统，让 Agent 按需读写。一句话原则：上下文是工作记忆，文件系统是长期记忆。</li>
+          <li><strong>模式三讲并行：</strong>父 Agent 当进程管理器，启动子 Agent、查进度、取消失败分支、合并结果。子 Agent 输出必须持久化成文件，中断也能恢复。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>能说出子 Agent 并行的关键取舍：每个子 Agent 在独立沙箱工作、输出到明确的文件路径，父 Agent 靠轮询文件状态来协调，不做内存共享。这一条能极大简化并发控制，说得出来就是看过真实系统的人。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">Harness 三大设计模式</a>
+        <a href="/dashboard/learning?lesson=11-1" data-lesson-id="11-1">从脚手架到自我改进系统</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="paywall-locked xa-peek">
+    <!-- Q3 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q3</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「咱们那个 Agent，任务一跑长就开始犯傻，前面说过的事后面全忘了。这毛病能治吗？要多久？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板要的是<strong>诊断加方案加节奏</strong>。露馅的回答是「换个更大窗口的模型」，这说明你没看懂病根。真正的问题出在上下文管理策略上，能把这一点讲清楚并给出分阶段方案的人，才值得被信任。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先诊断病根：</strong>大概率是朴素追加式的上下文管理。把所有工具响应和历史全塞进上下文，任务一长窗口就打满，早期信息被挤出去，输出质量骤降。这是策略问题，换大窗口模型只能延后发病。</li>
+          <li><strong>给第一阶段方案：</strong>上文件系统持久记忆。每轮完成后把进度、错误日志、中间结果写文件，释放上下文，下一轮按需读取。上下文占用从持续膨胀变成恒定，可以稳定跑几十轮。</li>
+          <li><strong>给第二阶段方案：</strong>引入 ACE 式的结构化上下文维护。Generator 干活、Reflector 复盘提炼经验、Curator 把经验整理成条目化剧本，增量合并、定期去重。经验越用越精，上下文却越用越薄。</li>
+          <li><strong>给节奏承诺：</strong>第一阶段是工程改造，周级见效。第二阶段需要搭评测集验证收敛，按双周汇报长任务成功率的变化，用指标说话。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句行业判断：长上下文能力和上下文工程是两条腿，模型的窗口再大，也需要管理层来构建结构化、简洁的上下文。这个问题所有做 Agent 的团队都会遇到，咱们解决得早就是优势。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">文件系统做持久记忆</a>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q4</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「上下文工程不就是把 prompt 写好点吗？我看论文里说现在能自动进化了，ACE、MCE 这些你了解吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对前沿的<strong>理解深度和层次感</strong>。背名词的人会把 ACE、MCE 混成一锅粥。真懂的人能说清一条演进线：优化对象在一层层升级，从内容到机制再到系统代码，每一层各自解决什么。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先纠正前提：</strong>手写 prompt 只是起点。优化对象有一条演进线：指令 Prompt → 结构化上下文 → 工作流 → Harness 代码 → 优化器代码。模型越强，能优化的目标就越复杂。</li>
+          <li><strong>讲 ACE：</strong>优化上下文内容。维护一份结构化的 bullet point 剧本，Generator 执行任务、Reflector 从成败轨迹提炼洞察、Curator 用确定性逻辑增量合并条目。从不整块重写，避免上下文坍缩。局限是更新规则仍靠手工设计。</li>
+          <li><strong>讲 MCE：</strong>把「怎么管理上下文」和「上下文里有什么」分开，双层优化。内层给定 skill 找最优上下文，外层比较不同 skill 选最优机制。记的内容和记的方法一起进化。</li>
+          <li><strong>讲 Meta-Harness：</strong>再深一层，优化对象是决定信息如何存储、检索、呈现的代码本身。Proposer 是一个编码 Agent，输出 Pareto 前沿上的 Harness 候选集。最通用，但每改一版都要完整试运行打分，计算最重。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>能一句话总结三者差异：ACE 优化笔记内容，MCE 优化记笔记的方法，Meta-Harness 优化整个工作台的源代码。再补一句核心教训：一旦 Harness 设计变成可执行的搜索空间，强编码 Agent 就能用上人类工程师的同一设计空间。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+        <a href="/dashboard/learning?lesson=11-4" data-lesson-id="11-4">工作流设计：从手工到自动搜索</a>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q5</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你想让 Agent 自己改自己的 Harness？那它顺手把评估器也改了，给自己打满分怎么办？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术同事用一个尖锐的反例试探你<strong>懂不懂自我改进系统的安全设计</strong>。答「加个 prompt 让它别改」会被当场看轻。对方想听的是边界设计：哪些东西必须放在改进循环之外，怎么验证每一次改动。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先承认问题真实：</strong>这就是奖励黑客，自我改进循环里最危险的反模式。优化单元测试会过拟合测试用例，优化评判模型会学会钻空子，优化 benchmark 分数会利用 benchmark 漏洞。</li>
+          <li><strong>给边界原则：</strong>评估器和权限控制必须放在进化循环之外，由人类或不可篡改的独立机制维护。出卷人和改卷人必须独立于被考的学生本人。可编辑面要有界，改到 OS 系统配置这种层级就等于打破了抽象边界。</li>
+          <li><strong>给验证机制：</strong>参考 Self-Harness 的三阶段循环。Weakness Mining 从失败轨迹聚类出失败模式，Harness Proposal 提出有界编辑，Proposal Validation 用 held-in 和 held-out 数据集验证，只接受没有回归的编辑。</li>
+          <li><strong>给能力前提：</strong>STOP 的实验证明递归结构本身不保证改善。GPT-4 能持续进步，弱模型反而放大噪声、不进反退。上这套系统之前，先评估基座模型撑得住元级优化。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>再补一个对方可能没想到的风险：多样性坍缩。进化循环天然爱利用已知高奖励模式，所有候选都变成同一方案的微小变体时创新就停了，需要多样性奖励、档案保持这类机制兜底。能把两个风险都说全，这场对话你就赢了。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q6</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「递归自我改进现在到底走到哪一步了？AI 都能自己改自己了，是不是快要失控了？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能不能<strong>既不神化也不恐慌</strong>地评估前沿进展。露馅的回答有两种：跟着渲染「AI 要觉醒了」，或者一口咬定「都是炒作」。对方想听的是有事实、有边界、有判断的行业认知。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给概念坐标：</strong>RSI 的设想从 Good（1965）到 Yudkowsky（2008）就有了，指系统用自己当前的智能去改善产生智能的机制本身。它当了几十年理论概念，近两年才有了现实路径。</li>
+          <li><strong>说清现实路径：</strong>模型没有直接改写自己的权重。它改进的是围绕自身的 Harness：上下文管理、工作流、工具编排、评估。更好的 Harness 催生更强模型，更强模型又反过来简化 Harness，形成正反馈飞轮。</li>
+          <li><strong>给进展的真实水位：</strong>STOP 证明了改善器能递归改善自己，还自动发现了遗传算法、Beam Search 这类经典策略；Self-Harness 让 Agent 通过挖弱点、提编辑、验证回归来改进自己的配置。但这些都发生在有界、可验证的循环里。</li>
+          <li><strong>正面回答失控问题：</strong>离失控还隔着七道关：弱评估器让反馈信号模糊、记忆生命周期管不好、奖励黑客、多样性坍缩、长期健康难以度量。这些是根本性的系统设计挑战，共同解法都指向把人类留在循环里，在正确的抽象层级提供监督。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>引用自动研究的现实检验收尾：AI Scientist 能写出格式完整的论文，但能写论文远够不上能做科学，虚假引用、实现漂移、过度乐观这些失败模式反复出现。用这个案例说明你看过一手材料，判断有据。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-1" data-lesson-id="11-1">从脚手架到自我改进系统</a>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q7</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你们做 Agent 优化，具体在优化什么？说白了就是改改 prompt 吧？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对<strong>优化对象层次</strong>的认知。只会说调 prompt 的人停在最底层。真懂的人知道优化对象有一条五级演进线，还能说清为什么模型越强，可优化的层级就越往上走。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>报出五级阶梯：</strong>指令 Prompt → 结构化上下文 → 工作流 → Harness 代码 → 优化器代码。调 prompt 只是 Level 1，这条线的尽头是优化「写优化器的代码」。</li>
+          <li><strong>说清上移逻辑：</strong>模型越智能，能优化的目标就越复杂、方法越通用。ACE 在优化上下文内容，AFlow 在搜索工作流，Meta-Harness 在改 Harness 源码，STOP 在优化改进器本身，每一级都有代表工作。</li>
+          <li><strong>给 PM 判断：</strong>先看清团队现在卡在哪一级。大多数团队还在 Level 1 和 Level 2 之间，往上走每一级，对评估体系的要求都会陡增。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出这条阶梯的共同教训：一旦 Harness 设计变成可执行的搜索空间，强编码 Agent 就能用上人类工程师的同一设计空间。层级越高，人的角色越从执行者变成出题人。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q8</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你说 Agent 可以并行开子 Agent，那父 Agent 具体要管哪些事？子 Agent 半路挂了怎么办？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对子 Agent 模式的<strong>工程细节</strong>。露馅的回答是「就是多开几个一起跑」。对方想听的是进程管理视角：父 Agent 管什么、状态怎么查、坏了怎么兜底。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先定位角色：</strong>父 Agent 是进程管理器，干四件事：启动子任务、检查日志和进度、取消失败的分支、合并成功的结果。这是操作系统层面的思维。</li>
+          <li><strong>讲显式可检查：</strong>并行不能发射后不管。父 Agent 要能随时查看每个子 Agent 的状态、输出和错误。</li>
+          <li><strong>讲输出持久化：</strong>子 Agent 的结果要存成文件、日志或状态记录，别只回传到父 Agent 的上下文里。这样即使中断也能恢复。</li>
+          <li><strong>讲容错兜底：</strong>后台任务会超时、崩溃、产出低质量结果，Harness 要预先设计重试策略和优雅降级机制。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给出量级感：并行的收益是把串行等待变成多核加速，课程演示里 5 个并行任务 3 轮跑完（串行要 5 轮），主 Agent 只负责分发与合并，上下文占用不到三成。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">Harness 三大设计模式</a>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q9</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「记忆这块你们打算拿文件系统硬堆？向量库、专门的记忆模块都不上，是想省事还是真有道理？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">试探你是<strong>跟风选型还是理解取舍</strong>。说不出文件系统方案的设计理由和分工边界，就会被当成偷懒。对方想听的是这个「土办法」背后的结构性理由。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给分工原则：</strong>上下文是工作记忆，文件系统是长期记忆。当前任务指令、即时工具结果、最近 2-3 轮对话放上下文；历史实验结果、错误日志、已完成子任务的摘要、长期策略放文件。</li>
+          <li><strong>讲制品现实：</strong>长任务的制品（实验日志、代码 diff、论文摘要、错误追踪、完整执行轨迹）会迅速超出上下文窗口，全塞进 prompt 是结构性的死路。</li>
+          <li><strong>给设计理由：</strong>文件读写是 LLM 的基础技能，不需要复杂的外部工具链，还受益于基座能力提升：模型越聪明，文件管理越高效。外挂记忆系统吃不到这个红利。</li>
+          <li><strong>讲工作习惯：</strong>好的 Agent 会自己维护 scratchpad、todo 列表、实验记录，像人类程序员一样管理工作区。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>用前沿方法佐证：MCE 干脆把上下文函数实例化成目录里的文件集合，skill.md 存知识、动态文件存 rollout 记录；Meta-Harness 也靠文件系统访问执行历史。文件系统当记忆已经是前沿自我改进方法的公共地基。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">文件系统做持久记忆</a>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q10</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「我看新闻说现在 Agent 都能自我进化了，竞品要是先搞出来怎么办？咱们要不要立项跟一个？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板要的是<strong>判断标准</strong>，帮他分清哪些能跟、哪些还停留在论文里。直接说好或说不行都危险，能给出一套适用性检查的人才值得授权。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给适用三条件：</strong>进化搜索起作用要同时满足：搜索空间庞大且离散、梯度不可用但评估容易、fitness 能量化成数字。三条都占才值得上。</li>
+          <li><strong>给不适用清单：</strong>评估一次要数小时、评估标准模糊主观、主要靠启发式判断、算力预算有限、需要人工审核环节。占了任何一条，先别碰。</li>
+          <li><strong>对照自家业务：</strong>关键问题是咱们的 Agent 任务有没有能自动打分的评测集。没有的话，第一步是建评测，优先级比上进化算法高得多。</li>
+          <li><strong>给参照系：</strong>DGM 用进化把 SWE-bench Verified 从 20% 提到 50%，但那是编码任务，测试通过与否天然可自动评估。先确认自己的任务有没有这种「秤」。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动预告风险：就算条件全满足，进化循环还有奖励黑客和多样性坍缩两类坑，评估器必须放在循环外由人维护。立项前把风险说清，比出事后解释强。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q11</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「ACE 为什么非要一条一条增量更新那份剧本？直接让模型把整份 prompt 重写一遍，多省事？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你懂没懂 ACE 最核心的<strong>设计决策</strong>。背流程的人只会念 Generator、Reflector、Curator 三个名字，真懂的人能说出为什么更新方式必须是增量合并。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先摆机制：</strong>ACE 维护一份结构化的 bullet point 剧本，每条有 identifier 和 description。Generator 照剧本干活，Reflector 从成败轨迹提炼洞察，Curator 负责把洞察写回剧本。</li>
+          <li><strong>讲关键设计：</strong>Curator 输出结构化的 (identifier, description) 条目，用确定性逻辑合并进剧本，从不重写整块 prompt。</li>
+          <li><strong>说清理由：</strong>让模型迭代重写整块内容会带来上下文坍缩和简洁偏差，有用的细节会被一遍遍压没。增量合并加定期精炼去重，经验越用越精，上下文却不会越用越厚。</li>
+          <li><strong>点出局限：</strong>ACE 的更新规则仍靠手工设计，这正是 MCE 接着往下解的问题。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>一句话讲透：上下文是不断演进的剧本。任由 prompt 无限增长会溢出，任由模型整块重写会坍缩，ACE 选了第三条路：条目化、增量、可去重。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q12</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「MCE 说自己是双层优化，这两层到底各在优化什么？它和 ACE 的本质区别在哪？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">前沿方法辨析题，考<strong>机制拆解能力</strong>。skill 是什么、内外层各干什么，这两问答不清就说明只看过标题和转发语。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先定义 skill：</strong>一个 MCE skill 定义上下文函数 c = F(x; ρ)。ρ 是静态组件（prompts、知识库、代码库），F 是动态算子（搜索、选择、过滤、格式化）。管上下文的方法本身被形式化了。</li>
+          <li><strong>拆开双层：</strong>内层给定 skill，在训练集上找最优上下文；外层在验证集上比较不同 skill，选出最优机制。先优化内容，再优化方法，轮流来。</li>
+          <li><strong>讲进化方式：</strong>系统维护 skill 数据库记录每组 (skill, context, 训练分, 验证分)，Meta-agent 用 agentic crossover 从历史里杂交出新 skill。</li>
+          <li><strong>对比 ACE：</strong>ACE 的更新规则手工设计、固定不变；MCE 把「怎么记」也放进优化循环，记的内容和记的方法一起进化。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出内外层分用训练集和验证集的用意：skill 的好坏在没参与内层优化的数据上打分，防止管理机制过拟合到特定几条任务，和机器学习防过拟合的思路一脉相承。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+      </div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q13</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「Meta-Harness 迭代那么多版 harness，历史记录越滚越大，全喂给模型不就先把自己的上下文撑爆了？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">用工程可行性试探你<strong>是真读过方法还是只会转述概念</strong>。想听的是历史怎么存、优化器怎么读、真正的成本瓶颈到底在哪一环。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲存储结构：</strong>每个提出的 harness 在文件系统里就是一个字典：源码、分数、轨迹、状态更新。历史不进 prompt，全部落盘。</li>
+          <li><strong>讲访问方式：</strong>Proposer 本身是编码 Agent，用 grep、cat 按需读取执行历史，要哪段查哪段，避免全塞进上下文。</li>
+          <li><strong>讲输出形态：</strong>产出的是 Pareto 前沿上的 harness 候选集合，多目标之下保留一组各有所长的方案，可以按场景挑。</li>
+          <li><strong>承认真瓶颈：</strong>撑不住的地方在评估侧：每改一版 harness 都要完整试运行打分，Meta-Harness 是三种上下文优化方法里最通用也计算最重的。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句设计洞察：Proposer 用的 grep 和 cat 全是编码 Agent 的基本功，Meta-Harness 没为历史访问发明任何新机制。这印证了「代码是定义 Harness 的通用语言」，编码能力强的模型天然适合当优化器。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+        <a href="/dashboard/learning?lesson=11-4" data-lesson-id="11-4">工作流设计：从手工到自动搜索</a>
+      </div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q14</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「AFlow 说用下棋的算法来搜工作流，它具体是怎么搜的？搜到什么时候算完？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对<strong>自动工作流搜索的机制理解</strong>。能讲出图表示和搜索循环的人才算读进去了，终止条件是最容易被问倒的细节。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲表示：</strong>工作流表示成有向图，节点是 LLM 调用动作，边是代码里的逻辑操作（条件分支、循环、数据传递）。设计问题就此变成了树搜索问题。</li>
+          <li><strong>讲搜索循环：</strong>初始工作流做根节点；用分数与均匀探索的软混合选待扩展节点，平衡利用与探索；LLM 生成修改变体（增删改节点和边）；执行评估，有改进就加回搜索树。</li>
+          <li><strong>答终止条件：</strong>循环到 top-k 平均分稳定，或者计算预算用完。</li>
+          <li><strong>给定位：</strong>对比 ADAS 靠 meta-agent self-refine 自由发挥，AFlow 用 MCTS 做系统化搜索，收敛更稳定，实验上也优于手工设计和 ADAS。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>用课程演示收尾：从「Plan → Execute」52 分起步，几轮搜索后发现反思加验证的组合拿到 78 分，比手工起点高出 50%。搜出来的最优结构恰好长得像资深工程师的工作习惯。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-4" data-lesson-id="11-4">工作流设计：从手工到自动搜索</a>
+      </div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q15</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「AI Scientist 号称能自己做研究写论文，它的管线长什么样？评审那关是怎么过的？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能否<strong>既讲清管线又保持清醒</strong>。只会惊叹全自动的人，和只会说都是炒作的人，都不合格。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>报出管线：</strong>提出研究想法 → 写代码 → 跑实验 → 分析结果 → 写论文 → 同行评审，六步全由 LLM 驱动，端到端跑完一轮完整研究循环。</li>
+          <li><strong>讲评审环节：</strong>评审引入 LLM-as-judge 做质量把关，产出的论文格式完整。</li>
+          <li><strong>给现实检验：</strong>能写论文远够不上能做科学。系统测试发现六种反复出现的失败模式：训练数据默认值偏好、执行压力下的实现漂移、记忆与上下文退化、过度乐观、领域智能不足、科学品味薄弱。</li>
+          <li><strong>下判断：</strong>这些是结构性瓶颈。专家设计的 Harness 确实能协调研究循环的大部分环节，但环节里的判断质量还差得远。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>挑一条细说最见功力：「过度乐观」指系统宣称实验显著优于基线、实际结果全是噪声；「领域智能不足」指缺那些论文里不写、但实验室里人人都知道的隐性技艺。这两条恰好是 LLM-as-judge 也难兜住的。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-4" data-lesson-id="11-4">工作流设计：从手工到自动搜索</a>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q16</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「合成数据大家都在做，Autodata 凭什么说自己合成的数据质量高？它怎么知道一道题出得好？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对<strong>数据质量信号</strong>的理解。空谈数据质量的人很多，能说出一条可操作判据的人很少。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>报角色体系：</strong>四个角色协作：Challenger 出题，Weak Solver 和 Strong Solver 分别试解，Verifier / Judge 仲裁。</li>
+          <li><strong>给核心判据：</strong>难度差就是质量信号：只保留 strong solver 能做出、weak solver 做不出的题。</li>
+          <li><strong>说清为什么：</strong>两个都会的题没有训练价值，两个都不会的题可能本身就是烂题。落在能力边界上的题，对提升模型价值最大。</li>
+          <li><strong>给 PM 迁移：</strong>这套「用两个能力档位夹出难度带」的思路，可以直接搬到评测集建设和训练数据分级的设计上。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给出定位：Autodata 和 AI Scientist 同属手工设计工作流的代表作，说明在自动搜索成熟之前，专家手写的多角色工作流依然是产出生产价值的主力。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-4" data-lesson-id="11-4">工作流设计：从手工到自动搜索</a>
+      </div>
+    </div>
+
+    <!-- Q17 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q17</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「STOP 那个递归改善器，说白了就是让模型改自己的 prompt 呗？这玩意真能越改越好？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">试探你对递归自我改进<strong>最早范例的机制理解</strong>。对方期待你说清改善的对象到底是什么，以及递归什么时候有效、什么时候失效。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先纠正对象：</strong>STOP 不直接改善解 s，它反复改善的是产生更好解的「改善器」I 本身。种子改善器接受初始解、效用函数、黑盒模型三个输入，返回改善后的解。</li>
+          <li><strong>讲递归的钥匙：</strong>改善器本身也是文本（一段 prompt 或代码），所以同样的改善逻辑能作用在改善器自身上：I_t = I_{t-1}(û, I_{t-1}; M)，让今天的自己去升级昨天的自己。</li>
+          <li><strong>给实验答案：</strong>真能变好，但有门槛。GPT-4 驱动时持续改善，还自动发现了遗传算法、分解改进、多臂 Prompt Bandit、模拟退火、Beam Search 这些经典优化策略；GPT-3.5 和 Mixtral 驱动时反而退化。</li>
+          <li><strong>给结论：</strong>递归结构给的只是改善的可能性，收敛没有保证。弱模型在元级操作里缺编程直觉，只会放大噪声。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说出「自动发现经典策略」的深意：没人预设遗传算法或 Beam Search，改善器自己长出了这些结构。足够强的模型加递归结构，能重新发明人类优化领域几十年的家底，这就是元级优化的想象空间。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q18 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q18</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Agent 跑失败的那些轨迹，你们一般怎么处理？直接丢了，还是能榨出点什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你有没有<strong>把失败当资产</strong>的意识和方法论。答「记个错误日志」太浅，对方想听的是结构化的失败挖掘怎么做。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给出方法名：</strong>Self-Harness 的第一阶段就叫 Weakness Mining：把失败轨迹聚类成 verifier-grounded 的失败模式，从个案上升到模式。</li>
+          <li><strong>讲记录规格：</strong>每条失败记录三件套：终端验证器级的失败原因、相关 Agent 行为的因果状态、轨迹暴露的抽象 Agent 机制。有这三样，失败才是可寻址的。</li>
+          <li><strong>讲下游用法：</strong>提案阶段优先挑可寻址的重复错误模式下手，改一处修一类，避免头痛医头。</li>
+          <li><strong>给 PM 落点：</strong>失败轨迹库怎么建、按什么维度聚类，这是 PM 现在就能推动的基建，方法可以直接照搬。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出「verifier-grounded」这个定语的分量：失败归因锚定在可验证的终端信号上，聚出来的模式才不会是模型自己脑补的病因。没有这个锚，失败库越大越误导。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q19 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q19</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「让 Agent 自己改自己的配置，怎么保证它改好了这里，别处没有悄悄变差？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考改进闭环的<strong>质量门禁设计</strong>。这是自我改进能否上生产的关键一环，答不出验证机制的人，只能算听说过 Self-Harness。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给验证机制：</strong>Self-Harness 第三阶段 Proposal Validation 用 held-in 和 held-out 两套数据集验证候选编辑，只接受没有回归的编辑。改进不许以牺牲已有能力为代价。</li>
+          <li><strong>讲编辑范围：</strong>提案本身就是有界 Harness 编辑。模型拿到的是可编辑面、失败模式摘要、通过行为记录、已尝试编辑的历史，出手之前就被框住了。</li>
+          <li><strong>给实验证据：</strong>Terminal-Bench-2 上对 MiniMax M2.5、Qwen3.5-35B-A3B、GLM-5 做实验，Self-Harness 给每个模型学出了模型特定的 harness 指令。</li>
+          <li><strong>说产品含义：</strong>同一框架对不同基座产生不同优化路径，说明 harness 改进是上下文敏感的。换模型时 harness 配置照搬不得，要重新跑一轮优化。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出「已尝试编辑的历史」这个输入的作用：它防止提案器在同一个想法上反复打转，相当于给自我改进加了去重记忆。这类小设计往往决定循环收不收敛。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q20 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q20</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「照这么发展下去，Agent 都会自己改自己了，咱们养这么多工程师，还有你这个产品经理，往后干嘛？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板半开玩笑半认真，考的是你能否说清<strong>人在闭环里的新位置</strong>，顺便看你慌不慌。答案要具体到岗位职责怎么变，光喊「人很重要」没用。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给方向：</strong>答案在七道关的最后一关：人类在栈中向上移动，继续留在循环之中。AI 接管执行层，人的价值上移到设定目标、判断方向、守住底线。</li>
+          <li><strong>给具体职责：</strong>有几样必须由人维护：评估器和权限控制要放在改进循环之外；可编辑面的边界要人来划；哪个问题值得解要人来定义。</li>
+          <li><strong>给证据：</strong>自动研究的六种失败模式里，「科学品味薄弱」和「领域智能不足」恰好是人的长板：判断问题值不值得问、掌握写不进文档的隐性知识。</li>
+          <li><strong>收个态度：</strong>引用课程结尾那句话：人是系统不可或缺的方向盘，从来都不是要被替代的瓶颈。监督要发生在正确的时间和正确的抽象层级。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>翻译成人才战略：层级上移意味着评估体系和目标定义能力变成团队最稀缺的资产，招人和培养的重心该往「会出题、会验收」迁移。老板要的就是这种落到组织的判断。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <!-- Q21 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q21</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Darwin Gödel Machine 这名字挺唬人，它到底怎么进化 Agent 的？有没有拿得出手的数字？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对 harness 自我改写<strong>最激进案例</strong>的掌握。名字谁都会念，对方想听的是进化循环里每一步的动作，和能背出来的实验数字。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲对象：</strong>DGM 显式针对可编辑的 harness 代码仓库进化，Agent 被允许修改自己的 harness 代码，这一点比 AlphaEvolve 改别人的程序更激进。</li>
+          <li><strong>讲循环：</strong>从池中一个 coding agent 开始；按性能概率选父代；父 agent 检查自己的 benchmark 评估日志、提出改进方案；变异出新 agent；评估后性能够高才进池；循环到停止条件。</li>
+          <li><strong>报出数字：</strong>基于 Claude 3.5 Sonnet，SWE-bench Verified 从 20% 提到 50%，Polyglot 从 14.2% 提到 30.7%，全程无人类介入。</li>
+          <li><strong>补工具面：</strong>工具集朴素得惊人：bash 加 editor（view / create / edit）。说明威力在循环设计上，用不着花哨的工具。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>单独点出父代选择的反比设计：选中概率与子代数量成反比，给已经儿孙满堂的个体降权，鼓励探索冷门分支。这等于在进化循环里内置了一道抗多样性坍缩的机制。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+      </div>
+    </div>
+
+    <!-- Q22 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q22</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Prompt 自动优化的工具几年前就有了，Promptbreeder、GEPA 这些老工作，现在还值得看吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你的<strong>技术史观</strong>。能把老工作放进演进线里的人，比只追新名词的人可信得多。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲 Promptbreeder：</strong>用丰富的变异操作进化 task-specific prompts。关键创新是元进化：变异 prompt 本身也通过进化改进，连改法都在进化。</li>
+          <li><strong>讲 GEPA：</strong>把 reflection-based prompting 和进化搜索结合：Agent 先反思当前 prompt 的不足，再用进化算子产生候选改进，最后择优。</li>
+          <li><strong>给历史位置：</strong>两项工作是 prompt 进化的先驱，为后来更大规模的 Harness 进化（AlphaEvolve、DGM）奠定了基础。它们证明了文本可进化，后来者把可进化对象扩到了代码和整个 harness。</li>
+          <li><strong>回答值不值：</strong>值得。看懂了元进化这个内核，再读新论文全是似曾相识。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>画出这条线索：Promptbreeder 进化变异器、STOP 改善改善器、MCE 优化管理机制，三个时期三种叫法，内核都是把改进方法本身放进改进循环。能看出同构的人，学新东西永远最快。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q23 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q23</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「既然 harness 都能自动优化了，干脆把模型权重也放进同一个循环一起训，一步到位，你觉得靠谱吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">试探你会顺着激进方案一起嗨，还是能指出风险。这题答「靠谱」和答「完全不行」都丢分，要给<strong>机制加风险的平衡评估</strong>。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先讲机制：</strong>这就是 SIA 的做法，三个角色进同一优化循环：Meta-Agent 提出新 harness 设计，Task-Specific Agent 在新 harness 下执行任务，Feedback-Agent 根据结果决定下一步更新 harness 还是更新模型权重。</li>
+          <li><strong>给评价：</strong>方向有趣，但证据暂时性。两大开放挑战没解：训练稳定性，以及 Goodhart 效应，优化代理指标导致真实目标退化。</li>
+          <li><strong>打比方说风险：</strong>一边改赛车引擎一边改赛道，两边同时变化，出了问题都不知道该归因给谁。</li>
+          <li><strong>给建议：</strong>短期内 harness 优化和权重训练分开跑更稳，等单侧循环都收敛可控了，再谈联合。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>指出 SIA 和此前所有方法的本质差别：前面的路线都刻意不动权重，把改进限制在 Harness 层，正因如此才可验证、可回滚。把权重放进循环等于拆掉了这层安全垫，这是它最需要被审视的地方。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+        <a href="/dashboard/learning?lesson=11-1" data-lesson-id="11-1">从脚手架到自我改进系统</a>
+      </div>
+    </div>
+
+    <!-- Q24 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q24</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「AlphaEvolve 发现新算法那事挺出圈的，从产品视角看，它的系统设计有哪些值得抄的？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能否从明星案例里<strong>拆出可复用的设计要素</strong>。光会讲「AI 发现了新算法」这个故事的人，过不了这关。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲主循环：</strong>维护一个候选程序池，用冻结的 LLM 生成代码 diffs 改进程序，反复评估子程序、保留表现最好的。模型全程不训练，提升全部来自搜索循环。</li>
+          <li><strong>拆 prompt 设计：</strong>进化 prompt 由父程序、评估结果、指令、元信息共同构成；用 EVOLVE-BLOCK 标记显式圈出可改进区域，把搜索约束在划定范围内。</li>
+          <li><strong>讲 meta-prompt：</strong>指令和上下文本身也参与共同进化，不会固定不变。</li>
+          <li><strong>引消融实验：</strong>进化流程、上下文 prompt、meta-prompt、全文件进化、更强 LLM，消融证明各自有独立贡献。值得抄的正是这种每个组件都验证过必要性的做法。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>成果背书加一句边界：谷歌用它真的找到了比人类已知更快的矩阵乘法算法。但 EVOLVE-BLOCK 标记意味着人类先划定哪里可以动，进化再强，也是在人划的圈里跑。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+      </div>
+    </div>
+
+    <!-- Q25 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q25</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「你上次说的那些自动优化方法我听着都好，那到底得烧多少算力？给我算笔账。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板要的是<strong>成本结构和投入节奏</strong>，念论文没用。想听的是钱花在哪一环、哪种方法贵、先上便宜的还是贵的。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲成本大头：</strong>搜索类方法的开销集中在评估：每一轮都是 LLM 推理加代码执行加基准测试，代数越多越烧。计算效率（每代要多少次评估）和进化效果（每代提升多少）怎么平衡，学界都还是开放问题。</li>
+          <li><strong>给贵贱排序：</strong>ACE 式结构化上下文维护最轻，跑在正常任务流里；MCE 双层要多养一层 skill 进化循环；Meta-Harness 每改一版都要完整试运行打分，三者里计算最重。</li>
+          <li><strong>给投入节奏：</strong>先上 ACE 式维护把长任务稳住，再建能自动跑的评测集，评测立住了才评估要上搜索类方法的哪一档。</li>
+          <li><strong>给止损线：</strong>评估一次要数小时、指标主观、预算有限，这三条占了就停在轻量档。这也是课程里明确列出的进化搜索不适用场景。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给一个省钱的巧思：Meta-Harness 在 TerminalBench-2 的实验就是从已有强 harness 初始化的，从好基线继续搜比从零搜省得多。咱们手工调 harness 的沉淀，就是将来自动优化的启动资产。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+      </div>
+    </div>
+
+    <!-- Q26 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q26</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「大家都在存成功案例当经验库，那些失败的死胡同要不要也存？存了不怕把 Agent 带偏吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对<strong>记忆内容设计的深度</strong>。多数人只想到存成功经验，负面结果的价值和存法是这一章最反直觉的考点之一。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给立场：</strong>要存。知道什么行不通和知道什么行同样重要，研究 Harness 应该让失败的尝试和死胡同易于保存和检索。</li>
+          <li><strong>讲为什么难：</strong>科学文献严重偏向成功案例，LLM 可能不擅长决定何时放弃假设、何时坦诚报告负面结果。这个偏差会被自动研究系统原样继承。</li>
+          <li><strong>讲怎么存不带偏：</strong>负面结果的用途是剪枝，标注清楚试过什么、怎么失败的、原因是什么，Agent 检索到就不再重走死胡同。Self-Harness 给提案器喂「已尝试编辑的历史」就是同一逻辑。</li>
+          <li><strong>连回失败模式：</strong>自动研究的「过度乐观」毛病（宣称显著优于基线、实际全是噪声），恰恰说明系统缺少坦诚记录负面结果的习惯。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>一句反直觉认知收尾：负面结果库既是防重复探索的地图，也是评审环节的对照组。经验库只存成功案例的团队，等于逼 Agent 把每个死胡同都重新撞一遍。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+        <a href="/dashboard/learning?lesson=11-5" data-lesson-id="11-5">让 Harness 改进自己</a>
+      </div>
+    </div>
+
+    <!-- Q27 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q27</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「假设明天就让你负责一个自我改进 Agent 的项目，第一件事写风险清单，你会列哪几条？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对本章收尾框架的<strong>系统掌握</strong>。零散说出两三个风险不难，对方想听的是完整的分类地图，和每一类对应的解法方向。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给分类框架：</strong>七道关分四类：评估相关、数据与记忆、安全与稳定性、人类角色。按类报，不容易漏。</li>
+          <li><strong>过评估与记忆：</strong>弱且模糊的评估器（很多目标没有快速精确的验证器，反馈信号是糊的）；上下文与记忆生命周期（记忆需求随自主性爆炸增长，上下文工程应该成为智能本身的核心部分）；负面结果（失败尝试要易于保存和检索）。</li>
+          <li><strong>过安全三关：</strong>多样性坍缩（候选挤成微小变体，创新停止）、奖励黑客（过拟合测试、钻评判模型空子、利用 benchmark 漏洞）、长期成功（只顾测试通过，忽视可维护性、所有权边界、迁移成本、向后兼容）。</li>
+          <li><strong>收人类角色：</strong>第七关是人的位置：在正确的时间、正确的抽象层级提供监督。这七条是根本性的系统设计挑战，别当成普通工程问题排进迭代就完事。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说出四类的内在顺序：评估器是反馈信号的源头，信号错了后面全错，所以「弱评估器」排在七道关第一位。风险清单也该按这个优先级排，先解决怎么打分，再谈怎么改进。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <!-- Q28 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q28</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你讲的这些论文一个比一个玄。说实话，哪些咱们下季度就能用，哪些五年内都别想？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术同事要的是靠谱的<strong>成熟度分层</strong>，全吹或全贬都会失去信任。这题答好了，后面的合作就顺了。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>「现在就用」层：</strong>三大设计模式（自动化循环、文件系统记忆、子 Agent 并行）已经是 Claude Code、Codex、Cursor 的标配，覆盖最强 Agent 系统 90% 的架构决策，照着搭就行。</li>
+          <li><strong>「下季度可试」层：</strong>ACE 式结构化上下文维护。Generator、Reflector、Curator 是清晰的工程管线，前提是先有评测集验证收敛。</li>
+          <li><strong>「有条件上」层：</strong>AFlow、DGM 这类搜索方法，要满足评估自动化、fitness 可量化、算力充足。编码类任务最先受益，DGM 的 SWE-bench 数字就是在这种条件下跑出来的。</li>
+          <li><strong>「持续观察」层：</strong>SIA 联合优化的训练稳定性未解，Meta-Harness 计算最重，都还在证据暂时性的阶段，跟进论文就好。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给一个通用判据：一个方法离落地的距离，基本取决于它对「快速可靠评估器」的依赖有多深，以及你手里的评估器有多成熟。评估基建才是隐藏的关键路径。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-2" data-lesson-id="11-2">Harness 三大设计模式</a>
+        <a href="/dashboard/learning?lesson=11-3" data-lesson-id="11-3">上下文工程：从手写到自动进化</a>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+      </div>
+    </div>
+
+    <!-- Q29 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q29</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「你提到的多样性坍缩，到底长什么样？系统明明还在涨分，我怎么知道它已经悄悄坍缩了？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对进化系统<strong>慢性病</strong>的理解。这个失效模式短期没有症状，能描述它的表现、解药和监控方式，才算真的懂。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲病理：</strong>进化算法和 RL 循环天然倾向于利用已知的高奖励模式，短期分数很好看，问题被掩盖。</li>
+          <li><strong>讲症状：</strong>种群里所有候选解坍缩成同一方案的微小变体，新一代和上一代长得越来越像，创新就停了。课程的比方很贴切：全班都抄第一名的作业，分数好看，但再没人想出新解法。</li>
+          <li><strong>给解药：</strong>需要专门机制防止解空间坍缩：多样性奖励、档案保持。</li>
+          <li><strong>给监控建议：</strong>光盯分数曲线看不出坍缩，还要度量种群内方案的差异程度。差异趋零就是警报，它比分数下跌来得早得多。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>和奖励黑客做区分最显功力：奖励黑客是分数虚高、真实能力没涨；多样性坍缩是分数真实但创新停滞。两种病症状相反，根源相同：优化压力只认一个数字。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+        <a href="/dashboard/learning?lesson=11-6" data-lesson-id="11-6">进化搜索：让最强 Harness 存活</a>
+      </div>
+    </div>
+
+    <!-- Q30 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q30</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「AI 写的代码测试全过、上线也没出事，那代码审查是不是可以省了？人审太慢了。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">老板在找降本点，考的是你能否讲清<strong>「测试通过」和「仓库健康」的差距</strong>，还要给出替代方案，光说不行没有用。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给病根：</strong>这就是七道关里的「长期成功」：当前优化目标太短期，编码 Agent 能完成眼前任务，但不够清楚怎么保护仓库的长期健康。</li>
+          <li><strong>列测不出的东西：</strong>标准沙箱 RLVR 训练很少捕获可维护性、所有权边界、迁移成本、向后兼容性。这些恰恰是人审在把的关。</li>
+          <li><strong>给风险画面：</strong>只追求测试通过的 Agent，可能在技术债里埋定时炸弹。炸弹爆的那天，不会写在任何一份测试报告里。</li>
+          <li><strong>给折中方案：</strong>审查可以换形态：常规改动轻量审，架构层改动重点审。人往上移，盯所有权边界和长期结构，逐行检查交给工具。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>帮老板校准预期：连自我改进研究的前沿都把长期健康难以度量列为根本挑战之一，说明这不只是咱们团队的流程问题。短期内人审省不得，能省的是层级，把人的时间花在机器测不出的那部分。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=11-7" data-lesson-id="11-7">未来挑战：自我改进的七道关</a>
+      </div>
+    </div>
+
+    <div class="l-callout">
+      <div style="font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:8px">最后一个建议</div>
+      <div style="font-size:15px;color:var(--text);line-height:1.7">这一章的知识最新，也最容易被拿来唬人。这 30 题的正确用法是<strong>开口讲一遍</strong>，对着同事、朋友或者录音讲。讲不顺的地方，就是你以为懂了但还没懂的地方，点关联课程页回去补上。</div>
+    </div>
+  </section>
+</article>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

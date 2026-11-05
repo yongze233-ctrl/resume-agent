@@ -1,0 +1,3444 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"oss-9",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=oss-9',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ollama 与 LM Studio 怎么上手 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   oss.css —— 开源专题（oss-1 … oss-9）共享组件
+
+   背景：这一章有大量跨页复用的结构（来源标注、许可证卡、显存计算器、
+   命令行块），写在各页 <style> 里会出现九份互相漂移的副本。
+   设计意图：抽成独立文件，与 lesson.css 分层，lesson.css 管全站骨架，
+   本文件只管本章特有组件，不覆盖 lesson.css 的任何选择器。
+   约束：颜色一律走 lesson.css 的 CSS 变量，本章强调色 --oss 为中性靛蓝，
+   刻意不采用合作方品牌色，避免整章视觉被单一品牌占据。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --oss: #4f46e5;
+  --oss-soft: rgba(79, 70, 229, 0.07);
+  --oss-line: rgba(79, 70, 229, 0.22);
+}
+
+/* ── 数据来源标注 ───────────────────────────────
+   本章每一处外部数据下方都要跟一条，读者可自行核对。 */
+.oss-src {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 12.5px; color: var(--sub); line-height: 1.6;
+  margin-top: 8px;
+}
+.oss-src svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 3px; opacity: .6; }
+.oss-src a { color: var(--sub); text-decoration: underline; text-underline-offset: 2px; }
+.oss-src a:hover { color: var(--oss); }
+
+/* ── 事实卡 ─────────────────────────────────── */
+.oss-facts {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  margin: 16px 0;
+}
+.oss-fact {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.oss-fact .of-num {
+  font-size: 30px; font-weight: 800; color: var(--oss);
+  line-height: 1.15; letter-spacing: -0.5px;
+}
+.oss-fact .of-label { font-size: 14px; font-weight: 700; margin-top: 6px; }
+.oss-fact .of-desc { font-size: 13px; color: var(--sub); margin-top: 4px; line-height: 1.6; }
+
+/* ── 许可证判定卡 ───────────────────────────────
+   三态共用同一套评判维度，避免不同厂商用不同尺子。 */
+.oss-lic-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  margin: 16px 0;
+}
+.oss-lic {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.oss-lic .ol-head { margin-bottom: 10px; }
+.oss-lic .ol-name { font-size: 17px; font-weight: 800; }
+.oss-lic .ol-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; margin-top: 7px;
+  padding: 3px 10px; border-radius: 999px;
+}
+.oss-lic .ol-badge svg { width: 13px; height: 13px; }
+.oss-lic .ol-lic {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+  font-size: 12.5px; color: var(--sub);
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.oss-lic .ol-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.oss-lic .ol-list li { font-size: 13.5px; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
+.oss-lic .ol-list span {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+}
+.ol-y { background: rgba(22,163,74,.12); color: var(--success); }
+.ol-w { background: rgba(217,119,6,.14); color: var(--amber); }
+.ol-n { background: rgba(0,0,0,.06); color: var(--sub); }
+
+.oss-lic.is-full .ol-badge { background: rgba(22,163,74,.12); color: var(--success); }
+.oss-lic.is-partial .ol-badge { background: rgba(217,119,6,.14); color: var(--amber); }
+.oss-lic.is-closed .ol-badge { background: rgba(0,0,0,.06); color: var(--sub); }
+
+/* ── 显存计算器 ─────────────────────────────── */
+.oss-calc {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  box-shadow: var(--shadow-card); margin: 16px 0;
+}
+.oc-controls {
+  display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 16px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.oc-group { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.oc-label {
+  font-size: 11.5px; font-weight: 800; letter-spacing: .6px;
+  text-transform: uppercase; color: var(--sub);
+}
+.oc-seg {
+  display: flex; gap: 4px; background: rgba(0,0,0,.04);
+  padding: 3px; border-radius: 10px;
+}
+.oc-seg-btn {
+  flex: 1; border: none; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--sub);
+  padding: 7px 6px; border-radius: 8px; transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.oc-seg-btn:hover { color: var(--text); }
+.oc-seg-btn.is-on { background: var(--card); color: var(--oss); box-shadow: var(--shadow-card); }
+.oc-select {
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--text);
+  padding: 9px 11px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--card);
+  width: 100%; min-width: 0;
+}
+.oc-select:focus { outline: none; border-color: var(--oss-line); }
+
+.oc-readout {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
+  padding: 14px 0 4px; font-size: 14px; color: var(--sub);
+}
+.oc-readout b { font-size: 22px; font-weight: 800; color: var(--oss); }
+.oc-readout .ocr-formula {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+  font-size: 12.5px; color: var(--sub);
+}
+
+.oc-results { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.oc-row {
+  display: grid; grid-template-columns: 1.5fr 0.8fr 1.4fr 1fr;
+  align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--card);
+  font-size: 13.5px;
+}
+.ocr-name { font-weight: 700; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ocr-tag {
+  font-size: 10.5px; font-weight: 700; color: var(--sub);
+  background: rgba(0,0,0,.05); padding: 2px 7px; border-radius: 999px;
+}
+.ocr-need { font-family: "SF Mono", "Fira Code", Menlo, monospace; font-size: 12.5px; color: var(--sub); }
+.ocr-bar { height: 8px; background: rgba(0,0,0,.06); border-radius: 4px; overflow: hidden; }
+.ocr-bar i { display: block; height: 100%; border-radius: 4px; transition: width .5s ease; }
+.ocr-state { font-weight: 700; font-size: 13px; text-align: right; }
+
+.oc-row.is-ok { border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.04); }
+.oc-row.is-ok .ocr-bar i { background: var(--success); }
+.oc-row.is-ok .ocr-state { color: var(--success); }
+.oc-row.is-tight { border-color: rgba(217,119,6,.32); background: rgba(217,119,6,.05); }
+.oc-row.is-tight .ocr-bar i { background: var(--amber); }
+.oc-row.is-tight .ocr-state { color: var(--amber); }
+.oc-row.is-no { opacity: .58; }
+.oc-row.is-no .ocr-bar i { background: rgba(0,0,0,.22); }
+.oc-row.is-no .ocr-state { color: var(--sub); }
+
+/* ── 命令行块 ─────────────────────────────── */
+.oss-cmd {
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin: 14px 0; background: #1c1c1e;
+}
+.ocmd-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; background: rgba(255,255,255,.06);
+}
+.ocmd-tip {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: rgba(255,255,255,.5);
+}
+.ocmd-copy {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: rgba(255,255,255,.1); cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  color: rgba(255,255,255,.8); padding: 5px 11px; border-radius: 7px;
+  transition: background .15s, color .15s;
+}
+.ocmd-copy:hover { background: rgba(255,255,255,.18); color: #fff; }
+.ocmd-copy svg { width: 13px; height: 13px; }
+.ocmd-copy.is-done { background: rgba(22,163,74,.3); color: #86efac; }
+.oss-cmd pre { padding: 14px 16px; overflow-x: auto; }
+.oss-cmd code {
+  background: none; padding: 0; color: #e5e7eb;
+  font-size: 13px; line-height: 1.75;
+}
+.oss-cmd .c { color: #6b7280; }
+
+/* ── 流程步骤 ─────────────────────────────── */
+.oss-steps { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+.oss-step {
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+.ostep-n {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px;
+  background: var(--oss-soft); color: var(--oss);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+}
+.ostep-body h4 { font-size: 15.5px; font-weight: 700; margin-bottom: 4px; }
+.ostep-body p { font-size: 14px; color: var(--sub); line-height: 1.7; }
+
+/* ── 体积对比条 ───────────────────────────── */
+.oss-bars { display: flex; flex-direction: column; gap: 13px; margin: 16px 0; }
+.oss-bar { display: flex; flex-direction: column; gap: 5px; }
+.ob-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ob-meta strong { font-size: 14.5px; }
+.ob-meta span { font-size: 13px; color: var(--sub); font-weight: 600; }
+.ob-track { height: 12px; background: rgba(0,0,0,.06); border-radius: 6px; overflow: hidden; }
+.ob-track i {
+  display: block; height: 100%; width: 0; border-radius: 6px;
+  background: var(--oss); transition: width .9s ease;
+}
+.ob-track i.is-big { background: var(--amber); }
+
+/* ═══════════════════════════════════════════════════════
+   动手实验区（oss-1 … oss-7 的交互 demo 共用外壳）
+
+   背景：这一章原本七节纯文字。读一遍「参数量 × 2 = 体积」和自己拖着滑块
+   看 8B 在 FP16 下装不进 8GB 显卡，是两种理解深度。
+   设计意图：所有 demo 共用同一个外壳（角标 + 控制区 + 输出区），学员在
+   不同页面之间不需要重新学怎么操作。
+   约束：控件一律用原生 input，不自造滑块，键盘可达性直接由浏览器保证。
+   ═══════════════════════════════════════════════════════ */
+.oss-lab {
+  position: relative;
+  background: var(--card);
+  border: 1.5px solid var(--oss-line);
+  border-radius: var(--radius);
+  padding: 22px 24px 24px;
+  margin: 20px 0;
+  box-shadow: var(--shadow-card);
+}
+/* 左上角挑明这是可以动手的区域，否则学员会当成又一张静态图划过去 */
+.oss-lab::before {
+  content: attr(data-lab);
+  position: absolute; top: -10px; left: 20px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .5px;
+  color: #fff; background: var(--oss);
+  padding: 3px 11px; border-radius: 999px;
+}
+.oss-lab .lab-q {
+  font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-top: 4px;
+}
+
+/* ── 控制区 ───────────────────────────── */
+.lab-ctrl { display: flex; flex-direction: column; gap: 16px; }
+.lab-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.lab-label {
+  font-size: 13px; font-weight: 700; color: var(--sub);
+  min-width: 72px; flex-shrink: 0;
+}
+.lab-range {
+  -webkit-appearance: none; appearance: none;
+  flex: 1; min-width: 180px; height: 6px; border-radius: 999px;
+  background: var(--oss-soft); outline: none; cursor: pointer;
+}
+.lab-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--oss); cursor: grab;
+  border: 3px solid var(--card); box-shadow: 0 1px 6px rgba(0,0,0,.22);
+}
+.lab-range::-webkit-slider-thumb:active { cursor: grabbing; }
+.lab-range::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--card);
+  background: var(--oss); cursor: grab; box-shadow: 0 1px 6px rgba(0,0,0,.22);
+}
+.lab-range:focus-visible { box-shadow: 0 0 0 3px var(--oss-line); }
+.lab-val {
+  font-size: 15px; font-weight: 800; color: var(--oss);
+  min-width: 86px; text-align: right; font-variant-numeric: tabular-nums;
+}
+
+/* 分段按钮：精度切换、硬软标签切换这类互斥选项 */
+.lab-seg { display: inline-flex; gap: 4px; background: var(--oss-soft); padding: 4px; border-radius: 10px; }
+.lab-seg button {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 13px; font-weight: 700; color: var(--sub);
+  padding: 7px 14px; border-radius: 7px;
+  font-family: inherit; transition: background .15s, color .15s;
+}
+.lab-seg button:hover { color: var(--oss); }
+.lab-seg button.is-on { background: var(--card); color: var(--oss); box-shadow: var(--shadow-card); }
+.lab-seg button:focus-visible { outline: 2px solid var(--oss); outline-offset: 1px; }
+
+/* 可多选的卡片式选项，用于 oss-3 选业务、oss-7 选模型 */
+.lab-chips { display: flex; gap: 9px; flex-wrap: wrap; }
+.lab-chip {
+  border: 1.5px solid var(--border); background: var(--card);
+  border-radius: 10px; padding: 9px 15px; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; color: var(--text);
+  font-family: inherit; transition: border-color .15s, background .15s, color .15s;
+}
+.lab-chip:hover { border-color: var(--oss-line); }
+.lab-chip.is-on { border-color: var(--oss); background: var(--oss-soft); color: var(--oss); }
+.lab-chip:focus-visible { outline: 2px solid var(--oss); outline-offset: 1px; }
+
+.lab-btn {
+  border: none; background: var(--oss); color: #fff; cursor: pointer;
+  font-size: 13.5px; font-weight: 700; font-family: inherit;
+  padding: 10px 20px; border-radius: 9px; transition: opacity .15s;
+}
+.lab-btn:hover { opacity: .88; }
+.lab-btn:disabled { opacity: .4; cursor: not-allowed; }
+.lab-btn.is-ghost { background: transparent; color: var(--sub); border: 1.5px solid var(--border); }
+
+/* ── 输出区 ───────────────────────────── */
+.lab-out {
+  margin-top: 18px; padding-top: 18px;
+  border-top: 1.5px dashed var(--oss-line);
+}
+.lab-big {
+  font-size: 34px; font-weight: 800; color: var(--oss);
+  line-height: 1.1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums;
+}
+.lab-big small { font-size: 15px; font-weight: 700; color: var(--sub); margin-left: 6px; }
+.lab-note { font-size: 13px; color: var(--sub); line-height: 1.7; margin-top: 8px; }
+
+/* 结论条：交互产生的那句「所以呢」，是整个 demo 的落点 */
+.lab-verdict {
+  margin-top: 14px; padding: 13px 16px; border-radius: var(--radius-sm);
+  background: var(--oss-soft); font-size: 14px; line-height: 1.75;
+}
+.lab-verdict b { color: var(--oss); }
+.lab-verdict.is-warn { background: rgba(217, 119, 6, .08); }
+.lab-verdict.is-warn b { color: var(--amber); }
+
+/* 判定灯：装得下 / 装不下、已涌现 / 还没有 */
+.lab-lamps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.lab-lamp {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; background: var(--bg);
+  transition: border-color .2s, background .2s;
+}
+.lab-lamp .ll-name { font-size: 12.5px; color: var(--sub); font-weight: 600; }
+.lab-lamp .ll-state { font-size: 15px; font-weight: 800; margin-top: 3px; }
+.lab-lamp.is-yes { border-color: rgba(22,163,74,.45); background: rgba(22,163,74,.07); }
+.lab-lamp.is-yes .ll-state { color: var(--success); }
+.lab-lamp.is-no .ll-state { color: var(--sub); opacity: .65; }
+
+/* 概率分布柱：oss-6 的软标签 */
+.lab-dist { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
+.lab-drow { display: grid; grid-template-columns: 62px 1fr 60px; align-items: center; gap: 12px; }
+.lab-drow .ld-name { font-size: 13.5px; font-weight: 700; }
+/* track 与 fill 都必须显式 block。两者在 HTML 里是 <span> 和 <i>，默认 inline，
+   而 inline 元素上 width / height 一律不生效——fill 会被渲染成 0×0，页面看起来
+   却「正常」：读者看到的是 track 的底色，两条一样长。oss-5 的账单对比和 oss-6 的
+   概率分布都靠这根条表达差距，条不长就等于结论没了。
+   track 作为 grid item 会被自动 blockify，但 fill 不会，且 PlayGround 里 track
+   未必总在 grid 中，所以两边都写死，不依赖外层布局。 */
+.lab-drow .ld-track {
+  display: block; height: 22px; background: var(--oss-soft);
+  border-radius: 6px; overflow: hidden;
+}
+.lab-drow .ld-fill {
+  display: block;
+  height: 100%; background: var(--oss); border-radius: 6px;
+  transition: width .18s ease-out;
+}
+.lab-drow .ld-p {
+  font-size: 13.5px; font-weight: 800; text-align: right;
+  font-variant-numeric: tabular-nums; color: var(--oss);
+}
+.lab-drow.is-dim .ld-fill { background: var(--oss-line); }
+.lab-drow.is-dim .ld-p { color: var(--sub); }
+
+/* 血缘树：oss-7 追溯到同一个底座 */
+.lab-tree { margin-top: 16px; }
+.lab-tree .lt-bases { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.lab-tree .lt-base {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 18px; font-size: 13.5px; font-weight: 700;
+  background: var(--bg); opacity: .35; transition: opacity .3s, border-color .3s;
+}
+.lab-tree .lt-base.is-on { opacity: 1; border-color: var(--oss); color: var(--oss); background: var(--oss-soft); }
+.lab-tree .lt-links { height: 34px; position: relative; }
+.lab-tree .lt-links svg { width: 100%; height: 100%; overflow: visible; }
+/* dasharray 与 dashoffset 由脚本按 getTotalLength() 实测长度写入。
+   这里写死过一个 120，路径改成像素坐标后长度对不上，线会残缺或提前画完。 */
+.lab-tree .lt-links path {
+  fill: none; stroke: var(--oss-line); stroke-width: 2;
+  transition: stroke-dashoffset .5s ease-out, stroke .3s;
+}
+.lab-tree .lt-links path.is-on { stroke-dashoffset: 0; stroke: var(--oss); }
+
+/* ── 反馈动效 ─────────────────────────────
+   背景：滑块拖过去数字确实变了，但变化太安静，学员容易看不见自己刚触发了什么。
+   设计意图：只在「状态发生跳变」的那一刻给一次短促反馈，稳态下不做任何持续动画，
+   免得整页都在动、干扰阅读。动效一律由 JS 加一次性 class 触发。
+   约束：类名加完必须在 animationend 里摘掉，否则同一状态再次跳变时不会重播。 */
+
+/* 兜底：fire 加到任何元素上都该有反馈。下面几条更具体的选择器权重更高，
+   会各自覆盖这一条，所以这里只放最轻的一种。 */
+.fire { animation: lab-bump .2s ease-out; }
+
+/* 判定灯从灭到亮：蹦一下，让「又解锁一项」这件事被看见 */
+@keyframes lab-pop {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(1.075); }
+  100% { transform: scale(1); }
+}
+.lab-lamp.fire { animation: lab-pop .34s cubic-bezier(.34,1.56,.64,1); }
+
+/* 亮起瞬间的一圈光晕，animation 结束即消失，不留残影 */
+@keyframes lab-glow {
+  from { box-shadow: 0 0 0 0 rgba(22,163,74,.32); }
+  to   { box-shadow: 0 0 0 11px rgba(22,163,74,0); }
+}
+.lab-lamp.is-yes.fire { animation: lab-pop .34s cubic-bezier(.34,1.56,.64,1), lab-glow .5s ease-out; }
+
+/* 大数字跳变：轻微上浮，幅度必须小，否则滑块连续拖动时整块会抖 */
+@keyframes lab-bump {
+  0%   { transform: translateY(3px); opacity: .55; }
+  100% { transform: translateY(0);   opacity: 1; }
+}
+.lab-big.fire { animation: lab-bump .2s ease-out; }
+
+/* 结论条换文案时淡入，提示「这句话跟着你的操作变了」 */
+@keyframes lab-fade {
+  from { opacity: .35; }
+  to   { opacity: 1; }
+}
+.lab-verdict.fire { animation: lab-fade .26s ease-out; }
+
+/* 输出区首次出现（向导答完、追溯完成）：整块滑入 */
+@keyframes lab-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lab-out.fire { animation: lab-reveal .3s ease-out; }
+
+/* 只有在动画真的会播放时才需要这些过渡。开了减少动态效果的学员
+   直接看终态，不该被逐帧推进干扰。 */
+@media (prefers-reduced-motion: reduce) {
+  .lab-drow .ld-fill,
+  .lab-tree .lt-base,
+  .lab-tree .lt-links path { transition: none; }
+  .lab-tree .lt-links path { stroke-dashoffset: 0; }
+  .fire,
+  .lab-lamp.fire,
+  .lab-lamp.is-yes.fire,
+  .lab-big.fire,
+  .lab-verdict.fire,
+  .lab-out.fire { animation: none; }
+}
+
+/* ── 事实卡 ─────────────────────────────
+   用来陈述一组「已核实 / 尚未落实」混在一起的事实。刻意做得朴素：
+   这类内容一旦配上重样式，读者会以为在强调某个结论，而这里要传达的
+   恰恰是「事情还没定，别急着下结论」。 */
+.oss-fact-card {
+  border: 1px solid var(--oss-line); border-radius: var(--radius);
+  padding: 18px 20px; margin: 16px 0; background: #fff;
+}
+.oss-fact-card .of-head {
+  font-size: 14px; font-weight: 800; color: var(--oss);
+  padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--oss-line);
+}
+.oss-fact-card ul { margin: 0; padding-left: 18px; }
+.oss-fact-card li { font-size: 14.5px; line-height: 1.85; color: var(--text); }
+
+/* ── 量化实验台 ─────────────────────────────
+   oss-8 专用。要讲清楚「位数变少 → 权重被四舍五入到更少的档位 → 误差 →
+   排序翻转 → 整条推理链跑偏」这条因果链，光靠文字读者会跳过。
+   刻度尺是核心：INT4 只有 16 道刻度肉眼可数，INT8 密到成为条带，两者的
+   差距不用解释就看得见。 */
+.qz-ruler {
+  position: relative; height: 46px; margin: 14px 0 6px;
+  border-radius: 8px; background: var(--oss-soft);
+  overflow: hidden;
+}
+.qz-ruler .qr-tick {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--oss-line);
+}
+/* 档位密到一定程度就画不清了，这时改用渐变条带表达「密到数不清」 */
+.qz-ruler.is-dense::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg,
+    var(--oss-line) 0 1px, transparent 1px 3px);
+  opacity: .55;
+}
+.qz-ruler .qr-dot {
+  position: absolute; top: 50%; width: 11px; height: 11px;
+  margin: -5.5px 0 0 -5.5px; border-radius: 50%;
+  background: var(--oss); box-shadow: 0 0 0 2px #fff;
+  transition: left .35s cubic-bezier(.34, 1.2, .64, 1);
+}
+.qz-ruler .qr-dot.is-zero { background: var(--danger, #dc2626); }
+
+.qz-vals { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.qz-val {
+  display: grid; grid-template-columns: 1fr auto 1fr auto;
+  align-items: center; gap: 10px;
+  font-family: "SF Mono", Menlo, monospace; font-size: 13px;
+  padding: 7px 12px; border-radius: 8px; background: var(--bg-soft, #f7f7fa);
+}
+.qz-val .qv-arrow { color: var(--sub); font-size: 12px; }
+.qz-val .qv-new { font-weight: 700; color: var(--oss); }
+.qz-val .qv-err { font-size: 11.5px; color: var(--sub); text-align: right; }
+.qz-val.is-zero { background: rgba(220, 38, 38, .07); }
+.qz-val.is-zero .qv-new { color: var(--danger, #dc2626); }
+.qz-val.is-zero .qv-err { color: var(--danger, #dc2626); font-weight: 700; }
+
+/* 候选词排序：翻转那一刻要看得见，所以名次徽标单独着色 */
+.qz-cands { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.qz-cand {
+  display: grid; grid-template-columns: 26px 1fr 76px; align-items: center; gap: 10px;
+  padding: 7px 12px; border-radius: 8px; background: var(--bg-soft, #f7f7fa);
+  transition: background .2s;
+}
+.qz-cand .qc-rank {
+  width: 22px; height: 22px; border-radius: 50%; font-size: 11.5px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--oss-line); color: var(--oss);
+}
+/* 顺序有讲究：所有候选都会被扰动，动过的都标橙色，但第一名决定模型真正写出
+   哪个词，它的高亮必须压过移动标记，否则四行一起变橙，焦点就散了。 */
+.qz-cand.is-moved { background: rgba(217, 119, 6, .1); }
+.qz-cand.is-top { background: var(--oss-soft); }
+.qz-cand.is-top .qc-rank { background: var(--oss); color: #fff; }
+.qz-cand .qc-word { font-weight: 700; }
+.qz-cand .qc-p {
+  font-family: "SF Mono", Menlo, monospace; font-size: 12.5px;
+  color: var(--sub); text-align: right;
+}
+
+@media (max-width: 560px) {
+  .qz-val { grid-template-columns: 1fr auto 1fr; }
+  .qz-val .qv-err { grid-column: 1 / -1; text-align: left; }
+}
+
+/* ── 选材说明 ─────────────────────────────
+   全章反复拿同一个系列举例，读者会怀疑是不是在打广告。这个块专门用来把
+   选材理由摆在明面上，所以样式刻意做轻：浅底、无阴影，不抢正文。全章只在
+   开头出现一次。 */
+.oss-why {
+  background: var(--oss-soft);
+  border-radius: var(--radius);
+  padding: 16px 20px; margin: 18px 0;
+  font-size: 14.5px; line-height: 1.9; color: var(--text);
+}
+.oss-why p { margin: 0 0 8px; font-size: inherit; line-height: inherit; }
+.oss-why p:last-child { margin-bottom: 0; }
+.oss-why ul { margin: 8px 0; padding-left: 18px; }
+.oss-why li { margin-bottom: 4px; }
+
+/* ── 里程碑卡 ─────────────────────────────
+   给行业级别的标志性事件用。深色底是为了在整页浅色卡片里形成一次停顿，
+   全章只用一次，用多了就不是里程碑了。 */
+.oss-milestone {
+  background: #1c1c1e; color: #f5f5f7;
+  border-radius: var(--radius); padding: 26px 28px; margin: 18px 0;
+  box-shadow: var(--shadow-pop);
+}
+.oss-milestone .om-date {
+  display: inline-block; font-size: 11.5px; font-weight: 800;
+  letter-spacing: .8px; color: #a5b4fc;
+  background: rgba(165,180,252,.14); padding: 3px 11px; border-radius: 999px;
+}
+.oss-milestone h4 {
+  font-size: 21px; font-weight: 800; line-height: 1.4;
+  margin: 12px 0 4px; color: #fff;
+}
+.oss-milestone .om-nums {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  margin: 18px 0; padding: 16px 0;
+  border-top: 1px solid rgba(255,255,255,.12);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.oss-milestone .om-nums div { display: flex; flex-direction: column; gap: 3px; }
+.oss-milestone .om-nums b {
+  font-size: 25px; font-weight: 800; color: #a5b4fc;
+  line-height: 1.15; letter-spacing: -0.5px;
+}
+.oss-milestone .om-nums span { font-size: 12.5px; color: rgba(245,245,247,.6); }
+.oss-milestone p { font-size: 14.5px; line-height: 1.85; color: rgba(245,245,247,.82); }
+.oss-milestone p + p { margin-top: 12px; }
+.oss-milestone p b { color: #fff; font-weight: 700; }
+.oss-milestone .om-turn {
+  margin-top: 16px; padding: 14px 18px;
+  background: rgba(165,180,252,.1); border-radius: var(--radius-sm);
+  font-size: 14.5px; line-height: 1.8;
+}
+.oss-milestone .om-turn b { color: #a5b4fc; }
+
+/* ── 风险提示条 ───────────────────────────── */
+.oss-warn {
+  display: flex; gap: 11px; align-items: flex-start;
+  background: rgba(217,119,6,.06); border: 1.5px solid rgba(217,119,6,.24);
+  border-radius: var(--radius); padding: 15px 18px;
+  font-size: 14.5px; line-height: 1.7; margin: 14px 0;
+}
+.oss-warn svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 3px; color: var(--amber); }
+
+/* ── 移动端 ─────────────────────────────── */
+@media (max-width: 768px) {
+  .oss-facts, .oss-lic-grid { grid-template-columns: 1fr; }
+  .oss-lab { padding: 20px 16px 22px; }
+  .lab-row { gap: 10px; }
+  .lab-label { min-width: 100%; }
+  .lab-val { min-width: auto; text-align: left; }
+  .lab-lamps { grid-template-columns: 1fr; }
+  .lab-drow { grid-template-columns: 52px 1fr 48px; gap: 8px; }
+  .lab-big { font-size: 28px; }
+  .oss-milestone { padding: 20px 18px; }
+  .oss-milestone h4 { font-size: 18px; }
+  .oss-milestone .om-nums { grid-template-columns: 1fr; gap: 12px; }
+  .oss-milestone .om-nums b { font-size: 22px; }
+  .oc-controls { grid-template-columns: 1fr; gap: 13px; }
+  .oc-row {
+    grid-template-columns: 1fr auto; gap: 6px 12px;
+    padding: 12px 14px;
+  }
+  .ocr-bar { grid-column: 1 / -1; order: 3; }
+  .ocr-need { order: 2; text-align: right; }
+  .ocr-state { grid-column: 1 / -1; order: 4; text-align: left; }
+  .oss-fact .of-num { font-size: 26px; }
+}
+</style>
+<style>
+/* 工具选择：两张卡并排，帮读者快速定位自己该用哪个 */
+.tool { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.tool-box {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-card);
+}
+.tool-box h4 { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 9px; }
+.tool-box h4 svg { width: 18px; height: 18px; color: var(--oss); }
+.tool-box .t-tag {
+  display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--oss);
+  background: var(--oss-soft); padding: 2px 9px; border-radius: 999px; margin: 8px 0 10px;
+}
+.tool-box ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.tool-box li { font-size: 13.5px; line-height: 1.65; color: var(--sub); padding-left: 14px; position: relative; }
+.tool-box li::before {
+  content: ''; position: absolute; left: 0; top: 8px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--oss); opacity: .5;
+}
+.tool-box .t-fit {
+  font-size: 13.5px; margin-top: 11px; padding-top: 11px;
+  border-top: 1px solid var(--border); line-height: 1.65;
+}
+.tool-box .t-fit b { color: var(--text); }
+
+/* 标签解剖图 */
+.tagbox {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin: 16px 0;
+  box-shadow: var(--shadow-card); text-align: center;
+}
+.tagbox .tb-line {
+  font-family: "SF Mono", Menlo, monospace; font-size: 19px; font-weight: 700;
+  display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 0;
+}
+.tagbox .tb-p { padding: 3px 5px; border-radius: 6px; }
+.tagbox .tb-p.c1 { background: rgba(79,70,229,.12); color: var(--oss); }
+.tagbox .tb-p.c2 { background: rgba(22,163,74,.12); color: var(--success); }
+.tagbox .tb-p.c3 { background: rgba(217,119,6,.14); color: var(--amber); }
+.tagbox .tb-legend {
+  display: flex; flex-direction: column; gap: 7px; margin-top: 16px;
+  text-align: left; font-size: 13.5px; line-height: 1.6;
+}
+.tagbox .tb-legend div { display: flex; gap: 9px; align-items: flex-start; }
+.tagbox .tb-legend b { flex-shrink: 0; font-family: "SF Mono", Menlo, monospace; font-size: 12.5px; padding: 1px 7px; border-radius: 5px; }
+.tagbox .tb-legend span { color: var(--sub); }
+
+/* 量化档位选择表 */
+.qz { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.qz-row {
+  display: grid; grid-template-columns: 110px 1fr; gap: 14px; align-items: baseline;
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--card); font-size: 13.5px;
+}
+.qz-row.is-rec { border-color: rgba(79,70,229,.3); background: rgba(79,70,229,.03); }
+.qz-row .qz-n { font-family: "SF Mono", Menlo, monospace; font-weight: 700; }
+.qz-row .qz-d { color: var(--sub); line-height: 1.65; }
+.qz-row .qz-d b { color: var(--text); }
+@media (max-width: 768px) {
+  .tool { grid-template-columns: 1fr; }
+  .qz-row { grid-template-columns: 1fr; gap: 5px; }
+  .tagbox .tb-line { font-size: 15px; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="用 Ollama 或 LM Studio 在本地跑开源模型。含安装到运行的完整命令、模型标签的读法、Q4 与 Q5 量化档位怎么选，以及上下文长度撑爆显存等几个最常见的坑。">
+<meta name="keywords" content="Ollama 教程,LM Studio 使用,本地部署大模型,ollama pull,量化档位选择,GGUF,本地大模型 API">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="Ollama 与 LM Studio 怎么上手">
+<meta property="og:description" content="从安装到跑起来，加上模型标签的读法、量化档位的取舍和几个常见的坑。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/oss-9.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/oss-9.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ollama 与 LM Studio 怎么上手">
+<meta name="twitter:description" content="从安装到跑起来，加上模型标签的读法、量化档位的取舍和几个常见的坑。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">开源专题 · 在自己的机器上跑起来</div>
+    <h1>Ollama 与 LM Studio 怎么上手</h1>
+    <p class="subtitle">上一节算出了你能跑什么，这一节把它装起来。两个工具，一个命令行一个图形界面，第一次用十分钟能跑通。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>从安装到跑通的完整命令、模型标签的读法、量化档位怎么选，以及三个最常见的坑</p></aside><!--seo:end-->  <div class="sec-label">先选工具</div>
+
+  <div class="tool">
+    <div class="tool-box">
+      <h4>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="19" y2="19"></line></svg>
+        Ollama
+      </h4>
+      <div class="t-tag">命令行</div>
+      <ul>
+        <li>一条命令下载并运行，没有多余步骤</li>
+        <li>装好后自动在后台提供服务，可以直接被程序调用</li>
+        <li>接口兼容 OpenAI 的格式，原来调 API 的代码改个地址就能用</li>
+        <li>没有图形界面，换模型、调参数都要敲命令</li>
+      </ul>
+      <div class="t-fit"><b>适合你，如果：</b>你要把本地模型接进自己的程序，或者习惯用终端。</div>
+    </div>
+
+    <div class="tool-box">
+      <h4>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="3" rx="2"></rect><path d="M7 21h10"></path><path d="M12 17v4"></path></svg>
+        LM Studio
+      </h4>
+      <div class="t-tag">图形界面</div>
+      <ul>
+        <li>内置模型浏览器，能看到体积和量化档位再决定下不下</li>
+        <li>会提示当前机器能不能带得动，对新手很友好</li>
+        <li>也能开本地服务器，同样兼容 OpenAI 格式</li>
+        <li>在 Apple 芯片上支持 MLX 引擎，比通用格式更快</li>
+      </ul>
+      <div class="t-fit"><b>适合你，如果：</b>你想先试几个模型比较一下，或者不想碰命令行。</div>
+    </div>
+  </div>
+
+  <div class="l-callout">
+    <b>不用纠结，两个可以都装。</b>它们下载的模型文件互不冲突，很多人用 LM Studio 挑模型和试效果，用 Ollama 跑常驻服务。
+  </div>
+
+  <div class="sec-label">Ollama：从零到跑通</div>
+
+  <p>装好 Ollama 之后，只需要一条命令。以上一节算出你能跑 8B 为例：</p>
+
+  <div class="oss-cmd">
+    <div class="ocmd-bar">
+      <span class="ocmd-tip">下载并直接开始对话</span>
+      <button class="ocmd-copy" type="button" data-copy="ollama run qwen3:8b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+        复制
+      </button>
+    </div>
+    <pre><code>ollama run qwen3:8b</code></pre>
+  </div>
+
+  <p>就这一句。本地没有就先下载，下完自动进入对话。想只下载不运行，把 <code>run</code> 换成 <code>pull</code>。其余常用命令：</p>
+
+  <div class="oss-cmd">
+    <div class="ocmd-bar">
+      <span class="ocmd-tip">日常管理</span>
+      <button class="ocmd-copy" type="button" data-copy="ollama list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+        复制
+      </button>
+    </div>
+    <pre><code><span class="c"># 看已经下载了哪些模型，以及各占多少空间</span>
+ollama list
+
+<span class="c"># 删掉不用的，本地模型很占硬盘</span>
+ollama rm qwen3:8b
+
+<span class="c"># 看当前正在占用显存的模型</span>
+ollama ps</code></pre>
+  </div>
+
+  <p>装好后 Ollama 会在本机 <code>11434</code> 端口提供服务，接口格式跟 OpenAI 一致。也就是说你手上现成的 OpenAI 调用代码，把 <code>base_url</code> 指过来就能跑，模型名填标签名即可。</p>
+
+  <div class="oss-cmd">
+    <div class="ocmd-bar">
+      <span class="ocmd-tip">用现成的 OpenAI SDK 调本地模型</span>
+      <button class="ocmd-copy" type="button" data-copy="from openai import OpenAI
+
+# 本地服务不校验密钥，api_key 随便填一个非空值
+client = OpenAI(base_url=&quot;http://localhost:11434/v1&quot;, api_key=&quot;ollama&quot;)
+
+resp = client.chat.completions.create(
+    model=&quot;qwen3:8b&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;用一句话解释什么是量化&quot;}],
+)
+print(resp.choices[0].message.content)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+        复制
+      </button>
+    </div>
+    <pre><code>from openai import OpenAI
+
+<span class="c"># 本地服务不校验密钥，api_key 随便填一个非空值</span>
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
+
+resp = client.chat.completions.create(
+    model="qwen3:8b",
+    messages=[{"role": "user", "content": "用一句话解释什么是量化"}],
+)
+print(resp.choices[0].message.content)</code></pre>
+  </div>
+
+  <p>上面那条命令里的 <code>8b</code> 是举例。你自己该敲哪个数字，取决于你的机器。选一下，下面直接给出你能复制走的那条。</p>
+
+  <div class="oss-lab" data-lab="动手试试">
+    <div class="lab-q">选完直接点复制，这条命令装好 Ollama 就能用。</div>
+
+    <div class="lab-ctrl">
+      <div class="lab-row">
+        <span class="lab-label">平台</span>
+        <div class="lab-seg" id="cmdPlatform" role="group" aria-label="选择平台">
+          <button type="button" data-platform="nvidia" class="is-on">NVIDIA 显卡</button>
+          <button type="button" data-platform="apple">Apple Silicon</button>
+        </div>
+      </div>
+      <div class="lab-row">
+        <span class="lab-label">型号</span>
+        <select class="oc-select" id="cmdDevice" aria-label="选择设备型号"></select>
+      </div>
+      <div class="lab-row">
+        <span class="lab-label">主要用途</span>
+        <div class="lab-seg" id="cmdUse" role="group" aria-label="选择用途">
+          <button type="button" data-use="chat" class="is-on">日常问答</button>
+          <button type="button" data-use="code">写代码 / 数学</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-out">
+      <div class="lab-big" id="cmdPick"></div>
+      <div class="lab-note" id="cmdWhy"></div>
+
+      <div class="oss-cmd" id="cmdBox" style="margin-top:14px">
+        <div class="ocmd-bar">
+          <span class="ocmd-tip" id="cmdTip"></span>
+          <button class="ocmd-copy" type="button" id="cmdCopy" data-copy="">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+            复制
+          </button>
+        </div>
+        <pre><code id="cmdText"></code></pre>
+      </div>
+
+      <div class="lab-verdict" id="cmdLM"></div>
+    </div>
+  </div>
+
+  <p class="paywall-locked xa-peek">把上面那个选择器里的机型换着点一遍，会看出一件反直觉的事：<b>决定你能跑多大模型的不是显卡多贵，是显存多大。</b>一张 RTX 4090 停在 30B，而一台统一内存 128 GB 的 Mac 能吃下 122B——后者的图形算力远不如前者，但模型装得进去，前者装不进去。</p>
+
+  <div class="oss-fact-card paywall-locked">
+    <div class="of-head">同样是 INT4，两台机器的上限</div>
+    <ul>
+      <li>RTX 4090（24 GB 显存）→ 最大 <b>Qwen3-30B-A3B</b>，需 19.5 GB</li>
+      <li>Mac 统一内存 128 GB（约 96 GB 可用）→ 最大 <b>Qwen3.5-122B-A10B</b>，需 79.3 GB</li>
+    </ul>
+  </div>
+
+  <p class="paywall-locked">这也是大内存 Mac 在本地跑模型这件事上唯一说得通的理由。它的优势不是快，是<b>装得下</b>：同样的钱买独显，显存到 24 GB 就到头了，而统一内存能堆到 128 GB 以上，中间这一段没有别的消费级设备能补。<b>如果你的用途就是在本地跑大尺寸模型，内存容量比 GPU 型号重要得多。</b></p>
+
+  <div class="oss-src paywall-locked">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+    <span>上面的推荐只登记了 <b>Ollama 官方库里确实存在的标签</b>，核对日期 2026-08-07，来源 ollama.com/library。给一条拉不下来的命令比不给更糟。</span>
+  </div>
+
+  <div class="sec-label paywall-locked">标签怎么读</div>
+
+  <p class="paywall-locked">冒号后面那串不是随便写的，每一段都有含义。</p>
+
+  <div class="tagbox paywall-locked">
+    <div class="tb-line">
+      <span class="tb-p c1">qwen3</span><span>:</span><span class="tb-p c2">30b-a3b</span><span>-</span><span class="tb-p c3">q4_K_M</span>
+    </div>
+    <div class="tb-legend">
+      <div><b style="background:rgba(79,70,229,.12);color:var(--oss)">qwen3</b><span>模型系列名。</span></div>
+      <div><b style="background:rgba(22,163,74,.12);color:var(--success)">30b-a3b</b><span>尺寸。带 a 的是 MoE，这里表示总参数 30B、激活 3B。上一节讲过，显存要按 30B 准备。</span></div>
+      <div><b style="background:rgba(217,119,6,.14);color:var(--amber)">q4_K_M</b><span>量化档位。不写的话会用默认档，见下一段。</span></div>
+    </div>
+  </div>
+
+  <div class="oss-warn paywall-locked">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+    <div><b>第一个坑：你跑的默认就是量化版。</b>不写量化后缀时，Ollama 拉的通常是 Q4 档，不是原始精度。很多人拿它跟官方 API 的效果比，觉得开源模型不行，其实比的根本不是同一个东西。<b>要对比质量，先确认两边跑的是不是同一个档位。</b></div>
+  </div>
+
+  <div class="sec-label paywall-locked">量化档位怎么选</div>
+
+  <div class="qz paywall-locked">
+    <div class="qz-row is-rec">
+      <div class="qz-n">Q4_K_M</div>
+      <div class="qz-d"><b>默认选它。</b>体积和质量的平衡点，绝大多数工具的默认档。日常问答、总结、改写这类任务上够用。</div>
+    </div>
+    <div class="qz-row">
+      <div class="qz-n">Q5_K_M</div>
+      <div class="qz-d">体积略大，质量更稳。<b>如果你主要拿来写代码或做数学题，选这一档更保险</b>，这两类任务对精度损失比较敏感。</div>
+    </div>
+    <div class="qz-row">
+      <div class="qz-n">Q8_0</div>
+      <div class="qz-d">接近原始质量，体积也接近翻倍。显存充裕又想要最好效果时用。</div>
+    </div>
+    <div class="qz-row">
+      <div class="qz-n">Q3 及以下</div>
+      <div class="qz-d">除非显存实在不够，否则不建议。掉分开始明显，还不如换个小一号的模型跑高一档量化。</div>
+    </div>
+  </div>
+
+  <div class="l-callout paywall-locked">
+    <b>一条实用规律：模型越大，量化越安全。</b>32B 模型量化到 Q4 掉的那点分，往往还是比 8B 跑 Q8 强。所以显存有限时，优先保尺寸，再考虑档位。
+  </div>
+
+  <div class="oss-src paywall-locked">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+    <span>可用标签会随版本更新，实际拉取前建议到 <code>ollama.com/library</code> 对应模型的 tags 页确认当前有哪些尺寸与档位。核对日期 2026-08-07。</span>
+  </div>
+
+  <div class="sec-label paywall-locked">LM Studio：点几下就行</div>
+
+  <div class="oss-steps paywall-locked">
+    <div class="oss-step">
+      <div class="ostep-n">1</div>
+      <div class="ostep-body">
+        <h4>在模型库里搜索</h4>
+        <p>搜模型名，列表会列出各个量化版本的体积。界面会根据你的机器提示哪些带得动，这一点比命令行直观很多。</p>
+      </div>
+    </div>
+    <div class="oss-step">
+      <div class="ostep-n">2</div>
+      <div class="ostep-body">
+        <h4>下载后直接聊天</h4>
+        <p>加载模型时可以调上下文长度和 GPU 分配。这两个参数直接影响显存占用，先用默认值跑通再调。</p>
+      </div>
+    </div>
+    <div class="oss-step">
+      <div class="ostep-n">3</div>
+      <div class="ostep-body">
+        <h4>需要给程序调用时，开本地服务器</h4>
+        <p>在服务器面板里启动，同样是 OpenAI 兼容接口，用法和上面的 Ollama 例子一样，只是端口不同。</p>
+      </div>
+    </div>
+    <div class="oss-step">
+      <div class="ostep-n">4</div>
+      <div class="ostep-body">
+        <h4>Mac 用户注意选 MLX 版本</h4>
+        <p>如果模型有 MLX 格式，优先选它。这是针对 Apple 芯片优化的引擎，同样的模型速度会明显好于通用格式。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">还有三个常见的坑</div>
+
+  <div class="l-card paywall-locked">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:11px;font-size:14.5px;line-height:1.7">
+      <li><b>上下文开太大，显存直接爆。</b>这是最高频的问题。模型加载时显存看着够，一旦把上下文拉到几十 K，KV Cache 涨上来就崩了。现象是生成到一半卡死，或者速度突然慢到不可用。<b>先按默认上下文跑通，需要长文再一档一档往上加。</b></li>
+      <li><b>显存不够时不一定报错。</b>有些工具会自动把装不下的部分放到内存里，靠 CPU 算。结果是能跑，但慢十倍以上。如果你发现生成速度慢得离谱，先检查是不是没完全装进显存。</li>
+      <li><b>硬盘会被吃掉。</b>一个 8B 的 Q4 模型三四个 GB，试几个模型就是几十个 GB。定期用 <code>ollama list</code> 看一眼，不用的删掉。</li>
+    </ul>
+  </div>
+
+  <div class="sec-label paywall-locked">三条路，什么时候走哪条</div>
+
+  <p class="paywall-locked">到这里，你手上有三种用模型的方式了。它们不是替代关系，各有各的场合：</p>
+
+  <div class="l-card paywall-locked">
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.7">
+      <li><b>本地跑。</b>数据不能外发、要长期高频调用、或者想完全不受服务商影响时。代价是能力上限受硬件限制。</li>
+      <li><b>官方 API。</b>要最强能力、不想管运维时。按量付费，用多少算多少。</li>
+      <li><b>中转站。</b>便利性和风险并存，具体的取舍在<a href="/dashboard/learning?lesson=zero-q-relay" data-lesson-id="zero-q-relay">《什么是 API 中转站》</a>那一节讲过，涉及数据经手第三方的问题，选之前建议回去再看一眼。</li>
+    </ul>
+  </div>
+
+  <p class="paywall-locked">这一章到此结束。你现在应该能自己判断一个模型的开放程度、知道小模型是怎么来的和它的代价、并且能在自己的机器上把它跑起来。</p>
+
+</article>
+
+<script>/* ═══════════════════════════════════════════════════════════
+   oss-calc.js —— 显存换算与机型匹配（oss-8 / PlayGround 共用）
+
+   背景：oss-8 要回答「我这台机器能跑多大的模型」。这个判断本身有明确公式，
+   但散落在各处的说法口径不一（有的按参数量 ×2 估，有的忘了算 KV Cache），
+   学员照着算会得到跑不起来的结论。
+   设计意图：把换算规则、设备参数、模型清单集中在一个文件里，浏览器与 Node
+   共用同一份实现，单测直接验证这份代码本身，避免测试与页面各算各的。
+   约束：所有系数取自 luoxiaoshan.cn/llm 的公开对照表，改动系数必须同步更新
+   tests/test_oss_calc.py 的预期值与页面上的公式说明，三者不允许漂移。
+   ═══════════════════════════════════════════════════════════ */
+
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) { module.exports = api; }
+  if (root) { root.OSSCalc = api; }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  /* 精度系数：显存(GB) ≈ 参数量(B) × 系数。
+     系数里已经含约 30% 到 50% 的运行时开销（主要是 KV Cache），
+     所以不要在外部再乘一次开销，否则会高估到没有机器跑得动。 */
+  var PRECISION = {
+    fp32: { label: 'FP32', factor: 4.0 },
+    fp16: { label: 'FP16', factor: 2.6 },
+    int8: { label: 'INT8', factor: 1.3 },
+    int4: { label: 'INT4', factor: 0.65 },
+  };
+
+  /* ── oss-8：量化为什么会掉分 ──
+     背景：页面原先只写「位数越少损失越大」，读者记住了结论但不知道损失从哪来，
+     也就无法判断自己的任务该选哪一档。
+     设计意图：量化的本质是把连续的权重四舍五入到有限个档位，这件事可以精确算，
+     所以这里只做真实的数学，不编造「掉几分」这类跑分。
+     约束：INT 走对称均匀量化，档位数与步长都是定义直接推出来的；FP16 是浮点，
+     档位不均匀（越靠近 0 越密），必须按指数分段算，不能当成均匀格子，否则
+     会把「浮点在小数值上精度更高」这个关键差异抹掉。 */
+  var QUANT = {
+    fp16: { label: 'FP16', bits: 16, uniform: false },
+    int8: { label: 'INT8', bits: 8, uniform: true },
+    int4: { label: 'INT4', bits: 4, uniform: true },
+  };
+
+  /**
+   * 一个数值在该精度下能落到的档位间隔。
+   * INT：整个范围被均分成 2^bits - 1 段，步长处处相同。
+   * FP16：10 位尾数，同一个二进制指数区间内均分 1024 份，所以步长随数值大小变化。
+   */
+  function quantStep(precision, absMax, value) {
+    var q = QUANT[precision];
+    if (!q) { throw new Error('未知精度: ' + precision); }
+    if (!(absMax > 0)) { throw new Error('取值范围必须为正数: ' + absMax); }
+    if (q.uniform) {
+      return (2 * absMax) / (Math.pow(2, q.bits) - 1);
+    }
+    var a = Math.abs(value || 0);
+    /* 非正规数以下直接用 FP16 能表示的最小间隔，避免 log2(0) */
+    if (a < Math.pow(2, -14)) { return Math.pow(2, -24); }
+    return Math.pow(2, Math.floor(Math.log2(a)) - 10);
+  }
+
+  /** 把一个权重值四舍五入到该精度最近的档位上。 */
+  function quantize(value, precision, absMax) {
+    var step = quantStep(precision, absMax, value);
+    var v = Math.max(-absMax, Math.min(absMax, value));
+    return Math.round(v / step) * step;
+  }
+
+  /**
+   * 一组权重在该精度下的舍入误差。
+   * 返回的 relMax 是「最大误差占取值范围的比例」，这是页面上最能说明问题的数：
+   * INT4 为 6.67%、INT8 为 0.39%，相差 17 倍（255/15，即两者档位数之比）。
+   */
+  function quantStats(values, precision, absMax) {
+    var errs = values.map(function (v) {
+      return Math.abs(quantize(v, precision, absMax) - v);
+    });
+    var sum = errs.reduce(function (a, b) { return a + b; }, 0);
+    return {
+      avg: sum / errs.length,
+      max: Math.max.apply(null, errs),
+      /* 均匀量化下最大舍入误差恒为半个步长，与具体取到哪些样本无关 */
+      relMax: quantStep(precision, absMax, absMax) / 2 / absMax,
+    };
+  }
+
+  /**
+   * 背景：读者真正要判断的是「这点误差会不会影响我的任务」。
+   * 设计意图：把误差换算成「一条 n 步推理链全程不出错的概率」。单步翻车概率
+   * 很低也架不住连乘，这正是页面上「日常问答没感觉、长链推理掉分明显」的由来。
+   * 约束：p 是每步出错概率，这里假设各步独立。真实推理链前后相关，独立假设会
+   * 低估风险，页面必须写明这是示意而非实测。
+   */
+  function chainSurvival(p, steps) {
+    if (p < 0 || p > 1) { throw new Error('单步出错概率必须在 0 与 1 之间: ' + p); }
+    return Math.pow(1 - p, steps);
+  }
+
+  /* 界面文案：本模块同时被中英韩三套页面加载，渲染出来的文字必须跟着页面语言走。
+     早期版本把中文写死在渲染函数里，导致 .en / .ko 页面上的计算器显示中文。
+     新增语言时在这里补一份即可，渲染逻辑不需要改。 */
+  var I18N = {
+    zh: {
+      tier: { edge: '端侧', light: '轻量', main: '主流', high: '高配', moe: 'MoE', flagship: '旗舰' },
+      state: { ok: '可以跑', tight: '勉强，留意上下文', no: '跑不动' },
+      avail: '可用于载入模型：',
+      formula: function (f, label) {
+        return '显存 ≈ 参数量(B) × ' + f + '（' + label + '，已含 KV Cache 开销）';
+      },
+      vramNote: function (gb) { return '独立显存 ' + gb + ' GB'; },
+      memNote: function (gb, pct) {
+        return '统一内存 ' + gb + ' GB，按可分配给 GPU 的约 ' + pct + '% 计';
+      },
+      optVram: function (gb) { return gb + ' GB 显存'; },
+      optMem: function (gb) { return gb + ' GB 统一内存'; },
+      wrap: function (s) { return '（' + s + '）'; },
+      moeTag: function (total, active) {
+        return '总参 ' + total + 'B / 激活 ' + active + 'B';
+      },
+      need: function (gb) { return '需 ' + gb + ' GB'; },
+      deviceMissing: '设备数据缺失，请重新选择',
+      copy: '复制',
+      copied: '已复制',
+      copyManual: '请手动选中复制',
+      recWhy: function (need, avail) {
+        return '这台机器可用 ' + avail + ' GB，它需要 ' + need + ' GB，留得出余量。';
+      },
+      recNone: '这台机器带不动官方库里已上架的型号',
+      recNoneWhy: '先换更低的精度档试试，或者按上一节的结论挑一个更小的尺寸。',
+      recCmdTip: '复制这条，装好 Ollama 后直接敲',
+      recUse: { chat: '日常问答', code: '写代码 / 数学' },
+      recQuant: function (q) { return '想更稳可以试 ' + q + ' 档，拉之前先到 library 的 tags 页确认这个尺寸有没有这一档。'; },
+      recTop: '这已经是官方库里<b>能下到本机的最大 Qwen 尺寸</b>了。再往上的 397B 只提供云端版本（<code>qwen3.5:397b-cloud</code>），跑在别人的机器上，不落到你这里。',
+      recVer: '注意它是 <b>3.5</b> 那一代，不是最新的 3.6。3.6 目前只出到 35B，<b>版本号更新不等于全尺寸跟进</b>，挑本地模型要看尺寸，不能只看版本号。',
+      qLevels: function (n) { return n.toLocaleString('zh-CN') + ' 档'; },
+      qLevelsNote: { fp16: '浮点，越靠近 0 档位越密', int8: '整个范围均分', int4: '整个范围均分' },
+      qOrig: '原始值', qAfter: '存进去变成', qErr: '差了',
+      qZero: '被抹成 0',
+      qRelMax: function (pct) { return '最大误差 ' + pct + '%'; },
+      qVsInt8: function (x) { return '是 INT8 的 ' + x + ' 倍'; },
+      qHintFp16: '这是模型发布时的原始格式，后面两档都拿它当基准。误差小到看不出来。',
+      qHintInt8: '误差还在千分之四以内。日常任务上基本察觉不到差别，显存够就选它。',
+      qHintInt4: '误差跳到 6.7%，而且<b>绝对值小的权重会被直接抹成 0</b>——那个参数在这份文件里就不存在了。',
+      qFlipTitle: '一次预测里会发生什么',
+      qFlipHint: '模型每写一个词，都是在若干候选里挑概率最高的那个。下面这组候选前两名咬得很紧。',
+      qFlipKeep: '排序没变，这一步不受影响',
+      qFlipTurn: '<b>排序翻了</b>，这一步会写出另一个词',
+      qChainHint: '单看一步，出问题的机会不大。但推理是一步接一步往下走的：',
+      qChainSteps: function (n) { return n + ' 步'; },
+      qChainLive: function (pct) { return '全程不出错的概率 ' + pct + '%'; },
+      qChainNote: function (n) {
+        return n + ' 步里只要有一步选错，后面就顺着错的往下走。这也是为什么长链条推理对精度更敏感，而问个天气怎么样感觉不出区别。';
+      },
+      recLM: function (n) { return 'LM Studio 用户：在模型库里搜 <b>' + n + '</b>，界面会直接标出哪些量化版本你带得动。'; },
+    },
+    hk: {
+      tier: { edge: '端側', light: '輕量', main: '主流', high: '高配', moe: 'MoE', flagship: '旗艦' },
+      state: { ok: '可以跑', tight: '勉強，留意上下文', no: '跑不動' },
+      avail: '可用於載入模型：',
+      formula: function (f, label) {
+        return '顯存 ≈ 參數量(B) × ' + f + '（' + label + '，已含 KV Cache 開銷）';
+      },
+      vramNote: function (gb) { return '獨立顯存 ' + gb + ' GB'; },
+      memNote: function (gb, pct) {
+        return '統一記憶體 ' + gb + ' GB，按可分配給 GPU 的約 ' + pct + '% 計';
+      },
+      optVram: function (gb) { return gb + ' GB 顯存'; },
+      optMem: function (gb) { return gb + ' GB 統一記憶體'; },
+      wrap: function (s) { return '（' + s + '）'; },
+      moeTag: function (total, active) {
+        return '總參 ' + total + 'B / 激活 ' + active + 'B';
+      },
+      need: function (gb) { return '需 ' + gb + ' GB'; },
+      deviceMissing: '設備數據缺失，請重新選擇',
+      copy: '複製',
+      copied: '已複製',
+      copyManual: '請手動選中複製',
+      recWhy: function (need, avail) {
+        return '這台機器可用 ' + avail + ' GB，它需要 ' + need + ' GB，留得出餘量。';
+      },
+      recNone: '這台機器帶不動官方庫裏已上架的型號',
+      recNoneWhy: '先換更低的精度檔試試，或者按上一節的結論挑一個更小的尺寸。',
+      recCmdTip: '複製這條，裝好 Ollama 後直接敲',
+      recUse: { chat: '日常問答', code: '寫程式碼 / 數學' },
+      recQuant: function (q) { return '想更穩可以試 ' + q + ' 檔，拉之前先到 library 的 tags 頁確認這個尺寸有沒有這一檔。'; },
+      recTop: '這已經是官方庫裏<b>能下到本機的最大 Qwen 尺寸</b>了。再往上的 397B 只提供雲端版本（<code>qwen3.5:397b-cloud</code>），跑在別人的機器上，不落到你這裏。',
+      recVer: '注意它是 <b>3.5</b> 那一代，不是最新的 3.6。3.6 目前只出到 35B，<b>版本號更新不等於全尺寸跟進</b>，挑本地模型要看尺寸，不能只看版本號。',
+      qLevels: function (n) { return n.toLocaleString('zh-CN') + ' 檔'; },
+      qLevelsNote: { fp16: '浮點，越靠近 0 檔位越密', int8: '整個範圍均分', int4: '整個範圍均分' },
+      qOrig: '原始值', qAfter: '存進去變成', qErr: '差了',
+      qZero: '被抹成 0',
+      qRelMax: function (pct) { return '最大誤差 ' + pct + '%'; },
+      qVsInt8: function (x) { return '是 INT8 的 ' + x + ' 倍'; },
+      qHintFp16: '這是模型發佈時的原始格式，後面兩檔都拿它當基準。誤差小到看不出來。',
+      qHintInt8: '誤差還在千分之四以內。日常任務上基本察覺不到差別，顯存夠就選它。',
+      qHintInt4: '誤差跳到 6.7%，而且<b>絕對值小的權重會被直接抹成 0</b>——那個參數在這份檔案裏就不存在了。',
+      qFlipTitle: '一次預測裏會發生什麼',
+      qFlipHint: '模型每寫一個詞，都是在若干候選裏挑概率最高的那個。下面這組候選前兩名咬得很緊。',
+      qFlipKeep: '排序沒變，這一步不受影響',
+      qFlipTurn: '<b>排序翻了</b>，這一步會寫出另一個詞',
+      qChainHint: '單看一步，出問題的機會不大。但推理是一步接一步往下走的：',
+      qChainSteps: function (n) { return n + ' 步'; },
+      qChainLive: function (pct) { return '全程不出錯的概率 ' + pct + '%'; },
+      qChainNote: function (n) {
+        return n + ' 步裏只要有一步選錯，後面就順着錯的往下走。這也是為什麼長鏈條推理對精度更敏感，而問個天氣怎麼樣感覺不出區別。';
+      },
+      recLM: function (n) { return 'LM Studio 用戶：在模型庫裏搜 <b>' + n + '</b>，界面會直接標出哪些量化版本你帶得動。'; },
+    },
+    tw: {
+      tier: { edge: '端側', light: '輕量', main: '主流', high: '高配', moe: 'MoE', flagship: '旗艦' },
+      state: { ok: '可以跑', tight: '勉強，留意上下文', no: '跑不動' },
+      avail: '可用於載入模型：',
+      formula: function (f, label) {
+        return '顯存 ≈ 參數量(B) × ' + f + '（' + label + '，已含 KV Cache 開銷）';
+      },
+      vramNote: function (gb) { return '獨立顯存 ' + gb + ' GB'; },
+      memNote: function (gb, pct) {
+        return '統一記憶體 ' + gb + ' GB，按可分配給 GPU 的約 ' + pct + '% 計';
+      },
+      optVram: function (gb) { return gb + ' GB 顯存'; },
+      optMem: function (gb) { return gb + ' GB 統一記憶體'; },
+      wrap: function (s) { return '（' + s + '）'; },
+      moeTag: function (total, active) {
+        return '總參 ' + total + 'B / 啟用 ' + active + 'B';
+      },
+      need: function (gb) { return '需 ' + gb + ' GB'; },
+      deviceMissing: '裝置資料缺失，請重新選擇',
+      copy: '複製',
+      copied: '已複製',
+      copyManual: '請手動選中複製',
+      recWhy: function (need, avail) {
+        return '這臺機器可用 ' + avail + ' GB，它需要 ' + need + ' GB，留得出餘量。';
+      },
+      recNone: '這臺機器帶不動官方庫裡已上架的型號',
+      recNoneWhy: '先換更低的精度檔試試，或者按上一節的結論挑一個更小的尺寸。',
+      recCmdTip: '複製這條，裝好 Ollama 後直接敲',
+      recUse: { chat: '日常問答', code: '寫程式碼 / 數學' },
+      recQuant: function (q) { return '想更穩可以試 ' + q + ' 檔，拉之前先到 library 的 tags 頁確認這個尺寸有沒有這一檔。'; },
+      recTop: '這已經是官方庫裡<b>能下到本機的最大 Qwen 尺寸</b>了。再往上的 397B 只提供雲端版本（<code>qwen3.5:397b-cloud</code>），跑在別人的機器上，不落到你這裡。',
+      recVer: '注意它是 <b>3.5</b> 那一代，不是最新的 3.6。3.6 目前只出到 35B，<b>版本號更新不等於全尺寸跟進</b>，挑本地模型要看尺寸，不能只看版本號。',
+      qLevels: function (n) { return n.toLocaleString('zh-CN') + ' 檔'; },
+      qLevelsNote: { fp16: '浮點，越靠近 0 檔位越密', int8: '整個範圍均分', int4: '整個範圍均分' },
+      qOrig: '原始值', qAfter: '存進去變成', qErr: '差了',
+      qZero: '被抹成 0',
+      qRelMax: function (pct) { return '最大誤差 ' + pct + '%'; },
+      qVsInt8: function (x) { return '是 INT8 的 ' + x + ' 倍'; },
+      qHintFp16: '這是模型釋出時的原始格式，後面兩檔都拿它當基準。誤差小到看不出來。',
+      qHintInt8: '誤差還在千分之四以內。日常任務上基本察覺不到差別，顯存夠就選它。',
+      qHintInt4: '誤差跳到 6.7%，而且<b>絕對值小的權重會被直接抹成 0</b>——那個參數在這份檔案裡就不存在了。',
+      qFlipTitle: '一次預測裡會發生什麼',
+      qFlipHint: '模型每寫一個詞，都是在若干候選裡挑機率最高的那個。下面這組候選前兩名咬得很緊。',
+      qFlipKeep: '排序沒變，這一步不受影響',
+      qFlipTurn: '<b>排序翻了</b>，這一步會寫出另一個詞',
+      qChainHint: '單看一步，出問題的機會不大。但推理是一步接一步往下走的：',
+      qChainSteps: function (n) { return n + ' 步'; },
+      qChainLive: function (pct) { return '全程不出錯的機率 ' + pct + '%'; },
+      qChainNote: function (n) {
+        return n + ' 步裡只要有一步選錯，後面就順著錯的往下走。這也是為什麼長鏈條推理對精度更敏感，而問個天氣怎麼樣感覺不出區別。';
+      },
+      recLM: function (n) { return 'LM Studio 使用者：在模型庫裡搜 <b>' + n + '</b>，介面會直接標出哪些量化版本你帶得動。'; },
+    },
+    en: {
+      tier: { edge: 'On-device', light: 'Light', main: 'Mainstream', high: 'High-end', moe: 'MoE', flagship: 'Flagship' },
+      state: { ok: 'Runs fine', tight: 'Tight, watch context length', no: 'Too large' },
+      avail: 'Available for loading a model: ',
+      formula: function (f, label) {
+        return 'VRAM ≈ params(B) × ' + f + ' (' + label + ', KV Cache included)';
+      },
+      vramNote: function (gb) { return 'Dedicated VRAM ' + gb + ' GB'; },
+      memNote: function (gb, pct) {
+        return 'Unified memory ' + gb + ' GB, about ' + pct + '% assumed available to the GPU';
+      },
+      optVram: function (gb) { return gb + ' GB VRAM'; },
+      optMem: function (gb) { return gb + ' GB unified memory'; },
+      wrap: function (s) { return ' (' + s + ')'; },
+      moeTag: function (total, active) {
+        return total + 'B total / ' + active + 'B active';
+      },
+      need: function (gb) { return 'Needs ' + gb + ' GB'; },
+      deviceMissing: 'Device data missing, please select again',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyManual: 'Please select and copy manually',
+      recWhy: function (need, avail) {
+        return 'This machine has ' + avail + ' GB available and this model needs ' + need + ' GB, which leaves real headroom.';
+      },
+      recNone: 'This machine cannot run anything currently in the official library',
+      recNoneWhy: 'Try a lower precision first, or pick a smaller size based on the previous lesson.',
+      recCmdTip: 'Copy this and run it once Ollama is installed',
+      recUse: { chat: 'Everyday chat', code: 'Code / math' },
+      recQuant: function (q) { return 'For more quality headroom, try the ' + q + ' build, but check the tags page in the library first to confirm this size offers it.'; },
+      recTop: 'This is the <b>largest Qwen you can pull down to your own machine</b> from the official library. Anything bigger, such as the 397B, is cloud-only (<code>qwen3.5:397b-cloud</code>) and runs on someone else\'s hardware, never on yours.',
+      recVer: 'Note that it comes from the <b>3.5</b> generation, not the newer 3.6. The 3.6 line currently tops out at 35B, so a <b>higher version number does not mean every size followed</b>. Pick a local model by size, not by version.',
+      qLevels: function (n) { return n.toLocaleString('en-US') + ' levels'; },
+      qLevelsNote: { fp16: 'Floating point: levels cluster near zero', int8: 'Range split evenly', int4: 'Range split evenly' },
+      qOrig: 'Original', qAfter: 'Stored as', qErr: 'Off by',
+      qZero: 'flattened to 0',
+      qRelMax: function (pct) { return 'Max error ' + pct + '%'; },
+      qVsInt8: function (x) { return x + '\u00d7 that of INT8'; },
+      qHintFp16: 'This is the format models ship in, and the baseline the other two are measured against. The error is too small to notice.',
+      qHintInt8: 'Error stays under 0.4%. On everyday tasks you will not feel a difference, so pick this whenever the memory allows.',
+      qHintInt4: 'Error jumps to 6.7%, and <b>weights with small magnitudes get flattened to exactly 0</b> — that parameter no longer exists in this file.',
+      qFlipTitle: 'What this does to one prediction',
+      qFlipHint: 'Every word the model writes is the highest-scoring candidate of several. In the set below the top two are neck and neck.',
+      qFlipKeep: 'Order held. This step is unaffected',
+      qFlipTurn: '<b>The order flipped.</b> This step now writes a different word',
+      qChainHint: 'One step alone is unlikely to go wrong. But reasoning runs step after step:',
+      qChainSteps: function (n) { return n + (n === 1 ? ' step' : ' steps'); },
+      qChainLive: function (pct) { return pct + '% chance of getting through cleanly'; },
+      qChainNote: function (n) {
+        var where = n === 1 ? 'in that one step' : 'anywhere in those ' + n + ' steps';
+        return 'A single wrong pick ' + where + ' and everything after it follows the wrong path. That is why long reasoning chains are sensitive to precision while asking about the weather is not.';
+      },
+      recLM: function (n) { return 'LM Studio users: search for <b>' + n + '</b> in the model library and the app will mark which quantized builds your machine can handle.'; },
+    },
+    ko: {
+      tier: { edge: '온디바이스', light: '경량', main: '주력', high: '고사양', moe: 'MoE', flagship: '플래그십' },
+      state: { ok: '실행 가능', tight: '빠듯함, 컨텍스트 주의', no: '실행 불가' },
+      avail: '모델 로딩에 쓸 수 있는 용량: ',
+      formula: function (f, label) {
+        return 'VRAM ≈ 파라미터 수(B) × ' + f + ' (' + label + ', KV Cache 포함)';
+      },
+      vramNote: function (gb) { return '전용 VRAM ' + gb + ' GB'; },
+      memNote: function (gb, pct) {
+        return '통합 메모리 ' + gb + ' GB, GPU에 할당 가능한 약 ' + pct + '% 기준';
+      },
+      optVram: function (gb) { return gb + ' GB VRAM'; },
+      optMem: function (gb) { return gb + ' GB 통합 메모리'; },
+      wrap: function (s) { return ' (' + s + ')'; },
+      moeTag: function (total, active) {
+        return '총 ' + total + 'B / 활성 ' + active + 'B';
+      },
+      need: function (gb) { return gb + ' GB 필요'; },
+      deviceMissing: '기기 데이터가 없습니다. 다시 선택해 주세요',
+      copy: '복사',
+      copied: '복사됨',
+      copyManual: '직접 선택해 복사해 주세요',
+      recWhy: function (need, avail) {
+        return '이 기기는 ' + avail + ' GB를 쓸 수 있고 이 모델은 ' + need + ' GB가 필요하므로 여유가 남습니다.';
+      },
+      recNone: '이 기기로는 공식 라이브러리에 올라온 모델을 돌리기 어렵습니다',
+      recNoneWhy: '먼저 더 낮은 정밀도를 시도하거나, 앞 강의의 결론에 따라 더 작은 크기를 고르세요.',
+      recCmdTip: 'Ollama 설치 후 이 명령을 그대로 복사해 실행하세요',
+      recUse: { chat: '일상 대화', code: '코딩 / 수학' },
+      recQuant: function (q) { return '품질에 여유를 더 두고 싶다면 ' + q + ' 빌드를 시도해 보세요. 다만 받기 전에 library의 tags 페이지에서 해당 크기에 그 등급이 있는지 확인해야 합니다.'; },
+      recTop: '공식 라이브러리에서 <b>내 컴퓨터로 내려받을 수 있는 가장 큰 Qwen</b>입니다. 이보다 큰 397B는 클라우드 전용(<code>qwen3.5:397b-cloud</code>)이라 남의 장비에서 돌 뿐, 내 컴퓨터로는 오지 않습니다.',
+      recVer: '이 모델이 최신 3.6이 아니라 <b>3.5</b> 세대라는 점에 유의하세요. 3.6은 현재 35B까지만 나와 있습니다. <b>버전이 올라갔다고 모든 크기가 따라 나오지는 않습니다.</b> 로컬 모델은 버전이 아니라 크기를 보고 골라야 합니다.',
+      qLevels: function (n) { return n.toLocaleString('ko-KR') + '단계'; },
+      qLevelsNote: { fp16: '부동소수점, 0에 가까울수록 촘촘', int8: '전체 범위를 균등 분할', int4: '전체 범위를 균등 분할' },
+      qOrig: '원래 값', qAfter: '저장되면', qErr: '차이',
+      qZero: '0으로 뭉개짐',
+      qRelMax: function (pct) { return '최대 오차 ' + pct + '%'; },
+      qVsInt8: function (x) { return 'INT8의 ' + x + '배'; },
+      qHintFp16: '모델이 배포될 때의 원본 형식이며, 나머지 두 등급의 기준선입니다. 오차는 알아챌 수 없을 만큼 작습니다.',
+      qHintInt8: '오차가 0.4% 이내입니다. 일상적인 작업에서는 차이를 느끼기 어려우니 메모리가 허락하면 이 등급을 고르세요.',
+      qHintInt4: '오차가 6.7%로 뛰고, <b>절댓값이 작은 가중치는 아예 0으로 뭉개집니다.</b> 그 파라미터는 이 파일 안에 더 이상 존재하지 않습니다.',
+      qFlipTitle: '예측 한 번에서 벌어지는 일',
+      qFlipHint: '모델은 단어를 하나 쓸 때마다 여러 후보 중 확률이 가장 높은 것을 고릅니다. 아래 후보들은 1위와 2위가 아슬아슬합니다.',
+      qFlipKeep: '순서가 그대로입니다. 이 단계는 영향을 받지 않습니다',
+      qFlipTurn: '<b>순서가 뒤집혔습니다.</b> 이 단계에서 다른 단어가 나옵니다',
+      qChainHint: '한 단계만 보면 잘못될 가능성은 크지 않습니다. 하지만 추론은 한 단계씩 이어집니다:',
+      qChainSteps: function (n) { return n + '단계'; },
+      qChainLive: function (pct) { return '전 과정을 무사히 통과할 확률 ' + pct + '%'; },
+      qChainNote: function (n) {
+        return n + '단계 중 한 번만 잘못 골라도 그 뒤는 틀린 쪽을 따라 흘러갑니다. 긴 추론이 정밀도에 민감하고, 날씨를 묻는 정도로는 차이를 못 느끼는 이유입니다.';
+      },
+      recLM: function (n) { return 'LM Studio 사용자: 모델 라이브러리에서 <b>' + n + '</b>를 검색하면 어떤 양자화 빌드를 돌릴 수 있는지 앱이 표시해 줍니다.'; },
+    },
+  };
+
+  /**
+   * 背景：同一份计算模块被三种语言的页面加载，需要知道当前该用哪套文案。
+   * 设计意图：直接读 html 标签的 lang，页面已经声明过语言，不再另设配置项，
+   * 避免出现 lang 与文案不一致的状态。
+   * 约束：未知语言回退到中文，保证任何情况下都有可显示的文案而不是 undefined。
+   */
+  function dict() {
+    if (typeof document === 'undefined') { return I18N.zh; }
+    var lang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    if (lang.indexOf('ko') === 0) { return I18N.ko; }
+    if (lang.indexOf('en') === 0) { return I18N.en; }
+    return I18N.zh;
+  }
+
+  /* NVIDIA 显卡：显存独占，标称容量基本可全部用于载入模型。 */
+  var NVIDIA = [
+    { id: 'rtx5090d', name: 'RTX 5090 D', vram: 32 },
+    { id: 'rtx4090',  name: 'RTX 4090',   vram: 24 },
+    { id: 'rtx5080',  name: 'RTX 5080',   vram: 16 },
+    { id: 'rtx4080',  name: 'RTX 4080',   vram: 16 },
+    { id: 'rtx5070',  name: 'RTX 5070',   vram: 12 },
+    { id: 'rtx3060',  name: 'RTX 3060',   vram: 12 },
+    { id: 'rtx3080',  name: 'RTX 3080',   vram: 10 },
+    { id: 'rtx4060',  name: 'RTX 4060',   vram: 8 },
+    { id: 'rtx2080',  name: 'RTX 2080',   vram: 8 },
+    { id: 'gtx1080',  name: 'GTX 1080',   vram: 8 },
+    { id: 'rtx2060',  name: 'RTX 2060',   vram: 6 },
+    { id: 'gtx1060',  name: 'GTX 1060',   vram: 6 },
+  ];
+
+  /* Apple Silicon：统一内存由 CPU 与 GPU 共享，系统不允许全部划给 GPU。
+     这里按可用比例折算，避免直接拿 128GB 去比对导致高估。 */
+  var APPLE_GPU_RATIO = 0.75;
+
+  var APPLE = [
+    { id: 'm2ultra192', name: 'M2 Ultra · 192GB', mem: 192 },
+    { id: 'm4max128',   name: 'M4 Max · 128GB',   mem: 128 },
+    { id: 'm1ultra128', name: 'M1 Ultra · 128GB', mem: 128 },
+    { id: 'm3max96',    name: 'M3 Max · 96GB',    mem: 96 },
+    { id: 'm2max96',    name: 'M2 Max · 96GB',    mem: 96 },
+    { id: 'm4max64',    name: 'M4 Max · 64GB',    mem: 64 },
+    { id: 'm4pro64',    name: 'M4 Pro · 64GB',    mem: 64 },
+    { id: 'm3max64',    name: 'M3 Max · 64GB',    mem: 64 },
+    { id: 'm1max64',    name: 'M1 Max · 64GB',    mem: 64 },
+    { id: 'm4max48',    name: 'M4 Max · 48GB',    mem: 48 },
+    { id: 'm3max48',    name: 'M3 Max · 48GB',    mem: 48 },
+    { id: 'm4max36',    name: 'M4 Max · 36GB',    mem: 36 },
+    { id: 'm3pro36',    name: 'M3 Pro · 36GB',    mem: 36 },
+    { id: 'm4_32',      name: 'M4 · 32GB',        mem: 32 },
+    { id: 'm2max32',    name: 'M2 Max · 32GB',    mem: 32 },
+    { id: 'm2pro32',    name: 'M2 Pro · 32GB',    mem: 32 },
+    { id: 'm1max32',    name: 'M1 Max · 32GB',    mem: 32 },
+    { id: 'm4_24',      name: 'M4 · 24GB',        mem: 24 },
+    { id: 'm4pro24',    name: 'M4 Pro · 24GB',    mem: 24 },
+    { id: 'm3_24',      name: 'M3 · 24GB',        mem: 24 },
+    { id: 'm3pro18',    name: 'M3 Pro · 18GB',    mem: 18 },
+    { id: 'm4_16',      name: 'M4 · 16GB',        mem: 16 },
+    { id: 'm3_16',      name: 'M3 · 16GB',        mem: 16 },
+    { id: 'm2pro16',    name: 'M2 Pro · 16GB',    mem: 16 },
+    { id: 'm1_16',      name: 'M1 · 16GB',        mem: 16 },
+    { id: 'm4_8',       name: 'M4 · 8GB',         mem: 8 },
+    { id: 'm3_8',       name: 'M3 · 8GB',         mem: 8 },
+    { id: 'm1_8',       name: 'M1 · 8GB',         mem: 8 },
+  ];
+
+  /* 候选模型：除最后一行外，全部为已经放出权重、可以真正下载到本机的型号。
+     MoE 模型的 params 记总参数量（决定显存），active 记激活参数量（决定速度），
+     两者不能混用，这也是页面上要讲清楚的一个点。 */
+  var MODELS = [
+    { name: 'Qwen3-0.6B',        params: 0.6,   tier: 'edge' },
+    { name: 'Qwen3-1.7B',        params: 1.7,   tier: 'edge' },
+    { name: 'Qwen3-4B',          params: 4,     tier: 'light' },
+    { name: 'Qwen3-8B',          params: 8,     tier: 'main' },
+    { name: 'Qwen3-14B',         params: 14,    tier: 'main' },
+    { name: 'Qwen3.6-27B',       params: 27,    tier: 'high' },
+    { name: 'Qwen3-32B',         params: 32,    tier: 'high' },
+    { name: 'Qwen3-30B-A3B',     params: 30,    active: 3,  tier: 'moe' },
+    { name: 'Qwen3.6-35B-A3B',   params: 35,    active: 3,  tier: 'moe' },
+    /* 大内存 Mac 的意义全在这一行。128 GB 以上的统一内存刚好吃得下它，
+       而同价位的独显机器塞不进去。没有这一行，192 GB 的用户会停在 32B，
+       看不出自己那台机器到底买到了什么。 */
+    { name: 'Qwen3.5-122B-A10B', params: 122,   active: 10, tier: 'moe' },
+    { name: 'Qwen3-235B-A22B',   params: 235,   active: 22, tier: 'moe' },
+    /* 这一行在任何消费级设备上都判定为跑不动，是故意的。oss-3 提到这个模型时
+       预告了读者会在这里撞到天花板，亲眼看到 1560 GB 这个数字比读一句「很大」有用。
+       删掉它会让 oss-3 的那句交叉引用变成空指。 */
+    { name: 'Qwen3.8-Max',       params: 2400,  active: 95, tier: 'flagship' },
+  ];
+
+  /**
+   * 背景：页面上每一行模型都要显示「需要多少显存」，这是全页最核心的一个数。
+   * 设计意图：只做参数量乘系数，把 KV Cache 开销留在系数里，让公式在页面上
+   * 一行就能写清楚，学员能拿计算器自己复算。
+   * 约束：MoE 模型必须传总参数量，传激活参数量会严重低估显存需求。
+   */
+  function estimateVram(paramsB, precision) {
+    var p = PRECISION[precision];
+    if (!p) { throw new Error('未知精度: ' + precision); }
+    if (typeof paramsB !== 'number' || !(paramsB > 0)) {
+      throw new Error('参数量必须为正数: ' + paramsB);
+    }
+    return Math.round(paramsB * p.factor * 10) / 10;
+  }
+
+  /**
+   * 背景：Apple 的统一内存和 NVIDIA 的独立显存不是一回事，直接拿标称容量
+   * 比大小会让 Mac 用户以为自己能跑远超实际的模型。
+   * 设计意图：在这里统一折算成「可用于载入模型的显存」，页面与单测都只认
+   * 这个函数的输出，不各自去乘比例。
+   * 约束：APPLE_GPU_RATIO 是经验值，macOS 可通过 iogpu.wired_limit_max 调整，
+   * 页面上需要注明这一点，不能让读者以为是硬上限。
+   */
+  function availableVram(device) {
+    if (device.vram != null) { return device.vram; }
+    return Math.round(device.mem * APPLE_GPU_RATIO * 10) / 10;
+  }
+
+  /**
+   * 背景：算出需求和可用之后还要给一个结论，学员真正想要的是「能不能跑」。
+   * 设计意图：留出 15% 余量作为 ok 与 tight 的分界。显存刚好卡满时模型能载入，
+   * 但上下文一长就会 OOM，直接判定「可以跑」会误导人。
+   * 约束：阈值调整需同步更新 tests/test_oss_calc.py 的边界用例。
+   */
+  var HEADROOM = 0.85;
+
+  function judge(needGb, availGb) {
+    if (needGb <= availGb * HEADROOM) { return 'ok'; }
+    if (needGb <= availGb) { return 'tight'; }
+    return 'no';
+  }
+
+  /**
+   * 背景：页面需要一次性拿到某台机器在某个精度下对全部候选模型的判定结果。
+   * 设计意图：把遍历与排序收在这里，渲染层只负责把结果画出来，便于单测覆盖。
+   * 约束：返回顺序与 MODELS 一致，页面依赖这个顺序来体现从小到大的递进。
+   */
+  function evaluate(device, precision) {
+    var avail = availableVram(device);
+    return MODELS.map(function (m) {
+      var need = estimateVram(m.params, precision);
+      return {
+        name: m.name,
+        tier: m.tier,
+        params: m.params,
+        active: m.active || null,
+        need: need,
+        avail: avail,
+        ratio: Math.min(need / avail, 1),
+        state: judge(need, avail),
+      };
+    });
+  }
+
+  /* ── oss-9：从机型推出该敲的命令 ──
+     背景：oss-8 算出「你能跑 14B」，学员到了 oss-9 还是不知道该敲哪一条。
+     设计意图：把机型直接映射到一条可以复制就用的命令，把两节课接上。
+     约束：这里只登记**确实存在于 ollama library 的标签**。给出一条拉不下来的
+     命令比不给更糟，学员会以为是自己装错了。下表逐条核对于 2026-08-07，来源为
+     ollama.com/library/<name>/tags。未上架的型号一律返回 null。
+     注意 qwen3.6 目前只有 27b 与 35b-a3b 两档，本地能跑的最大尺寸反而在 3.5 那一代
+     （122b-a10b，81 GB）。版本号更新不等于全尺寸跟进，这一点页面上要说明。 */
+  var OLLAMA_TAG = {
+    'Qwen3-0.6B': 'qwen3:0.6b',
+    'Qwen3-1.7B': 'qwen3:1.7b',
+    'Qwen3-4B': 'qwen3:4b',
+    'Qwen3-8B': 'qwen3:8b',
+    'Qwen3-14B': 'qwen3:14b',
+    'Qwen3-32B': 'qwen3:32b',
+    'Qwen3-30B-A3B': 'qwen3:30b-a3b',
+    'Qwen3.6-27B': 'qwen3.6:27b',
+    'Qwen3.6-35B-A3B': 'qwen3.6:35b-a3b',
+    'Qwen3.5-122B-A10B': 'qwen3.5:122b-a10b',
+  };
+
+  function ollamaTag(name) {
+    return OLLAMA_TAG[name] || null;
+  }
+
+  /* 本地能拉到的最大尺寸。再往上（qwen3.5:397b-cloud）只跑在云端，不落到本机，
+     所以不算进本地天花板。页面用它来判断该不该提示「你已经到顶了」。 */
+  function largestLocal() {
+    var best = null;
+    MODELS.forEach(function (m) {
+      if (!ollamaTag(m.name)) { return; }
+      if (!best || m.params > best.params) { best = m; }
+    });
+    return best ? best.name : null;
+  }
+
+  /**
+   * 背景：学员真正想问的是「那我该装哪个」，不是「我能装哪些」。
+   * 设计意图：在判定为 ok 的模型里取最大的一个。刻意排除 tight，因为
+   * tight 的含义是「装得下但上下文一长就 OOM」，作为第一次上手的推荐
+   * 会让人以为本地部署很不稳。
+   * 约束：只推荐有 ollama 标签的型号，否则给不出可复制的命令。
+   */
+  function recommend(device, precision) {
+    var rows = evaluate(device, precision);
+    var best = null;
+    rows.forEach(function (r) {
+      if (r.state !== 'ok') { return; }
+      if (!ollamaTag(r.name)) { return; }
+      if (!best || r.params > best.params) { best = r; }
+    });
+    if (!best) { return null; }
+    return {
+      name: best.name,
+      tag: ollamaTag(best.name),
+      params: best.params,
+      need: best.need,
+      avail: best.avail,
+      /* 推到顶和推不上去是两种情况，页面要说不一样的话，所以在这里就分好 */
+      isTop: best.name === largestLocal(),
+    };
+  }
+
+  function findDevice(id) {
+    var all = NVIDIA.concat(APPLE);
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].id === id) { return all[i]; }
+    }
+    return null;
+  }
+
+  /* ── 以下为浏览器渲染部分，Node 环境不会执行 ── */
+
+  /**
+   * 背景：PlayGround 与 oss-8 正式页要用同一套渲染，避免调好的样式上线后不一致。
+   * 设计意图：接收一组已有的 DOM 节点而非自己创建结构，让两个页面可以各自决定
+   * 布局，只共享行为与计算。
+   * 约束：调用方必须保证六个节点都存在，缺任意一个直接返回，不做静默降级渲染。
+   */
+  function mount(opts) {
+    if (typeof document === 'undefined') { return null; }
+    if (!opts || !opts.platformEl || !opts.deviceEl || !opts.precEl
+        || !opts.readoutEl || !opts.resultsEl) {
+      console.error('[OSSCalc] mount 缺少必要节点，已跳过初始化', opts);
+      return null;
+    }
+
+    var state = { platform: 'nvidia', deviceId: NVIDIA[0].id, precision: 'int4' };
+    var t = dict();
+
+    function deviceList() {
+      return state.platform === 'nvidia' ? NVIDIA : APPLE;
+    }
+
+    function fillDevices() {
+      var list = deviceList();
+      opts.deviceEl.innerHTML = list.map(function (d) {
+        var cap = d.vram != null ? t.optVram(d.vram) : t.optMem(d.mem);
+        return '<option value="' + d.id + '">' + d.name + t.wrap(cap) + '</option>';
+      }).join('');
+      state.deviceId = list[0].id;
+      opts.deviceEl.value = state.deviceId;
+    }
+
+    function render() {
+      var device = findDevice(state.deviceId);
+      if (!device) {
+        console.error('[OSSCalc] 找不到设备', state.deviceId);
+        opts.resultsEl.innerHTML = '<div class="oc-row is-no"><div class="ocr-name">'
+          + t.deviceMissing + '</div></div>';
+        return;
+      }
+      var avail = availableVram(device);
+      var rows = evaluate(device, state.precision);
+      var p = PRECISION[state.precision];
+
+      var memNote = device.vram != null
+        ? t.vramNote(device.vram)
+        : t.memNote(device.mem, Math.round(APPLE_GPU_RATIO * 100));
+
+      opts.readoutEl.innerHTML =
+        '<span>' + t.avail + '</span><b>' + avail + ' GB</b>' +
+        '<span class="ocr-formula">' + t.formula(p.factor, p.label) + '</span>' +
+        '<span class="ocr-formula">' + memNote + '</span>';
+
+      opts.resultsEl.innerHTML = rows.map(function (r) {
+        var moe = r.active
+          ? '<span class="ocr-tag">' + t.moeTag(r.params, r.active) + '</span>'
+          : '';
+        return '' +
+          '<div class="oc-row is-' + r.state + '">' +
+            '<div class="ocr-name">' + r.name
+              + '<span class="ocr-tag">' + (t.tier[r.tier] || r.tier) + '</span>' + moe + '</div>' +
+            '<div class="ocr-need">' + t.need(r.need) + '</div>' +
+            '<div class="ocr-bar"><i style="width:' + Math.round(r.ratio * 100) + '%"></i></div>' +
+            '<div class="ocr-state">' + t.state[r.state] + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    opts.platformEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.oc-seg-btn');
+      if (!btn) { return; }
+      state.platform = btn.dataset.platform;
+      opts.platformEl.querySelectorAll('.oc-seg-btn').forEach(function (b) {
+        b.classList.toggle('is-on', b === btn);
+      });
+      fillDevices();
+      render();
+    });
+
+    opts.precEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.oc-seg-btn');
+      if (!btn) { return; }
+      state.precision = btn.dataset.prec;
+      opts.precEl.querySelectorAll('.oc-seg-btn').forEach(function (b) {
+        b.classList.toggle('is-on', b === btn);
+      });
+      render();
+    });
+
+    opts.deviceEl.addEventListener('change', function () {
+      state.deviceId = opts.deviceEl.value;
+      render();
+    });
+
+    fillDevices();
+    render();
+    return { render: render, state: state };
+  }
+
+  /**
+   * 背景：oss-9 的命令行块需要一键复制，移动端与非安全上下文下
+   * navigator.clipboard 不可用。
+   * 设计意图：优先用标准 API，失败时回退到临时 textarea，两条路都失败时
+   * 给用户可见提示，不静默失败。
+   * 约束：需绑定在用户手势事件里，否则浏览器会拒绝写入剪贴板。
+   */
+  function bindCopy(scope) {
+    if (typeof document === 'undefined') { return; }
+    var t = dict();
+    (scope || document).querySelectorAll('.ocmd-copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.dataset.copy || '';
+        var done = function () {
+          var old = btn.innerHTML;
+          btn.classList.add('is-done');
+          btn.innerHTML = t.copied;
+          setTimeout(function () {
+            btn.classList.remove('is-done');
+            btn.innerHTML = old;
+          }, 1600);
+        };
+        var fallback = function (err) {
+          console.warn('[OSSCalc] 剪贴板 API 不可用，改用 textarea 回退', err);
+          try {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            done();
+          } catch (e2) {
+            console.error('[OSSCalc] 复制失败', e2);
+            btn.innerHTML = t.copyManual;
+            setTimeout(function () { btn.innerHTML = t.copy; }, 2200);
+          }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(fallback);
+        } else {
+          fallback(new Error('navigator.clipboard 不存在'));
+        }
+      });
+    });
+  }
+
+  return {
+    PRECISION: PRECISION,
+    I18N: I18N,
+    dict: dict,
+    NVIDIA: NVIDIA,
+    APPLE: APPLE,
+    APPLE_GPU_RATIO: APPLE_GPU_RATIO,
+    MODELS: MODELS,
+    HEADROOM: HEADROOM,
+    estimateVram: estimateVram,
+    availableVram: availableVram,
+    judge: judge,
+    evaluate: evaluate,
+    findDevice: findDevice,
+    OLLAMA_TAG: OLLAMA_TAG,
+    largestLocal: largestLocal,
+    ollamaTag: ollamaTag,
+    recommend: recommend,
+    QUANT: QUANT,
+    quantStep: quantStep,
+    quantize: quantize,
+    quantStats: quantStats,
+    chainSurvival: chainSurvival,
+    mount: mount,
+    bindCopy: bindCopy,
+  };
+});
+</script>
+<script>/* ═══════════════════════════════════════════════════════════
+   oss-interact.js —— 开源篇章 oss-1 到 oss-7 的动手 demo 逻辑
+
+   背景：这一章原本七节全是纯文字。参数量与体积的换算、许可证档次的判定、
+   能力在某个规模突然涌现、温度系数把概率分布调软，这些东西读一遍是「知道有
+   这回事」，拖一次滑块才是「有手感」。
+   设计意图：把七个 demo 的计算部分从页面里抽出来集中在这里，浏览器与 Node
+   共用同一份实现。这些数字会直接出现在课程结论里（比如「差一到两个数量级」
+   「8B 在 FP16 下装不进 8GB 显卡」），必须能被单测锁死，不能散在各页脚本里。
+   约束：精度系数与 oss-8 的 oss-calc.js 共用同一套口径，此处只保留「每个数
+   占几个字节」的存储换算，运行时显存一律走 oss-calc.js，避免一章里两套数。
+   ═══════════════════════════════════════════════════════════ */
+
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) { module.exports = api; }
+  if (root) { root.OSSInteract = api; }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  /* ── oss-1：参数量 → 权重文件体积 ──
+     这里是纯存储换算，一个参数占几个字节，跟运行时要多少显存是两件事。
+     页面上必须把这个区别说清楚，否则学员会拿 16GB 去买 16GB 的显卡。 */
+  var BYTES = {
+    fp32: { label: 'FP32', bytes: 4 },
+    fp16: { label: 'FP16', bytes: 2 },
+    int8: { label: 'INT8', bytes: 1 },
+    int4: { label: 'INT4', bytes: 0.5 },
+  };
+
+  /* 滑块要跨越 0.5B 到 2400B 共四个数量级，线性刻度会让 90% 的行程都堆在
+     几百 B 以上，小模型区间根本拖不准。所以滑块位置走对数。
+     刻度取 0 到 1000 而不是 0 到 100：四个数量级分成 100 档的话每档要跳
+     9%，学员想停在 8B 这种整数档位会停不住，只能在 7.6 和 8.3 之间反复。
+     分成 1000 档后每档不到 1%，拖起来才有停得住的手感。 */
+  var PARAM_MIN = 0.5;
+  var PARAM_MAX = 2400;
+  var SLIDER_STEPS = 1000;
+
+  function posToParams(pos) {
+    var p = Math.max(0, Math.min(SLIDER_STEPS, Number(pos)));
+    var lo = Math.log(PARAM_MIN), hi = Math.log(PARAM_MAX);
+    var v = Math.exp(lo + (hi - lo) * (p / SLIDER_STEPS));
+    return v < 10 ? Math.round(v * 10) / 10 : Math.round(v);
+  }
+
+  function paramsToPos(params) {
+    var v = Math.max(PARAM_MIN, Math.min(PARAM_MAX, Number(params)));
+    var lo = Math.log(PARAM_MIN), hi = Math.log(PARAM_MAX);
+    return Math.round((Math.log(v) - lo) / (hi - lo) * SLIDER_STEPS);
+  }
+
+  function fileSize(paramsB, precision) {
+    var b = BYTES[precision];
+    if (!b) { throw new Error('未知精度: ' + precision); }
+    if (typeof paramsB !== 'number' || !(paramsB > 0)) {
+      throw new Error('参数量必须为正数: ' + paramsB);
+    }
+    return Math.round(paramsB * b.bytes * 10) / 10;
+  }
+
+  /* 三档常见显存，用来给出「装得进 / 装不进」的即时反馈。
+     判定只看权重能否载入，不含运行开销，页面上标注了这一点。 */
+  var CARDS = [8, 16, 24];
+
+  function fitCards(sizeGb) {
+    return CARDS.map(function (c) {
+      return { vram: c, fit: sizeGb <= c };
+    });
+  }
+
+  /* ── oss-2：许可证三问 → 档次判定 ──
+     三个问题按顺序问，任何一问答「否」就不必再往下问了，这本身就是教学点：
+     判断一个模型是不是真开源，第一关就能筛掉大部分。 */
+  var LICENSE_Q = ['download', 'commercial', 'distill'];
+
+  function judgeLicense(answers) {
+    if (!answers || typeof answers !== 'object') {
+      throw new Error('answers 必须是对象');
+    }
+    if (answers.download === 'no') { return 'closed'; }
+    if (answers.download == null) { return null; }
+    if (answers.commercial == null) { return null; }
+    if (answers.commercial === 'no') { return 'restricted'; }
+    if (answers.distill == null) { return null; }
+    if (answers.commercial === 'limited' || answers.distill === 'no') {
+      return 'conditional';
+    }
+    return 'open';
+  }
+
+  /* 每一档配几个真实样本，学员走完流程后能立刻对照「哦，我判出来的这一档
+     里都有谁」。样本与 oss-2 页面上的三档表保持一致。
+     这里一律只放模型名。曾经用过「部分研究许可模型」这种描述性写法，
+     结果英韩页面上直接漏出中文，专有名词三语通用才不会有这个问题。 */
+  var TIER_SAMPLE = {
+    /* 这里只放许可证已经公布、且确实归得进这一档的模型。
+       Qwen3.8-Max 曾经列在这里，但它的权重尚未放出、许可证也没公布，
+       归档所需的信息都还不存在，列进来等于替它做了判断。 */
+    open: ['Qwen3-8B', 'DeepSeek-R1', 'Mistral-7B'],
+    conditional: ['Llama 3', 'Gemma'],
+    restricted: ['LLaMA 1', 'OPT-175B'],
+    closed: ['GPT', 'Claude', 'Gemini'],
+  };
+
+  /* ── oss-3：商业模式 → 开源策略 ──
+     这一节要让学员意识到开源不是慷慨，是算过账的。选自己的主营业务，
+     看到对应的策略，比读一张六行的表印象深。 */
+  var BIZ = [
+    { id: 'ads',      strategy: 'open',   who: 'Meta' },
+    { id: 'cloud',    strategy: 'open',   who: 'Alibaba Cloud / Google' },
+    { id: 'api',      strategy: 'closed', who: 'OpenAI / Anthropic' },
+    { id: 'service',  strategy: 'open',   who: 'Mistral' },
+    { id: 'research', strategy: 'open',   who: 'DeepSeek' },
+    { id: 'model',    strategy: 'closed', who: 'OpenAI' },
+  ];
+
+  function bizStrategy(id) {
+    for (var i = 0; i < BIZ.length; i++) {
+      if (BIZ[i].id === id) { return BIZ[i]; }
+    }
+    return null;
+  }
+
+  /* ── oss-4：规模 → 能力是否涌现 ──
+     阈值取自 oss-4 页面上引用的公开观察，都是示意值而非精确测量，
+     页面上必须标明这一点。换架构或换训练方法阈值会整体偏移。 */
+  var ABILITIES = [
+    { id: 'translate', threshold: 1,   emergent: false },
+    { id: 'multiling', threshold: 7,   emergent: true },
+    { id: 'tooljson',  threshold: 7,   emergent: true },
+    { id: 'math',      threshold: 10,  emergent: true },
+    { id: 'roleplay',  threshold: 13,  emergent: true },
+    { id: 'cot',       threshold: 100, emergent: true },
+  ];
+
+  function abilitiesAt(paramsB) {
+    if (typeof paramsB !== 'number' || !(paramsB > 0)) {
+      throw new Error('参数量必须为正数: ' + paramsB);
+    }
+    return ABILITIES.map(function (a) {
+      return { id: a.id, threshold: a.threshold, on: paramsB >= a.threshold };
+    });
+  }
+
+  /* 两条曲线的取值：一条平滑上升代表常规能力，一条在阈值前贴地、
+     跨过之后陡升代表涌现能力。用于页面上的探针跟随。 */
+  function smoothScore(paramsB) {
+    var t = Math.log(paramsB / PARAM_MIN) / Math.log(PARAM_MAX / PARAM_MIN);
+    return Math.round(Math.max(0, Math.min(1, t)) * 100);
+  }
+
+  function emergentScore(paramsB, threshold) {
+    var th = threshold || 10;
+    if (paramsB < th) {
+      /* 阈值前不是恒等于零，是贴着地面缓慢爬，写死为 0 会让曲线看起来
+         像开关而不是涌现。 */
+      return Math.round(Math.min(6, (paramsB / th) * 6));
+    }
+    var over = Math.log(paramsB / th) / Math.log(PARAM_MAX / th);
+    return Math.round(6 + Math.min(1, over * 2.2) * 88);
+  }
+
+  /* ── oss-5：请求量 → 成本与延迟 ──
+     单价为公开价目的数量级示意，页面上标注了「示意，非实测报价」。
+     这里要的是让学员看到两条曲线的开口差距，不是精确报价。 */
+  var TIER_COST = {
+    flagship: { perK: 0.06, latencyMs: 2800 },
+    small:    { perK: 0.001, latencyMs: 320 },
+  };
+
+  function monthlyCost(dailyCalls, tier) {
+    var t = TIER_COST[tier];
+    if (!t) { throw new Error('未知档位: ' + tier); }
+    if (typeof dailyCalls !== 'number' || dailyCalls < 0) {
+      throw new Error('请求量不能为负: ' + dailyCalls);
+    }
+    return Math.round(dailyCalls / 1000 * t.perK * 30 * 100) / 100;
+  }
+
+  function costRatio(dailyCalls) {
+    var a = monthlyCost(dailyCalls, 'flagship');
+    var b = monthlyCost(dailyCalls, 'small');
+    if (b <= 0) { return 0; }
+    return Math.round(a / b);
+  }
+
+  /* ── oss-6：温度系数 → 软标签分布 ──
+     这是本章最抽象的一个概念，也是最适合动手的一个。教师模型原始的
+     打分（logits）经过 softmax(z/T) 得到概率，T 越大分布越平缓，
+     学生能学到的「猫像狗但不像兔」这类信息就越多。 */
+  var TEACHER_LOGITS = [
+    { id: 'cat', z: 6.0 },
+    { id: 'dog', z: 4.7 },
+    { id: 'rabbit', z: 3.4 },
+    { id: 'car', z: 0.2 },
+  ];
+
+  function softmax(logits, temperature) {
+    var T = Number(temperature);
+    if (!(T > 0)) { throw new Error('温度必须大于 0: ' + temperature); }
+    if (!Array.isArray(logits) || logits.length === 0) {
+      throw new Error('logits 不能为空');
+    }
+    /* 减去最大值再取指数，避免 T 很小时 Math.exp 溢出成 Infinity。
+       T=0.1 时 z/T 会到 60，exp(60) 已经很接近浮点上限。 */
+    var scaled = logits.map(function (l) { return l / T; });
+    var max = Math.max.apply(null, scaled);
+    var exps = scaled.map(function (s) { return Math.exp(s - max); });
+    var sum = exps.reduce(function (a, b) { return a + b; }, 0);
+    return exps.map(function (e) { return e / sum; });
+  }
+
+  function teacherDist(temperature) {
+    var probs = softmax(TEACHER_LOGITS.map(function (t) { return t.z; }), temperature);
+    return TEACHER_LOGITS.map(function (t, i) {
+      return { id: t.id, p: Math.round(probs[i] * 1000) / 10 };
+    });
+  }
+
+  /* 用分布的熵衡量「学生能学到多少信息」。硬标签的熵是 0，因为除了
+     正确答案之外什么都没说；温度越高熵越大，携带的相似性信息越多。
+     归一化到 0 到 100，页面上显示为一条信息量的条。 */
+  function infoRichness(temperature) {
+    var probs = softmax(TEACHER_LOGITS.map(function (t) { return t.z; }), temperature);
+    var h = 0;
+    probs.forEach(function (p) { if (p > 0) { h -= p * Math.log(p); } });
+    var hMax = Math.log(probs.length);
+    return Math.round(h / hMax * 100);
+  }
+
+  /* ── oss-7：血缘追溯 ──
+     学员挑三个「看起来不同」的模型做交叉验证，追溯之后发现同源。
+     base 字段是这些模型公开的底座信息。 */
+  var LINEAGE = [
+    { id: 'a', base: 'qwen' },
+    { id: 'b', base: 'qwen' },
+    { id: 'c', base: 'qwen' },
+    { id: 'd', base: 'llama' },
+    { id: 'e', base: 'llama' },
+    { id: 'f', base: 'independent' },
+  ];
+
+  function lineageOf(ids) {
+    if (!Array.isArray(ids)) { throw new Error('ids 必须是数组'); }
+    return ids.map(function (id) {
+      for (var i = 0; i < LINEAGE.length; i++) {
+        if (LINEAGE[i].id === id) { return LINEAGE[i]; }
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
+  /* 交叉验证是否可靠：只要选中的模型全部同源，就是虚假的安全感。
+     只有当血缘里出现两种以上底座，这次交叉验证才算数。 */
+  function crossCheckVerdict(ids) {
+    var picked = lineageOf(ids);
+    if (picked.length < 2) { return null; }
+    var bases = {};
+    picked.forEach(function (p) { bases[p.base] = true; });
+    var kinds = Object.keys(bases).length;
+    return { kinds: kinds, reliable: kinds > 1, bases: Object.keys(bases) };
+  }
+
+  /* ── 界面文案 ──
+     本模块被中英韩三套页面加载。oss-calc.js 早期版本把中文写死在渲染里，
+     导致译版页面显示中文，这里从一开始就走语言包，新增语言只需补一份。 */
+  var I18N = {
+    zh: {
+      fileOf: function (gb) { return gb + ' GB'; },
+      fitYes: '装得下', fitNo: '装不下',
+      cardLabel: function (gb) { return gb + ' GB 显卡'; },
+      paramLabel: function (b) { return b >= 1000 ? (b / 1000) + ' 万亿' : b + ' B'; },
+      bytesNote: function (n, label) {
+        return label + '：每个参数占 ' + n + ' 字节';
+      },
+      tier: {
+        open: '第一档：标准开源许可',
+        conditional: '第二档：附加条件',
+        restricted: '第二档：限制商用',
+        closed: '第三档：只给 API',
+      },
+      tierDesc: {
+        open: '权重可下载、可商用、可用于训练新模型，没有额外门槛。',
+        conditional: '权重给了，但许可证里加了自己的条款，商用或再训练受限。',
+        restricted: '权重能拿到，但不允许商业使用，只能研究。',
+        closed: '拿不到权重，只能调接口。能力再强也不是开源。',
+      },
+      sampleLabel: '这一档里有：',
+      listSep: '、',
+      qDownload: '权重能下载吗？',
+      qCommercial: '能商用吗？',
+      qDistill: '能用它的输出训练新模型吗？',
+      ansYes: '能', ansNo: '不能', ansLimited: '有条件',
+      restart: '重新判断',
+      bizName: {
+        ads: '卖广告', cloud: '卖云和算力', api: '卖 API 订阅',
+        service: '卖企业定制服务', research: '做研究攒声誉', model: '直接卖模型',
+      },
+      bizLogic: {
+        ads: '模型是你主业的互补品。互补品越便宜，你的主业越值钱，所以你会希望全世界都能免费拿到好模型。',
+        cloud: '开发者拿模型去微调和部署，算力需求最终回到你的云上。模型免费，算力收费。',
+        api: '模型本身就是你在卖的东西。开源等于把自己的商品免费送出去，跟收入结构直接冲突。',
+        service: '模型用来建立技术声誉，钱从私有化部署和定制合同里来，不靠接口锁住客户。',
+        research: '用最宽松的许可换全球范围的关注度，一次发布带来的声誉远超同等投入的营销费用。',
+        model: '你的收入直接来自模型授权。把权重放出去，等于取消了自己的收费理由。',
+      },
+      youLean: '按这个收入结构，你多半会',
+      strategy: { open: '倾向开源', closed: '倾向闭源' },
+      bizWho: function (who) { return '代表：' + who; },
+      abilityOn: '已涌现', abilityOff: '还没有',
+      abilityName: {
+        translate: '照着例子续写', multiling: '跨语言问答', tooljson: '稳定输出 JSON',
+        math: '多步数学推理', roleplay: '长对话里守住人设', cot: '思维链推理',
+      },
+      emergedCount: function (n, total) { return total + ' 项里已经出现 ' + n + ' 项'; },
+      thresholdAt: function (b) { return '约 ' + b + 'B'; },
+      scaleNow: function (b) { return '当前规模：' + (b >= 1000 ? (b / 1000) + ' 万亿' : b + ' B'); },
+      costMonthly: function (v) { return '￥' + v.toLocaleString('zh-CN'); },
+      costFlagship: '旗舰模型', costSmall: '蒸馏小模型',
+      costRatio: function (n) { return '差 ' + n + ' 倍'; },
+      costGap: function (v) { return '每月多付 ￥' + v.toLocaleString('zh-CN'); },
+      costBarNote: '两条的长度比就是成本比。这个比例由单价决定，不随规模变化——所以拖滑块时变的是上面的金额，不是条的长短。',
+      latency: function (ms) { return ms + ' ms'; },
+      dailyCalls: function (n) { return '每天 ' + n.toLocaleString('zh-CN') + ' 次请求'; },
+      labelCat: '猫', labelDog: '狗', labelRabbit: '兔', labelCar: '汽车',
+      hardLabel: '硬标签', softLabel: '软标签',
+      tempNow: function (t) { return 'T = ' + t; },
+      infoLabel: '学生能学到的信息量',
+      tempHintLow: '分布很尖，几乎只告诉学生「是猫」，跟硬标签差不多。',
+      tempHintMid: '分布软下来了，学生开始知道猫比较像狗、不太像兔。',
+      tempHintHigh: '太平了，各类差异被抹掉，噪音开始盖过有用信息。',
+      pickAtLeast: '再选一个模型，才能做交叉验证',
+      verdictSame: '这三个都从同一个底座蒸馏而来。它们答错的时候，会错得一模一样，交叉验证在这里给不了你任何保障。',
+      verdictMixed: '血缘里有不同的底座，这次交叉验证才算数。',
+      traceBtn: '追溯血缘',
+      lineageName: {
+        a: '星尘助手', b: '灵犀对话', c: '明析问答',
+        d: '岩层 Chat', e: '海图助理', f: '自研模型 X',
+      },
+      lineageVendor: {
+        a: '星尘科技', b: '灵犀网络', c: '明析数据',
+        d: '岩层智能', e: '海图云', f: '内部团队',
+      },
+      pickHint: '挑三个看起来最不相干的产品，然后点下面的按钮。',
+      baseName: { qwen: 'Qwen 底座', llama: 'Llama 底座', independent: '独立训练' },
+    },
+    hk: {
+      fileOf: function (gb) { return gb + ' GB'; },
+      fitYes: '裝得下', fitNo: '裝不下',
+      cardLabel: function (gb) { return gb + ' GB 顯卡'; },
+      paramLabel: function (b) { return b >= 1000 ? (b / 1000) + ' 萬億' : b + ' B'; },
+      bytesNote: function (n, label) {
+        return label + '：每個參數佔 ' + n + ' 字節';
+      },
+      tier: {
+        open: '第一檔：標準開源許可',
+        conditional: '第二檔：附加條件',
+        restricted: '第二檔：限制商用',
+        closed: '第三檔：只給 API',
+      },
+      tierDesc: {
+        open: '權重可下載、可商用、可用於訓練新模型，沒有額外門檻。',
+        conditional: '權重給了，但許可證里加了自己的條款，商用或再訓練受限。',
+        restricted: '權重能拿到，但不允許商業使用，只能研究。',
+        closed: '拿不到權重，只能調接口。能力再強也不是開源。',
+      },
+      sampleLabel: '這一檔裏有：',
+      listSep: '、',
+      qDownload: '權重能下載嗎？',
+      qCommercial: '能商用嗎？',
+      qDistill: '能用它的輸出訓練新模型嗎？',
+      ansYes: '能', ansNo: '不能', ansLimited: '有條件',
+      restart: '重新判斷',
+      bizName: {
+        ads: '賣廣告', cloud: '賣雲和算力', api: '賣 API 訂閲',
+        service: '賣企業定製服務', research: '做研究攢聲譽', model: '直接賣模型',
+      },
+      bizLogic: {
+        ads: '模型是你主業的互補品。互補品越便宜，你的主業越值錢，所以你會希望全世界都能免費拿到好模型。',
+        cloud: '開發者拿模型去微調和部署，算力需求最終回到你的雲上。模型免費，算力收費。',
+        api: '模型本身就是你在賣的東西。開源等於把自己的商品免費送出去，跟收入結構直接衝突。',
+        service: '模型用來建立技術聲譽，錢從私有化部署和定製合同裏來，不靠接口鎖住客户。',
+        research: '用最寬鬆的許可換全球範圍的關注度，一次發佈帶來的聲譽遠超同等投入的營銷費用。',
+        model: '你的收入直接來自模型授權。把權重放出去，等於取消了自己的收費理由。',
+      },
+      youLean: '按這個收入結構，你多半會',
+      strategy: { open: '傾向開源', closed: '傾向閉源' },
+      bizWho: function (who) { return '代表：' + who; },
+      abilityOn: '已湧現', abilityOff: '還沒有',
+      abilityName: {
+        translate: '照着例子續寫', multiling: '跨語言問答', tooljson: '穩定輸出 JSON',
+        math: '多步數學推理', roleplay: '長對話裏守住人設', cot: '思維鏈推理',
+      },
+      emergedCount: function (n, total) { return total + ' 項裏已經出現 ' + n + ' 項'; },
+      thresholdAt: function (b) { return '約 ' + b + 'B'; },
+      scaleNow: function (b) { return '當前規模：' + (b >= 1000 ? (b / 1000) + ' 萬億' : b + ' B'); },
+      costMonthly: function (v) { return '￥' + v.toLocaleString('zh-CN'); },
+      costFlagship: '旗艦模型', costSmall: '蒸餾小模型',
+      costRatio: function (n) { return '差 ' + n + ' 倍'; },
+      costGap: function (v) { return '每月多付 ￥' + v.toLocaleString('zh-CN'); },
+      costBarNote: '兩條的長度比就是成本比。這個比例由單價決定，不隨規模變化——所以拖滑塊時變的是上面的金額，不是條的長短。',
+      latency: function (ms) { return ms + ' ms'; },
+      dailyCalls: function (n) { return '每天 ' + n.toLocaleString('zh-CN') + ' 次請求'; },
+      labelCat: '貓', labelDog: '狗', labelRabbit: '兔', labelCar: '汽車',
+      hardLabel: '硬標籤', softLabel: '軟標籤',
+      tempNow: function (t) { return 'T = ' + t; },
+      infoLabel: '學生能學到的資訊量',
+      tempHintLow: '分佈很尖，幾乎只告訴學生「是貓」，跟硬標籤差不多。',
+      tempHintMid: '分佈軟下來了，學生開始知道貓比較像狗、不太像兔。',
+      tempHintHigh: '太平了，各類差異被抹掉，噪音開始蓋過有用資訊。',
+      pickAtLeast: '再選一個模型，才能做交叉驗證',
+      verdictSame: '這三個都從同一個底座蒸餾而來。它們答錯的時候，會錯得一模一樣，交叉驗證在這裏給不了你任何保障。',
+      verdictMixed: '血緣裏有不同的底座，這次交叉驗證才算數。',
+      traceBtn: '追溯血緣',
+      lineageName: {
+        a: '星塵助手', b: '靈犀對話', c: '明析問答',
+        d: '岩層 Chat', e: '海圖助理', f: '自研模型 X',
+      },
+      lineageVendor: {
+        a: '星塵科技', b: '靈犀網絡', c: '明析數據',
+        d: '岩層智能', e: '海圖雲', f: '內部團隊',
+      },
+      pickHint: '挑三個看起來最不相干的產品，然後點下面的按鈕。',
+      baseName: { qwen: 'Qwen 底座', llama: 'Llama 底座', independent: '獨立訓練' },
+    },
+    tw: {
+      fileOf: function (gb) { return gb + ' GB'; },
+      fitYes: '裝得下', fitNo: '裝不下',
+      cardLabel: function (gb) { return gb + ' GB 顯示卡'; },
+      paramLabel: function (b) { return b >= 1000 ? (b / 1000) + ' 兆' : b + ' B'; },
+      bytesNote: function (n, label) {
+        return label + '：每個參數佔 ' + n + ' 位元組';
+      },
+      tier: {
+        open: '第一檔：標準開源許可',
+        conditional: '第二檔：附加條件',
+        restricted: '第二檔：限制商用',
+        closed: '第三檔：只給 API',
+      },
+      tierDesc: {
+        open: '權重可下載、可商用、可用於訓練新模型，沒有額外門檻。',
+        conditional: '權重給了，但許可證里加了自己的條款，商用或再訓練受限。',
+        restricted: '權重能拿到，但不允許商業使用，只能研究。',
+        closed: '拿不到權重，只能調介面。能力再強也不是開源。',
+      },
+      sampleLabel: '這一檔裡有：',
+      listSep: '、',
+      qDownload: '權重能下載嗎？',
+      qCommercial: '能商用嗎？',
+      qDistill: '能用它的輸出訓練新模型嗎？',
+      ansYes: '能', ansNo: '不能', ansLimited: '有條件',
+      restart: '重新判斷',
+      bizName: {
+        ads: '賣廣告', cloud: '賣雲和算力', api: '賣 API 訂閱',
+        service: '賣企業客製服務', research: '做研究攢聲譽', model: '直接賣模型',
+      },
+      bizLogic: {
+        ads: '模型是你主業的互補品。互補品越便宜，你的主業越值錢，所以你會希望全世界都能免費拿到好模型。',
+        cloud: '開發者拿模型去微調和部署，算力需求最終回到你的雲上。模型免費，算力收費。',
+        api: '模型本身就是你在賣的東西。開源等於把自己的商品免費送出去，跟收入結構直接衝突。',
+        service: '模型用來建立技術聲譽，錢從私有化部署和客製合同裡來，不靠介面鎖住客戶。',
+        research: '用最寬鬆的許可換全球範圍的關注度，一次釋出帶來的聲譽遠超同等投入的行銷費用。',
+        model: '你的收入直接來自模型授權。把權重放出去，等於取消了自己的收費理由。',
+      },
+      youLean: '按這個收入結構，你多半會',
+      strategy: { open: '傾向開源', closed: '傾向閉源' },
+      bizWho: function (who) { return '代表：' + who; },
+      abilityOn: '已湧現', abilityOff: '還沒有',
+      abilityName: {
+        translate: '照著例子續寫', multiling: '跨語言問答', tooljson: '穩定輸出 JSON',
+        math: '多步數學推理', roleplay: '長對話裡守住人設', cot: '思維鏈推理',
+      },
+      emergedCount: function (n, total) { return total + ' 項裡已經出現 ' + n + ' 項'; },
+      thresholdAt: function (b) { return '約 ' + b + 'B'; },
+      scaleNow: function (b) { return '當前規模：' + (b >= 1000 ? (b / 1000) + ' 兆' : b + ' B'); },
+      costMonthly: function (v) { return '￥' + v.toLocaleString('zh-CN'); },
+      costFlagship: '旗艦模型', costSmall: '蒸餾小模型',
+      costRatio: function (n) { return '差 ' + n + ' 倍'; },
+      costGap: function (v) { return '每月多付 ￥' + v.toLocaleString('zh-CN'); },
+      costBarNote: '兩條的長度比就是成本比。這個比例由單價決定，不隨規模變化——所以拖滑塊時變的是上面的金額，不是條的長短。',
+      latency: function (ms) { return ms + ' ms'; },
+      dailyCalls: function (n) { return '每天 ' + n.toLocaleString('zh-CN') + ' 次請求'; },
+      labelCat: '貓', labelDog: '狗', labelRabbit: '兔', labelCar: '汽車',
+      hardLabel: '硬標籤', softLabel: '軟標籤',
+      tempNow: function (t) { return 'T = ' + t; },
+      infoLabel: '學生能學到的資訊量',
+      tempHintLow: '分佈很尖，幾乎只告訴學生「是貓」，跟硬標籤差不多。',
+      tempHintMid: '分佈軟下來了，學生開始知道貓比較像狗、不太像兔。',
+      tempHintHigh: '太平了，各類差異被抹掉，噪音開始蓋過有用資訊。',
+      pickAtLeast: '再選一個模型，才能做交叉驗證',
+      verdictSame: '這三個都從同一個底座蒸餾而來。它們答錯的時候，會錯得一模一樣，交叉驗證在這裡給不了你任何保障。',
+      verdictMixed: '血緣裡有不同的底座，這次交叉驗證才算數。',
+      traceBtn: '追溯血緣',
+      lineageName: {
+        a: '星塵助手', b: '靈犀對話', c: '明析問答',
+        d: '岩層 Chat', e: '海圖助理', f: '自研模型 X',
+      },
+      lineageVendor: {
+        a: '星塵科技', b: '靈犀網路', c: '明析資料',
+        d: '岩層智慧', e: '海圖雲', f: '內部團隊',
+      },
+      pickHint: '挑三個看起來最不相干的產品，然後點下面的按鈕。',
+      baseName: { qwen: 'Qwen 底座', llama: 'Llama 底座', independent: '獨立訓練' },
+    },
+    en: {
+      fileOf: function (gb) { return gb + ' GB'; },
+      fitYes: 'Fits', fitNo: 'Too big',
+      cardLabel: function (gb) { return gb + ' GB card'; },
+      paramLabel: function (b) { return b >= 1000 ? (b / 1000) + 'T' : b + 'B'; },
+      bytesNote: function (n, label) {
+        return label + ': ' + n + ' bytes per parameter';
+      },
+      tier: {
+        open: 'Tier 1: standard open-source license',
+        conditional: 'Tier 2: extra conditions',
+        restricted: 'Tier 2: no commercial use',
+        closed: 'Tier 3: API only',
+      },
+      tierDesc: {
+        open: 'Weights downloadable, commercial use allowed, training new models allowed, no extra hurdles.',
+        conditional: 'Weights are released, but the license adds custom clauses limiting commercial use or retraining.',
+        restricted: 'You can get the weights, but commercial use is off the table. Research only.',
+        closed: 'No weights, only an endpoint. However capable, it is not open source.',
+      },
+      sampleLabel: 'Also in this tier: ',
+      listSep: ', ',
+      qDownload: 'Can you download the weights?',
+      qCommercial: 'Can you use it commercially?',
+      qDistill: 'Can you train a new model on its output?',
+      ansYes: 'Yes', ansNo: 'No', ansLimited: 'With conditions',
+      restart: 'Start over',
+      bizName: {
+        ads: 'Selling ads', cloud: 'Selling cloud and compute', api: 'Selling API subscriptions',
+        service: 'Selling enterprise customization', research: 'Building reputation through research', model: 'Selling the model itself',
+      },
+      bizLogic: {
+        ads: 'The model is a complement to your real business. The cheaper the complement, the more valuable your core product, so you want everyone to have a good model for free.',
+        cloud: 'Developers fine-tune and deploy the model, and the compute demand comes back to your cloud. Free models, paid compute.',
+        api: 'The model is the product you sell. Open-sourcing it means giving away your inventory, which collides head-on with your revenue.',
+        service: 'The model builds technical credibility. The money comes from private deployments and custom contracts, not from locking customers into an endpoint.',
+        research: 'The most permissive license buys worldwide attention. One release earns more reputation than a marketing budget of the same size.',
+        model: 'Your revenue comes directly from licensing the model. Releasing the weights removes the reason anyone would pay you.',
+      },
+      youLean: 'Given that revenue structure, you would most likely ',
+      strategy: { open: 'lean open', closed: 'lean closed' },
+      bizWho: function (who) { return 'Example: ' + who; },
+      abilityOn: 'Emerged', abilityOff: 'Not yet',
+      abilityName: {
+        translate: 'Continuing from an example', multiling: 'Cross-lingual question answering', tooljson: 'Reliably emitting JSON',
+        math: 'Multi-step math reasoning', roleplay: 'Holding a persona across a long chat', cot: 'Chain-of-thought reasoning',
+      },
+      emergedCount: function (n, total) { return n + ' of ' + total + ' have appeared'; },
+      thresholdAt: function (b) { return 'around ' + b + 'B'; },
+      scaleNow: function (b) { return 'Current scale: ' + (b >= 1000 ? (b / 1000) + 'T' : b + 'B'); },
+      costMonthly: function (v) { return '$' + v.toLocaleString('en-US'); },
+      costFlagship: 'Flagship model', costSmall: 'Distilled small model',
+      costRatio: function (n) { return n + 'x difference'; },
+      costGap: function (v) { return '$' + v.toLocaleString('en-US') + ' extra every month'; },
+      costBarNote: 'The ratio between the two bars is the cost ratio. It is set by the per-token price and does not shift with scale, which is why dragging the slider changes the figure above rather than the length of the bars.',
+      latency: function (ms) { return ms + ' ms'; },
+      dailyCalls: function (n) { return n.toLocaleString('en-US') + ' calls per day'; },
+      labelCat: 'Cat', labelDog: 'Dog', labelRabbit: 'Rabbit', labelCar: 'Car',
+      hardLabel: 'Hard label', softLabel: 'Soft label',
+      tempNow: function (t) { return 'T = ' + t; },
+      infoLabel: 'Information the student can pick up',
+      tempHintLow: 'Very peaked. It essentially just says "cat", which is barely better than a hard label.',
+      tempHintMid: 'The distribution has softened. The student now learns that a cat is closer to a dog than to a rabbit.',
+      tempHintHigh: 'Too flat. The distinctions are washed out and noise starts to drown the useful signal.',
+      pickAtLeast: 'Pick one more model to run a cross-check',
+      verdictSame: 'All three were distilled from the same base. When they are wrong, they are wrong in exactly the same way, and cross-checking buys you nothing here.',
+      verdictMixed: 'The lineage covers different bases, so this cross-check actually counts.',
+      traceBtn: 'Trace lineage',
+      lineageName: {
+        a: 'Stardust Assistant', b: 'Lingxi Chat', c: 'Clarity QA',
+        d: 'Bedrock Chat', e: 'SeaChart Helper', f: 'In-house Model X',
+      },
+      lineageVendor: {
+        a: 'Stardust Tech', b: 'Lingxi Networks', c: 'Clarity Data',
+        d: 'Bedrock AI', e: 'SeaChart Cloud', f: 'Internal team',
+      },
+      pickHint: 'Pick the three products that look least related to each other, then press the button.',
+      baseName: { qwen: 'Qwen base', llama: 'Llama base', independent: 'Trained independently' },
+    },
+    ko: {
+      fileOf: function (gb) { return gb + ' GB'; },
+      fitYes: '들어감', fitNo: '안 들어감',
+      cardLabel: function (gb) { return gb + ' GB 그래픽카드'; },
+      paramLabel: function (b) { return b >= 1000 ? (b / 1000) + '조' : b + 'B'; },
+      bytesNote: function (n, label) {
+        return label + ': 파라미터 하나당 ' + n + ' 바이트';
+      },
+      tier: {
+        open: '1등급: 표준 오픈소스 라이선스',
+        conditional: '2등급: 추가 조건 있음',
+        restricted: '2등급: 상업적 이용 불가',
+        closed: '3등급: API만 제공',
+      },
+      tierDesc: {
+        open: '가중치를 내려받을 수 있고, 상업적 이용도 새 모델 학습도 가능하며 별도의 문턱이 없습니다.',
+        conditional: '가중치는 공개했지만 라이선스에 자체 조항을 넣어 상업적 이용이나 재학습을 제한합니다.',
+        restricted: '가중치는 받을 수 있지만 상업적 이용은 불가능하고 연구용으로만 쓸 수 있습니다.',
+        closed: '가중치는 주지 않고 API만 제공합니다. 성능이 아무리 좋아도 오픈소스는 아닙니다.',
+      },
+      sampleLabel: '이 등급에 속한 모델: ',
+      listSep: ', ',
+      qDownload: '가중치를 내려받을 수 있나요?',
+      qCommercial: '상업적으로 쓸 수 있나요?',
+      qDistill: '그 출력으로 새 모델을 학습시킬 수 있나요?',
+      ansYes: '가능', ansNo: '불가', ansLimited: '조건부',
+      restart: '다시 판단하기',
+      bizName: {
+        ads: '광고 판매', cloud: '클라우드와 연산 판매', api: 'API 구독 판매',
+        service: '기업 맞춤 서비스 판매', research: '연구로 평판 쌓기', model: '모델 자체를 판매',
+      },
+      bizLogic: {
+        ads: '모델은 본업의 보완재입니다. 보완재가 쌀수록 본업의 가치가 올라가므로, 좋은 모델을 모두가 무료로 쓰기를 바라게 됩니다.',
+        cloud: '개발자가 모델을 파인튜닝하고 배포하면 연산 수요가 결국 자사 클라우드로 돌아옵니다. 모델은 무료, 연산은 유료입니다.',
+        api: '모델 자체가 판매 상품입니다. 오픈소스로 푸는 것은 상품을 공짜로 주는 셈이라 수익 구조와 정면으로 충돌합니다.',
+        service: '모델로 기술적 신뢰를 쌓고, 수익은 온프레미스 배포와 맞춤 계약에서 나옵니다. API로 고객을 묶어 두지 않습니다.',
+        research: '가장 관대한 라이선스로 전 세계의 주목을 얻습니다. 릴리스 한 번이 같은 비용의 마케팅보다 큰 평판을 가져옵니다.',
+        model: '수익이 모델 라이선스에서 직접 나옵니다. 가중치를 공개하면 돈을 받을 이유가 사라집니다.',
+      },
+      youLean: '이런 수익 구조라면 여러분은 아마도 ',
+      strategy: { open: '오픈소스 쪽일 겁니다', closed: '클로즈드 쪽일 겁니다' },
+      bizWho: function (who) { return '대표 사례: ' + who; },
+      abilityOn: '창발함', abilityOff: '아직',
+      abilityName: {
+        translate: '예시를 보고 이어 쓰기', multiling: '교차 언어 질의응답', tooljson: 'JSON 안정적으로 출력',
+        math: '다단계 수학 추론', roleplay: '긴 대화에서 캐릭터 유지', cot: '사고 사슬 추론',
+      },
+      emergedCount: function (n, total) { return total + '개 중 ' + n + '개가 나타남'; },
+      thresholdAt: function (b) { return '약 ' + b + 'B'; },
+      scaleNow: function (b) { return '현재 규모: ' + (b >= 1000 ? (b / 1000) + '조' : b + 'B'); },
+      costMonthly: function (v) { return '$' + v.toLocaleString('en-US'); },
+      costFlagship: '플래그십 모델', costSmall: '증류한 소형 모델',
+      costRatio: function (n) { return n + '배 차이'; },
+      costGap: function (v) { return '매달 $' + v.toLocaleString('en-US') + ' 추가 지출'; },
+      costBarNote: '두 막대의 길이 비율이 곧 비용 비율입니다. 이 비율은 단가로 정해지며 규모에 따라 달라지지 않습니다. 그래서 슬라이더를 움직이면 막대 길이가 아니라 위의 금액이 바뀝니다.',
+      latency: function (ms) { return ms + ' ms'; },
+      dailyCalls: function (n) { return '하루 ' + n.toLocaleString('en-US') + '회 요청'; },
+      labelCat: '고양이', labelDog: '개', labelRabbit: '토끼', labelCar: '자동차',
+      hardLabel: '하드 레이블', softLabel: '소프트 레이블',
+      tempNow: function (t) { return 'T = ' + t; },
+      infoLabel: '학생이 얻을 수 있는 정보량',
+      tempHintLow: '분포가 매우 뾰족합니다. 사실상 「고양이」라고만 알려주는 셈이라 하드 레이블과 별 차이가 없습니다.',
+      tempHintMid: '분포가 부드러워졌습니다. 고양이가 토끼보다 개에 가깝다는 것을 학생이 배우기 시작합니다.',
+      tempHintHigh: '너무 평평합니다. 항목 간 차이가 지워지고 노이즈가 유용한 신호를 덮기 시작합니다.',
+      pickAtLeast: '교차 검증을 하려면 모델을 하나 더 선택하세요',
+      verdictSame: '세 모델 모두 같은 베이스에서 증류되었습니다. 틀릴 때는 똑같이 틀리기 때문에, 여기서 교차 검증은 아무것도 보장해 주지 못합니다.',
+      verdictMixed: '계보에 서로 다른 베이스가 섞여 있으므로 이번 교차 검증은 의미가 있습니다.',
+      traceBtn: '계보 추적',
+      lineageName: {
+        a: '스타더스트 어시스턴트', b: '링시 챗', c: '클래리티 QA',
+        d: '베드록 챗', e: '씨차트 헬퍼', f: '자체 개발 모델 X',
+      },
+      lineageVendor: {
+        a: '스타더스트 테크', b: '링시 네트웍스', c: '클래리티 데이터',
+        d: '베드록 AI', e: '씨차트 클라우드', f: '내부 팀',
+      },
+      pickHint: '서로 가장 관련 없어 보이는 제품 세 개를 골라 아래 버튼을 눌러 보세요.',
+      baseName: { qwen: 'Qwen 베이스', llama: 'Llama 베이스', independent: '독자 학습' },
+    },
+  };
+
+  /**
+   * 背景：同一份逻辑要给中英韩三套页面用，文案必须跟着页面语言走。
+   * 设计意图：直接读 html 标签的 lang，页面已经声明过语言，不再另设配置项。
+   * 约束：Node 环境没有 document，返回中文包供单测取默认值。
+   */
+  function dict() {
+    if (typeof document === 'undefined') { return I18N.zh; }
+    var lang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    if (lang.indexOf('ko') === 0) { return I18N.ko; }
+    if (lang.indexOf('en') === 0) { return I18N.en; }
+    return I18N.zh;
+  }
+
+  /**
+   * 背景：多个 demo 都要在「用户改了输入」之后重画，各页各写一套绑定容易漏
+   * 键盘事件，导致滑块只能用鼠标拖。
+   * 设计意图：统一在这里绑 input 事件，原生 range 控件本身支持方向键，
+   * 只要不自己造滑块就能免费拿到键盘可达性。
+   */
+  function bindRange(el, fn) {
+    if (!el || typeof fn !== 'function') { return; }
+    el.addEventListener('input', function () { fn(Number(el.value)); });
+    fn(Number(el.value));
+  }
+
+  /**
+   * 背景：部分学员开了系统的「减少动态效果」，逐帧动画对他们是干扰。
+   * 设计意图：页面在播放任何过程动画前问一次，该模式下直接跳到终态。
+   */
+  function reducedMotion() {
+    if (typeof window === 'undefined' || !window.matchMedia) { return false; }
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  /**
+   * 背景：滑块拖过去数字确实变了，但变化太安静。学员盯着控件本身，
+   * 输出区在视线之外悄悄换了个数，等于白改。
+   * 设计意图：只在状态真的跳变时给一次短促反馈，稳态下不播任何动画。
+   * 加类前先摘类并强制重排，否则连续跳变时同一个 animation 不会重播。
+   * 约束：reduced-motion 下直接返回，CSS 那边也关了动画，两处都要挡住，
+   * 只关一处会让这类学员白等一个动画时长。
+   */
+  function fire(el) {
+    if (!el || typeof el.classList === 'undefined') { return; }
+    if (reducedMotion()) { return; }
+    el.classList.remove('fire');
+    void el.offsetWidth;
+    el.classList.add('fire');
+  }
+
+  /**
+   * 背景：render 每次输入都会跑一遍，但绝大多数时候结论没变。每次都闪一下
+   * 会让整块一直在抖，反而看不出哪一次是真的跨过了阈值。
+   * 设计意图：调用方给一个能代表当前状态的值，只有跟上次不同才触发动效。
+   * 返回是否真的变了，页面可以据此决定要不要连带播别的反馈。
+   * 约束：状态值要能用 !== 比较，对象请先自行序列化。
+   */
+  function fireOnChange(el, key, store, slot) {
+    if (!store) { return false; }
+    var name = slot || 'last';
+    var changed = store[name] !== key;
+    store[name] = key;
+    if (changed && store.primed) { fire(el); }
+    store.primed = true;
+    return changed;
+  }
+
+  return {
+    fire: fire,
+    fireOnChange: fireOnChange,
+    BYTES: BYTES,
+    PARAM_MIN: PARAM_MIN,
+    PARAM_MAX: PARAM_MAX,
+    SLIDER_STEPS: SLIDER_STEPS,
+    posToParams: posToParams,
+    paramsToPos: paramsToPos,
+    fileSize: fileSize,
+    CARDS: CARDS,
+    fitCards: fitCards,
+    LICENSE_Q: LICENSE_Q,
+    judgeLicense: judgeLicense,
+    TIER_SAMPLE: TIER_SAMPLE,
+    BIZ: BIZ,
+    bizStrategy: bizStrategy,
+    ABILITIES: ABILITIES,
+    abilitiesAt: abilitiesAt,
+    smoothScore: smoothScore,
+    emergentScore: emergentScore,
+    TIER_COST: TIER_COST,
+    monthlyCost: monthlyCost,
+    costRatio: costRatio,
+    TEACHER_LOGITS: TEACHER_LOGITS,
+    softmax: softmax,
+    teacherDist: teacherDist,
+    infoRichness: infoRichness,
+    LINEAGE: LINEAGE,
+    lineageOf: lineageOf,
+    crossCheckVerdict: crossCheckVerdict,
+    I18N: I18N,
+    dict: dict,
+    bindRange: bindRange,
+    reducedMotion: reducedMotion,
+  };
+});
+</script>
+<script>
+/**
+ * 背景：本页有多个命令行块，读者需要直接复制到终端执行，手工选中容易漏字符。
+ * 设计意图：复用 oss-calc.js 里的 bindCopy，它已经处理了 navigator.clipboard
+ * 在非安全上下文下不可用时的 textarea 回退，避免本页再写一份。
+ * 约束：复制的原文写在按钮的 data-copy 上，改动命令时两处都要改，
+ * 否则读者复制到的会是旧命令。
+ */
+(function () {
+  if (window.OSSCalc && window.OSSCalc.bindCopy) {
+    window.OSSCalc.bindCopy(document);
+  } else {
+    console.error('[oss-9] 复制模块未加载，命令需手动选中复制');
+  }
+})();
+</script>
+<script>
+/**
+ * 背景：上一节算出「你能跑 14B」，到这一节读者仍然不知道该敲哪一条命令，
+ * 中间那一步得自己在脑子里换算，很多人就卡在这里没往下走。
+ * 设计意图：把机型直接翻译成一条可以复制就用的命令，读者选完就能去终端里
+ * 敲。推荐逻辑走 oss-calc.js 的 recommend，与 oss-8 的判定口径完全一致，
+ * 不在这里另算一遍，避免两节课给出互相矛盾的结论。
+ * 约束：
+ *   1) 命令主体只用官方库确实存在的基础标签，量化档作为文字建议给出并
+ *      提示去 tags 页确认。给一条拉不下来的命令比不给更糟。
+ *   2) data-copy 必须与 <code> 里显示的文本逐字一致，所见即所得。
+ */
+(function () {
+  var C = window.OSSCalc;
+  var seg = document.getElementById('cmdPlatform');
+  var sel = document.getElementById('cmdDevice');
+  if (!C || !seg || !sel || !C.recommend) { return; }
+
+  var t = C.dict();
+  /* 动效来自本章共享的交互模块，缺失时整块照常工作，只是没有反馈动画 */
+  var FX = window.OSSInteract;
+  var state = { platform: 'nvidia', deviceId: null, use: 'chat' };
+
+  var elPick = document.getElementById('cmdPick');
+  var elWhy = document.getElementById('cmdWhy');
+  var elBox = document.getElementById('cmdBox');
+  var elTip = document.getElementById('cmdTip');
+  var elCopy = document.getElementById('cmdCopy');
+  var elText = document.getElementById('cmdText');
+  var elLM = document.getElementById('cmdLM');
+  var anim = {};
+
+  /* 用途只影响量化建议，不影响选哪个尺寸。尺寸由显存决定，这是硬约束；
+     写代码更吃精度，所以在同尺寸上建议高一档量化，而不是换更小的模型。 */
+  var QUANT = { chat: 'Q4_K_M', code: 'Q5_K_M' };
+
+  function fillDevices() {
+    var list = state.platform === 'nvidia' ? C.NVIDIA : C.APPLE;
+    sel.innerHTML = list.map(function (d) {
+      var cap = d.vram != null ? t.optVram(d.vram) : t.optMem(d.mem);
+      return '<option value="' + d.id + '">' + d.name + t.wrap(cap) + '</option>';
+    }).join('');
+    state.deviceId = list[0].id;
+    sel.value = state.deviceId;
+  }
+
+  function render() {
+    var device = C.findDevice(state.deviceId);
+    if (!device) { return; }
+
+    /* 本地跑一律按 INT4 推荐：这是 Ollama 不写后缀时的默认档，
+       也是绝大多数人实际会跑的那一档，用别的精度推荐会与现实脱节。 */
+    var rec = C.recommend(device, 'int4');
+
+    if (!rec) {
+      elPick.textContent = t.recNone;
+      elWhy.textContent = t.recNoneWhy;
+      elBox.hidden = true;
+      elLM.hidden = true;
+      return;
+    }
+
+    elBox.hidden = false;
+    elLM.hidden = false;
+    elPick.textContent = rec.name;
+    elWhy.textContent = t.recWhy(rec.need, rec.avail);
+
+    var cmd = 'ollama run ' + rec.tag;
+    elText.textContent = cmd;
+    elCopy.setAttribute('data-copy', cmd);
+    elTip.textContent = t.recCmdTip;
+
+    /* 推到本地最大尺寸时要说清楚这就是天花板，否则大内存用户会一直怀疑
+       自己还没榨干机器。同时点破它来自 3.5 而不是最新的 3.6。 */
+    elLM.innerHTML = t.recLM(rec.name)
+      + '<br>' + t.recQuant(QUANT[state.use])
+      + (rec.isTop ? '<br>' + t.recTop + '<br>' + t.recVer : '');
+
+    /* 换机型时推荐结果常常不变（同代显卡显存一样），这时不闪，
+       免得读者以为换出了新结果。动效只标记「推荐真的换了」。 */
+    if (FX) { FX.fireOnChange(elPick, rec.name, anim, 'pick'); }
+  }
+
+  function bindSeg(el, key, after) {
+    el.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-' + key + ']');
+      if (!btn) { return; }
+      state[key] = btn.dataset[key];
+      this.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('is-on', b === btn);
+      });
+      if (after) { after(); }
+      render();
+    });
+  }
+
+  bindSeg(seg, 'platform', fillDevices);
+  bindSeg(document.getElementById('cmdUse'), 'use', null);
+  sel.addEventListener('change', function () {
+    state.deviceId = this.value;
+    render();
+  });
+
+  fillDevices();
+  render();
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

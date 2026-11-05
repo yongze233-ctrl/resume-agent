@@ -1,0 +1,771 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-10",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-10',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 先告诉我必须懂哪五个概念 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+.lesson .clause mark{background:rgba(180,83,9,.24)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl-copy{margin:0;font-size:14px;line-height:2;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-src{margin-bottom:20px;padding:18px 20px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-src b{display:block;font-size:12.5px;color:var(--accent-deep);margin-bottom:8px}
+.dm-src p{margin:0;font-size:13px;line-height:2;color:var(--text)}
+.dm-src .dm-w{padding:0 2px;border-radius:4px;transition:background .6s cubic-bezier(.25,1,.5,1),color .6s cubic-bezier(.25,1,.5,1)}
+.dm-src .dm-w.lit{background:rgba(220,38,38,.09);color:var(--danger);font-weight:700}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pane{padding:16px 18px;min-height:300px;overflow-wrap:anywhere;word-break:break-word}
+.dm-meter{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.dm-m{display:flex;align-items:baseline;gap:6px}
+.dm-m b{font-size:26px;font-weight:900;color:var(--accent-deep);display:inline-block;font-variant-numeric:tabular-nums;transition:color .35s cubic-bezier(.4,0,.2,1)}
+.dm-m span{font-size:12px;color:var(--sub)}
+.dm-m b.pop{animation:flashPop .8s ease}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+.dm-track{height:6px;border-radius:99px;background:var(--border);margin:0 0 14px;overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .8s cubic-bezier(.25,1,.5,1)}
+#dm-col-l.stuck .dm-bar{background:var(--danger);animation:stuckPulse 1.4s ease infinite}
+#dm-col-l.stuck .dm-m b{color:var(--danger)}
+@keyframes stuckPulse{0%,100%{opacity:1}50%{opacity:.45}}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;min-height:26px}
+.dm-chip{padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(220,38,38,.06);color:var(--danger);border:1px solid rgba(220,38,38,.22);opacity:0;transform:translateY(8px)}
+.dm-chip.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-chip.pop{animation:flashPop .8s ease}
+.dm-order{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.dm-o{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;color:var(--faint);background:var(--card);border:1px dashed var(--border);transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-o.on{color:#fff;background:var(--accent);border-color:var(--accent);border-style:solid}
+.dm-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.dm-c{padding:9px 12px;border-radius:10px;background:var(--card);border:1px solid var(--border);opacity:.4;transform:scale(.98);transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1),background .4s ease,border-color .4s ease}
+.dm-c.active{opacity:1;transform:scale(1)}
+.dm-c-n{font-size:13px;font-weight:700;color:var(--text);transition:color .4s ease}
+.dm-c-s{font-size:11.5px;color:var(--sub);margin-left:8px}
+.dm-c.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.28)}
+.dm-c.ok .dm-c-n{color:var(--faint);text-decoration:line-through}
+.dm-c.ok .dm-c-s{color:var(--success)}
+.dm-c.gap{background:var(--accent-soft);border-color:rgba(180,83,9,.32)}
+.dm-c.gap .dm-c-s{color:var(--accent-deep);font-weight:700}
+.dm-c.pop{animation:flashPop .8s ease}
+.dm-c.glow{animation:fireGlow .9s ease}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+.dm-c-b{max-height:0;overflow:hidden;font-size:12px;line-height:1.8;color:var(--accent-deep);transition:max-height .5s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+.dm-c-b.open{max-height:110px;padding:6px 0 2px}
+.dm-note{font-size:12.5px;line-height:1.8;color:var(--sub)}
+.dm-note.warn{color:var(--danger);font-weight:700}
+.dm-note.good{color:var(--success);font-weight:700}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:240px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo{max-width:100%;min-width:0}.dm-pane{min-height:0}}
+@media(prefers-reduced-motion:reduce){.dm-bar,.dm-c,.dm-o,.dm-chip,.dm-chip.show,.dm-c-b,.dm-summary,.dm-src .dm-w,.dm-m b{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="一份四十页的参赛手册，从第一页往下读很快耗完时间。先按目录、摘要、结论、图表搭结构，再列出需要先懂的五个概念。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 先告诉我必须懂哪五个概念"><meta property="og:description" content="一份四十页的参赛手册，从第一页往下读很快耗完时间。先按目录、摘要、结论、图表搭结构，再列出需要先懂的五个概念。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-10.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-10.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 啃硬材料</div>
+    <h1>让 AI 先告诉我必须懂哪五个概念</h1>
+    <p class="subtitle">按目录、摘要、结论、图表、正文的顺序给它，开工先问要先懂哪五个概念。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>按目录、摘要、结论、图表、正文的顺序给它，开工先问要先懂哪五个概念。</p></aside><!--seo:end-->  <p class="reveal">跑步群里弹出一个附件，周日半程马拉松的参赛手册，<strong>40 页</strong>。你要确认的只有三件事：几点存包、自己这一组几点出发、15 公里处几点关门。那天是周五晚上，比赛还有一天半。</p>
+  <p class="reveal">你想着既然要参加，就从第一页开始老老实实往下读。封面、主办方名单、赞助商、天气提醒一页页翻过去；遇到「净计时」「分区检录」「强制收容」，你又停下来搜索。顺序很认真，也没有漏字。</p>
+  <p class="reveal">到晚上 10 点 25 分，你读到第 8 页，已经停下来查了六次。存包截止时间还没找到，15 公里关门表在第 27 页。你原先按自己越过起点的时间算配速，翻到那里才看到这句：</p>
+  <p class="reveal"><span class="clause">第 15 公里关门时间为本分区枪声后 2 小时 10 分。迟到出发所耗时间计入关门时限；超过关门时间的选手须停止比赛，乘收容车返回终点。</span></p>
+  <p class="reveal">你在 C 区，鸣枪后 <strong>8 分钟</strong>才越过起点。原来留给你的时间会少 8 分钟，刚做好的配速表得重算。前面读过的主办方名单和天气提醒没有回答手上这三个问题，45 分钟也用完了。</p>
+  <p class="reveal">你会从第一页开始，是因为默认页码顺序就是理解顺序：前面是基础，后面才是细节。参赛手册的编排任务是把所有规则收齐，重要信息会分散在日程、路线图、关门表和名词解释里。<mark>你把页码顺序当成了重要性顺序。</mark></p>
+
+  <div class="sec-label">整份材料开工前，AI 能先替你排路</div>
+  <p class="reveal">把 40 页直接丢给 AI，只问「帮我总结」，它通常会把 40 页压成两页。内容变短了，净计时和枪声时间仍然挤在同一段里，你还是不知道哪个词会改掉自己的配速计划。</p>
+  <p class="reveal">更有用的做法，是先让它按材料的目录、摘要、关键结论和图表搭出结构，再问读懂这份材料需要哪五个概念。接着逐个出题：能解释的先划掉，说不清的才补。<strong>AI 先替你找出入口和缺口</strong>，正文等这两件事清楚以后再读。</p>
+  <ol class="four reveal">
+    <li><b>先看目录，知道答案散在哪几节</b>，存包看日程，出发看分区，关门看路线表。</li>
+    <li><b>再看摘要和关键结论</b>，先抓会改变行动的规则。</li>
+    <li><b>接着看图表</b>，把时间、公里点和分区放回同一张地图。</li>
+    <li><b>最后进入正文</b>，只细读与你有关的段落和五个前置概念。</li>
+  </ol>
+  <p class="reveal paywall-locked xa-peek"><mark>先让 AI 找出五个前置概念，再决定正文从哪里读。</mark>可同样是 40 页，这个顺序究竟会省掉哪些停顿？下面两条路线同时跑一遍。</p>
+
+  <div class="sec-label paywall-locked">先玩一遍 · 同一份手册用两种顺序开工</div>
+  <div class="demo reveal paywall-locked" id="demo-scaffold">
+    <div class="demo-top">
+      <div class="demo-title">同一份 40 页半程马拉松参赛手册</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-src">
+      <b>手册里会反复引用的关门规则</b>
+      <p>个人完赛成绩采用<span class="dm-w">净计时</span>。选手须按号码布标注的<span class="dm-w">分区检录</span>，各分区以<span class="dm-w">枪声时间</span>作为赛道<span class="dm-w">关门时间</span>的起点。迟到出发所耗时间计入关门时限；超过规定时限的选手须接受<span class="dm-w">强制收容</span>，退出赛道并乘车返回终点。</p>
+    </div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col" id="dm-col-l">
+        <div class="dm-cmp-h">从第一页开始逐行往下读</div>
+        <div class="dm-pane">
+          <div class="dm-meter">
+            <div class="dm-m"><b id="dm-l-stop">0</b><span>次停下来查</span></div>
+            <div class="dm-m"><b id="dm-l-page">0</b><span>/ 40 页</span></div>
+          </div>
+          <div class="dm-track"><div class="dm-bar" id="dm-l-bar"></div></div>
+          <div class="dm-chips" id="dm-l-chips"></div>
+          <div class="dm-note" id="dm-l-note">播放后，这里会记录每一次停下来查词。</div>
+        </div>
+      </div>
+      <div class="dm-cmp-col" id="dm-col-r">
+        <div class="dm-cmp-h">先看结构，再确认自己缺什么</div>
+        <div class="dm-pane">
+          <div class="dm-meter">
+            <div class="dm-m"><b id="dm-r-gap">0</b><span>个概念要补</span></div>
+            <div class="dm-m"><b id="dm-r-page">0</b><span>/ 40 页</span></div>
+          </div>
+          <div class="dm-track"><div class="dm-bar" id="dm-r-bar"></div></div>
+          <div class="dm-order" id="dm-r-order">
+            <span class="dm-o">目录</span><span class="dm-o">摘要</span><span class="dm-o">结论</span><span class="dm-o">图表</span><span class="dm-o">正文</span>
+          </div>
+          <div class="dm-list" id="dm-r-list">
+            <div class="dm-c"><span class="dm-c-n">净计时</span><span class="dm-c-s"></span></div>
+            <div class="dm-c"><span class="dm-c-n">枪声时间</span><span class="dm-c-s"></span><div class="dm-c-b"></div></div>
+            <div class="dm-c"><span class="dm-c-n">关门时间</span><span class="dm-c-s"></span></div>
+            <div class="dm-c"><span class="dm-c-n">分区检录</span><span class="dm-c-s"></span></div>
+            <div class="dm-c"><span class="dm-c-n">强制收容</span><span class="dm-c-s"></span><div class="dm-c-b"></div></div>
+          </div>
+          <div class="dm-note" id="dm-r-note">播放后，这里会显示当前读到了哪一层。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，两边会用不同顺序处理同一份手册。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>为什么左边读到第 2 页就停了</b>每碰到一个词就离开手册去查，查完仍然不知道它与关门规则有什么关系。</div>
+      <div class="dm-s"><b>为什么右边能走完整份手册</b>结构先把关键页圈出来，五个概念再把真正缺的两项筛出来。</div>
+    </div>
+    <div class="demo-caption">教学示意：这份参赛手册和规则为演示编写，不对应任何真实赛事。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">把这段话直接贴给 AI</div>
+  <p class="reveal paywall-locked">先把文件上传，再把下面这段接在后面。「材料名称」换成参赛手册、行业报告、课程讲义或你手上的文件名，其余部分可以原样保留。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <p class="tpl-copy">我准备读一份【材料名称】。请先根据目录、摘要、结论和图表，告诉我它在回答哪三个问题，以及每个问题该去看哪一节。然后回答：读这份材料需要先懂哪五个概念？按依赖排序。先不要解释，逐个出题考我。答得上的概念直接划掉，答不上的再用生活例子补。每次只补一个，等我用自己的话说对以后再继续。</p>
+    <p class="tpl-note">如果文件没有摘要或结论，就让 AI 从目录、各章开头、表格和末尾小结中代为提取，不需要为了凑顺序寻找不存在的栏目。</p>
+  </div>
+  <p class="reveal paywall-locked">「按依赖排序」这半句决定先后。净计时和枪声时间都不清楚时，先弄懂两种计时从哪一刻开始，再谈第 15 公里的关门表；否则 AI 会按它想到的顺序解释五个词，后一个解释里又塞回前一个生词。</p>
+  <p class="reveal paywall-locked">「先不要解释，逐个出题考我」也很关键。它会先检查你已有的基础。你若能说出净计时从越过起点感应带开始，这一项就划掉；说不清枪声时间如何影响关门时限，才把时间花在这一项上。</p>
+
+  <div class="sec-label paywall-locked">五个概念只是一张开工清单</div>
+  <p class="reveal paywall-locked">五个是一个便于开工的数量，够你看见结构，也不容易让第一次自测拖太久。材料很窄时可能只有三个，跨了多个章节时可以先列五个，补完再请 AI 检查有没有下一层缺口。</p>
+  <p class="reveal paywall-locked"><mark>答得上的划掉，答不上的才补。</mark>这句话能防住另一种浪费：让 AI 从最基础的定义开始讲，已经会的也陪着听一遍。检查的标准要落到具体问题上，比如「C 区鸣枪 8 分钟后才过起点，关门时间少不少这 8 分钟」。能说清理由才算划掉。</p>
+  <p class="reveal paywall-locked">如果已经卡在某一句，回到 <a href="/dashboard/learning?lesson=learn-9" data-lesson-id="learn-9">分层拆解四步</a>，一次只拆那一个缺口。补完怎么确认自己会说，见 <a href="/dashboard/learning?view=courses" data-learning-view="courses">讲得清那一关</a>。</p>
+
+  <div class="key-line reveal paywall-locked">先筛出真正缺的，再开始读正文。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-scaffold');
+  var colL = document.getElementById('dm-col-l');
+  var lStop = document.getElementById('dm-l-stop');
+  var lPage = document.getElementById('dm-l-page');
+  var lBar = document.getElementById('dm-l-bar');
+  var lChips = document.getElementById('dm-l-chips');
+  var lNote = document.getElementById('dm-l-note');
+  var rGap = document.getElementById('dm-r-gap');
+  var rPage = document.getElementById('dm-r-page');
+  var rBar = document.getElementById('dm-r-bar');
+  var rNote = document.getElementById('dm-r-note');
+  var orders = Array.prototype.slice.call(document.querySelectorAll('#dm-r-order .dm-o'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#dm-r-list .dm-c'));
+  var words = Array.prototype.slice.call(document.querySelectorAll('.dm-src .dm-w'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var timers = [];
+  var TOTAL = 40;
+  var IDLE = '点播放，两边会用不同顺序处理同一份手册。';
+  var CHECK = '我能解释，先划掉';
+  var FILL = '我还说不清，要先补上';
+  var BODY = [
+    '枪声时间从本分区鸣枪那一刻开始，关门表按它计算；净计时从你越过起点感应带开始。',
+    '超过某个公里点的规定时间后，选手要离开赛道，乘收容车返回终点。'
+  ];
+
+  var STEPS = [
+    {
+      lStop: 1, lPage: 1, chips: ['净计时'], lit: 1,
+      lNote: '第一个不懂的词出现了，先停下来查。',
+      rGapN: 0, rPage: 2, order: 1, marks: ['', '', '', '', ''], open: false,
+      rNote: '正文还没开始读，先用目录找到日程、分区和关门表。',
+      cap: '同一份 40 页手册，两边同时开工。左边读第一句就撞上「净计时」，停下来查。右边先看目录。'
+    },
+    {
+      lStop: 4, lPage: 1, chips: ['净计时', '分区检录', '枪声时间', '关门时间'], lit: 4,
+      lNote: '同一条规则停了四次，进度还在第 1 页。',
+      rGapN: 0, rPage: 5, order: 3, marks: ['', '', '', '', ''], open: false,
+      rNote: '摘要和关键结论看完，先锁定出发分区、关门表和收容规则。',
+      cap: '第一条规则里又出现三个陌生词，左边累计停了四次。右边靠摘要和关键结论找到最相关的三节。'
+    },
+    {
+      lStop: 6, lPage: 2, chips: ['净计时', '分区检录', '枪声时间', '关门时间', '强制收容', '存包截止'], lit: 5,
+      lNote: '第 2 页又停了两次，45 分钟用完，只好合上。', stuck: true,
+      rGapN: 0, rPage: 8, order: 4, marks: ['', '', '', '', ''], open: false,
+      rNote: '结构已经搭好，现在把五个概念的自测问题发出去。',
+      cap: '左边翻到第 2 页又停两次，累计六次，只好合上。右边已经看过路线表，并发出五个概念的自测问题。'
+    },
+    {
+      lStop: 6, lPage: 2, chips: ['净计时', '分区检录', '枪声时间', '关门时间', '强制收容', '存包截止'], lit: 5,
+      lNote: '逐行阅读仍然停在第 2 页。', stuck: true,
+      rGapN: 0, rPage: 8, order: 4,
+      marks: ['ok', '', 'ok', 'ok', ''], stagger: true, open: false,
+      rNote: '五道题逐个检查，其中三个已经能解释清楚。',
+      cap: '五个概念按依赖排序，逐个出题。净计时、关门时间、分区检录这三个能说清，直接划掉。'
+    },
+    {
+      lStop: 6, lPage: 2, chips: ['净计时', '分区检录', '枪声时间', '关门时间', '强制收容', '存包截止'], lit: 5,
+      lNote: '逐行阅读仍然停在第 2 页。', stuck: true,
+      rGapN: 2, rPage: 8, order: 4,
+      marks: ['ok', 'gap', 'ok', 'ok', 'gap'], open: true,
+      rNote: '只剩枪声时间和强制收容需要补，补完以后各答一道题。',
+      cap: '答不上的只剩两个。枪声时间补完后，要能说出 C 区晚 8 分钟越过起点会不会少 8 分钟关门时间。'
+    },
+    {
+      lStop: 6, lPage: 2, chips: ['净计时', '分区检录', '枪声时间', '关门时间', '强制收容', '存包截止'], lit: 5,
+      lNote: '停了六次以后，进度留在第 2 页。', stuck: true,
+      rGapN: 0, rPage: 40, order: 5,
+      marks: ['ok', 'ok', 'ok', 'ok', 'ok'], open: false, glow: true,
+      rNote: '两个缺口补完以后再进正文，关键规则和行动时间都已经找到。', good: true,
+      cap: '两个概念补上，40 页手册走完。左边停了六次，仍在第 2 页；材料相同，时间也相同。',
+      fin: true
+    }
+  ];
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  function setNum(el, v){
+    if (el.textContent === String(v)) return;
+    el.textContent = v;
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    if (!reduce) el.classList.add('pop');
+  }
+
+  // 停下来查的词只增不减：新的 chip 插进 DOM 之后 double-rAF 才加 show，
+  // 否则浏览器会把插入与加 class 合成一帧，进场动画不播。
+  function setChips(list){
+    var have = lChips.children.length;
+    if (list.length < have) { lChips.innerHTML = ''; have = 0; }
+    for (var i = have; i < list.length; i++) {
+      (function(text, order){
+        var el = document.createElement('span');
+        el.className = 'dm-chip';
+        el.textContent = text;
+        lChips.appendChild(el);
+        var t = setTimeout(function(){
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ el.classList.add('show', 'pop'); });
+          });
+        }, reduce ? 0 : order * 130);
+        timers.push(t);
+      })(list[i], i - have);
+    }
+  }
+
+  function paintWords(n){
+    words.forEach(function(el, i){
+      if (i < n) el.classList.add('lit');
+      else el.classList.remove('lit');
+    });
+  }
+
+  function paintRows(marks, stagger, open, glow){
+    rows.forEach(function(el, i){
+      var mark = marks[i];
+      var body = el.querySelector('.dm-c-b');
+      var tag = el.querySelector('.dm-c-s');
+      var apply = function(){
+        var was = el.className;
+        el.className = 'dm-c';
+        if (mark) el.classList.add('active', mark === 'ok' ? 'ok' : 'gap');
+        if (mark && was.indexOf(mark) < 0 && !reduce) el.classList.add('pop');
+        if (glow && mark === 'ok') el.classList.add('glow');
+        tag.textContent = mark ? (mark === 'ok' ? CHECK : FILL) : '';
+        if (body) {
+          body.textContent = i === 1 ? BODY[0] : BODY[1];
+          if (open && mark === 'gap') body.classList.add('open');
+          else body.classList.remove('open');
+        }
+      };
+      if (stagger && mark && !reduce) {
+        timers.push(setTimeout(apply, i * 320));
+      } else {
+        apply();
+      }
+    });
+  }
+
+  function paint(st){
+    clearTimers();
+    setNum(lStop, st.lStop);
+    setNum(lPage, st.lPage);
+    lBar.style.width = (st.lPage / TOTAL * 100) + '%';
+    lNote.textContent = st.lNote;
+    lNote.className = 'dm-note' + (st.stuck ? ' warn' : '');
+    colL.classList.toggle('stuck', !!st.stuck);
+    setChips(st.chips);
+    paintWords(st.lit);
+
+    setNum(rGap, st.rGapN);
+    setNum(rPage, st.rPage);
+    rBar.style.width = (st.rPage / TOTAL * 100) + '%';
+    rNote.textContent = st.rNote;
+    rNote.className = 'dm-note' + (st.good ? ' good' : '');
+    orders.forEach(function(el, i){ el.classList.toggle('on', i < st.order); });
+    paintRows(st.marks, st.stagger, st.open, st.glow);
+
+    captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx]);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+
+  // 节拍不匀速：出题那一步和收尾那一步停久一点，两条进度条的差距要给时间看清
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= steps.length) { stop(); return; }
+    var st = steps[idx];
+    paint(st);
+    idx++;
+    pauseUntil = ts + (st.fin ? 3000 : (st.stagger || st.open ? 2600 : 1500));
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop(); idx = 0; pauseUntil = 0;
+    steps = STEPS;
+    clearTimers();
+    colL.classList.remove('stuck');
+    lChips.innerHTML = '';
+    setNum(lStop, 0); setNum(lPage, 0); setNum(rGap, 0); setNum(rPage, 0);
+    lBar.style.width = '0%'; rBar.style.width = '0%';
+    lNote.className = 'dm-note'; lNote.textContent = '播放后，这里会记录每一次停下来查词。';
+    rNote.className = 'dm-note'; rNote.textContent = '播放后，这里会显示当前读到了哪一层。';
+    paintWords(0);
+    orders.forEach(function(el){ el.classList.remove('on'); });
+    paintRows(['', '', '', '', ''], false, false, false);
+    summary.classList.remove('on');
+    captionText.textContent = IDLE;
+  }
+
+  function play(){
+    if (idx >= steps.length) reset();
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

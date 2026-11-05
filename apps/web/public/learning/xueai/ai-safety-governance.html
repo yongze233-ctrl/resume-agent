@@ -1,0 +1,1096 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"ai-safety-governance",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=ai-safety-governance',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>风险分级与责任：谁来管、怎么管 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root { --accent2: var(--danger); --green: var(--success); --red: var(--danger); --amber: #d97706; --blue: #2563eb; --muted: var(--sub); --surface: var(--card); }
+
+/* ── 筛选按钮 ── */
+.filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.filter-row .fl-lbl { font-size: 13px; color: var(--sub); font-weight: 600; }
+.filter-btn {
+  padding: 9px 16px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--card);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; color: var(--sub); font-family: inherit; min-height: 40px;
+}
+.filter-btn.active { color: white; }
+.filter-btn.f-all.active { background: var(--danger); border-color: var(--danger); }
+.filter-btn.f-tier.active { background: var(--amber); border-color: var(--amber); }
+.filter-btn.f-role.active { background: var(--blue); border-color: var(--blue); }
+
+/* ── 主从布局 ── */
+.gov-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.card-list { display: flex; flex-direction: column; gap: 10px; }
+
+.scene-card {
+  background: var(--card); border: 2px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; cursor: pointer;
+  transition: all 0.2s; display: flex; gap: 12px; align-items: flex-start;
+  box-shadow: var(--shadow-card);
+}
+.scene-card:hover { transform: translateX(3px); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.scene-card.active { border-color: var(--danger); background: rgba(220,38,38,0.03); }
+.scene-card.hidden { display: none; }
+.sc-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; flex-shrink: 0; }
+.sc-body { flex: 1; min-width: 0; }
+.sc-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
+.sc-desc { font-size: 13px; color: var(--sub); line-height: 1.45; }
+.sc-risk { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 800; margin-top: 6px; }
+
+/* ── 详情面板 ── */
+.detail-panel { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 20px; }
+.detail-hd { display: flex; align-items: center; gap: 12px; }
+.detail-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; }
+.detail-title { font-size: 19px; font-weight: 800; color: var(--text); }
+.detail-risk { font-size: 12px; font-weight: 700; margin-top: 2px; }
+
+.info-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-card);
+}
+.ic-label { font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-bottom: 8px; }
+.ic-body { font-size: 14px; color: var(--sub); line-height: 1.7; }
+.ic-body strong { color: var(--text); }
+.ic-body em { font-style: normal; font-weight: 700; }
+.ic-list { display: flex; flex-direction: column; gap: 6px; }
+.ic-item { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: var(--sub); }
+.ic-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+
+.do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dd-col { border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; line-height: 1.65; }
+.dd-col strong { display: block; font-size: 11px; letter-spacing: 0.3px; margin-bottom: 5px; }
+.dd-do { background: rgba(22,163,74,0.06); border: 1px solid rgba(22,163,74,0.15); color: #14532d; }
+.dd-do strong { color: var(--success); }
+.dd-dont { background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.15); color: #7c2d12; }
+.dd-dont strong { color: var(--danger); }
+
+.tip-strip { border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; line-height: 1.65; }
+
+@media (max-width: 768px) {
+  .gov-cols { grid-template-columns: 1fr; }
+  .detail-panel { position: static; }
+  .do-dont { grid-template-columns: 1fr; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="AI 使用的风险分级（L1/L2/L3）与责任链（使用者/审批人/管理者）：不同风险等级对应不同管控要求，每个角色都要为自己的 AI 使用行为负责。">
+<meta name="keywords" content="AI风险分级,AI责任链,AI治理,AI合规,风险管控,AI管理制度">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="风险分级与责任：谁来管、怎么管">
+<meta property="og:description" content="AI 使用的风险分级（L1/L2/L3）与责任链（使用者/审批人/管理者）：不同风险等级对应不同管控要求，每个角色都要为自己的 AI 使用行为负责。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/ai-safety-governance.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/ai-safety-governance.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="风险分级与责任：谁来管、怎么管">
+<meta name="twitter:description" content="AI 使用的风险分级（L1/L2/L3）与责任链（使用者/审批人/管理者）：不同风险等级对应不同管控要求，每个角色都要为自己的 AI 使用行为负责。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+
+  <header class="lesson-header">
+    <div class="kicker">Prompt 安全</div>
+    <h1>风险分级与责任</h1>
+    <p class="subtitle">AI 使用不是能用就行。按风险分级（L1/L2/L3）匹配管控强度，按责任链（使用者/审批人/管理者）明确谁担责。点击左侧任意条目查看详情。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>AI 输出的风险分级模型，各角色的责任分工与治理框架</p></aside><!--seo:end-->  <div class="sec-label">
+    筛选查看
+  </div>
+
+  <div class="filter-row">
+    <span class="fl-lbl">查看：</span>
+    <button class="filter-btn f-all active" onclick="filterBy('all',this)">全部</button>
+    <button class="filter-btn f-tier" onclick="filterBy('tier',this)">风险分级</button>
+    <button class="filter-btn f-role" onclick="filterBy('role',this)">责任链</button>
+  </div>
+
+  <div class="gov-cols" style="margin-top:16px">
+    <div class="card-list" id="cardList"></div>
+    <div class="detail-panel" id="detailPanel"></div>
+  </div>
+
+</article>
+
+<script>
+const ITEMS = [
+  {
+    cat:'tier', icon:'L1', iconBg:'rgba(22,163,74,.1)', iconColor:'var(--green)',
+    title:'L1 · 低风险 — 日常辅助', desc:'写邮件、做总结、翻译、头脑风暴',
+    riskText:'低风险', riskBg:'rgba(22,163,74,.1)', riskColor:'var(--green)',
+    detail:{
+      titleColor:'var(--green)',
+      desc:'AI 输出仅供内部参考，不直接影响外部客户或关键业务决策。<strong>大多数日常 AI 使用都属于 L1。</strong>',
+      controls:[
+        {color:'#16a34a',text:'使用企业授权的 AI 工具'},
+        {color:'#16a34a',text:'不输入敏感数据（客户信息、财务数据等）'},
+        {color:'#16a34a',text:'对 AI 输出做基本合理性检查'},
+      ],
+      doList:['用 AI 起草邮件、总结、翻译','用 AI 做头脑风暴和方案发散','用 AI 整理公开资料和学习笔记'],
+      dontList:['把内部数据不脱敏就粘给 AI','AI 输出不看就直接发出去','以为 L1 就不用检查输出'],
+      tip:{bg:'rgba(22,163,74,.06)',color:'#14532d',text:'<strong>审批要求：</strong>无需额外审批，使用者自主判断。<strong>记住：</strong>低风险不等于零风险，输出仍需过眼。'}
+    }
+  },
+  {
+    cat:'tier', icon:'L2', iconBg:'rgba(217,119,6,.1)', iconColor:'var(--amber)',
+    title:'L2 · 中风险 — 业务决策辅助', desc:'生成对外文案、辅助分析报告、AI 代码上线',
+    riskText:'中风险', riskBg:'rgba(217,119,6,.1)', riskColor:'var(--amber)',
+    detail:{
+      titleColor:'var(--amber)',
+      desc:'AI 输出将影响外部客户、业务流程或对外发布的内容。<strong>关键词：人工审核 — AI 干活，人来把关。</strong>',
+      controls:[
+        {color:'#d97706',text:'AI 输出须经人工审核后方可使用'},
+        {color:'#d97706',text:'对外发布内容须标注"AI 辅助生成"'},
+        {color:'#d97706',text:'AI 生成代码须通过安全扫描（SAST / SCA）'},
+        {color:'#d97706',text:'保留 AI 交互记录，便于审计追溯'},
+      ],
+      doList:['AI 出稿 → 人工审核 → 再使用','对外内容标注 AI 标识','代码跑完安全扫描再上线'],
+      dontList:['AI 写的文案直接发公众号','AI 代码不测试就上生产','跳过审核流程图省事'],
+      tip:{bg:'rgba(217,119,6,.06)',color:'#78350f',text:'<strong>审批要求：</strong>须经主管审批。<strong>数据规则：</strong>内部业务数据须脱敏后输入；客户数据须使用内部 AI 平台。'}
+    }
+  },
+  {
+    cat:'tier', icon:'L3', iconBg:'rgba(220,38,38,.1)', iconColor:'var(--red)',
+    title:'L3 · 高风险 — 自主执行与关键决策', desc:'Agent 操作生产系统、自动化审批、涉及资金',
+    riskText:'高风险', riskBg:'rgba(220,38,38,.1)', riskColor:'var(--red)',
+    detail:{
+      titleColor:'var(--red)',
+      desc:'AI 的输出直接影响关键业务、资金流转或法律合规，<strong>错误代价极高。关键词：可控可回退 — 出了问题能立刻停。</strong>',
+      controls:[
+        {color:'#dc2626',text:'必须在沙箱环境中运行和测试'},
+        {color:'#dc2626',text:'设置执行步数上限，超限触发人工确认'},
+        {color:'#dc2626',text:'具备一键终止（kill switch）能力'},
+        {color:'#dc2626',text:'审计日志保留不少于 180 天'},
+        {color:'#dc2626',text:'定期进行红队测试和安全评估'},
+      ],
+      doList:['沙箱环境充分测试再上生产','每步关键操作插入人工确认','保留完整审计日志'],
+      dontList:['Agent 直接操作生产数据库','不设步数上限让 AI 自由执行','没有 kill switch 就上线'],
+      tip:{bg:'rgba(220,38,38,.06)',color:'#7c2d12',text:'<strong>审批要求：</strong>须经安全委员会审批 + 上线前安全评估。<strong>就高原则：</strong>涉及多个风险维度时，按最高等级管控。'}
+    }
+  },
+  {
+    cat:'role', icon:'U', iconBg:'rgba(37,99,235,.1)', iconColor:'var(--blue)',
+    title:'使用者 — 对自己的行为负责', desc:'每一个使用 AI 的人都是第一责任人',
+    riskText:'直接责任', riskBg:'rgba(37,99,235,.1)', riskColor:'var(--blue)',
+    detail:{
+      titleColor:'var(--blue)',
+      desc:'<em style="color:var(--blue)">AI 不替代责任主体。</em>用 AI 写的报告出了错，责任在你，不在 AI。用 AI 泄露了数据，后果由你承担。',
+      controls:[
+        {color:'#2563eb',text:'使用前确认场景风险等级，遵守对应管控要求'},
+        {color:'#2563eb',text:'对 AI 输出进行合理性审查，不盲目采信'},
+        {color:'#2563eb',text:'输入数据前做脱敏处理（默认脱敏原则）'},
+        {color:'#2563eb',text:'发现异常及时上报，不隐瞒不回避'},
+      ],
+      doList:['判断风险等级再使用','检查 AI 输出是否准确','数据脱敏后再输入'],
+      dontList:['「AI 写的不是我写的」试图推责','「大家都这么用」当借口','输入敏感数据后假装没发生'],
+      tip:{bg:'rgba(37,99,235,.06)',color:'#1e40af',text:'<strong>核心原则：</strong>「默认脱敏」：所有输入 AI 的数据默认应脱敏处理，除非数据所有者明确授权。不确定？那就脱敏。'}
+    }
+  },
+  {
+    cat:'role', icon:'A', iconBg:'rgba(217,119,6,.1)', iconColor:'var(--amber)',
+    title:'审批人 — 签字即担责', desc:'L2/L3 场景的审批负责人',
+    riskText:'连带责任', riskBg:'rgba(217,119,6,.1)', riskColor:'var(--amber)',
+    detail:{
+      titleColor:'var(--amber)',
+      desc:'须对审批事项进行<em style="color:var(--amber)">实质性审核</em>。「我只是走个流程签个字」<strong style="color:var(--red)">不能免责</strong>。未尽审核义务的，承担连带责任。',
+      controls:[
+        {color:'#d97706',text:'审查 AI 使用场景的风险分级是否准确'},
+        {color:'#d97706',text:'确认已落实对应等级的管控措施'},
+        {color:'#d97706',text:'审核数据安全和合规性'},
+        {color:'#d97706',text:'理解审批内容的实质，不做橡皮图章'},
+      ],
+      doList:['了解审批事项的具体内容','确认管控措施已到位','对不确定的事项追问清楚'],
+      dontList:['不看内容就签字','假设「下面的人应该处理好了」','审批后就不再关注后续执行'],
+      tip:{bg:'rgba(217,119,6,.06)',color:'#78350f',text:'<strong>记住：</strong>审批人的责任不会因为「当时不知情」而免除。你签字的那一刻，就对这件事负有连带责任。'}
+    }
+  },
+  {
+    cat:'role', icon:'M', iconBg:'rgba(220,38,38,.1)', iconColor:'var(--red)',
+    title:'管理者 — 确保团队整体合规', desc:'部门/团队负责人的管理责任',
+    riskText:'管理责任', riskBg:'rgba(220,38,38,.1)', riskColor:'var(--red)',
+    detail:{
+      titleColor:'var(--red)',
+      desc:'「我不知道下属在用 AI 做什么」<strong style="color:var(--red)">不是免责理由</strong>。管理者有义务确保团队了解规范、遵守规范。',
+      controls:[
+        {color:'#dc2626',text:'确保团队成员了解并遵守 AI 安全规范'},
+        {color:'#dc2626',text:'建立部门级 AI 使用管理制度'},
+        {color:'#dc2626',text:'定期组织 AI 安全培训（如本课程）'},
+        {color:'#dc2626',text:'对部门内的 AI 安全事件承担管理责任'},
+      ],
+      doList:['组织团队学习 AI 安全规范','建立部门 AI 使用登记制度','主动了解团队的 AI 使用情况'],
+      dontList:['对团队 AI 使用放任不管','把安全责任全部推给安全部门','出了事才开始关注'],
+      tip:{bg:'rgba(220,38,38,.06)',color:'#7c2d12',text:'<strong>违规后果（所有角色）：</strong>视情节轻重，包括撤销 AI 使用权限、纪律处分、连带赔偿，严重者追究法律责任。'}
+    }
+  }
+];
+
+function renderCards(filter) {
+  const list = document.getElementById('cardList');
+  list.innerHTML = '';
+  ITEMS.forEach((s,i) => {
+    const card = document.createElement('div');
+    card.className = 'scene-card' + (i===0?' active':'');
+    card.dataset.cat = s.cat;
+    if (filter !== 'all' && s.cat !== filter) card.classList.add('hidden');
+    card.innerHTML = `
+      <div class="sc-icon" style="background:${s.iconBg};color:${s.iconColor};font-weight:800">${s.icon}</div>
+      <div class="sc-body">
+        <div class="sc-title">${s.title}</div>
+        <div class="sc-desc">${s.desc}</div>
+        <span class="sc-risk" style="background:${s.riskBg};color:${s.riskColor}">${s.riskText}</span>
+      </div>
+    `;
+    card.onclick = () => {
+      document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      showDetail(i);
+    };
+    list.appendChild(card);
+  });
+}
+
+function showDetail(idx) {
+  const s = ITEMS[idx];
+  const d = s.detail;
+  const panel = document.getElementById('detailPanel');
+  panel.innerHTML = `
+    <div class="detail-hd">
+      <div class="detail-icon" style="background:${s.iconBg};color:${s.iconColor};font-weight:800;font-size:18px">${s.icon}</div>
+      <div>
+        <div class="detail-title">${s.title.split(' — ')[0]}</div>
+        <div class="detail-risk" style="color:${d.titleColor}">${s.riskText}</div>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label" style="color:${d.titleColor}">核心说明</div>
+      <div class="ic-body">${d.desc}</div>
+    </div>
+    <div class="info-card">
+      <div class="ic-label" style="color:${d.titleColor}">${s.cat==='tier'?'管控要求':'核心职责'}</div>
+      <div class="ic-list">${d.controls.map(c=>`<div class="ic-item"><div class="ic-dot" style="background:${c.color}"></div><span>${c.text}</span></div>`).join('')}</div>
+    </div>
+    <div class="do-dont">
+      <div class="dd-col dd-do">
+        <strong>应该这样做</strong>
+        ${d.doList.map(x => '· ' + x).join('<br>')}
+      </div>
+      <div class="dd-col dd-dont">
+        <strong>不要这样做</strong>
+        ${d.dontList.map(x => '· ' + x).join('<br>')}
+      </div>
+    </div>
+    <div class="tip-strip" style="background:${d.tip.bg};border:1px solid ${d.tip.bg.replace('.06','.15')};color:${d.tip.color}">
+      ${d.tip.text}
+    </div>
+  `;
+}
+
+function filterBy(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.scene-card').forEach(card => {
+    if (cat === 'all' || card.dataset.cat === cat) {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+  const firstVisible = document.querySelector('.scene-card:not(.hidden)');
+  if (firstVisible) firstVisible.click();
+}
+
+renderCards('all');
+showDetail(0);
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

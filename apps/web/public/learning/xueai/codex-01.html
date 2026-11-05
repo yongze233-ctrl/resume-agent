@@ -1,0 +1,1009 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-01",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-01',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>新功能先找落脚的 crate，core 是最后一档 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 180px;padding-top:10px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cols{display:grid;grid-template-columns:1.2fr .8fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{display:flex;gap:16px;font-size:11px;font-weight:600;color:var(--sub);text-align:right}
+.dm-meter b{display:block;color:var(--accent-deep);font-size:20px;line-height:1.15;font-variant-numeric:tabular-nums}
+.dm-meter > span:after{content:"";display:block;height:4px;width:56px;margin:8px 0 0 auto;border-radius:99px;background:var(--accent);transform:scaleX(var(--rebuild,0));transform-origin:right center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:12px;min-height:280px}
+#dm-map{position:relative}
+.dm-layer{padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--card);transition:border-color .35s cubic-bezier(.4,0,.2,1),background .35s cubic-bezier(.4,0,.2,1)}
+#dm-map.is-live .dm-layer.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft)}
+.dm-layer b{display:block;font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:700}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dm-chip{min-height:44px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--sub);font:600 12.5px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;text-align:left;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip small{display:block;font-size:11px;font-weight:500;color:var(--faint);margin-top:2px}
+.dm-chip.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-chip.ok{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success)}
+.dm-chip.bad{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger)}
+.dm-chip.warn{border-color:rgba(217,119,6,.4);background:rgba(217,119,6,.08);color:var(--amber)}
+.dm-chip.hold{border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-chip.hot{border-color:rgba(65,75,90,.5);background:var(--accent-soft);color:var(--accent-deep);box-shadow:0 0 0 2px rgba(65,75,90,.12)}
+#dm-map.is-live .dm-chip{opacity:.4;transform:scale(.98)}
+#dm-map.is-live .dm-chip.on,#dm-map.is-live .dm-chip.ok,#dm-map.is-live .dm-chip.bad,#dm-map.is-live .dm-chip.warn,#dm-map.is-live .dm-chip.hold,#dm-map.is-live .dm-chip.hot{opacity:1;transform:scale(1)}
+.dm-chip.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-core-chip{flex:1 1 100%}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:72px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-status.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-status-inner.is-enter{opacity:0;transform:translateY(8px)}
+.dm-status-inner.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-id{display:flex;flex-direction:column;gap:10px}
+.dm-id-row{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-id-row b{color:var(--accent-deep);font-weight:700}
+.dm-id-row.on{background:var(--accent-soft);border-color:rgba(65,75,90,.35);color:var(--accent-deep)}
+.dm-id.is-live .dm-id-row{opacity:.4;transform:scale(.98)}
+.dm-id.is-live .dm-id-row.on{opacity:1;transform:scale(1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+#dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+#dm-trace.is-live li.on{opacity:1;transform:scale(1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-budget .dm-b-label{padding-top:0}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-meter{width:100%;justify-content:space-between}}
+</style>
+<meta name="description" content="Codex 把默认落点写成禁令：新概念先找现有的非 core crate，否则新建 crate。依赖方向把叶子类型挡在核心之外">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="新功能先找落脚的 crate，core 是最后一档"><meta property="og:description" content="Codex 把默认落点写成禁令：新概念先找现有的非 core crate，否则新建 crate。依赖方向把叶子类型挡在核心之外"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-01.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>新功能先找落脚的 crate，core 是最后一档</h1>
+    <p class="subtitle">打开仓库，第一反应是往 core 里加。仓库把这件事写成禁令：先找现有的非 core crate，否则新建一个。依赖方向会把叶子类型挡在核心之外。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>打开仓库，第一反应是往 core 里加。仓库把这件事写成禁令：先找现有的非 core crate，否则新建一个。依赖方向会把叶子类型挡在核心之外。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。新功能为什么不能默认写进 <code>codex-core</code>。依赖方向怎么把它挡在某一层之外，挡住之后正确的落点在哪。这条禁令没有机器红灯，靠什么还在运转。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 给新功能挑落脚的 crate</div>
+  <div class="demo reveal" id="demo-place">
+    <div class="demo-top">
+      <div class="demo-title">同一条新功能：先撞核心，再看规则把它推到哪一层</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">新功能</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-feat="branch" class="on">分支名进上下文</button>
+        <button type="button" data-feat="provider">模型供应商适配</button>
+        <button type="button" data-feat="session">改 session 调度</button>
+      </div>
+      <span class="dm-b-hint">点播放看规则怎么走。也可以直接点左侧某个 crate，看它会不会被挡。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">编译图上的落点</span><span class="dm-meter"><span><b id="dm-rebuild">0</b>个重编</span></span></div>
+        <div class="dm-body" id="dm-map">
+          <div class="dm-layer">
+            <b>叶子 · 不依赖 core</b>
+            <div class="dm-chips">
+              <button type="button" class="dm-chip" data-crate="fragments">context-fragments<small>片段类型</small></button>
+              <button type="button" class="dm-chip" data-crate="features">features<small>特性开关</small></button>
+              <button type="button" class="dm-chip" data-crate="provider">model-provider<small>模型适配</small></button>
+              <button type="button" class="dm-chip" data-crate="newbie">新建 crate<small>新边界</small></button>
+            </div>
+          </div>
+          <div class="dm-layer">
+            <b>核心 · 33 万行，86 个 mod</b>
+            <div class="dm-chips">
+              <button type="button" class="dm-chip dm-core-chip" data-crate="core">codex-core<small>session / context / guardian / tools 都在这</small></button>
+            </div>
+          </div>
+          <div class="dm-layer">
+            <b>直接依赖 core 的 25 个</b>
+            <div class="dm-chips">
+              <button type="button" class="dm-chip" data-crate="cli">cli</button>
+              <button type="button" class="dm-chip" data-crate="appsvr">app-server</button>
+              <button type="button" class="dm-chip" data-crate="client">app-server-client</button>
+              <button type="button" class="dm-chip" data-crate="more">另 22 个</button>
+            </div>
+          </div>
+          <div class="dm-layer">
+            <b>间接 · 经 client 带上</b>
+            <div class="dm-chips">
+              <button type="button" class="dm-chip" data-crate="tui">tui<small>Cargo.toml 没有 codex-core 这一行</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">这一步的判定</span><span class="dm-meter" id="dm-verdict-tag">待命</span></div>
+        <div class="dm-body">
+          <div class="dm-id">
+            <div class="dm-id-row" id="dm-row-feat"><span>手里的功能</span><b id="dm-feat-name">分支名进上下文</b></div>
+            <div class="dm-id-row" id="dm-row-try"><span>试探落点</span><b id="dm-try-name">还没放</b></div>
+            <div class="dm-id-row" id="dm-row-rule"><span>挡住它的规则</span><b id="dm-rule-name">尚未触发</b></div>
+            <div class="dm-id-row" id="dm-row-land"><span>正确落点</span><b id="dm-land-name">先走一遍规则</b></div>
+          </div>
+          <div class="dm-status" id="dm-status">等待开始。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>workspace members 是一份显式数组，当前 135 个</span><span class="ln">Cargo.toml L3</span></li>
+        <li><span>目录叫 core，crate 名叫 codex-core</span><span class="ln">AGENTS.md L4</span></li>
+        <li><span>禁令：resist adding code to codex-core</span><span class="ln">AGENTS.md L76</span></li>
+        <li><span>先问现有的非 core crate 能不能住</span><span class="ln">AGENTS.md L80</span></li>
+        <li><span>否则新建 workspace crate，并允许重构旧代码</span><span class="ln">AGENTS.md L81</span></li>
+        <li><span>评审对不必要地进 core 的 PR 主动挡</span><span class="ln">AGENTS.md L83</span></li>
+        <li><span>core 已经依赖拆出去的 context-fragments</span><span class="ln">core/Cargo.toml L35</span></li>
+        <li><span>非机械改动一次不超过 800 行</span><span class="ln">AGENTS.md L127</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">选一个新功能，点播放。看它先被挡在哪一层，正确落点在哪。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>挡住的是默认落点</b>往 core 一放，25 个直接下游加 core 自己要重编，tui 还会顺着 client 被带上。叶子类型焊进核心，复用它就得把沙箱和 Guardian 一起拉进来。</div>
+      <div class="dm-s"><b>正确落点在叶子</b>现有的非 core crate 能住就住。住不下再新建 crate，并重构旧代码。core 已经依赖这些叶子，它可以当调用方。</div>
+      <div class="dm-s"><b>最后一档仍要解释</b>必须摸 session 内部状态时，可以进 core。评审仍要问为什么拆不出去。禁令挡习惯，挡不住有理由的例外。</div>
+    </div>
+    <div class="demo-caption">教学示意：重编个数按 core 自己加 25 个直接下游估算，用来展示依赖边会蔓延到哪。tui 标成间接。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 新概念先找落点，core 是最后一档</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你要给这台 agent 加一个小功能：每轮对话开头把当前 git 分支名写进模型上下文。打开仓库，第一反应是往 <code>codex-core</code> 里加。session、context、guardian、tools 都在那儿，新文件放进去最省事。依赖表不用改，调用链不用跨 crate。</p>
+  <p class="reveal">过了一周，同样的理由又进来三条。一个截断工具输出的 helper，一个模型供应商适配，一个会话恢复的边角。<code>core/src/lib.rs</code> 顶部又多三个 <code>mod</code>。下游只要写 <code>use codex_core</code>，编译图跟着变宽。有人想单独复用上下文片段那个类型，发现它焊在 core 里。要复用就得把整个 core 拉进来，包括沙箱、MCP、Guardian。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">仓库把这件事写成禁令。<code>AGENTS.md</code> 用加粗英文写 <code>resist adding code to codex-core</code>。新概念先问现有的非 core crate 能不能住。再问该不该新建一个 workspace crate，并且允许为此重构旧代码。core 是最后一档。评审遇到往 core 里堆功能的 PR，被要求主动挡回去。</p>
+  <p class="src-note reveal">出处：<code>AGENTS.md</code> 第 72 至 83 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 300" role="img" aria-label="新功能落点的三问">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="30" y="110" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="105" y="140" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">新概念</text>
+      <text x="105" y="162" fill="#6b7280" text-anchor="middle" font-size="13">要找一个 crate</text>
+      <path fill="none" d="M188 145H250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="258" y="102" width="176" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="346" y="136" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">现有非 core crate</text>
+      <text x="346" y="160" fill="#6b7280" text-anchor="middle" font-size="13">能不能住</text>
+      <path fill="none" d="M434 124H500" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M434 166H500" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="508" y="36" width="190" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="603" y="66" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">加进那个 crate</text>
+      <text x="603" y="88" fill="#6b7280" text-anchor="middle" font-size="13">能住就住</text>
+      <rect x="508" y="186" width="190" height="78" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="603" y="216" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">新建 crate</text>
+      <text x="603" y="238" fill="#6b7280" text-anchor="middle" font-size="13">边界清楚就建，并重构</text>
+      <text x="470" y="116" fill="#6b7280" font-size="12">能</text>
+      <text x="470" y="188" fill="#6b7280" font-size="12">不能</text>
+      <path fill="none" d="M698 225H760" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="768" y="194" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="843" y="224" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">最后一档 core</text>
+      <text x="843" y="246" fill="#6b7280" text-anchor="middle" font-size="13">评审仍要问</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：输入是一个新概念，输出是落点。core 只在两条路都走不通时出现。</div>
+  </div>
+  <p class="reveal">禁令写进文件的日期是 2026-03-26。当时 core 已经是最大 crate。立完之后 workspace 成员从 75 个长到 135 个，core 的生产代码却还是涨了。挡的是默认往核心扔，挡不住核心继续长。</p>
+  <p class="reveal">清单是一份显式数组。<code>codex-rs/Cargo.toml</code> 的 <code>members</code> 数一遍是 135。目录名和 crate 名要分开看：目录叫 <code>core</code>，包名叫 <code>codex-core</code>，<code>use</code> 的时候写成 <code>codex_core</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/Cargo.toml</code> 第 1 至 20 行；<code>AGENTS.md</code> 第 1 至 5 行；<code>codex-rs/core/Cargo.toml</code> 第 1 至 9 行</p>
+  <p class="reveal">按 <code>.rs</code> 行数，少数几个吃掉大半体积。core 33 万行，tui 27 万，app-server 14.8 万。大于等于 1 万行的 24 个，小于 2 千的 77 个。core 去掉测试后剩约 10.3 万行。25 个 workspace 成员直接依赖它。tui 的 <code>Cargo.toml</code> 没有这一行，它依赖 <code>codex-app-server-client</code>，再由 client 拉 core。往 core 加一行，直接下游 25 个要重编，tui 仍会被带上。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/cli/Cargo.toml</code> 第 41 至 42 行；<code>codex-rs/tui/Cargo.toml</code> 第 30 至 31 行</p>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal">上帝包的失败模式是这次很小、先放核心。把默认落点写成明文，让评审有权挡，不依赖某种语言。换个语言重写，最小形态仍是这三问：现有包能不能住，该不该新建包，进核心凭什么拆不出去。</p>
+
+  <div class="sec-label">思路二 · 叶子类型待在叶子 crate</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">依赖方向反了，编译图会从两边一起胀。core 自己已经依赖 61 个 <code>codex-*</code> crate，包括拆出去的 <code>context-fragments</code> 和 <code>features</code>。如果新的上下文类型再写回 core，想复用它的人必须把沙箱和 Guardian 一起拉进来。叶子依赖核心，核心再依赖叶子，边界就没了。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">拆出去的 crate 只带自己需要的那一点。<code>context-fragments</code> 的包清单几乎没有业务依赖，只碰 protocol 和一段字符串工具，对外 re-export 两个片段类型和一个 trait。core 可以依赖它，它不依赖 core。git 分支名这种片段走这条路：类型落在 fragments，core 当调用方。模型供应商适配已经抽到 <code>codex-model-provider</code>。必须摸 session 内部状态的东西，才走到最后一档，评审仍要问为什么拆不出去。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/context-fragments/src/lib.rs</code> 第 1 至 6 行；<code>codex-rs/core/Cargo.toml</code> 第 26 至 42 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 280" role="img" aria-label="依赖只能朝叶子长">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="40" width="200" height="86" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">叶子 crate</text>
+      <text x="140" y="98" fill="#6b7280" text-anchor="middle" font-size="13">fragments / features</text>
+      <path fill="none" d="M248 83H360" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="304" y="74" fill="#6b7280" text-anchor="middle" font-size="12">core 依赖叶子</text>
+      <rect x="368" y="32" width="220" height="102" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="478" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">codex-core</text>
+      <text x="478" y="98" fill="#6b7280" text-anchor="middle" font-size="13">可以调用，不许吞回去</text>
+      <path fill="none" d="M588 83H700" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="708" y="40" width="192" height="86" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="804" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">25 个直接下游</text>
+      <text x="804" y="98" fill="#6b7280" text-anchor="middle" font-size="13">cli / app-server / ext</text>
+      <rect x="40" y="176" width="860" height="72" rx="12" fill="#ffffff" stroke="rgba(65,75,90,.35)"></rect>
+      <text x="470" y="206" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">类型焊进 core，复用成本变成拉进整个中心</text>
+      <text x="470" y="230" fill="#6b7280" text-anchor="middle" font-size="13">类型留在叶子，谁需要谁依赖这一小包</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：箭头只允许从中心指向叶子，叶子不能回头依赖 core。</div>
+  </div>
+  <p class="reveal">旁边还有两把尺子。文件目标 500 行，大约超过 800 行就开新模块。非机械改动一次不超过 800 行，复杂逻辑压到 500。三层一起看，针对的是同一件事：人和 AI 都倾向于把改动写大，写进已经很大的文件。</p>
+  <p class="src-note reveal">出处：<code>AGENTS.md</code> 第 49 至 61 行；<code>AGENTS.md</code> 第 125 至 131 行</p>
+  <p class="reveal">这条禁令本身没有 lint，没有 CI job。仓库里检索 <code>resist adding code to codex-core</code>，只命中 <code>AGENTS.md</code> 这一处。挡得住的是旁边那几条：依赖没刷 Bazel lock，CI 红；<code>include_str!</code> 没改 <code>BUILD.bazel</code>，Bazel 红。core 禁令挡得住习惯，挡不住有理由的例外，也挡不住漏看。</p>
+  <p class="src-note reveal">出处：<code>AGENTS.md</code> 第 37 至 43 行</p>
+
+  <div class="key-line reveal">core 是最后一档，不是默认档。</div>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal">编译图的方向是物理约束。叶子可以独立编译，被多个中心复用。中心一旦吞下叶子类型，复用成本变成拉进整个中心。这个形状换语言也成立。</p>
+
+  <div class="sec-label">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：能力全是插件，没有特权内核</h4>
+      <p>DSH 根 <code>AGENTS.md</code> 把原则写成加粗英文：<code>everything is a plugin</code>。Cordis 只收服务、类型化事件和可逆副作用。模型适配器、工具注册表、会话日志、agent loop 都是插件。没有需要打补丁的特权内核。新包落进现有分组时，根 <code>package.json</code> 不用改，glob 会发现它。</p>
+      <p>Codex 用编译期 crate 换掉了这套装卸器，新能力必须改 <code>members</code> 数组、写 <code>BUILD.bazel</code>、重新编译。能下手的位置只剩评审和 CI。评审管该不该进 core，CI 管两份锁有没有一起改。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-1" data-lesson-id="dsh-1">DSH · 插件包</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build：清单自动生成，靠目录分层</h4>
+      <p>Grok 根 <code>Cargo.toml</code> 第一行写明这份 workspace 是生成的，人应该改各 crate 自己的清单。members 按同一口径数是 79。组织方式写在根 README：pager 是 TUI，shell 是运行时，tools 和 workspace 是领域能力，common / build 是叶子。</p>
+      <p>它没有写成给评审看的 core 禁令。切分本身被当成地图，膨胀靠组合入口和抽 crate 消化。Codex 多付的是评审文本和双构建锁。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=12-1" data-lesson-id="12-1">Grok · 79 个 Workspace 成员</a></span>
+    </div>
+  </div>
+
+  <div class="sec-label">课堂练习</div>
+  <div class="exercise reveal">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>截断工具输出，该落在哪</h3>
+      <p>又来一个小功能：工具返回太长时先截断，再交给模型。它看起来像 helper，放进 core 的 tools 旁边最省事。按刚才的三问推演：现有非 core crate 有没有更合适的家，该不该新建一个只要字符串工具的小包，进 core 会挡住哪一条依赖边。</p>
+      <p>写下你会挡哪一条边，以及挡住之后正确的落点。如果选最后一档，补一句评审会问什么。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>新概念先找现有的非 core crate，否则新建 crate 并重构。core 是最后一档，评审对进核心的 PR 必须问为什么拆不出去。叶子类型待在叶子 crate，编译图才不会从两边一起胀。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var feat = 'branch';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false, prevMarks = {};
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#dm-map [data-crate]'));
+  var mapBox = document.getElementById('dm-map');
+  var idBox = document.querySelector('.dm-id');
+  var traceBox = document.getElementById('dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var statusEl = document.getElementById('dm-status');
+  var rebuildEl = document.getElementById('dm-rebuild');
+  var verdictTag = document.getElementById('dm-verdict-tag');
+  var featName = document.getElementById('dm-feat-name');
+  var tryName = document.getElementById('dm-try-name');
+  var ruleName = document.getElementById('dm-rule-name');
+  var landName = document.getElementById('dm-land-name');
+  var rowFeat = document.getElementById('dm-row-feat');
+  var rowTry = document.getElementById('dm-row-try');
+  var rowRule = document.getElementById('dm-row-rule');
+  var rowLand = document.getElementById('dm-row-land');
+  var IDLE = '选一个新功能，点播放。看它先被挡在哪一层，正确落点在哪。';
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var META = {
+    branch: { title: '分支名进上下文', land: 'context-fragments' },
+    provider: { title: '模型供应商适配', land: 'model-provider' },
+    session: { title: '改 session 调度', land: '最后一档 core' }
+  };
+  var CRATE_LABEL = {
+    fragments: 'context-fragments',
+    features: 'features',
+    provider: 'model-provider',
+    newbie: '新建 crate',
+    core: 'codex-core',
+    cli: 'cli',
+    appsvr: 'app-server',
+    client: 'app-server-client',
+    more: '另 22 个直接下游',
+    tui: 'tui'
+  };
+
+  function buildSteps(id){
+    if (id === 'provider') {
+      return [
+        { cap: '新功能到了：加一个模型供应商适配。打开仓库，第一反应仍是往 core 加。', try: null, hot: [], rebuild: 0, rule: '尚未触发', land: '先走一遍规则', tag: '待命', kind: '', st: '手里是一段模型适配。清单上已经有 135 个成员。', trace: 0, rows: ['feat'] },
+        { cap: '试探放进 core。session 和 client 都在那儿，看起来最近。', try: 'core', hot: ['core'], mark: {core:'hot'}, rebuild: 0, rule: '即将碰到禁令', land: '还没判定', tag: '试探', kind: 'hold', st: 'core 已经是最大 crate。往里面加最省事，也最容易把编译图喂大。', trace: 1, rows: ['feat','try'] },
+        { cap: '规则挡下。resist adding code to codex-core。25 个直接下游加 core 自己要重编，tui 还会被带上。', try: 'core', hot: ['core','cli','appsvr','client','more','tui'], mark: {core:'bad',cli:'bad',appsvr:'bad',client:'bad',more:'bad',tui:'bad'}, rebuild: 26, rule: '不许默认进 core', land: '还没落到正确层', tag: '挡住', kind: 'warn', st: '依赖边从核心蔓延到已经靠着它的包。这是惯性，不是正确落点。', trace: 2, rows: ['feat','try','rule'] },
+        { cap: '先问现有的非 core crate。这段活是模型所有权，context-fragments 对不上。', try: 'fragments', hot: ['fragments'], mark: {fragments:'bad'}, rebuild: 0, rule: '现有 crate 要对口', land: '还在问', tag: '不对口', kind: 'warn', st: 'fragments 只收上下文片段类型。模型适配放进去，会在叶子层再造一个上帝包。', trace: 3, rows: ['feat','try','rule'] },
+        { cap: 'model-provider 已经从 core 拆走过，包清单不依赖 core。正确落点就是它。', try: 'provider', hot: ['provider'], mark: {provider:'ok'}, rebuild: 1, rule: '现有非 core crate 能住', land: 'model-provider', tag: '放行', kind: 'ok', st: '只亮新边界自己。core 若要调用，它当调用方，编译图不朝 25 个下游为新代码进核心而蔓延。', trace: 6, rows: ['feat','try','rule','land'] },
+        { cap: '评审这一步用不上，因为根本没进 core。落对了，大 diff 仍要按 800 行拆。', try: 'provider', hot: ['provider'], mark: {provider:'ok'}, rebuild: 1, rule: '改动预算另算', land: 'model-provider', tag: '放行', kind: 'ok', st: '行数预算和落点是两把尺。落对了，一次 PR 过长仍要拆成可评审的阶段。', trace: 7, rows: ['feat','try','rule','land'], fin: true }
+      ];
+    }
+    if (id === 'session') {
+      return [
+        { cap: '新功能到了：必须改还在 core 里的 session 内部调度。', try: null, hot: [], rebuild: 0, rule: '尚未触发', land: '先走一遍规则', tag: '待命', kind: '', st: '这次真的摸到 session。先按同一套三问走，不先默认进 core。', trace: 0, rows: ['feat'] },
+        { cap: '现有叶子 crate 接不住。fragments 管片段类型，provider 管模型适配，features 管开关。', try: 'fragments', hot: ['fragments','features','provider'], mark: {fragments:'bad',features:'bad',provider:'bad'}, rebuild: 0, rule: '现有 crate 要对口', land: '还在问', tag: '住不下', kind: 'warn', st: '对口的现有非 core crate 没有。第一问的答案是不能住。', trace: 3, rows: ['feat','try','rule'] },
+        { cap: '再问该不该新建 crate。调度逻辑和 session 缠在一起，边界暂时画不清。', try: 'newbie', hot: ['newbie'], mark: {newbie:'bad'}, rebuild: 0, rule: '新边界要画得清', land: '还在问', tag: '边界不清', kind: 'warn', st: '禁令允许为此重构旧代码。这次重构量会把 session 整段抽走，眼下还做不到。', trace: 4, rows: ['feat','try','rule'] },
+        { cap: '两条路都走不通，才落到最后一档 core。25 个直接下游仍会陪着重编。', try: 'core', hot: ['core','cli','appsvr','client','more','tui'], mark: {core:'warn',cli:'hot',appsvr:'hot',client:'hot',more:'hot',tui:'hot'}, rebuild: 26, rule: '最后一档', land: 'codex-core', tag: '例外', kind: 'hold', st: '进 core 了。编译图仍然变宽。这是例外，要写进评审意见。', trace: 2, rows: ['feat','try','rule','land'] },
+        { cap: '评审仍要主动问：为什么这次拆不出去。禁令挡习惯，挡不住有理由的例外。', try: 'core', hot: ['core','cli','appsvr','client','more','tui'], mark: {core:'warn',cli:'hot',appsvr:'hot',client:'hot',more:'hot',tui:'hot'}, rebuild: 26, rule: '评审必须问', land: 'codex-core（例外）', tag: '例外', kind: 'hold', st: '没有机器红灯。漏看就会变成又一次往核心堆。五个被点名的 TUI 大文件，就是这种失效已经发生过的证据。', trace: 5, rows: ['feat','try','rule','land'], fin: true }
+      ];
+    }
+    return [
+      { cap: '新功能到了：每轮开头把当前 git 分支名写进模型上下文。', try: null, hot: [], rebuild: 0, rule: '尚未触发', land: '先走一遍规则', tag: '待命', kind: '', st: '135 个成员摊在桌上。core 最大，往里面加看起来最近。', trace: 0, rows: ['feat'] },
+      { cap: '第一反应是往 core 加。session 和 context 都在那儿，新文件放进去最省事。', try: 'core', hot: ['core'], mark: {core:'hot'}, rebuild: 0, rule: '即将碰到禁令', land: '还没判定', tag: '试探', kind: 'hold', st: '目录叫 core，crate 名叫 codex-core。便利性陷阱从这里开始。', trace: 1, rows: ['feat','try'] },
+      { cap: '规则挡下。resist adding code to codex-core。25 个直接下游加 core 自己要重编，tui 顺着 client 被带亮。', try: 'core', hot: ['core','cli','appsvr','client','more','tui'], mark: {core:'bad',cli:'bad',appsvr:'bad',client:'bad',more:'bad',tui:'bad'}, rebuild: 26, rule: '不许默认进 core', land: '还没落到正确层', tag: '挡住', kind: 'warn', st: '依赖边蔓延到已经靠着它的包。叶子类型若焊进核心，复用它就要拉进整个中心。', trace: 2, rows: ['feat','try','rule'] },
+      { cap: '先问现有的非 core crate。这是一段上下文片段，context-fragments 正好管这类类型。', try: 'fragments', hot: ['fragments'], mark: {fragments:'hot'}, rebuild: 0, rule: '先问现有非 core crate', land: 'context-fragments', tag: '对口', kind: 'hold', st: 'core 已经依赖 fragments。类型落在叶子，core 当调用方。', trace: 3, rows: ['feat','try','rule','land'] },
+      { cap: '落到 context-fragments。重编译停在新边界。那 25 个直接下游不必为新代码进核心陪跑。', try: 'fragments', hot: ['fragments'], mark: {fragments:'ok'}, rebuild: 1, rule: '现有非 core crate 能住', land: 'context-fragments', tag: '放行', kind: 'ok', st: '包清单几乎没有业务依赖。谁要复用分支名片段，只拉这一小包。', trace: 6, rows: ['feat','try','rule','land'] },
+      { cap: '评审这一步用不上，因为根本没进 core。行数预算仍在：一次非机械改动超过 800 行还要拆。', try: 'fragments', hot: ['fragments'], mark: {fragments:'ok'}, rebuild: 1, rule: '改动预算另算', land: 'context-fragments', tag: '放行', kind: 'ok', st: '落点和行数是两把尺。落对了，大 diff 仍要拆成可评审的阶段。', trace: 7, rows: ['feat','try','rule','land'], fin: true }
+    ];
+  }
+
+  function motionOn(){
+    return !reduceMotion;
+  }
+  function clearChips(){
+    chips.forEach(function(el){
+      el.className = el.getAttribute('data-crate') === 'core' ? 'dm-chip dm-core-chip' : 'dm-chip';
+    });
+  }
+  function spawnGhost(el){
+    if (!motionOn()) return;
+    var box = mapBox.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.removeAttribute('data-crate');
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    mapBox.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+  function flipChips(oldRects){
+    chips.forEach(function(el){
+      var old = oldRects[el.getAttribute('data-crate')];
+      if (!old) return;
+      var now = el.getBoundingClientRect();
+      var dx = old.left - now.left;
+      var dy = old.top - now.top;
+      if (!dx && !dy) return;
+      el.style.transition = 'none';
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      requestAnimationFrame(function(){
+        el.style.transition = '';
+        el.style.transform = '';
+      });
+    });
+  }
+  function markChips(map, animate, tryId){
+    var oldRects = {};
+    chips.forEach(function(el){
+      oldRects[el.getAttribute('data-crate')] = el.getBoundingClientRect();
+    });
+    chips.forEach(function(el){
+      var id = el.getAttribute('data-crate');
+      var state = (map || {})[id] || '';
+      var prev = prevMarks[id] || '';
+      if (animate && motionOn() && tryId && id === tryId && state && prev !== state && (state === 'bad' || state === 'ok')) {
+        spawnGhost(el);
+      }
+      el.className = id === 'core' ? 'dm-chip dm-core-chip' : 'dm-chip';
+      if (state) el.classList.add(state);
+      if (animate && motionOn() && state && prev !== state && (state === 'ok' || state === 'bad' || state === 'warn')) {
+        el.classList.add('firing');
+      }
+    });
+    if (animate && motionOn()) flipChips(oldRects);
+    prevMarks = {};
+    Object.keys(map || {}).forEach(function(k){ prevMarks[k] = map[k]; });
+  }
+  function markLayers(tryId){
+    var layers = mapBox.querySelectorAll('.dm-layer');
+    Array.prototype.forEach.call(layers, function(layer){
+      layer.classList.toggle('on', !!(tryId && layer.querySelector('[data-crate="'+tryId+'"]')));
+    });
+  }
+  function setRows(on){
+    rowFeat.classList.toggle('on', on.indexOf('feat') >= 0);
+    rowTry.classList.toggle('on', on.indexOf('try') >= 0);
+    rowRule.classList.toggle('on', on.indexOf('rule') >= 0);
+    rowLand.classList.toggle('on', on.indexOf('land') >= 0);
+  }
+  function setRebuildBar(n){
+    var host = rebuildEl.parentElement;
+    if (host) host.style.setProperty('--rebuild', String(n / 26));
+  }
+  function rollNum(el, to, animate){
+    var from = parseInt(el.textContent, 10);
+    if (isNaN(from)) from = 0;
+    if (!animate || !motionOn() || from === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function fillStatus(text, animate){
+    if (!animate || !motionOn()) {
+      statusEl.textContent = text;
+      return;
+    }
+    statusEl.textContent = '';
+    var el = document.createElement('span');
+    el.className = 'dm-status-inner is-enter';
+    el.textContent = text;
+    statusEl.appendChild(el);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ el.classList.add('in'); });
+    });
+  }
+  function fadeCaption(text, animate){
+    if (!animate || !motionOn()) {
+      captionText.style.opacity = '1';
+      captionText.textContent = text;
+      return;
+    }
+    captionText.style.opacity = '0';
+    requestAnimationFrame(function(){
+      captionText.textContent = text;
+      requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+    });
+  }
+  function popVerdict(text, animate){
+    var changed = verdictTag.textContent !== text;
+    verdictTag.textContent = text;
+    if (!animate || !motionOn() || !changed) return;
+    verdictTag.classList.remove('dm-pop');
+    void verdictTag.offsetWidth;
+    verdictTag.classList.add('dm-pop');
+  }
+  function paint(st, animate){
+    mapBox.classList.add('is-live');
+    idBox.classList.add('is-live');
+    traceBox.classList.add('is-live');
+    markLayers(st.try);
+    markChips(st.mark || {}, animate, st.try);
+    rollNum(rebuildEl, st.rebuild, animate);
+    setRebuildBar(st.rebuild);
+    popVerdict(st.tag, animate);
+    featName.textContent = META[feat].title;
+    tryName.textContent = st.try ? CRATE_LABEL[st.try] : '还没放';
+    ruleName.textContent = st.rule;
+    landName.textContent = st.land;
+    setRows(st.rows || []);
+    statusEl.className = 'dm-status' + (st.kind ? ' ' + st.kind : '');
+    fillStatus(st.st, animate);
+    if (st.trace !== null && st.trace !== undefined) {
+      traceRows.forEach(function(el, n){ el.classList.toggle('on', n === st.trace); });
+    }
+    fadeCaption(st.cap, animate);
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.rebuild >= 26) return 2200;
+    if (st.kind === 'warn') return 1800;
+    if (st.kind === 'ok') return 1600;
+    if (st.kind === 'hold') return 1400;
+    return 1100;
+  }
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0; prevMarks = {};
+    steps = buildSteps(feat);
+    mapBox.classList.remove('is-live');
+    idBox.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    Array.prototype.slice.call(mapBox.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    Array.prototype.forEach.call(mapBox.querySelectorAll('.dm-layer'), function(layer){ layer.classList.remove('on'); });
+    featName.textContent = META[feat].title;
+    tryName.textContent = '还没放';
+    ruleName.textContent = '尚未触发';
+    landName.textContent = '先走一遍规则';
+    rebuildEl.textContent = '0';
+    setRebuildBar(0);
+    verdictTag.classList.remove('dm-pop');
+    verdictTag.textContent = '待命';
+    statusEl.className = 'dm-status';
+    statusEl.textContent = '等待开始。';
+    clearChips();
+    setRows([]);
+    traceRows.forEach(function(el){ el.classList.remove('on'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function tapCrate(id){
+    stop();
+    var st;
+    if (id === 'cli' || id === 'appsvr' || id === 'client' || id === 'more' || id === 'tui') {
+      st = { cap: '下游和 TUI 是被带动的层，不是新功能该住的地方。落点要往叶子找。', try: id, mark: {}, rebuild: 0, rule: '落点不在下游', land: META[feat].land, tag: '挡错层', kind: 'warn', st: CRATE_LABEL[id] + ' 已经靠在核心或更外一圈。新概念放这里，依赖方向会反。', trace: 2, rows: ['feat','try','rule','land'] };
+      st.mark[id] = 'bad';
+    } else if (feat === 'branch') {
+      if (id === 'core') st = { cap: '规则挡下。这段是上下文片段，焊进 core 会让复用者拉进整个中心。', try: 'core', mark: {core:'bad',cli:'bad',appsvr:'bad',client:'bad',more:'bad',tui:'bad'}, rebuild: 26, rule: '不许默认进 core', land: 'context-fragments', tag: '挡住', kind: 'warn', st: '25 个直接下游加 core 自己要重编。正确落点在 context-fragments。', trace: 2, rows: ['feat','try','rule','land'] };
+      else if (id === 'fragments') st = { cap: '放行。类型落在叶子，core 已经依赖它，可以当调用方。', try: 'fragments', mark: {fragments:'ok'}, rebuild: 1, rule: '现有非 core crate 能住', land: 'context-fragments', tag: '放行', kind: 'ok', st: '重编译停在新边界。谁要复用分支名片段，只拉这一小包。', trace: 6, rows: ['feat','try','rule','land'], fin: true };
+      else if (id === 'newbie') st = { cap: '也能建新 crate。不过 fragments 已经对口，再建一个会多一份清单。', try: 'newbie', mark: {newbie:'hold'}, rebuild: 1, rule: '先问现有 crate', land: 'context-fragments 更合适', tag: '次优', kind: 'hold', st: '禁令的第一问是现有非 core crate。对口的已经在，优先住进去。', trace: 3, rows: ['feat','try','rule','land'] };
+      else st = { cap: '这个叶子对不上。features 管开关，model-provider 管模型适配。', try: id, mark: {}, rebuild: 0, rule: '现有 crate 要对口', land: 'context-fragments', tag: '不对口', kind: 'warn', st: CRATE_LABEL[id] + ' 接不住一段上下文片段。', trace: 3, rows: ['feat','try','rule','land'] };
+      if (st && !st.mark[id] && id !== 'core') st.mark[id] = 'bad';
+    } else if (feat === 'provider') {
+      if (id === 'core') st = { cap: '规则挡下。模型适配已经从 core 拆走过，再写回去等于把债搬回家。', try: 'core', mark: {core:'bad',cli:'bad',appsvr:'bad',client:'bad',more:'bad',tui:'bad'}, rebuild: 26, rule: '不许默认进 core', land: 'model-provider', tag: '挡住', kind: 'warn', st: '编译图会重新吞进一段已经独立的能力。', trace: 2, rows: ['feat','try','rule','land'] };
+      else if (id === 'provider') st = { cap: '放行。model-provider 不依赖 core，正是给这类适配留的边界。', try: 'provider', mark: {provider:'ok'}, rebuild: 1, rule: '现有非 core crate 能住', land: 'model-provider', tag: '放行', kind: 'ok', st: '只亮新边界自己。', trace: 6, rows: ['feat','try','rule','land'], fin: true };
+      else st = { cap: '这个 crate 对不上模型适配。先问对口的那一个。', try: id, mark: {}, rebuild: 0, rule: '现有 crate 要对口', land: 'model-provider', tag: '不对口', kind: 'warn', st: CRATE_LABEL[id] + ' 不是模型所有权的家。', trace: 3, rows: ['feat','try','rule','land'] };
+      if (st && id !== 'core' && id !== 'provider') st.mark[id] = 'bad';
+    } else {
+      if (id === 'core') st = { cap: '两条路都走不通，才进最后一档。评审仍要问为什么拆不出去。', try: 'core', mark: {core:'warn',cli:'hot',appsvr:'hot',client:'hot',more:'hot',tui:'hot'}, rebuild: 26, rule: '评审必须问', land: 'codex-core（例外）', tag: '例外', kind: 'hold', st: '进 core 了，编译图仍会变宽。这是例外，要写进评审意见。', trace: 5, rows: ['feat','try','rule','land'], fin: true };
+      else if (id === 'newbie') st = { cap: '可以新建。代价是先把 session 从 core 抽出来，边界现在画不清。', try: 'newbie', mark: {newbie:'bad'}, rebuild: 0, rule: '新边界要画得清', land: '最后一档 core', tag: '边界不清', kind: 'warn', st: '禁令允许重构旧代码。这次重构量太大，眼下还走不通。', trace: 4, rows: ['feat','try','rule','land'] };
+      else st = { cap: '现有叶子接不住 session 内部调度。', try: id, mark: {}, rebuild: 0, rule: '现有 crate 要对口', land: '最后一档 core', tag: '住不下', kind: 'warn', st: CRATE_LABEL[id] + ' 没有 session 的内部状态。', trace: 3, rows: ['feat','try','rule','land'] };
+      if (st && id !== 'core') st.mark[id] = 'bad';
+    }
+    paint(st, true);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    feat = b.getAttribute('data-feat');
+    reset();
+  });
+  document.getElementById('dm-map').addEventListener('click', function(e){
+    var b = e.target.closest('[data-crate]');
+    if (!b) return;
+    tapCrate(b.getAttribute('data-crate'));
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-place'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

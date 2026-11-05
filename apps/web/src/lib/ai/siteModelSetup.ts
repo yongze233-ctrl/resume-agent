@@ -1,0 +1,32 @@
+import { useSettingStore } from '@/store/useSettingStore';
+import type { SiteModel } from './siteModel';
+import { dbClient } from '@/lib/api/IndexDBClient';
+
+let inFlight: Promise<void> | null = null;
+
+export function loadSiteModel(): Promise<void> {
+  if (inFlight) return inFlight;
+  inFlight = fetchSiteModel().finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+async function fetchSiteModel() {
+  try {
+    const response = await fetch('/api/site-model', { cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(8000) });
+    if (response.status !== 200) return;
+    const model = await response.json() as SiteModel;
+    if (typeof model.provider !== 'string' || typeof model.model !== 'string' || typeof model.baseUrl !== 'string'
+      || typeof model.maxTokens !== 'number' || !Number.isFinite(model.maxTokens) || model.maxTokens <= 0) return;
+    useSettingStore.setState({ siteModel: model });
+    // An operator's explicit local setup is applied once. Preserve the personal
+    // key encrypted in storage so choosing the shared default is reversible.
+    if (typeof model.setupId === 'string' && model.setupId) {
+      await useSettingStore.getState().loadSettings();
+      if (await dbClient.getItem('site_model_setup_applied') !== model.setupId) {
+        useSettingStore.getState().setPreferSiteModel(true);
+        await useSettingStore.getState().saveSettings();
+        await dbClient.setItem('site_model_setup_applied', model.setupId);
+      }
+    }
+  } catch { /* BYOK remains available when no site default is provisioned. */ }
+}

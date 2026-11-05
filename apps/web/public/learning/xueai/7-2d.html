@@ -1,0 +1,1157 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"7-2d",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=7-2d',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MCP 协议：工具的 USB 接口 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}} body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── Before / After 对比 ── */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare-col{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-card);display:flex;flex-direction:column}
+.compare-label{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.compare-label .badge{padding:3px 10px;border-radius:6px;font-size:12px;font-weight:800}
+
+/* 图 */
+.diagram{display:flex;align-items:center;justify-content:center}
+.diagram svg{width:100%;height:auto}
+.node-box{rx:10;ry:10;stroke-width:1.5}
+.node-label{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+.conn-line{stroke-width:2;fill:none;opacity:.7;stroke-linecap:round}
+.conn-line-mcp{stroke:var(--success);stroke-width:2.5;opacity:.9}
+
+/* stats */
+.stats-row{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.stat-chip{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+
+/* ── 传输方式 ── */
+.transport-body{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+
+.t-cards{display:flex;flex-direction:column;gap:8px}
+.t-card{padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s}
+.t-card:hover{border-color:rgba(0,102,255,.3);background:rgba(0,102,255,.02)}
+.t-card.active{border-color:var(--accent);background:rgba(0,102,255,.04);box-shadow:0 2px 8px rgba(0,102,255,.1)}
+.t-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.t-card-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.t-card-name{font-size:14px;font-weight:800;color:var(--text)}
+.t-card-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:auto}
+.t-card-desc{font-size:12px;color:var(--sub);line-height:1.5}
+
+/* 详情 */
+.t-detail{display:flex;flex-direction:column;gap:10px;min-width:0}
+.t-detail-title{font-size:15px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px}
+.t-detail-quote{font-size:14px;color:var(--sub);line-height:1.6;padding:10px 14px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+
+/* 数据流动画 */
+.flow-box{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;position:relative;overflow:hidden;min-height:80px}
+.flow-row{display:flex;align-items:center;gap:12px;position:relative}
+.flow-node{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700;flex-shrink:0;z-index:1}
+.flow-track{flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.05);position:relative;overflow:hidden}
+.flow-dot{width:10px;height:10px;border-radius:50%;position:absolute;top:-3px;opacity:0}
+@keyframes flowRight{0%{left:0;opacity:1}100%{left:calc(100% - 10px);opacity:1}}
+@keyframes flowLeft{0%{left:calc(100% - 10px);opacity:1}100%{left:0;opacity:1}}
+.flow-dot.go-right{animation:flowRight 1.2s ease-in-out infinite}
+.flow-dot.go-left{animation:flowLeft 1.2s ease-in-out .6s infinite}
+.flow-dot.go-left-2{animation:flowLeft 1.2s ease-in-out 1s infinite}
+.flow-dot.go-left-3{animation:flowLeft 1.2s ease-in-out 1.4s infinite}
+
+/* 优缺点 */
+.pc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.pc-item{padding:6px 10px;border-radius:8px;font-size:13px;line-height:1.5;display:flex;align-items:flex-start;gap:6px}
+.pc-icon{flex-shrink:0;font-size:14px;margin-top:1px}
+
+/* 决策卡 */
+.dec-card{background:rgba(0,102,255,.04);border:1.5px solid rgba(0,102,255,.2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);line-height:1.6}
+.dec-card b{color:var(--accent)}
+
+@media (max-width:768px){
+  .compare{grid-template-columns:1fr}
+  .transport-body{grid-template-columns:1fr}
+  .pc-grid{grid-template-columns:1fr}
+}
+</style>
+<meta name="description" content="MCP（Model Context Protocol）就是 AI 工具的 USB 标准。工具开发者只写一次适配，就能接入所有 Agent。">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="MCP 协议：工具的 USB 接口">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/7-2d.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/7-2d.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:description" content="MCP（Model Context Protocol）就是 AI 工具的 USB 标准。工具开发者只写一次适配，就能接入所有 Agent。"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker">Agent 工程</div>
+    <h1>MCP 协议：工具的 USB 接口</h1>
+    <p class="subtitle">USB 之前每台设备要专属数据线；MCP 之前每个 Agent 要专属对接代码。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>stdio / SSE / Streamable HTTP 三种传输方式对比，数据流动画</p></aside><!--seo:end-->  <div class="sec-label">Before / After 对比</div>
+  <div class="compare" id="compareArea">
+    <!-- LEFT: before MCP -->
+    <div class="compare-col">
+      <div class="compare-label">
+        <span class="badge" style="background:rgba(220,38,38,.08);color:var(--danger)">Before</span>
+        没有 MCP 的世界
+      </div>
+      <div class="diagram" id="diagramBefore">
+        <svg viewBox="0 0 420 200" preserveAspectRatio="xMidYMid meet">
+          <rect class="node-box" x="10" y="15" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="33" fill="var(--purple)">Cursor</text>
+          <rect class="node-box" x="10" y="82" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="100" fill="var(--purple)">Alice</text>
+          <rect class="node-box" x="10" y="150" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="168" fill="var(--purple)">Claude</text>
+
+          <rect class="node-box" x="320" y="15" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="33" fill="var(--cyan)">GitHub</text>
+          <rect class="node-box" x="320" y="82" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="100" fill="var(--cyan)">Slack</text>
+          <rect class="node-box" x="320" y="150" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="168" fill="var(--cyan)">Database</text>
+
+          <path class="conn-line" d="M100,33 C210,33 210,33 320,33" stroke="#dc2626"></path>
+          <path class="conn-line" d="M100,33 C180,33 240,100 320,100" stroke="#d97706"></path>
+          <path class="conn-line" d="M100,33 C180,45 240,155 320,168" stroke="#7c3aed"></path>
+          <path class="conn-line" d="M100,100 C180,100 240,33 320,33" stroke="#0891b2"></path>
+          <path class="conn-line" d="M100,100 C210,100 210,100 320,100" stroke="#16a34a"></path>
+          <path class="conn-line" d="M100,100 C180,110 240,155 320,168" stroke="#ea580c"></path>
+          <path class="conn-line" d="M100,168 C180,155 240,33 320,33" stroke="#8e8e93"></path>
+          <path class="conn-line" d="M100,168 C180,168 240,100 320,100" stroke="#a855f7"></path>
+          <path class="conn-line" d="M100,168 C210,168 210,168 320,168" stroke="#f59e0b"></path>
+        </svg>
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip" style="background:rgba(220,38,38,.06);color:var(--danger)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          9 条专属对接
+        </div>
+        <div class="stat-chip" style="background:rgba(220,38,38,.06);color:var(--danger)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 8v4m0 4h.01"></path><circle cx="12" cy="12" r="10"></circle></svg>
+          新增 1 个工具 → +3 条对接
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: with MCP -->
+    <div class="compare-col">
+      <div class="compare-label">
+        <span class="badge" style="background:rgba(22,163,74,.08);color:var(--success)">After</span>
+        有 MCP 的世界
+      </div>
+      <div class="diagram" id="diagramAfter">
+        <svg viewBox="0 0 420 200" preserveAspectRatio="xMidYMid meet">
+          <rect class="node-box" x="10" y="15" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="33" fill="var(--purple)">Cursor</text>
+          <rect class="node-box" x="10" y="82" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="100" fill="var(--purple)">Alice</text>
+          <rect class="node-box" x="10" y="150" width="90" height="36" fill="rgba(124,58,237,.06)" stroke="var(--purple)"></rect>
+          <text class="node-label" x="55" y="168" fill="var(--purple)">Claude</text>
+
+          <rect x="175" y="60" width="70" height="80" rx="12" ry="12" fill="rgba(22,163,74,.08)" stroke="var(--success)" stroke-width="2"></rect>
+          <text x="210" y="95" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="12" font-weight="800" fill="var(--success)" text-anchor="middle" dominant-baseline="central">MCP</text>
+          <text x="210" y="115" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" font-size="10" fill="var(--success)" text-anchor="middle" dominant-baseline="central" opacity=".7">标准协议</text>
+
+          <rect class="node-box" x="320" y="15" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="33" fill="var(--cyan)">GitHub</text>
+          <rect class="node-box" x="320" y="82" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="100" fill="var(--cyan)">Slack</text>
+          <rect class="node-box" x="320" y="150" width="90" height="36" fill="rgba(8,145,178,.06)" stroke="var(--cyan)"></rect>
+          <text class="node-label" x="365" y="168" fill="var(--cyan)">Database</text>
+
+          <line x1="100" y1="33" x2="175" y2="80" class="conn-line conn-line-mcp"></line>
+          <line x1="100" y1="100" x2="175" y2="100" class="conn-line conn-line-mcp"></line>
+          <line x1="100" y1="168" x2="175" y2="120" class="conn-line conn-line-mcp"></line>
+          <line x1="245" y1="80" x2="320" y2="33" class="conn-line conn-line-mcp"></line>
+          <line x1="245" y1="100" x2="320" y2="100" class="conn-line conn-line-mcp"></line>
+          <line x1="245" y1="120" x2="320" y2="168" class="conn-line conn-line-mcp"></line>
+        </svg>
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip" style="background:rgba(22,163,74,.06);color:var(--success)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"></path></svg>
+          6 条标准连接
+        </div>
+        <div class="stat-chip" style="background:rgba(22,163,74,.06);color:var(--success)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14m-7-7h14"></path></svg>
+          新增 1 个工具 → 只需 +1 条适配
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">三种传输方式 · 点击查看数据流动</div>
+  <div class="transport-body paywall-locked xa-peek">
+    <div class="t-cards" id="tCards">
+      <div class="t-card active" onclick="pickTransport(0)">
+        <div class="t-card-hd">
+          <div class="t-card-icon" style="background:rgba(124,58,237,.08);color:var(--purple)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          </div>
+          <span class="t-card-name">stdio</span>
+          <span class="t-card-tag" style="background:rgba(124,58,237,.08);color:var(--purple)">本地进程</span>
+        </div>
+        <div class="t-card-desc">Agent 启动一个本地程序，通过标准输入输出通信</div>
+      </div>
+      <div class="t-card" onclick="pickTransport(1)">
+        <div class="t-card-hd">
+          <div class="t-card-icon" style="background:rgba(8,145,178,.08);color:var(--cyan)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+          </div>
+          <span class="t-card-name">SSE</span>
+          <span class="t-card-tag" style="background:rgba(8,145,178,.08);color:var(--cyan)">服务器推送</span>
+        </div>
+        <div class="t-card-desc">Agent 通过 HTTP 连接远程服务，服务器主动推送数据</div>
+      </div>
+      <div class="t-card" onclick="pickTransport(2)">
+        <div class="t-card-hd">
+          <div class="t-card-icon" style="background:rgba(22,163,74,.08);color:var(--success)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3v3a2 2 0 0 1-2 2H3"></path><path d="M21 8h-3a2 2 0 0 1-2-2V3"></path><path d="M3 16h3a2 2 0 0 1 2 2v3"></path><path d="M16 21v-3a2 2 0 0 1 2-2h3"></path></svg>
+          </div>
+          <span class="t-card-name">Streamable HTTP</span>
+          <span class="t-card-tag" style="background:rgba(22,163,74,.08);color:var(--success)">双向流</span>
+        </div>
+        <div class="t-card-desc">最新标准，支持双向流式通信</div>
+      </div>
+    </div>
+    <div class="t-detail" id="tDetail"></div>
+  </div>
+
+  <div class="sec-label paywall-locked">Takeaway</div>
+  <div class="l-callout paywall-locked">
+    <b>Takeaway</b>　MCP 就是 AI 工具的 USB 标准：工具开发者只写一次适配，就能接入所有 Agent。没有 MCP 之前，每个 Agent 都要为每个工具写专属对接代码，就像每台设备都要专属数据线一样。
+  </div>
+</article>
+
+<script>
+var TRANSPORTS = [
+  {
+    name: 'stdio',
+    color: 'var(--purple)',
+    bg: 'rgba(124,58,237,.06)',
+    title: 'stdio — 本地进程通信',
+    quote: 'Agent 在本地启动一个子进程（如 Python 脚本），通过 stdin/stdout 收发 JSON-RPC 消息。就像两个人面对面传纸条。',
+    agentLabel: 'Agent 进程',
+    agentColor: 'var(--purple)', agentBg: 'rgba(124,58,237,.1)',
+    toolLabel: 'MCP Server 进程',
+    toolColor: 'var(--cyan)', toolBg: 'rgba(8,145,178,.1)',
+    dotColor: 'var(--purple)',
+    sendLabel: 'stdin（请求）',
+    recvLabel: 'stdout（响应）',
+    pros: [
+      { icon: '✅', text: '最简单，不需要网络', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: '启动快，延迟极低', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: '安全，只走本地通道', bg: 'rgba(22,163,74,.04)' }
+    ],
+    cons: [
+      { icon: '⚠️', text: '只能本地运行', bg: 'rgba(215,119,6,.04)' },
+      { icon: '⚠️', text: '进程随 Agent 退出而终止', bg: 'rgba(215,119,6,.04)' }
+    ],
+    useCase: '开发工具（Cursor）、本地文件操作、数据库查询',
+    decision: '📌 开发阶段调试 MCP Server 时，首选 stdio：不需要配端口、不需要 HTTPS，跑起来就能测。'
+  },
+  {
+    name: 'SSE',
+    color: 'var(--cyan)',
+    bg: 'rgba(8,145,178,.06)',
+    title: 'SSE — 一去多回（Server-Sent Events）',
+    quote: 'Agent 发一次 HTTP 请求，MCP Server 保持连接不断开，通过同一个连接持续推送多条事件回来。就像你问了一个问题，对方通过对讲机一条一条地持续回答你，你只能听不能插嘴。典型的「一去多回」模式。',
+    agentLabel: 'Agent（客户端）',
+    agentColor: 'var(--cyan)', agentBg: 'rgba(8,145,178,.1)',
+    toolLabel: 'MCP Server（远程）',
+    toolColor: 'var(--success)', toolBg: 'rgba(22,163,74,.1)',
+    dotColor: 'var(--cyan)',
+    sendLabel: 'HTTP POST（一次请求）',
+    recvLabel: 'SSE 事件流（持续多条推送）',
+    pros: [
+      { icon: '✅', text: '支持远程部署', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: '服务器主动推送，适合流式结果', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: '兼容现有 HTTP 基础设施', bg: 'rgba(22,163,74,.04)' }
+    ],
+    cons: [
+      { icon: '⚠️', text: '客户端无法中途追加消息（单向推送）', bg: 'rgba(215,119,6,.04)' },
+      { icon: '⚠️', text: '长连接可能被代理/防火墙中断', bg: 'rgba(215,119,6,.04)' }
+    ],
+    useCase: '云端工具服务、实时数据订阅、共享 MCP Server',
+    decision: '📌 SSE 正在被 Streamable HTTP 逐步替代，但很多现有 MCP Server 仍使用 SSE。选型时注意向前兼容。'
+  },
+  {
+    name: 'Streamable HTTP',
+    color: 'var(--success)',
+    bg: 'rgba(22,163,74,.06)',
+    title: 'Streamable HTTP — 双向流式通信',
+    quote: '最新的 MCP 传输标准。Agent 和 Server 通过 HTTP 建立双向流式通道，两边都可以主动发消息。就像打电话，双方随时都能说话。',
+    agentLabel: 'Agent（客户端）',
+    agentColor: 'var(--success)', agentBg: 'rgba(22,163,74,.1)',
+    toolLabel: 'MCP Server（远程）',
+    toolColor: 'var(--amber)', toolBg: 'rgba(217,119,6,.1)',
+    dotColor: 'var(--success)',
+    sendLabel: 'HTTP 请求流（双向）',
+    recvLabel: 'HTTP 响应流（双向）',
+    pros: [
+      { icon: '✅', text: '最灵活，双向实时通信', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: '支持大数据分块传输', bg: 'rgba(22,163,74,.04)' },
+      { icon: '✅', text: 'MCP 官方推荐的标准方式', bg: 'rgba(22,163,74,.04)' }
+    ],
+    cons: [
+      { icon: '⚠️', text: '实现复杂度较高', bg: 'rgba(215,119,6,.04)' },
+      { icon: '⚠️', text: '部分老旧基础设施不兼容', bg: 'rgba(215,119,6,.04)' }
+    ],
+    useCase: '复杂交互场景、大数据传输、生产级云端部署',
+    decision: '📌 新项目建议直接用 Streamable HTTP。它是 MCP 官方推荐的标准，未来所有 Agent 都会优先支持。'
+  }
+];
+
+var curTransport = 0;
+
+function pickTransport(idx) {
+  curTransport = idx;
+  var cards = document.querySelectorAll('.t-card');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].className = 't-card' + (i === idx ? ' active' : '');
+  }
+  renderTransportDetail(idx);
+}
+
+function renderTransportDetail(idx) {
+  var t = TRANSPORTS[idx];
+  var h = '';
+
+  h += '<div class="t-detail-title"><span style="color:' + t.color + '">' + t.title + '</span></div>';
+  h += '<div class="t-detail-quote">' + t.quote + '</div>';
+
+  h += '<div class="flow-box">';
+  h += '<div class="flow-row">';
+  h += '<div class="flow-node" style="background:' + t.agentBg + ';color:' + t.agentColor + '">' + t.agentLabel + '</div>';
+  h += '<div style="flex:1;display:flex;flex-direction:column;gap:8px">';
+
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<span style="font-size:11px;color:var(--sub);min-width:140px;text-align:right">' + t.sendLabel + '</span>';
+  h += '<div class="flow-track"><div class="flow-dot go-right" style="background:' + t.dotColor + '"></div></div>';
+  h += '<span style="font-size:12px;color:var(--sub)">→</span>';
+  h += '</div>';
+
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<span style="font-size:11px;color:var(--sub);min-width:140px;text-align:right">' + t.recvLabel + '</span>';
+  h += '<div class="flow-track">';
+  h += '<div class="flow-dot go-left" style="background:' + t.toolColor + '"></div>';
+  if (idx === 1) {
+    h += '<div class="flow-dot go-left-2" style="background:' + t.toolColor + '"></div>';
+    h += '<div class="flow-dot go-left-3" style="background:' + t.toolColor + '"></div>';
+  }
+  h += '</div>';
+  h += '<span style="font-size:12px;color:var(--sub)">←</span>';
+  h += '</div>';
+
+  h += '</div>';
+  h += '<div class="flow-node" style="background:' + t.toolBg + ';color:' + t.toolColor + '">' + t.toolLabel + '</div>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="pc-grid">';
+  h += '<div style="display:flex;flex-direction:column;gap:4px">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--success);margin-bottom:2px">优点</div>';
+  for (var i = 0; i < t.pros.length; i++) {
+    h += '<div class="pc-item" style="background:' + t.pros[i].bg + '"><span class="pc-icon">' + t.pros[i].icon + '</span><span>' + t.pros[i].text + '</span></div>';
+  }
+  h += '</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:4px">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--amber);margin-bottom:2px">注意</div>';
+  for (var j = 0; j < t.cons.length; j++) {
+    h += '<div class="pc-item" style="background:' + t.cons[j].bg + '"><span class="pc-icon">' + t.cons[j].icon + '</span><span>' + t.cons[j].text + '</span></div>';
+  }
+  h += '</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:4px">';
+  h += '<div style="font-size:12px;font-weight:800;color:var(--cyan);margin-bottom:2px">适合场景</div>';
+  h += '<div class="pc-item" style="background:rgba(8,145,178,.04)"><span>' + t.useCase + '</span></div>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="dec-card"><b>' + t.decision + '</b></div>';
+
+  document.getElementById('tDetail').innerHTML = h;
+}
+
+pickTransport(0);
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

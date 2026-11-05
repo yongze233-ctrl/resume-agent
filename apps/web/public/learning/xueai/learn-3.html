@@ -1,0 +1,787 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-3",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-3',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 按我的情况讲清楚 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl ol{margin:0;padding:0;list-style:none;counter-reset:tpl}
+.tpl li{counter-increment:tpl;position:relative;padding-left:34px;margin-bottom:18px}
+.tpl li:last-child{margin-bottom:0}
+.tpl li:before{content:counter(tpl);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tpl li b{display:block;font-size:12.5px;font-weight:700;color:var(--accent-deep);margin-bottom:5px}
+.tpl li q{display:block;quotes:"「" "」";font-size:13.5px;line-height:1.95;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s cubic-bezier(.4,0,.2,1)}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-sw{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.dm-sw button{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-height:64px;padding:16px 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:700 13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;text-align:left;opacity:.56;transform:scale(.985);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-sw-copy{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}
+.dm-sw-tpl{font:500 12.5px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--sub);transition:color .3s cubic-bezier(.4,0,.2,1)}
+.dm-sw.idle button,.dm-sw button.on,.dm-sw button.fresh{opacity:1;transform:scale(1)}
+.dm-sw button.on{background:var(--accent-soft);border-color:rgba(180,83,9,.4);color:var(--accent-deep)}
+.dm-sw button.on .dm-sw-tpl{color:var(--accent-deep)}
+.dm-knob-wrap{flex:0 0 36px;width:36px;height:20px;margin-top:2px;border-radius:999px;background:rgba(0,0,0,.12);position:relative;transition:background .3s cubic-bezier(.4,0,.2,1)}
+.dm-sw button.on .dm-knob-wrap{background:var(--accent)}
+.dm-knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.dm-sw button.on .dm-knob{transform:translateX(16px)}
+.dm-meter{height:4px;border-radius:999px;background:var(--border);margin:0 0 18px;overflow:hidden}
+.dm-meter-fill{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .6s cubic-bezier(.25,1,.5,1)}
+.dm-live{position:relative;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border);margin-bottom:20px}
+.dm-note-tag{display:block;font-size:11px;font-weight:800;letter-spacing:.6px;color:var(--accent-deep);margin-bottom:8px}
+.dm-lines{position:relative;min-height:30px}
+.dm-line{font-size:13.5px;line-height:1.9;color:var(--text);overflow:hidden;max-height:0;opacity:0;transform:translateY(8px);transition:max-height .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.25,1,.5,1),transform .35s cubic-bezier(.25,1,.5,1)}
+.dm-line.show{max-height:110px;opacity:1;transform:none}
+.dm-ghost{position:absolute;margin:0;pointer-events:none;max-height:110px;transition:opacity .38s cubic-bezier(.25,1,.5,1),transform .38s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.gone{opacity:0;transform:translateY(-10px)}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+@keyframes softPulse{0%,100%{opacity:1}50%{opacity:.58}}
+.dm-live.glow{animation:fireGlow .9s ease}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0;transition:border-color .3s cubic-bezier(.4,0,.2,1),background .3s cubic-bezier(.4,0,.2,1)}
+.dm-cmp-col.live{border-color:rgba(180,83,9,.3)}
+.dm-cmp-h{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pane{padding:16px 18px;font-size:13.5px;line-height:1.9;color:var(--text);min-height:212px;overflow-wrap:anywhere;word-break:break-word}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-enter{opacity:0;transform:translateY(10px)}
+.dm-enter.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-blk{max-height:0;overflow:hidden;padding:0 12px;margin:0 0 10px;border-radius:10px;background:var(--card);border:1px solid var(--border);opacity:.2;transition:max-height .5s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),opacity .45s cubic-bezier(.25,1,.5,1)}
+.dm-blk.open{max-height:220px;padding:12px;opacity:1}
+.dm-blk:last-child{margin:0}
+.dm-blk b{display:block;font-size:12px;color:var(--accent-deep);margin-bottom:5px}
+.dm-blk span{display:block;font-size:13px;line-height:1.85;color:var(--text)}
+.dm-blk.add{background:var(--accent-soft);border-color:rgba(180,83,9,.3)}
+.dm-blk.pop{animation:flashPop .8s ease;transform-origin:center top}
+.dm-blk.dim b{color:var(--sub)}
+.dm-blk.dim span{color:var(--sub);animation:softPulse 1.6s ease infinite}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare,.dm-sw{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}}
+@media(prefers-reduced-motion:reduce){.dm-sw button,.dm-knob,.dm-knob-wrap,.dm-meter-fill,.dm-line,.dm-ghost,.dm-enter,.dm-enter.show,.dm-blk,.dm-cmp-col,.dm-sw-tpl{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="锚点、场景、出题、预警，提问缺一个部件，回答就少一块。四句能直接抄的模板，看每加一句回答的形状怎么变。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 按我的情况讲清楚"><meta property="og:description" content="锚点、场景、出题、预警，提问缺一个部件，回答就少一块。四句能直接抄的模板，看每加一句回答的形状怎么变。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-3.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-3.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 提问结构</div>
+    <h1>让 AI 按我的情况讲清楚</h1>
+    <p class="subtitle">锚点、场景、出题、预警，每缺一个，回答就少一块。四句模板可以直接抄走。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>锚点、场景、出题、预警，每缺一个，回答就少一块。四句模板可以直接抄走。</p></aside><!--seo:end-->  <p class="reveal"><strong>第二件七折，还是两件一起八五折</strong>。周末优惠的两个选项并排摆在页面上。你在给书房挑收纳盒，看中的两个标价 120 元和 80 元。</p>
+  <p class="reveal">你想先把百分数弄明白，于是打开 AI，打了一句平时很正常的话。</p>
+  <p class="reveal"><span class="clause">给我讲讲百分数。</span></p>
+  <p class="reveal">它从百分数的定义讲到小数换算，还举了考试正确率的例子。每一步都能看懂。你看见<strong>七折对应 70%</strong>，八五折对应 85%，顺手选了数字更小的七折，觉得这个方案省得更多。</p>
+  <p class="reveal">周六上午 10 点 25 分，你到店里结账。第二件七折要付 <strong>176 元</strong>；两件一起八五折只要 <strong>170 元</strong>。你多付了 6 元，才发现七折只落在 80 元的第二件上，八五折落在 200 元的总价上。</p>
+  <p class="reveal">当时会选错，有一部分原因在那句提问里。它只写了要学什么，没写你已经会到哪里、准备拿去算哪笔账、讲完怎样检查、哪个地方最容易混。AI 便交付了一篇覆盖知识点的讲义，<strong>没有碰到你桌上的两张价签</strong>。</p>
+
+  <div class="sec-label">一句正常的提问，为什么会少掉三块</div>
+  <p class="reveal">「给我讲讲百分数」只给了主题。AI 不知道你已经会小数换算，于是从定义开始；不知道你要比较两种折扣，于是例子去了考试正确率；不知道你想确认自己会不会算，于是讲完就结束；也不知道你会把折扣数字直接比较，于是没有提前指出<strong>计算基数不同</strong>这个坑。</p>
+  <p class="reveal"><mark>提问里多写一句，作用是给回答增加一种必须交付的东西。</mark>四个部件分别管回答从哪里开始、例子落到哪里、讲完后怎样检查、哪些误解要提前拦住。</p>
+  <ol class="four reveal">
+    <li><b>先告诉它你已经会到哪里</b>，回答可以越过重复铺垫，从你的起点接着讲。</li>
+    <li><b>再写清你准备拿它做什么</b>，例子才会落到两张价签和两种折扣上。</li>
+    <li><b>要求它讲完后出题</b>，你得亲手算一次，顺畅阅读会变成一次可核对的回答。</li>
+    <li><b>请它提前指出易错处</b>，它会提醒你先找每个折扣乘在哪个价格上。</li>
+  </ol>
+  <p class="reveal paywall-locked xa-peek"><mark>那四句话具体该怎么写？</mark>下面先看同一个提问每加一个部件，回答会多出哪一块。</p>
+
+  <div class="sec-label paywall-locked">先玩一遍 · 给提问依次加上四个部件</div>
+  <div class="demo reveal paywall-locked" id="demo-ask">
+    <div class="demo-top">
+      <div class="demo-title">每加入一句提示，看看回答会多交付什么</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-sw idle" id="dm-sw">
+      <button type="button" data-i="0" id="sw-0"><span class="dm-sw-copy">1 · 告诉 AI 你已经会到哪里<span class="dm-sw-tpl">我已经懂：______。请从这里开始讲，前面我会的部分一带而过。</span></span><i class="dm-knob-wrap" aria-hidden="true"><i class="dm-knob"></i></i></button>
+      <button type="button" data-i="1" id="sw-1"><span class="dm-sw-copy">2 · 说清你准备拿它做什么<span class="dm-sw-tpl">我要用它做：______。请把例子落到这个场景里。</span></span><i class="dm-knob-wrap" aria-hidden="true"><i class="dm-knob"></i></i></button>
+      <button type="button" data-i="2" id="sw-2"><span class="dm-sw-copy">3 · 让 AI 讲完以后出题考你<span class="dm-sw-tpl">讲完出三道题考我，题出完先不要给答案。</span></span><i class="dm-knob-wrap" aria-hidden="true"><i class="dm-knob"></i></i></button>
+      <button type="button" data-i="3" id="sw-3"><span class="dm-sw-copy">4 · 请 AI 提前指出容易混淆的地方<span class="dm-sw-tpl">指出我在这个概念上哪里可能理解错，尤其是和相邻概念缠在一起的地方。</span></span><i class="dm-knob-wrap" aria-hidden="true"><i class="dm-knob"></i></i></button>
+    </div>
+    <div class="dm-meter" aria-hidden="true"><i class="dm-meter-fill" id="dm-meter"></i></div>
+    <div class="dm-live" id="dm-live">
+      <span class="dm-note-tag">你正在拼成的完整提问</span>
+      <div class="dm-lines" id="dm-live-text"></div>
+    </div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">四句提示都没加时，AI 会这样回答</div>
+        <div class="dm-pane" id="dm-left"></div>
+      </div>
+      <div class="dm-cmp-col live">
+        <div class="dm-cmp-h">加入当前这些提示以后，回答会变成这样</div>
+        <div class="dm-pane" id="dm-right"></div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">可以点播放依次加入四句话，也可以亲手打开任意一个开关。</span></div>
+    <div class="demo-caption">教学示意：两栏回答都是为演示写的简化文本，不是某个模型的真实输出。四个开关可任意组合。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">把这四句话整段贴给 AI</div>
+  <p class="reveal paywall-locked">下面四句可以接在任何学习问题后面。横线换成你的内容，四句一起发出去。以刚才的折扣题为例，整段会直接落在你的起点和那两张价签上。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <ol>
+      <li><b>告诉 AI 你的起点</b><q>我已经懂：百分数和小数可以互相换算。请从这里开始讲，前面我会的部分一带而过。</q></li>
+      <li><b>说清你要处理的事情</b><q>我要用它比较购物时的折扣。请用「120 元和 80 元的两件商品，第二件七折与两件八五折哪个省钱」来举例。</q></li>
+      <li><b>让它讲完以后出题</b><q>讲完出三道题考我，每道题只换一个条件。题出完先不要给答案，等我逐题回答。</q></li>
+      <li><b>让它提前指出易错处</b><q>指出我在计算折扣时最可能错在哪里，尤其提醒我每个折扣乘的是第二件价格、单件价格还是总价。</q></li>
+    </ol>
+    <p class="tpl-note">换材料时，只改横线后的内容和第二句里的例子。四句话的动作顺序可以保留。</p>
+  </div>
+
+  <div class="sec-label paywall-locked">每句话里，哪半句最关键</div>
+  <p class="reveal paywall-locked">第一句里的<strong>我已经懂</strong>给出了讲解起点。只写「讲详细点」，AI 仍要自己猜你的基础，最常见的结果是从定义重新铺一遍。</p>
+  <p class="reveal paywall-locked">第二句里的<strong>我要用它做</strong>规定了例子落在哪里。后面的两个具体价格也要保留，因为「用在购物里」范围仍然很大，AI 可能改讲满减、优惠券或积分。</p>
+  <p class="reveal paywall-locked">第三句里的<strong>先不要给答案</strong>守住了检查。少了这半句，AI 常在题目下面紧跟答案，你会继续沿着现成步骤往下读，亲手计算的机会又被拿走。</p>
+  <p class="reveal paywall-locked">第四句里的<strong>每个折扣乘什么价格</strong>点出了你最担心的混淆。预警写得越具体，AI 越容易在你下手计算前拦住那个错误。</p>
+  <p class="reveal paywall-locked">四个部件可以单独使用。时间紧时，先写场景和出题，回答至少会贴到手头问题上，并且留下一个需要你自己完成的动作。这是提问写法上的经验。</p>
+  <p class="reveal paywall-locked">比方那一句得你自己给，见 <a href="/dashboard/learning?lesson=learn-4" data-lesson-id="learn-4">让 AI 用我熟悉的东西打比方</a>。想让它把往下想的活儿交回来，见 <a href="/dashboard/learning?lesson=learn-5" data-lesson-id="learn-5">让 AI 一次只问我一个问题</a>。取一次这个动作单独有一页，见 <a href="/dashboard/learning?view=courses" data-learning-view="courses">合上材料，让 AI 考我一次</a>。</p>
+
+  <div class="key-line reveal paywall-locked">这四个部件改的是回答必须交付的形状。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var flags = [false, false, false, false];
+  var seqIdx = -1, autoId = null, played = false, dirty = false, lastToggled = -1;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-ask');
+  var btns = [0,1,2,3].map(function(i){ return document.getElementById('sw-' + i); });
+  var swBox = document.getElementById('dm-sw');
+  var liveBox = document.getElementById('dm-live-text');
+  var liveWrap = document.getElementById('dm-live');
+  var meter = document.getElementById('dm-meter');
+  var leftEl = document.getElementById('dm-left');
+  var rightEl = document.getElementById('dm-right');
+  var capEl = document.getElementById('dm-caption-text');
+  var timers = [];
+
+  var BASE_BARE = '给我讲讲百分数。';
+  var BASE_FULL = '请讲百分数。';
+  var FRAG = [
+    '我已经懂：百分数和小数可以互相换算。请从这里开始讲，前面我会的部分一带而过。',
+    '我要用它做：比较第二件七折和两件一起八五折哪个省钱。请把例子落到这个场景里。',
+    '讲完出三道题考我，题出完先不要给答案。',
+    '指出我在计算折扣时哪里可能理解错，尤其提醒我每个折扣乘的是哪一个价格。'
+  ];
+  var BASELINE = [
+    {t: '回答从哪里开始', s: '先讲百分数的定义，再讲它怎样写成小数，其中一部分你已经会了。'},
+    {t: '例子会落在哪件事上', s: '例子用考试正确率，没有出现你手上两件商品的价格。'},
+    {t: '读完以后要做什么', s: '回答到讲解结束。你可以一路读懂，却没有亲手比较两种折扣。'}
+  ];
+  var PLAY_CAP = [
+    '告诉 AI 你的起点以后，定义和换算被压成一句，回答从比较折扣接着讲。',
+    '说清要处理的事情以后，例子换成 120 元和 80 元的两个收纳盒。',
+    '要求讲完出题以后，回答末尾多出三道没有答案的折扣题，你得亲手算一次。',
+    '请它提前指出易错处以后，回答会先提醒你确认折扣究竟乘在哪个价格上。四句话都加入了。'
+  ];
+  var IDLE = '四个开关都关着，提问只剩「给我讲讲百分数」。两栏现在一模一样，可以从任意一句开始添加。';
+  var NAMES = ['告诉 AI 你的起点', '说清要处理的事情', '要求讲完以后出题', '请它提前指出易错处'];
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  function count(){
+    var n = 0;
+    for (var i = 0; i < 4; i++) if (flags[i]) n++;
+    return n;
+  }
+
+  function answerBlocks(){
+    var out = [];
+    out.push(flags[0]
+      ? {k: 'open', t: '回答从你的起点开始', s: '从「百分数和小数可以互换」接着讲，定义与换算压成一句。', add: true}
+      : {k: 'open', t: '回答从基础定义开始', s: '先讲百分数的定义，再讲它怎样写成小数，其中一部分你已经会了。', dim: true});
+    out.push(flags[1]
+      ? {k: 'eg', t: '例子落到你的两张价签上', s: '120 元和 80 元，第二件七折要 176 元，两件八五折要 170 元。', add: true}
+      : {k: 'eg', t: '例子停在通用材料里', s: '它用考试正确率举例，没有出现你手上两件商品的价格。', dim: true});
+    if (flags[2]) out.push({k: 'quiz', t: '讲完以后增加三道题', s: '题目每次只换一个价格或折扣，答案先不显示。你得亲手算一次。', add: true});
+    if (flags[3]) out.push({k: 'warn', t: '计算以前先提醒易错处', s: '先确认折扣乘第二件价格、单件价格还是总价，再比较最后要付的钱。', add: true});
+    return out;
+  }
+
+  function blockHTML(b){
+    var cls = 'dm-blk' + (b.add ? ' add' : '') + (b.dim ? ' dim' : '');
+    return '<div class="' + cls + '" data-k="' + b.k + '"><b>' + b.t + '</b><span>' + b.s + '</span></div>';
+  }
+
+  // 新块要先进 DOM 再加 class，两次 rAF 之间浏览器才会认这是一次变化
+  function paintPane(el, list, instant, stagger){
+    var wrap = document.createElement('div');
+    wrap.className = 'dm-enter';
+    wrap.innerHTML = list.map(blockHTML).join('');
+    el.innerHTML = '';
+    el.appendChild(wrap);
+    var blks = Array.prototype.slice.call(wrap.querySelectorAll('.dm-blk'));
+    if (instant || reduce) {
+      wrap.classList.add('show');
+      blks.forEach(function(b){ b.classList.add('open'); });
+      return;
+    }
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        wrap.classList.add('show');
+        blks.forEach(function(b, i){
+          var t = setTimeout(function(){
+            b.classList.add('open');
+            if (b.classList.contains('add') && i === blks.length - 1) b.classList.add('pop');
+          }, stagger ? i * 110 : 0);
+          timers.push(t);
+        });
+      });
+    });
+  }
+
+  function desired(){
+    if (!count()) return [{k: 'base', t: BASE_BARE}];
+    var items = [{k: 'base', t: BASE_FULL}];
+    for (var i = 0; i < 4; i++) if (flags[i]) items.push({k: 'f' + i, t: FRAG[i]});
+    return items;
+  }
+
+  function realLines(){
+    return Array.prototype.filter.call(liveBox.children, function(el){
+      return el.className.indexOf('dm-ghost') === -1;
+    });
+  }
+
+  // 走掉的行留一个 ghost 在原位淡出，留下的行用 FLIP 滑到新位置
+  function syncLines(instant){
+    var want = desired(), wantMap = {}, i, j;
+    for (i = 0; i < want.length; i++) wantMap[want[i].k] = want[i].t;
+
+    var oldRects = {}, kids = realLines();
+    for (i = 0; i < kids.length; i++) oldRects[kids[i].getAttribute('data-k')] = kids[i].getBoundingClientRect();
+
+    for (i = kids.length - 1; i >= 0; i--) {
+      var el = kids[i], k = el.getAttribute('data-k');
+      if (wantMap[k] !== undefined) {
+        if (el.textContent !== wantMap[k]) el.textContent = wantMap[k];
+        continue;
+      }
+      if (instant || reduce) { el.remove(); continue; }
+      var rc = oldRects[k], host = liveBox.getBoundingClientRect();
+      var ghost = el.cloneNode(true);
+      ghost.className = 'dm-line show dm-ghost';
+      ghost.style.left = (rc.left - host.left) + 'px';
+      ghost.style.top = (rc.top - host.top) + 'px';
+      ghost.style.width = rc.width + 'px';
+      liveBox.appendChild(ghost);
+      el.remove();
+      (function(g){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ g.classList.add('gone'); });
+        });
+        timers.push(setTimeout(function(){ if (g.parentNode) g.remove(); }, 420));
+      })(ghost);
+    }
+
+    for (i = 0; i < want.length; i++) {
+      var it = want[i], cur = realLines(), found = null;
+      for (j = 0; j < cur.length; j++) if (cur[j].getAttribute('data-k') === it.k) { found = cur[j]; break; }
+      if (found) continue;
+      var node = document.createElement('div');
+      node.className = (instant || reduce) ? 'dm-line show' : 'dm-line';
+      node.setAttribute('data-k', it.k);
+      node.textContent = it.t;
+      liveBox.appendChild(node);
+      if (!instant && !reduce) {
+        (function(n){
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ n.classList.add('show'); });
+          });
+        })(node);
+      }
+    }
+
+    if (instant || reduce) return;
+    var left = realLines();
+    for (i = 0; i < left.length; i++) {
+      var stay = left[i], old = oldRects[stay.getAttribute('data-k')];
+      if (!old) continue;
+      var now = stay.getBoundingClientRect();
+      var dy = old.top - now.top;
+      if (!dy) continue;
+      stay.style.transition = 'none';
+      stay.style.transform = 'translateY(' + dy + 'px)';
+      (function(n){
+        requestAnimationFrame(function(){ n.style.transition = ''; n.style.transform = ''; });
+      })(stay);
+    }
+  }
+
+  function freeCap(){
+    var n = count();
+    if (!n) return IDLE;
+    if (n === 4) return PLAY_CAP[3];
+    var hit = [];
+    for (var i = 0; i < 4; i++) if (flags[i]) hit.push(NAMES[i]);
+    return '现在开着：' + hit.join('、') + '。右栏比左栏多出来的，就是这几句换来的。缺的那一句，对应的那一块不会出现。';
+  }
+
+  function paint(cap, instant){
+    var n = count();
+    clearTimers();
+    for (var i = 0; i < 4; i++) {
+      btns[i].classList.toggle('on', flags[i]);
+      btns[i].classList.toggle('fresh', i === lastToggled);
+    }
+    swBox.classList.toggle('idle', n === 0);
+    meter.style.width = (n * 25) + '%';
+    syncLines(instant);
+    paintPane(leftEl, BASELINE.map(function(b, i){
+      return {k: 'b' + i, t: b.t, s: b.s, dim: true};
+    }), true, false);
+    paintPane(rightEl, answerBlocks(), instant, true);
+    capEl.textContent = cap || freeCap();
+    if (n === 4 && !instant && !reduce) {
+      liveWrap.classList.remove('glow');
+      void liveWrap.offsetWidth;
+      liveWrap.classList.add('glow');
+    } else if (n !== 4) {
+      liveWrap.classList.remove('glow');
+    }
+  }
+
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function reset(){
+    stop();
+    flags = [false, false, false, false];
+    seqIdx = -1; dirty = false; lastToggled = -1;
+    paint(IDLE, true);
+  }
+
+  function tick(){
+    if (seqIdx >= 3) return;
+    seqIdx++;
+    flags[seqIdx] = true;
+    lastToggled = seqIdx;
+    paint(PLAY_CAP[seqIdx]);
+  }
+
+  // 节拍不匀速：出题那一步信息量最大，之后多停一会儿
+  function play(){
+    if (autoId) return;
+    if (dirty || seqIdx >= 3 || seqIdx === -1) reset();
+    var pauseUntil = 0;
+    function loop(ts){
+      if (pauseUntil && ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+      if (seqIdx >= 3) { autoId = null; return; }
+      tick();
+      pauseUntil = ts + (seqIdx === 2 ? 2400 : (seqIdx === 3 ? 2600 : 1700));
+      autoId = requestAnimationFrame(loop);
+    }
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){
+    stop();
+    if (dirty) reset();
+    tick();
+  });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  swBox.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    stop();
+    var i = parseInt(b.getAttribute('data-i'), 10);
+    flags[i] = !flags[i];
+    lastToggled = i;
+    dirty = true;
+    seqIdx = -2;
+    paint();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

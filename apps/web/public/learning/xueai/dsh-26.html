@@ -1,0 +1,1178 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-26",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-26',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>测试一个非确定性系统 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.04),0 0 0 52px rgba(77,107,254,.025)}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.facts{display:grid;grid-template-columns:1fr;gap:20px;margin-top:20px}
+.fact{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.fact code{color:var(--accent);font-weight:800}.fact p{font-size:14px;line-height:1.9;color:var(--sub);margin:9px 0 0}
+.doc-quote{background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:10px;padding:20px 22px;margin:12px 0 20px;font-size:14px;line-height:1.9;color:var(--text)}
+.doc-quote .q-src{display:block;margin-top:8px;font-size:12px;color:var(--sub)}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}
+.source code{color:var(--text);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin-top:14px;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}
+.src-note code{font-size:11.5px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow-card);margin-top:12px}
+.cmp-card h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px;color:var(--text)}
+.cmp-card h3 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:9px 0 0}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eef1ff,var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0;color:var(--sub);font-size:14px;line-height:1.9}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--text);display:flex;gap:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+p.body{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+
+/* ── 交互演示：故障注入与回放实验室 ── */
+#demo-testing{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card);margin-top:12px}
+.d-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.d-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(77,107,254,.4);background:var(--accent-soft);color:var(--accent-deep);border-radius:11px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;min-height:48px}
+.d-btn svg{flex:0 0 auto}
+.d-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.d-btn.scn{padding:10px 14px;font-size:13px;min-height:44px}
+.d-btn.scn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tst-stage{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tst-pane{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:0}
+.tst-pane-title{font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.tst-pane-title svg{color:var(--accent)}
+.beh{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;margin-bottom:6px;font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);transition:opacity .35s,border-color .3s,background .3s,transform .35s}
+.beh .bn{font-weight:800;color:var(--amber)}
+.beh.good .bn{color:var(--success)}
+.beh.armed{border-color:var(--accent);box-shadow:0 0 0 2px rgba(77,107,254,.16)}
+.beh.used{opacity:.35;transform:translateX(-6px)}
+.beh .sub{color:var(--sub);font-size:10.5px}
+.tlog{display:flex;gap:8px;align-items:baseline;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin-bottom:5px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);opacity:0;transform:translateY(5px);transition:opacity .3s,transform .3s}
+.tlog.in{opacity:1;transform:translateY(0)}
+.tlog .et{font-weight:800;color:var(--sub);flex:0 0 auto}
+.tlog.bad{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.05);color:var(--text)}
+.tlog.bad .et{color:var(--danger)}
+.tlog.retry{border-color:rgba(217,119,6,.5);background:rgba(217,119,6,.06);color:var(--text)}
+.tlog.retry .et{color:var(--amber)}
+.tlog.ok{border-color:rgba(22,163,74,.5);background:rgba(22,163,74,.05);color:var(--text)}
+.tlog.ok .et{color:var(--success)}
+.tlog.msg{border-color:rgba(77,107,254,.45);background:var(--accent-soft);color:var(--text)}
+.tlog.msg .et{color:var(--accent-deep)}
+.diffrow{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 9px;margin-bottom:5px;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);opacity:0;transform:translateY(5px);transition:opacity .3s,transform .3s,border-color .3s,background .3s}
+.diffrow.in{opacity:1;transform:translateY(0)}
+.diffrow .mark{flex:0 0 auto;width:16px;height:16px;display:grid;place-items:center;color:var(--success)}
+.diffrow.diverged{border-color:rgba(220,38,38,.5);background:rgba(220,38,38,.06)}
+.diffrow.diverged .mark{color:var(--danger)}
+.tst-empty{font-size:12px;color:var(--sub);padding:4px 2px}
+.seed{font:800 11px/1 ui-monospace,Menlo,monospace;color:var(--accent);background:var(--accent-soft);border:1px solid rgba(77,107,254,.3);border-radius:7px;padding:5px 8px}
+.d-caption{display:flex;gap:9px;align-items:flex-start;margin-top:16px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.8;color:var(--text)}
+.d-caption svg{flex:0 0 auto;color:var(--accent);margin-top:2px}
+@media(max-width:760px){
+  .facts{grid-template-columns:1fr}
+  .tst-stage{grid-template-columns:1fr}
+  .source-head{flex-direction:column}
+  .objective{grid-template-columns:1fr}.lesson-header:after{display:none}
+  .d-btn{flex:1 1 auto;justify-content:center}
+}
+</style>
+<meta name="description" content="Agent 的行为依赖模型输出，怎么做可复现测试？DSH 的答案：确定性回放让日志变成测试资产，性质测试扫荡交错序列，一台专门骗 LLM 客户端的故障服务器演练每一种断法。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="测试一个非确定性系统"><meta property="og:description" content="Agent 的行为依赖模型输出，怎么做可复现测试？DSH 的答案：确定性回放让日志变成测试资产，性质测试扫荡交错序列，一台专门骗 LLM 客户端的故障服务器演练每一种断法。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-26.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 模型与外部接入</div>
+    <h1>测试一个非确定性系统</h1>
+    <p class="subtitle">确定性回放、性质测试、专门骗 LLM 客户端的故障服务器。核心材料：<code>docs/testing.zh.md</code> 与 <code>packages/test-support/</code>。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>确定性回放、性质测试、专门骗 LLM 客户端的故障服务器</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>Agent 的行为依赖模型输出，模型输出每次都不一样，这系统怎么测？读完你能说清 DSH 的三件武器：把真实会话日志直接变成回放脚本的确定性回放，让不确定性只留在录制那一次；专门给 LLM 客户端制造断流、半包、限流的脚本化故障服务器；以及用随机交错序列扫荡协议代码的性质测试，它首次运行就抓到过一个真 bug。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 故障注入与回放实验室</div>
+  <p class="reveal body">先玩再讲。情景 A 是一台真的 HTTP 故障服务器：行为排成队，每接一个请求消耗一个，看客户端怎么接招。情景 B 是确定性回放：拿一份真实会话日志，一键推导回放脚本重跑，再动手篡改一行，看 diff 怎么当场作证。</p>
+  <div id="demo-testing" class="reveal">
+    <div class="d-toolbar">
+      <button class="d-btn scn active" data-scn="A">情景 A · 故障服务器</button>
+      <button class="d-btn scn" data-scn="B">情景 B · 确定性回放</button>
+    </div>
+    <div class="d-toolbar">
+      <button class="d-btn primary" id="tPlay"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"></path></svg>播放</button>
+      <button class="d-btn" id="tStep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8z" fill="currentColor" stroke="none"></path><path d="M19 5v14"></path></svg>单步</button>
+      <button class="d-btn" id="tReset"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+    </div>
+    <div class="tst-stage">
+      <div class="tst-pane">
+        <div class="tst-pane-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="7" rx="2"></rect><rect x="2" y="13" width="20" height="7" rx="2"></rect><path d="M6 7.5h.01M6 16.5h.01"></path></svg><span id="tLeftTitle">故障服务器 · 行为脚本队列</span><span class="seed" id="tSeed">seed 0x5A3C</span></div>
+        <div id="tLeft"><div class="tst-empty">（空）</div></div>
+      </div>
+      <div class="tst-pane">
+        <div class="tst-pane-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg><span id="tRightTitle">客户端这头 · 分类 / 重试 / 落日志</span></div>
+        <div id="tRight"><div class="tst-empty">（空）</div></div>
+      </div>
+    </div>
+    <div class="d-caption">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2"></path></svg>
+      <span id="tCaption">选择情景后点「播放」，或滚动到此处自动播放情景 A。</span>
+    </div>
+  </div>
+
+  <div class="sec-label">逻辑拆解 · 先把地基打确定</div>
+  <p class="reveal body">测非确定性系统的思路只有一条：把不确定的部分圈起来，让其余一切确定。DSH 的测试分层（<code>docs/testing.zh.md</code>）就是围着这条思路搭的。单元测试盯边界情况、错误路径、事件顺序和并发竞态；CI 的覆盖率门禁对 <code>packages/*/*/src</code> 按文件要求 100%（<code>AGENTS.md</code> 第 65 行 Commands 一节），文档同时把话说死：行覆盖率是必要条件，永远不是充分条件，没跑过的行往往是该删的死代码，而非该补的测试。</p>
+  <p class="reveal body">带密钥的真实 API 测试是另一层。这里有句很有身份特色的话：</p>
+  <div class="doc-quote reveal">
+    「我们是 DeepSeek，不要吝惜真实 API 测试。无密钥测试只能证明底层通路；只有带密钥运行才能证明 agent 能对接真实模型正常工作。」
+    <span class="q-src">出处：<code>docs/testing.zh.md</code>「带密钥策略」一节，核对日期 2026-08-13</span>
+  </div>
+  <p class="reveal body">推理对自家便宜，冒烟测试就往真里做：启动真实示例、发一条提示词、检查外部世界。断言也有讲究：e2e 要重新读文件、重跑命令来验证结果，对 agent 自身输出做关键词探测会让作弊的 agent 通过。缺密钥的环境自动跳过，不阻塞任何人。</p>
+
+  <div class="sec-label">逻辑拆解 · 日志即测试资产</div>
+  <p class="reveal body">重头戏是回放。上一课讲过（见 <a href="/dashboard/learning?lesson=dsh-22" data-lesson-id="dsh-22">LLM 适配层</a>），每个流式分片都以 <code>assistant/chunk</code> 事件原样落进会话日志。<code>dsh-llm-replay</code> 插件把这件事反过来用：拿一份录好的 <code>session.jsonl</code>，把 chunk 事件按 (turn, step) 分组，每组就是当年一次模型调用的完整分片序列。测试时真实 agent 照常跑，只是模型那头换成回放适配器，逐帧吐回录制的分片。不确定性只存在于录制那一次，之后每次重跑都逐字节一致，不需要 API Key。</p>
+  <p class="reveal body">这就是日志即测试资产的意思：fixture 不用手写 mock 数据，直接就是生产格式的会话日志本身。快照测试拿它固定整个组装后的行为，改一行代码导致行为分叉，diff 当场标红。还有个精巧的细节在 fork（分叉会话）：子会话的日志开头继承了父会话的种子事件，回放推导脚本时必须从 <code>seedLength</code> 边界之后开始切，否则父会话的分片会被误当成子会话的调用重放：</p>
+  <div class="source reveal">
+    <div class="source-head"><span>packages/test-support/llm-replay/src/index.ts</span><span>第 532 至 542 行</span></div>
+    <pre><code>    <span class="kw">const</span> text = <span class="fn">readFileSync</span>(childFile, <span class="str">'utf8'</span>)
+    <span class="kw">const</span> header = <span class="fn">parseSessionHeader</span>(text)
+    <span class="cm">// Derive the child's script from its own events only — events AT OR after the seed</span>
+    <span class="cm">// boundary.</span>
+    <span class="kw">const</span> ownEvents = <span class="fn">parseSessionLog</span>(text).<span class="fn">slice</span>(header.seedLength)
+    children.<span class="fn">push</span>({
+      recordedId: header.id,
+      createdAt: header.createdAt,
+      entries: <span class="fn">deriveReplayScript</span>(ownEvents),
+      primary: <span class="kw">false</span>,
+    })</code></pre>
+  </div>
+  <div class="snapshot"><b>源码快照说明：</b>依据本地仓库 deepseek-harness-master，核对文件 <code>packages/test-support/llm-replay/src/index.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+  <p class="reveal body paywall-locked xa-peek">跨平台纪律也从这里来：签入的 fixture 必须在 macOS 和 Linux 上都能回放，录出来的快照哪个平台挂了就修 fixture 本身。<code>AGENTS.md</code> 第 123 行的原话是「fix fixtures, not normalizers」：修 fixture，别写归一化器。归一化器是在测试和现实之间垫棉花，垫多了就测不到现实了。</p>
+
+  <div class="sec-label paywall-locked">逻辑拆解 · 一台专门骗 LLM 客户端的服务器</div>
+  <p class="reveal body paywall-locked">回放测的是行为不变，还差一块：传输层的花式死法。连接被拒、发一半 socket 重置、正常关闭但没发 <code>[DONE]</code>、限流带 Retry-After、干脆停滞不动，每一种在适配器和恢复层眼里都是不同的东西，用进程内 mock 全测不到，因为 mock 绕过了 fetch、SSE 分帧、socket 终止和空闲看门狗这些真实边界。所以 DSH 造了 <code>dsh-llm-mock-server</code>：一台真的 Node HTTP 服务器，说 OpenAI 方言，行为完全由脚本控制，每接一个请求消耗一个行为，脚本耗尽就明确报错（设计动机见 Agent Note <code>2026-07-25-scriptable-llm-wire-fault-server.zh.md</code>）。开发者想手动复现故障，改一下 base URL 和 key 就能把任何应用接上来。</p>
+  <p class="reveal body paywall-locked">它还有个 random 模式，按权重随机抽故障做压力测试，seed 公开且可复现。默认权重表本身就是一份清单，列着 LLM 客户端在野外会遇到什么：正常成功占 48、慢速成功 10、半途掐线（partial_disconnect）10，然后是各占 5 的连接重置、断流、空回复和限流，服务器错误 4，触顶 max_tokens、停滞挂起和 503 各 2，最刁的两种各占 1：流正常收尾却没发完的 partial_eof，和吐出坏 JSON 的 malformed_json。源码注释还专门提醒：这是可调的测试压力配置，并非生产事故频率的估算。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>packages/test-support/llm-mock-server/src/index.ts</code> 第 56 至 70 行的 DEFAULT_MOCK_LLM_RANDOM_WEIGHTS，核对日期 2026-08-13。</p>
+  <p class="reveal body paywall-locked">服务器的操守很克制：只报告协议层事实，不判断可不可以重试，策略归 harness 自己。真实组合测试让请求依次穿过 DeepSeek 适配器、agent loop 和重试插件，验证的东西很具体：请求次数精确、重试步骤带编号、失败的半截分片不泄漏进历史、正常 EOF 的半截输出归类为 <code>STREAM_CLOSED</code> 且默认不重试。</p>
+
+  <div class="sec-label paywall-locked">逻辑拆解 · 性质测试，第一枪就见血</div>
+  <p class="reveal body paywall-locked">最后一件武器对付的是没人想得到的交错。协议形态的代码（分片流、事件日志、收件箱调度）输入空间是组合爆炸的，示例测试只能固定想到的用例。DSH 给每个协议形态的包配一个 fast-check 驱动的性质测试：生成器造出逼真但对抗性的输入（重复索引、滞后分片、缺 block-start 的畸形流），断言的不是具体输出，是不变式，比如组装出的块数不能超过见过的不同索引数、重复调用的结果必须稳定。失败自动打印可复现的 seed。</p>
+  <p class="reveal body paywall-locked">它的战绩写在 Agent Note 的第一行：</p>
+  <div class="doc-quote reveal paywall-locked">
+    「属性测试套件首次运行即发现了 BlockAssembler 重复 <code>block-end</code> 的真实 bug。」同一索引处重复的 block-end 会改写已经完成的块，而这个 bug 是在 happy path 100% 行覆盖率之下存活的。
+    <span class="q-src">出处：<code>.agents/notes/implemented/testing/2026-06-11-property-based-testing.zh.md</code>，核对日期 2026-08-13。修复后的「首次关闭优先」防御见 <a href="/dashboard/learning?lesson=dsh-22" data-lesson-id="dsh-22">LLM 适配层</a>一课的源码面板。</span>
+  </div>
+  <p class="reveal body paywall-locked">这套基础设施还有个副产品：<code>BENCHMARK.md</code> 给的官方基准测试路径就是 Python SDK 加 minimal 变体，每个任务独立 workspace。测试体系搭扎实了，跑评测只是换个输入。</p>
+  <div class="facts paywall-locked">
+    <div class="fact reveal"><code>覆盖率是必要不充分</code><p>按文件 100% 是 CI 门禁，但它只证明行被执行过。真 bug 藏在交错序列里，那是性质测试的地盘；藏在传输边界里，那是故障服务器的地盘。</p></div>
+    <div class="fact reveal"><code>fixture 就是会话日志</code><p>回放 fixture 不是手搓的 mock，是生产格式的 <code>session.jsonl</code> 本身。录一次，处处重放，跨平台必须过，挂了修 fixture 不修归一化器。</p></div>
+    <div class="fact reveal"><code>故障服务器不做策略</code><p>它只诚实地按脚本掐线、限流、停滞，重不重试是 harness 的事。测试基础设施保持中立，才能同时给适配器、loop 和重试层作证。</p></div>
+  </div>
+
+  <div class="sec-label paywall-locked">横向对比 · 别家怎么测</div>
+  <div class="cmp-card reveal paywall-locked">
+    <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build：也有脚本化 mock，但停在 HTTP 层</h3>
+    <p>Grok Build 的 <code>xai-grok-test-support</code> 里有一台 <code>MockInferenceServer</code>（<code>crates/codegen/xai-grok-test-support/src/mock_server.rs</code>）：默认 echo 模式回声最后一条用户消息，支持按路径排队的脚本化响应（精确控制状态码、body 和 SSE 事件），一台服务器同时伺候 chat-completions、responses、messages 三种 API 方言，所有请求带 header 全量记录供断言。思路和 DSH 的故障服务器同源。差距在覆盖面：从已核对的源码看，它做的是 HTTP 响应层面的脚本化；DSH 的故障服务器往下多打了一层，socket 重置、发一半掐线、停滞挂起这些传输层死法都进了行为词汇，还配了可复现的加权随机模式。回放这块，Grok 用 <code>xai-sqlite-journal</code> 做持久化，但基于已公开证据，未见把生产日志直接推导成回放脚本的等价机制。</p>
+  </div>
+  <div class="cmp-card reveal paywall-locked">
+    <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：闭源产品的测试黑箱</h3>
+    <p>还原源码（restored-src）里可见的测试痕迹有限，这符合还原的性质：从产物反推出来的是产品代码，测试代码本来就不随产物发布。所以这里能下的结论只有一条：基于已公开证据，外界无法评估 Claude Code 的测试体系长什么样。这恰好反衬出开源 harness 的一个价值：DSH 的测试策略、覆盖门禁、fixture 纪律全部写在仓库里，测试基础设施本身也是可以被学习和复用的交付物。</p>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div><h3>设计一条属于你的不变式</h3><p>假设你要给 <code>BlockAssembler</code> 再补一条性质测试。生成器会随机吐出合法与畸形交错的分片流（重复 block-end、缺 block-start、滞后 delta）。参考本课讲的组装块数不变式，再写出两条你认为值得断言的不变式，并说明每条防的是哪类真实故障。然后推演：录制的快照 fixture 在 macOS 通过、Linux 上因为路径分隔符 diff 挂了，按「fix fixtures, not normalizers」的纪律，你改哪里，为什么不在比对器里把路径统一替换掉？</p></div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>测非确定性系统的办法是把不确定性圈死在录制那一刻：会话日志直接推导回放脚本，fixture 就是生产格式的日志本身。传输层的死法用一台真 HTTP 故障服务器逐个演练，交错空间交给性质测试扫荡，它首战就抓到了覆盖率门禁放过的真 bug。覆盖率证明代码跑过，只有这三件武器证明代码是对的。</span>
+  </div>
+</article>
+
+
+<script>
+(function () {
+  'use strict';
+  var demo = document.getElementById('demo-testing');
+  var left = document.getElementById('tLeft');
+  var right = document.getElementById('tRight');
+  var leftTitle = document.getElementById('tLeftTitle');
+  var rightTitle = document.getElementById('tRightTitle');
+  var seedEl = document.getElementById('tSeed');
+  var caption = document.getElementById('tCaption');
+  var idx = 0, timer = null, playing = false, cur = 'A', runId = 0;
+  var steps = [];
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function clearEmpty(box) {
+    var e = box.querySelector('.tst-empty');
+    if (e) box.removeChild(e);
+  }
+  function addLog(type, body, cls) {
+    clearEmpty(right);
+    var d = document.createElement('div');
+    d.className = 'tlog' + (cls ? ' ' + cls : '');
+    d.innerHTML = '<span class="et">' + esc(type) + '</span><span>' + esc(body || '') + '</span>';
+    right.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('in');
+    return d;
+  }
+
+  /* ── 情景 A：故障服务器 ── */
+  var behs = [];
+  function setupA() {
+    leftTitle.textContent = '故障服务器 · 行为脚本队列';
+    rightTitle.textContent = '客户端这头 · 分类 / 重试 / 落日志';
+    seedEl.style.display = '';
+    left.innerHTML = '';
+    behs = [];
+    [
+      ['rate_limit', '429 + Retry-After: 2', ''],
+      ['partial_disconnect', '吐半截就掐 socket', ''],
+      ['success', '完整的流式响应', 'good']
+    ].forEach(function (b) {
+      var d = document.createElement('div');
+      d.className = 'beh' + (b[2] ? ' ' + b[2] : '');
+      d.innerHTML = '<span class="bn">' + esc(b[0]) + '</span><span class="sub">' + esc(b[1]) + '</span>';
+      left.appendChild(d);
+      behs.push(d);
+    });
+  }
+  function arm(i) {
+    behs.forEach(function (b) { b.classList.remove('armed'); });
+    if (behs[i]) behs[i].classList.add('armed');
+  }
+  function consume(i) {
+    if (behs[i]) { behs[i].classList.remove('armed'); behs[i].classList.add('used'); }
+  }
+
+  function buildA() {
+    return [
+      { cap: '这是一台真的 Node HTTP 服务器，说 OpenAI 方言。行为排成队：每接一个请求消耗一个，脚本耗尽就明确报错。测试因此完全确定。', dur: 3000, run: setupA },
+      { cap: '客户端发出请求 #1。队首行为是 rate_limit：服务器回 429，并附上 Retry-After: 2。', dur: 2500,
+        run: function () { arm(0); addLog('request #1', 'POST /v1/chat/completions'); } },
+      { cap: '适配器把它规范化成 RATE_LIMIT 错误码。重试插件认这个码，而且 provider 给的合法延迟会替换本地退避。llm/retry 事件落盘，等 2 秒。', dur: 3000,
+        run: function () {
+          consume(0);
+          addLog('failure', 'RATE_LIMIT · status 429', 'bad');
+          addLog('llm/retry', 'r1 · delay 2000ms（Retry-After 生效）', 'retry');
+        } },
+      { cap: '请求 #2 发出。这次是 partial_disconnect：服务器吐了两个分片，然后直接把 socket 掐断。', dur: 2700,
+        run: function () { arm(1); addLog('request #2', '收到 2 个分片后连接被重置'); } },
+      { cap: '分类为 TRANSPORT。注意两件事：半截分片留在 chunk 流里作证，但绝不进派生历史；重试编号推进到第 2 次。', dur: 3000,
+        run: function () {
+          consume(1);
+          addLog('failure', 'TRANSPORT · 半截分片已留档、不进历史', 'bad');
+          addLog('llm/retry', 'r2 · delay 512ms（本地退避）', 'retry');
+        } },
+      { cap: '请求 #3 发出，队首是 success：完整的流顺利到达。', dur: 2300,
+        run: function () { arm(2); addLog('request #3', '完整流 · finish stop'); } },
+      { cap: 'assistant/message 派生落盘，重试计数清零。整场演练里服务器只干一件事：诚实执行脚本。判断可不可以重试，从头到尾是 harness 的事。', dur: 3200,
+        run: function () {
+          consume(2);
+          addLog('assistant/message', '最终消息 · 干净落盘', 'msg');
+          addLog('verdict', '3 次请求、2 次显式重试，全部有据可查', 'ok');
+        } },
+      { cap: '还有一个 random 模式：按权重随机抽故障做压力测试，seed 公开可复现。换个 seed，就是一场新的但可重放的风暴。', dur: 2800 }
+    ];
+  }
+
+  /* ── 情景 B：确定性回放 ── */
+  var fixRows = [];
+  function setupB() {
+    leftTitle.textContent = '录好的 session.jsonl（fixture）';
+    rightTitle.textContent = '重跑 transcript · 与原记录逐行 diff';
+    seedEl.style.display = 'none';
+    left.innerHTML = '';
+    fixRows = [];
+    [
+      ['user/message', '「帮我修一下这个测试」'],
+      ['assistant/chunk', 'turn1 step1 · text-delta「我先看」'],
+      ['assistant/chunk', 'turn1 step1 · text-delta「看快照」'],
+      ['assistant/chunk', 'turn1 step1 · finish stop'],
+      ['assistant/message', '「我先看看快照」']
+    ].forEach(function (r) {
+      var d = document.createElement('div');
+      d.className = 'beh';
+      d.innerHTML = '<span class="bn" style="color:var(--accent-deep)">' + esc(r[0]) + '</span><span class="sub">' + esc(r[1]) + '</span>';
+      left.appendChild(d);
+      fixRows.push(d);
+    });
+  }
+  function addDiff(text, diverged) {
+    clearEmpty(right);
+    var d = document.createElement('div');
+    d.className = 'diffrow' + (diverged ? ' diverged' : '');
+    d.innerHTML = '<span class="mark">' + (diverged
+      ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+      : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>')
+      + '</span><span>' + esc(text) + '</span>';
+    right.appendChild(d);
+    void d.offsetWidth;
+    d.classList.add('in');
+  }
+
+  function buildB() {
+    return [
+      { cap: '左边是一份真实会话日志 fixture。注意那三条 assistant/chunk：当年模型的每一个分片都原样躺在里面。', dur: 2900, run: setupB },
+      { cap: '推导：把 chunk 事件按 (turn, step) 分组，每组直接变成一次模型调用的回放脚本。没有手写 mock，日志本身就是脚本。', dur: 3000,
+        run: function () { fixRows[1].classList.add('armed'); fixRows[2].classList.add('armed'); fixRows[3].classList.add('armed'); } },
+      { cap: '重跑：真实 agent 启动，模型那头换成回放适配器，逐帧吐回录制的分片。全程不需要 API Key，也没有任何网络请求。', dur: 2900,
+        run: function () { addLog('replay', '真实 loop + 回放适配器运行中…'); } },
+      { cap: 'diff：重跑产物与原始记录逐行比对，全部打钩。跑一万次都是这个结果，非确定性被锁死在录制那一次。', dur: 2900,
+        run: function () {
+          addDiff('user/message 一致');
+          addDiff('assistant/chunk ×3 一致');
+          addDiff('assistant/message 一致');
+        } },
+      { cap: '现在当一次坏人：把回放脚本里那条 text-delta「看快照」改成「删了它」，模拟一次行为变更，再重跑。', dur: 2800,
+        run: function () {
+          fixRows[2].querySelector('.sub').textContent = 'turn1 step1 · text-delta「删了它」（已篡改）';
+          fixRows[2].style.borderColor = 'rgba(220,38,38,.5)';
+        } },
+      { cap: 'diff 在分叉处当场标红。这就是日志即测试资产的含义：任何行为变化都逃不过一份固定的日志。想让它过？要么改回代码，要么明确重录 fixture 并接受评审。', dur: 3400,
+        run: function () {
+          addDiff('user/message 一致');
+          addDiff('assistant/chunk #2 分叉：「看快照」≠「删了它」', true);
+          addLog('verdict', '行为分叉被 fixture 作证，无处可藏', 'bad');
+        } }
+    ];
+  }
+
+  function build(k) { return k === 'A' ? buildA() : buildB(); }
+
+  function reset() {
+    runId++; playing = false; clearTimeout(timer); idx = 0;
+    left.innerHTML = '<div class="tst-empty">（空）</div>';
+    right.innerHTML = '<div class="tst-empty">（空）</div>';
+    if (cur === 'A') { setupA(); } else { setupB(); }
+    right.innerHTML = '<div class="tst-empty">（空）</div>';
+    caption.textContent = '已重置。点「播放」运行情景 ' + cur + '，或点「单步」逐帧推进。';
+    steps = build(cur);
+  }
+  function doStep() {
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    if (s.cap) caption.textContent = s.cap;
+    if (s.run) s.run();
+    if (playing) timer = setTimeout(doStep, s.dur || 1200);
+  }
+  function play() {
+    if (playing) return;
+    if (idx >= steps.length) reset();
+    playing = true; doStep();
+  }
+  function stepOnce() {
+    playing = false; clearTimeout(timer);
+    if (idx >= steps.length) { reset(); return; }
+    doStep();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#demo-testing .scn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#demo-testing .scn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      cur = btn.getAttribute('data-scn');
+      reset();
+    });
+  });
+  document.getElementById('tPlay').addEventListener('click', play);
+  document.getElementById('tStep').addEventListener('click', stepOnce);
+  document.getElementById('tReset').addEventListener('click', reset);
+  reset();
+  if (typeof window.lessonOnView === 'function') {
+    window.lessonOnView(demo, function () { if (idx === 0 && !playing) play(); });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

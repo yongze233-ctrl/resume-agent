@@ -1,0 +1,1 @@
+- Allow the local resume workspace to edit a dedicated OpenPencil document and export its editable source and PDF through an explicitly scoped embedding bridge.

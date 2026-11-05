@@ -1,0 +1,46 @@
+---
+title: Deploy to Vercel
+description: "One-click deployment runs only the self-hosted web app on Vercel, requiring no login, backend, or environment variables and providing no AI."
+---
+
+One-click deployment deploys only the web app in [self-hosted mode](/en/getting-started/self-hosted) as a pure, local-first editor, with no login, backend, or environment variables required. Resume data lives in each visitor’s browser (IndexedDB). There is no AI in this mode because AI Lab and AI PDF import need the backend (cloud mode).
+
+<Note>
+Self-hosted is the **default** — with no env vars set, the app auto-detects self-hosted mode (it only switches to cloud mode when a Clerk publishable key is present). So a plain Vercel import just works.
+</Note>
+
+<Steps>
+<Step title="Click deploy">
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLinMoQC%2FMagic-Resume)
+
+Vercel detects this as a Turborepo monorepo. Set the project **Root Directory** to `apps/web` if it isn't auto-detected.
+</Step>
+
+<Step title="Confirm build settings">
+Vercel should use:
+
+- **Install command:** `pnpm install`
+- **Build command:** `cd ../.. && pnpm turbo build --filter=@magic-resume/web`
+- **Output directory:** `apps/web/.next`
+
+If you forked the repo, double-check that `pnpm@10.28.1` is in `packageManager` so Vercel pins the right version.
+</Step>
+
+<Step title="Deploy">
+Click **Deploy**. That's it — no environment variables to set. When the build finishes you have a working, local-first Magic Resume.
+</Step>
+</Steps>
+
+<Tip>
+Optional: set `NEXT_PUBLIC_APP_URL` to your deployed URL if you want canonical links / correct absolute URLs. It's not required for the app to work.
+</Tip>
+
+## What features are available and unavailable in self-hosted mode?
+
+- ✅ Full editor, templates, live preview, PDF export — all client-side.
+- ❌ No AI — AI Lab and AI PDF import are proxied to the backend and need a signed-in user, so they don't work in pure self-hosted mode.
+- ❌ No accounts, no cloud sync, no share links, no server-managed AI quota — those need **cloud mode**.
+
+<Warning>
+Want accounts + cloud sync + sharing (cloud mode)? That's a bigger setup: a Clerk application plus the backend services (Core API + agent), then point the app at your gateway with `NEXT_PUBLIC_API_URL`. See [Cloud mode](/en/getting-started/cloud). This one-click button does **not** deploy the backend.
+</Warning>

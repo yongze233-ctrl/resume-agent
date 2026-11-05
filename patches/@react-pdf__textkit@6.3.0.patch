@@ -1,0 +1,91 @@
+diff --git a/lib/textkit.js b/lib/textkit.js
+index 0b8b6fa636c48ef0ac9cecb27040d2bac9303ce8..99bf13e4ffec576ae999416001edb6d95c07e1f6 100644
+--- a/lib/textkit.js
++++ b/lib/textkit.js
+@@ -697,6 +697,31 @@ const omit = (value, run) => {
+     return Object.assign({}, run, { attributes });
+ };
+ 
++/**
++ * Resolve a fontkit Font's vertical metrics, preferring the OS/2
++ * `sTypoAscender / sTypoDescender / sTypoLineGap` triple when available
++ * and falling back to hhea. This matches Chromium's font-metrics
++ * resolution and is what browsers (and the v5.0.x Puppeteer renderer)
++ * use, giving compact, predictable line boxes for fonts whose hhea
++ * values are inflated for Windows GDI compatibility (notably Source
++ * Han Sans/Serif a.k.a. Noto Sans/Serif CJK).
++ *
++ * `f['OS/2']` is exposed by fontkit when the font carries an OS/2 table.
++ * Standard PDF fonts (Helvetica/Courier/Times) and our internal
++ * EmbeddedFont don't, so they keep their existing hhea-based metrics.
++ */
++const resolveTypoMetrics = (font) => {
++    const os2 = font?.['OS/2'];
++    if (!os2 || typeof os2.typoAscender !== 'number' || typeof os2.typoDescender !== 'number') {
++        return { ascent: font?.ascent || 0, descent: font?.descent || 0, lineGap: font?.lineGap || 0 };
++    }
++    return {
++        ascent: os2.typoAscender,
++        descent: os2.typoDescender,
++        lineGap: typeof os2.typoLineGap === 'number' ? os2.typoLineGap : (font.lineGap || 0),
++    };
++};
++
+ /**
+  * Get run ascent
+  *
+@@ -706,7 +731,7 @@ const omit = (value, run) => {
+ const ascent$1 = (run) => {
+     const { font, attachment } = run.attributes;
+     const attachmentHeight = attachment?.height || 0;
+-    const fontAscent = typeof font === 'string' ? 0 : font?.[0]?.ascent || 0;
++    const fontAscent = typeof font === 'string' ? 0 : resolveTypoMetrics(font?.[0]).ascent;
+     return Math.max(attachmentHeight, fontAscent * scale(run));
+ };
+ 
+@@ -718,7 +743,7 @@ const ascent$1 = (run) => {
+  */
+ const descent = (run) => {
+     const font = run.attributes?.font;
+-    const fontDescent = typeof font === 'string' ? 0 : font?.[0]?.descent || 0;
++    const fontDescent = typeof font === 'string' ? 0 : resolveTypoMetrics(font?.[0]).descent;
+     return scale(run) * fontDescent;
+ };
+ 
+@@ -730,8 +755,8 @@ const descent = (run) => {
+  */
+ const lineGap = (run) => {
+     const font = run.attributes?.font;
+-    const lineGap = typeof font === 'string' ? 0 : font?.[0]?.lineGap || 0;
+-    return lineGap * scale(run);
++    const fontLineGap = typeof font === 'string' ? 0 : resolveTypoMetrics(font?.[0]).lineGap;
++    return fontLineGap * scale(run);
+ };
+ 
+ /**
+@@ -742,7 +767,8 @@ const lineGap = (run) => {
+  */
+ const height$1 = (run) => {
+     const lineHeight = run.attributes?.lineHeight;
+-    return lineHeight || lineGap(run) + ascent$1(run) - descent(run);
++    const intrinsic = lineGap(run) + ascent$1(run) - descent(run);
++    return Math.max(lineHeight || 0, intrinsic);
+ };
+ 
+ /**
+@@ -1753,6 +1779,15 @@ const applyAttributes = (a) => {
+         fill: a.fill !== false,
+         font: a.font || [],
+         fontSize: a.fontSize || 12,
++        // This whitelist is what reaches the renderer: anything not listed here
++        // is dropped. The *requested* weight has to survive alongside the
++        // resolved face, otherwise the render package cannot tell "asked for
++        // bold, got the only weight this family ships" from "this text is
++        // regular by design" — the exact comparison browsers use to decide on
++        // synthetic bold. See the sibling patches in @react-pdf/layout (which
++        // puts it on the attributes) and @react-pdf/render (which strokes the
++        // glyphs when it applies).
++        fontWeight: a.fontWeight,
+         hangingPunctuation: a.hangingPunctuation || false,
+         hyphenationFactor: a.hyphenationFactor || 0,
+         indent: a.indent || 0,

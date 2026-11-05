@@ -1,0 +1,1475 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-15",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-15',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>定价心理：锚点、诱饵与体面的价格歧视 | AI 产品心理学</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   taste.css —— 专题篇章「审美工程」共用设计系统
+   背景：本章 12 页交互密度极高（每页 2~3 处以上可玩组件），
+   若按成本篇的做法每页各写一套样式，A/B 找茬、迷你界面、
+   点选题这些跨页组件会复制 12 遍并逐渐漂移。
+   设计意图：本章讲的就是「一致性产生系统感」，篇章样式自身
+   必须是正面教材——主题色、圆角、间距全部收敛在这一个文件里，
+   页面特有样式才允许写在各页 <style> 中。
+   约束：全章唯一主色 --ct（玫红），间距一律 8 的倍数；
+   在 lesson.css 之后引入，只做增量不覆盖骨架。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#db2777;            /* 章主色：玫红 */
+  --ct-deep:#9d174d;       /* 深玫红：正文里的强调字 */
+  --ct-soft:rgba(219,39,119,.08);
+  --ct-line:rgba(219,39,119,.25);
+  --good:#16a34a;
+  --good-soft:rgba(22,163,74,.08);
+  --bad:#dc2626;
+  --bad-soft:rgba(220,38,38,.07);
+}
+
+.lesson-header .kicker{color:var(--ct);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.chip{padding:6px 14px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);font-size:13px;font-weight:700;}
+.desc{font-size:15px;color:var(--sub);line-height:1.8;}
+.desc b{color:var(--ct-deep);}
+.quote-card{background:var(--ct-soft);border:1.5px solid var(--ct-line);border-radius:14px;padding:16px 24px;font-size:16px;line-height:1.8;}
+.quote-card b{color:var(--ct-deep);}
+
+/* ── 表格（对齐成本篇的表格语言） ── */
+.tbl-wrap{overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card);}
+.tbl th{background:var(--ct-soft);color:var(--ct-deep);font-weight:800;text-align:left;padding:12px 16px;font-size:13px;}
+.tbl td{padding:12px 16px;border-top:1px solid var(--border);color:var(--sub);line-height:1.65;vertical-align:top;}
+.tbl td b{color:var(--ct-deep);}
+
+/* ── 交互容器：所有能玩的组件统一装进 .toy ──
+   头部彩条 + 「动手」徽标是全章交互区的统一识别色，
+   读者扫一眼就知道这块能点。 */
+.toy{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-top:16px;box-shadow:var(--shadow-card);overflow:hidden;}
+.toy-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);}
+.toy-head .toy-ic{width:26px;height:26px;border-radius:8px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toy-head .toy-ic svg{width:15px;height:15px;}
+.toy-head .toy-t{font-size:14px;font-weight:800;color:var(--text);}
+.toy-head .toy-badge{margin-left:auto;font-size:11px;font-weight:800;padding:3px 12px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);white-space:nowrap;}
+.toy-head .toy-badge.solved{background:var(--good-soft);color:var(--good);}
+.toy-body{padding:20px;}
+.toy-hint{font-size:12.5px;color:var(--sub);font-weight:600;margin-bottom:12px;}
+
+/* ── A/B 对决（找茬）：两块界面选出更好的那块 ── */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.duel-side{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;background:var(--bg);}
+.duel-side:hover{border-color:var(--ct-line);transform:translateY(-2px);box-shadow:var(--shadow-pop);}
+.duel.done .duel-side{cursor:default;}
+.duel.done .duel-side:hover{transform:none;box-shadow:none;}
+.duel-side .duel-tag{position:absolute;top:8px;left:8px;z-index:2;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--sub);border:1px solid var(--border);}
+.duel-side.win{border-color:var(--good);}
+.duel-side.lose{border-color:var(--bad);opacity:.75;}
+.duel-side.win .duel-tag{background:var(--good);color:#fff;border-color:var(--good);}
+.duel-side.lose .duel-tag{background:var(--bad);color:#fff;border-color:var(--bad);}
+.duel-verdict{margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.duel-verdict.show{display:block;}
+.duel-verdict.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.duel-verdict.good b{color:var(--good);}
+.duel-verdict.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+.duel-verdict.miss b{color:var(--text);}
+
+/* ── 迷你界面积木：页内所有「假界面」的统一零件 ──
+   pointer-events 关掉，读者点的是整块卡片而不是假按钮。 */
+.mock{background:#fff;padding:16px;min-height:150px;pointer-events:none;user-select:none;font-size:12px;line-height:1.5;}
+.mock *{box-sizing:border-box;}
+.mock-bar{height:8px;border-radius:4px;background:#e5e7eb;}
+.mock-dot{width:24px;height:24px;border-radius:50%;background:#e5e7eb;flex-shrink:0;}
+.mock-h{font-weight:800;color:#111827;}
+.mock-p{color:#6b7280;}
+.mock-btn{display:inline-block;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;background:#111827;color:#fff;}
+.mock-btn.ghost{background:transparent;color:#6b7280;border:1px solid #d1d5db;}
+.mock-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;}
+.mock-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+
+/* ── 点选题（多选项挑一个） ── */
+.quiz-opts{display:flex;flex-direction:column;gap:10px;}
+.quiz-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;background:var(--card);font-size:14px;line-height:1.65;color:var(--text);}
+.quiz-opt:hover{border-color:var(--ct-line);background:var(--ct-soft);}
+.quiz-opt .qo-key{width:24px;height:24px;border-radius:8px;background:rgba(0,0,0,.05);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.quiz-opt.right{border-color:var(--good);background:var(--good-soft);cursor:default;}
+.quiz-opt.right .qo-key{background:var(--good);color:#fff;}
+.quiz-opt.wrong{border-color:var(--bad);background:var(--bad-soft);cursor:default;opacity:.8;}
+.quiz-opt.wrong .qo-key{background:var(--bad);color:#fff;}
+.quiz-fb{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.quiz-fb.show{display:block;}
+.quiz-fb.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.quiz-fb.good b{color:var(--good);}
+.quiz-fb.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+
+/* ── 迷你浏览器外壳：所有 mock 教具的统一画框 ──
+   背景：v1.3 验收打回，裸的 mock 读起来像没画完的线框图。
+   设计意图：三个圆点 + 地址栏的顶栏让读者一眼认出「这是展品」，
+   正反案例的差距才会读成档次差而非完成度差。
+   用法：<div class="mockwin"><div class="mockwin-bar"><i></i><i></i><i></i>
+   <span class="mockwin-url">yoga.example.com</span></div>
+   <div class="mock">…</div></div> */
+.mockwin{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.mockwin-bar{display:flex;align-items:center;gap:5px;padding:8px 12px;background:#f4f4f5;border-bottom:1px solid var(--border);}
+.mockwin-bar i{width:9px;height:9px;border-radius:50%;background:#d4d4d8;flex-shrink:0;}
+.mockwin-bar i:first-child{background:#fca5a5;}
+.mockwin-bar i:nth-child(2){background:#fcd34d;}
+.mockwin-bar i:nth-child(3){background:#86efac;}
+.mockwin-url{margin-left:8px;flex:1;min-width:0;font-size:10.5px;color:#a1a1aa;background:#fff;border-radius:6px;padding:3px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,monospace;}
+
+/* ── 滑块行 ── */
+.sl-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.sl-row label{font-size:14px;font-weight:700;color:var(--text);min-width:96px;}
+.sl-row input[type=range]{flex:1;min-width:160px;accent-color:var(--ct);}
+.sl-row .sl-val{font-size:14px;font-weight:800;min-width:88px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ct-deep);}
+
+/* ── 分段切换 ── */
+.seg{display:inline-flex;background:rgba(0,0,0,.05);border-radius:10px;padding:3px;gap:2px;}
+.seg button{border:none;background:transparent;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.seg button.on{background:#fff;color:var(--ct-deep);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* ── 要点回顾 ── */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card);}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px;}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0;}
+.tk-item p b{color:var(--ct-deep);}
+
+/* ── 图片对比 / 挑选 ── */
+.pic-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pic-cell{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s;background:#000;}
+.pic-cell:hover{border-color:var(--ct-line);transform:translateY(-2px);}
+.pic-cell img{width:100%;display:block;aspect-ratio:1;object-fit:cover;}
+.pic-cell .pic-tag{position:absolute;top:8px;left:8px;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px);}
+.pic-cell.win{border-color:var(--good);}
+.pic-cell.lose{border-color:var(--bad);opacity:.7;}
+.pic-grid.done .pic-cell{cursor:default;}
+.pic-grid.done .pic-cell:hover{transform:none;}
+.pic-cap{font-size:12.5px;color:var(--sub);padding:8px 4px 0;line-height:1.6;}
+
+/* ── 出处注脚 ── */
+.src-note{margin-top:32px;font-size:13px;color:var(--sub);line-height:1.85;}
+.src-note b{color:var(--text);}
+
+@media (max-width:768px){
+  .duel{grid-template-columns:1fr;}
+  .pic-grid{grid-template-columns:1fr;}
+  .toy-body{padding:16px;}
+  .toy-head .toy-badge{display:none;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   psy.css —— 专题篇章「AI 产品心理学」样式覆盖
+   背景：本章 v3 起复用审美工程的组件体系（taste.css 的
+   toy / duel / quiz / mockwin / takeaways），组件颜色全部走
+   --ct 系列变量，本文件只负责把章色从玫红换成青色，
+   并保留旧页面在用的 --psy 别名。
+   约束：必须在 taste.css 之后引入；页面特有样式写在各页 <style>。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#0d9488;            /* 章主色：青 */
+  --ct-deep:#115e59;
+  --ct-soft:rgba(13,148,136,.08);
+  --ct-line:rgba(13,148,136,.28);
+  /* 旧页面别名，v3 重做完成后可移除 */
+  --psy:#0d9488;
+  --psy-deep:#115e59;
+  --psy-soft:rgba(13,148,136,.08);
+  --psy-line:rgba(13,148,136,.28);
+}
+
+/* 本章仪表类教具的公共零件：许多页要显示一个「情绪 / 弃用率 / 折扣」仪表，
+   拨开关看指针移动是本章工程杠杆的标准演示形态。 */
+.gauge{display:flex;flex-direction:column;gap:6px;}
+.gauge-head{display:flex;align-items:baseline;justify-content:space-between;}
+.gauge-label{font-size:12.5px;font-weight:800;color:var(--sub);}
+.gauge-num{font-size:22px;font-weight:900;color:var(--ct-deep);font-variant-numeric:tabular-nums;transition:color .25s;}
+.gauge-num.bad{color:var(--bad);}
+.gauge-track{height:12px;border-radius:8px;background:rgba(0,0,0,.06);overflow:hidden;}
+.gauge-fill{height:100%;border-radius:8px;background:var(--ct);width:0;transition:width .45s cubic-bezier(.22,1,.36,1),background .3s;}
+.gauge-fill.bad{background:var(--bad);}
+.gauge-note{font-size:12px;color:var(--sub);line-height:1.7;}
+
+/* 开关行：工程杠杆的标准形态，拨一下，上面的仪表当场动 */
+.lever-list{display:flex;flex-direction:column;gap:10px;}
+.lever{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:border-color .18s,background .18s;}
+.lever:hover{border-color:var(--ct-line);}
+.lever.on{border-color:var(--ct);background:var(--ct-soft);}
+.lever-sw{width:38px;height:22px;border-radius:99px;background:rgba(0,0,0,.15);flex-shrink:0;position:relative;transition:background .2s;margin-top:2px;}
+.lever-sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.22,1,.36,1);}
+.lever.on .lever-sw{background:var(--ct);}
+.lever.on .lever-sw::after{transform:translateX(16px);}
+.lever-body h6{font-size:13.5px;font-weight:800;color:var(--text);line-height:1.5;}
+.lever-body p{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:2px;}
+.lever-body p b{color:var(--ct-deep);}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="价格没有客观感受，全靠参照物。先复刻经济学人的诱饵实验：三档订阅里那个没人选的档位，撤掉之后销量大变；再拨三个开关搭你自己的定价页锚点，看中档转化率怎么动；然后判断五种价格歧视哪些体面哪些找死，AI 产品的模型分层是天然的版本化；最后选出不挨骂的涨价邮件。">
+<meta name="keywords" content="价格锚点,诱饵效应,价格歧视,版本化,AI定价,经济学人实验,涨价沟通">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="定价心理：锚点、诱饵与体面的价格歧视">
+<meta property="og:description" content="经济学人诱饵实验亲手复刻，定价页锚点开关，价格歧视红线判断。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-15.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-15.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="定价心理：锚点、诱饵与价格歧视">
+<meta name="twitter:description" content="那个没人选的档位，是整张定价表里最挣钱的一行。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+/* ── 经济学人实验 ── */
+.p15-econ{display:flex;flex-direction:column;gap:10px;}
+.p15-opt{display:flex;align-items:center;gap:14px;padding:15px 18px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:all .16s;}
+.p15-opt:hover{border-color:var(--ct-line);transform:translateY(-1px);}
+.p15-opt.lock{cursor:default;}
+.p15-opt.lock:hover{transform:none;}
+.p15-opt.gone{opacity:.28;text-decoration:line-through;pointer-events:none;}
+.p15-opt .on{flex:1;}
+.p15-opt .on h6{font-size:13.5px;font-weight:800;color:var(--text);}
+.p15-opt .on p{font-size:11.5px;color:var(--sub);margin-top:2px;}
+.p15-opt .pr{font-size:15px;font-weight:900;color:var(--ct-deep);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.p15-opt .bar{display:none;align-items:center;gap:8px;flex-shrink:0;width:150px;}
+.p15-opt .bar .tr{flex:1;height:9px;border-radius:6px;background:rgba(0,0,0,.06);overflow:hidden;}
+.p15-opt .bar .fl{height:100%;border-radius:6px;background:var(--ct);width:0;transition:width .6s cubic-bezier(.22,1,.36,1);}
+.p15-opt .bar .pc{font-size:12px;font-weight:900;color:var(--ct-deep);min-width:38px;text-align:right;font-variant-numeric:tabular-nums;}
+.p15-opt.reveal .bar{display:flex;}
+.p15-econ-note{display:none;margin-top:6px;padding:14px 18px;border-radius:10px;background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);font-size:13.5px;line-height:1.8;color:var(--text);}
+.p15-econ-note.show{display:block;}
+.p15-econ-note b{color:var(--good);}
+.p15-again{display:none;margin-top:12px;}
+.p15-again.show{display:inline-block;}
+.p15-btn{padding:9px 20px;border-radius:11px;border:none;background:var(--ct);color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;transition:transform .12s;}
+.p15-btn:hover{transform:translateY(-1px);}
+
+/* ── 定价页搭建器 ── */
+.p15-build{display:grid;grid-template-columns:7fr 5fr;gap:16px;align-items:start;}
+.p15-price{padding:16px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;min-height:210px;align-items:stretch;}
+.p15-tier{border:1px solid #e5e7eb;border-radius:10px;padding:12px 10px;display:flex;flex-direction:column;gap:6px;position:relative;transition:all .25s;}
+.p15-tier .tn{font-size:10px;font-weight:800;color:#6b7280;}
+.p15-tier .tp{font-size:15px;font-weight:900;color:#111827;font-variant-numeric:tabular-nums;}
+.p15-tier .tp small{font-size:9px;font-weight:700;color:#9ca3af;}
+.p15-tier .tf{font-size:9px;color:#6b7280;line-height:1.7;}
+.p15-tier .hot{display:none;position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#0d9488;color:#fff;font-size:8.5px;font-weight:900;padding:2px 10px;border-radius:999px;white-space:nowrap;}
+.p15-tier.pop{border-color:#0d9488;box-shadow:0 3px 10px rgba(13,148,136,.15);}
+.p15-tier.pop .hot{display:block;}
+.p15-tier.max{display:none;background:#111827;border-color:#111827;}
+.p15-tier.max .tn,.p15-tier.max .tf{color:#9ca3af;}
+.p15-tier.max .tp{color:#fff;}
+.p15-tier.max.show{display:flex;animation:p15in .3s ease;}
+@keyframes p15in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.p15-bnote{margin-top:14px;font-size:13px;line-height:1.8;color:var(--sub);border-top:1px dashed var(--border);padding-top:12px;}
+.p15-bnote b{color:var(--ct-deep);}
+
+/* ── 价格歧视判断 ── */
+.p15-pd{display:flex;flex-direction:column;gap:10px;}
+.p15-pc{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;}
+.p15-pc .say{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.65;margin-bottom:10px;}
+.p15-pc .btns{display:flex;gap:8px;flex-wrap:wrap;}
+.p15-pc .pb{padding:6px 15px;border-radius:999px;border:1.5px solid var(--border);background:transparent;font-size:12.5px;font-weight:800;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .15s;}
+.p15-pc .pb:hover:not(:disabled){border-color:var(--ct-line);color:var(--ct-deep);}
+.p15-pc .pb:disabled{cursor:default;opacity:.4;}
+.p15-pc .pb.hit{opacity:1;background:var(--good);border-color:var(--good);color:#fff;}
+.p15-pc .pb.miss{opacity:1;background:var(--bad);border-color:var(--bad);color:#fff;}
+.p15-pc .why{display:none;margin-top:10px;font-size:12.5px;line-height:1.75;color:var(--sub);background:var(--ct-soft);border:1px solid var(--ct-line);border-radius:9px;padding:10px 13px;}
+.p15-pc .why.show{display:block;}
+.p15-pc .why b{color:var(--ct-deep);}
+
+/* ── 涨价邮件 ── */
+.p15-mail{padding:32px 14px 14px;display:flex;flex-direction:column;gap:8px;min-height:196px;font-size:10.5px;color:#374151;line-height:1.75;}
+.p15-mail .mh{font-size:11px;font-weight:800;color:#111827;padding-bottom:8px;border-bottom:1px solid #f3f4f6;}
+.p15-mail b{color:#111827;}
+
+@media (max-width:768px){
+  .p15-build{grid-template-columns:1fr;}
+  .p15-price{grid-template-columns:1fr;}
+  .p15-opt{flex-wrap:wrap;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">专题篇章 · AI 产品心理学</div>
+    <h1>定价心理：锚点、诱饵与体面的价格歧视</h1>
+    <p class="subtitle">上一课讲怎么收钱不疼，这一课讲收多少。先记住一个反直觉的事实：<b>用户对价格没有客观感受，全部判断来自参照物</b>。参照物是可以摆的，这门手艺有一百年历史，AI 产品还拿到了一件独有的新工具。</p>
+    <div class="chips"><span class="chip">经济学人实验</span><span class="chip">锚点搭建器</span><span class="chip">价格歧视红线</span><span class="chip">涨价邮件对决</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>复刻经济学人的诱饵实验：没人选的档位撤掉后销量大变；拨开关搭自己的定价页锚点；判断五种价格歧视哪些体面哪些找死；最后选出不挨骂的涨价邮件</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">动手 · 先订一份《经济学人》</div>
+    <p class="desc">这是行为经济学史上最著名的定价实验，《怪诞行为学》开篇就是它。《经济学人》真实刊登过这张订阅价目表，<b>先选你自己会订的那档</b>，选完看 MIT 学生的选择数据。</p>
+    <div class="toy" id="p15Econ">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg></span>
+        <span class="toy-t">三档订阅，选一档</span>
+        <span class="toy-badge" id="p15EconBadge">第一轮</span>
+      </div>
+      <div class="toy-body">
+        <div class="p15-econ" id="p15EconList">
+          <div class="p15-opt" data-k="0">
+            <div class="on"><h6>电子版</h6><p>Economist.com 全年在线阅读权限</p></div>
+            <span class="pr">$59</span>
+            <div class="bar"><div class="tr"><div class="fl"></div></div><span class="pc"></span></div>
+          </div>
+          <div class="p15-opt" data-k="1">
+            <div class="on"><h6>印刷版</h6><p>纸质杂志全年寄送</p></div>
+            <span class="pr">$125</span>
+            <div class="bar"><div class="tr"><div class="fl"></div></div><span class="pc"></span></div>
+          </div>
+          <div class="p15-opt" data-k="2">
+            <div class="on"><h6>印刷版 + 电子版</h6><p>纸质杂志全年寄送，外加在线阅读权限</p></div>
+            <span class="pr">$125</span>
+            <div class="bar"><div class="tr"><div class="fl"></div></div><span class="pc"></span></div>
+          </div>
+        </div>
+        <div class="p15-econ-note" id="p15EconNote1"></div>
+        <button class="p15-btn p15-again" id="p15AgainBtn">把没人选的印刷版撤掉，再投一次 →</button>
+        <div class="p15-econ-note" id="p15EconNote2"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">理论一分钟 · 锚点与诱饵</div>
+    <p class="desc">卡尼曼和特沃斯基证明过：人对数字的判断会被<b>先看到的数字</b>拽着走，哪怕那个数字是转轮盘转出来的，这叫锚定。诱饵效应更进一步：往选项里放一个<b>明显不划算的选项</b>，它没人选，却改变了其他选项的相对吸引力。印刷版单独卖 $125 就是诱饵：它唯一的工作，是让「加 $0 送电子版」的套餐显得像捡漏。</p>
+    <div class="quote-card" style="margin-top:16px"><b>定价表上每一行都在工作，包括没人买的那行。</b>它不是滞销品，是售货员。</div>
+  </section>
+
+  <section class="reveal paywall-locked xa-peek">
+    <div class="sec-label">动手 · 给你的 AI 产品搭锚点</div>
+    <p class="desc">你的 AI 写作助手只有一档 ¥69/月，转化一般，客单价上不去。右边三个开关挨个拨开，看定价页怎么一步步长出锚点结构，<b>下面的中档选择率跟着动</b>。</p>
+    <div class="toy" id="p15Build">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V8"></path><path d="m5 12-2-2 2-2"></path><path d="m19 12 2-2-2-2"></path><path d="M5 10h14"></path><circle cx="12" cy="5" r="3"></circle></svg></span>
+        <span class="toy-t">定价页搭建器</span>
+        <span class="toy-badge" id="p15BuildBadge">0 / 3</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">拨右侧开关，左边定价页和下面的指标当场变</div>
+        <div class="p15-build">
+          <div>
+            <div class="mockwin">
+              <div class="mockwin-bar"><i></i><i></i><i></i><span class="mockwin-url">writer.example.com/pricing</span></div>
+              <div class="mock p15-price">
+                <div class="p15-tier" id="p15T0">
+                  <span class="tn">入门</span><span class="tp">¥29<small>/月</small></span>
+                  <span class="tf">基础模型 · 每月 200 次<br>单文档 3 千字</span>
+                </div>
+                <div class="p15-tier" id="p15T1">
+                  <span class="hot">最受欢迎 · 78% 用户的选择</span>
+                  <span class="tn">专业</span><span class="tp">¥69<small>/月</small></span>
+                  <span class="tf">旗舰模型 · 不限次数<br>长文档 · 风格定制</span>
+                </div>
+                <div class="p15-tier max" id="p15T2">
+                  <span class="tn">Max</span><span class="tp">¥299<small>/月</small></span>
+                  <span class="tf">最强推理模型 · 团队协作<br>API 接入 · 专属客服</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+              <div class="gauge"><div class="gauge-head"><span class="gauge-label">选中档（¥69）的用户</span><span class="gauge-num" id="p15MidN">41%</span></div><div class="gauge-track"><div class="gauge-fill" id="p15MidF" style="width:41%"></div></div></div>
+              <div class="gauge"><div class="gauge-head"><span class="gauge-label">平均客单价</span><span class="gauge-num" id="p15ArpuN">¥47</span></div><div class="gauge-track"><div class="gauge-fill" id="p15ArpuF" style="width:31%"></div></div></div>
+            </div>
+            <div class="p15-bnote" id="p15BNote"><b>当前只有两档：</b>¥29 和 ¥69 互为参照，没有锚，一半用户觉得 ¥69「有点贵」，缩去了入门档。</div>
+          </div>
+          <div class="lever-list" id="p15Levers"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">动手 · 价格歧视的红线判断</div>
+    <p class="desc">经济学里价格歧视是中性词：让不同支付意愿的人付不同的价，福利上双赢。但用户感知里它分两种：<b>体面的叫版本化，翻车的叫杀熟</b>。五个做法，逐个判断敢不敢上线。</p>
+    <div class="toy" id="p15Pd">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg></span>
+        <span class="toy-t">五个做法：敢上，还是不敢</span>
+        <span class="toy-badge" id="p15PdBadge">0 / 5</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">判断标准一句话：被写成新闻标题的时候，你站不站得住</div>
+        <div class="p15-pd" id="p15PdList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">找茬 · 涨价邮件对决</div>
+    <p class="desc">模型成本降了，但你加了新功能，决定从 ¥69 涨到 ¥89。两封通知邮件，点<b>不会引发退订潮</b>的那封。</p>
+    <div class="toy" id="p15Duel">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg></span>
+        <span class="toy-t">找茬：哪封能活着发出去</span>
+        <span class="toy-badge">点选一边</span>
+      </div>
+      <div class="toy-body">
+        <div class="duel">
+          <div class="duel-side">
+            <span class="duel-tag">邮件 A</span>
+            <div class="mock p15-mail">
+              <div class="mh">价格调整通知</div>
+              <p>尊敬的用户：</p>
+              <p>由于运营成本上升，自下月 1 日起，专业版价格将由 ¥69/月调整为 <b>¥89/月</b>，从您的下一个账单周期开始生效。</p>
+              <p>感谢您的理解与支持。</p>
+              <p style="color:#9ca3af">—— 产品团队</p>
+            </div>
+          </div>
+          <div class="duel-side">
+            <span class="duel-tag">邮件 B</span>
+            <div class="mock p15-mail">
+              <div class="mh">专业版要涨价了，但你有 90 天豁免期</div>
+              <p>老朋友：</p>
+              <p>过去半年专业版加了三件事：推理模型升级、20 万字长文档、风格库。新用户价格将调整为 <b>¥89/月</b>。</p>
+              <p>你是老用户：<b>未来 90 天内续费，锁定 ¥69 一年</b>；什么都不做，90 天后按新价计费。</p>
+              <p style="color:#9ca3af">—— 产品团队</p>
+            </div>
+          </div>
+        </div>
+        <div class="duel-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>价格感全靠参照物：</b>没人知道 AI 助手「该」值多少钱，判断全来自你摆的锚。定价表上没人买的那行也在工作，它是售货员。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>三档是标准结构：</b>入门档接住犹豫者，顶档当锚，中档吃下大盘。「最受欢迎」标签是社会认同，再推一把。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>AI 的版本化是天然的：</b>模型分层（基础/旗舰/最强推理）成本真实存在，档位差异用户可感知，这是比「功能阉割」体面得多的价格歧视。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>歧视的红线是不可选择的身份：</b>用户主动选的（学生认证、年付、低配版）都体面；按用户画像暗中调价的，等着上新闻。涨价永远给老用户豁免期。</p></div>
+    </div>
+    <p class="src-note"><b>内容来源：</b>小山学堂「AI 产品心理学」专题原创；经济学人实验出自 Ariely,<i>Predictably Irrational</i>（2008）第一章，选择数据为其 MIT 课堂实验（100 名学生）；锚定效应出自 Tversky &amp; Kahneman（1974）。</p>
+  </section>
+
+</main>
+
+
+<script>/* ═══════════════════════════════════════════════════════════
+   taste.js —— 专题篇章「审美工程」共用交互组件
+   背景：本章多页反复用到「A/B 对决找茬」和「点选题」两种玩法，
+   逐页手写会复制大量事件绑定代码并各自漂移。
+   设计意图：只抽真正跨页复用的两个组件；页面独有的滑块、
+   开关类演示留在各页 <script> 里，避免过度抽象。
+   约束：依赖 taste.css 的 .duel / .quiz-* 类名；
+   必须在 DOM 就绪后调用（各页脚本置于 </main> 之后天然满足）。
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* 判词与标签走 i18n，否则英韩译文页一交互就冒出中文。
+     i18n.js 未加载时按中文兜底，与 build.js / lesson.js 同一套口径。 */
+  function T(key, zh) {
+    var i18n = window.XUEAI_I18N;
+    return i18n ? i18n.t(key) : zh;
+  }
+
+  /* A/B 对决：两块内容选出更好的那块。
+     背景：识别美的教学模式是「先动手判断，再听理论」（沿用 zero-3 找茬），
+     本章四个抓手页每页至少一局。
+     设计意图：答案揭晓后不锁死页面，双方标签换成「更好/欠佳」并给判词，
+     选错也给判词但语气区分——教学目标是看懂差异，不是考倒读者。
+     约束：cfg.winner 为更好一侧的索引（0 左 1 右）；
+     verdictWin / verdictMiss 支持 HTML；onDone 可选，用于页内进度统计。 */
+  window.tasteDuel = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var duel = root.querySelector('.duel');
+    var verdict = root.querySelector('.duel-verdict');
+    var badge = root.querySelector('.toy-badge');
+    var sides = duel.querySelectorAll('.duel-side');
+    duel.addEventListener('click', function (e) {
+      var side = e.target.closest('.duel-side');
+      if (!side || duel.classList.contains('done')) return;
+      var idx = Array.prototype.indexOf.call(sides, side);
+      duel.classList.add('done');
+      sides[cfg.winner].classList.add('win');
+      sides[1 - cfg.winner].classList.add('lose');
+      sides[cfg.winner].querySelector('.duel-tag').textContent = T('tasteBetter', '✓ 更好');
+      sides[1 - cfg.winner].querySelector('.duel-tag').textContent = T('tasteWorse', '✗ 欠佳');
+      var hit = idx === cfg.winner;
+      verdict.className = 'duel-verdict show ' + (hit ? 'good' : 'miss');
+      verdict.innerHTML = (hit
+        ? T('tasteDuelHit', '<b>眼力不错。</b>')
+        : T('tasteDuelMiss', '<b>这局看走眼了，正常，学完这节回来就能看出来。</b>')) + cfg.verdict;
+      if (badge) { badge.textContent = T('tasteRevealed', '✓ 已揭晓'); badge.classList.add('solved'); }
+      if (typeof cfg.onDone === 'function') cfg.onDone(hit);
+    });
+  };
+
+  /* 点选题：多个选项挑一个对的。
+     背景：审美词汇、提示词写法这类知识点，选一次比读三遍记得牢。
+     设计意图：选错立即标红并给「为什么不对」，允许继续选直到命中，
+     命中后整题锁定——试错本身就是教学过程。
+     约束：容器内选项需带 data-k（0 起）；cfg.answer 为正确索引；
+     cfg.why 数组给每个选项的判词，支持 HTML。 */
+  window.tasteQuiz = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var fb = root.querySelector('.quiz-fb');
+    var badge = root.querySelector('.toy-badge');
+    root.addEventListener('click', function (e) {
+      var opt = e.target.closest('.quiz-opt');
+      if (!opt || root.classList.contains('done')) return;
+      var k = +opt.dataset.k;
+      if (k === cfg.answer) {
+        root.classList.add('done');
+        opt.classList.add('right');
+        fb.className = 'quiz-fb show good';
+        fb.innerHTML = T('tasteQuizRight', '<b>对。</b>') + cfg.why[k];
+        if (badge) { badge.textContent = T('tasteSolved', '✓ 已解决'); badge.classList.add('solved'); }
+        if (typeof cfg.onDone === 'function') cfg.onDone();
+      } else if (!opt.classList.contains('wrong')) {
+        opt.classList.add('wrong');
+        fb.className = 'quiz-fb show miss';
+        fb.innerHTML = cfg.why[k] + T('tasteQuizRetry', ' 再挑一个。');
+      }
+    });
+  };
+})();
+</script>
+
+<script>
+/* ── 经济学人实验两轮投票 ──
+   背景：诱饵效应最好的教法就是把实验原样搬来让读者自己上钩。
+   设计意图：第一轮选完亮出 MIT 数据条（宽度动画），并出现
+   「撤掉诱饵再投」按钮；点击后印刷版划掉、数据清零，第二轮
+   选完亮出撤诱饵后的数据。两轮数字对比就是全部论点。
+   约束：DATA1/DATA2 为两轮的百分比，印刷版第二轮不可选。 */
+(function () {
+  var DATA1 = [16, 0, 84];
+  var DATA2 = [68, 0, 32];
+  var stage = 1;
+  var list = document.getElementById('p15EconList');
+  var badge = document.getElementById('p15EconBadge');
+  var opts = list.querySelectorAll('.p15-opt');
+  function showData(data) {
+    opts.forEach(function (o, i) {
+      o.classList.add('reveal', 'lock');
+      o.querySelector('.fl').style.width = data[i] + '%';
+      o.querySelector('.pc').textContent = data[i] + '%';
+    });
+  }
+  list.addEventListener('click', function (e) {
+    var opt = e.target.closest('.p15-opt');
+    if (!opt || opt.classList.contains('lock')) return;
+    var k = +opt.dataset.k;
+    if (stage === 1) {
+      showData(DATA1);
+      var n1 = document.getElementById('p15EconNote1');
+      n1.className = 'p15-econ-note show';
+      n1.innerHTML = (k === 2 ? '<b>你和 84% 的 MIT 学生选了一样的。</b>' : k === 0 ? '<b>你选了电子版，MIT 学生里只有 16% 这么选。</b>' : '<b>你居然选了印刷版单独档，实验里这档的选择人数是零。</b>')
+        + 'Ariely 把这张真实价目表拿给 100 名 MIT 学生：84 人选套餐，16 人选电子版，<b>印刷版单独档 0 人选</b>。一个没人选的选项，留着干什么？点下面的按钮，撤掉它再投一次。';
+      document.getElementById('p15AgainBtn').classList.add('show');
+      badge.textContent = '第一轮完成';
+    } else {
+      showData(DATA2);
+      var n2 = document.getElementById('p15EconNote2');
+      n2.className = 'p15-econ-note show';
+      n2.innerHTML = '<b>数据翻盘了。</b>撤掉诱饵后再测：68 人选电子版，选套餐的从 84 人跌到 32 人。什么都没变，只是少了一个本来就没人要的选项，<b>《经济学人》的高价套餐销量掉了一多半</b>。印刷版单独档的工作从来不是被买走，是站在旁边让套餐显得划算。回头看看你自己两轮的选择变没变。';
+      badge.textContent = '✓ 两轮完成';
+      badge.classList.add('solved');
+    }
+  });
+  document.getElementById('p15AgainBtn').addEventListener('click', function () {
+    stage = 2;
+    this.classList.remove('show');
+    opts.forEach(function (o, i) {
+      o.classList.remove('reveal', 'lock');
+      o.querySelector('.fl').style.width = '0';
+      if (i === 1) o.classList.add('gone');
+    });
+    badge.textContent = '第二轮：再选一次';
+  });
+})();
+
+/* ── 定价页搭建器 ──
+   背景：锚点理论落到自家定价页，三个开关分别是结构锚（Max 档）、
+   社会认同（最受欢迎标签）、入门档降档（接住犹豫者）。
+   设计意图：开关改写定价页 mock 与两条指标；指标按开关组合查表，
+   避免线性叠加的假精确。
+   约束：STATE 索引为三位开关的位掩码（max<<0 | pop<<1 | entry<<2 的组合表）。 */
+(function () {
+  var LEV = [
+    { t: '顶上加一档 Max ¥299：结构锚', p: '没几个人买它，它也不是为了被买：它把 ¥69 从「最贵的」变成「中间那档理性之选」。锚定效应的产品化，成本几乎为零。' },
+    { t: '中档挂「最受欢迎」：社会认同', p: '犹豫的人抄大多数人的作业（影响力那本书的第四章）。真实数据支撑的标签才敢挂，编造比例被拆穿就是信任事故。' },
+    { t: '入门档写清「差在哪」：给降档留体面', p: '入门档的功能差异要具体（基础模型、200 次），让用户一眼看出自己会撞墙。它接住付不起 ¥69 的人，也反向证明中档的钱花在哪。' },
+  ];
+  /* key: max + pop*2 + entry*4 → [中档%, 客单价] */
+  var STATE = {
+    0: [41, 47], 1: [58, 65], 2: [49, 52], 3: [66, 74],
+    4: [44, 49], 5: [61, 68], 6: [52, 55], 7: [71, 81],
+  };
+  var NOTES = {
+    0: '<b>当前只有两档：</b>¥29 和 ¥69 互为参照，没有锚，一半用户觉得 ¥69「有点贵」，缩去了入门档。',
+    1: '<b>Max 档上线：</b>它自己的销量不到 4%，但 ¥69 的心理位置从「贵的」滑到了「中间的」，中档选择率立涨。这就是那位不卖货的售货员。',
+    7: '<b>三个开关全开：</b>顶档做锚、标签背书、入门档托底，中档选择率 71%，客单价从 ¥47 到 ¥81。注意整个过程<b>没有降过一分钱价</b>，动的全是参照物。这套结构就是市面上几乎所有 AI 订阅页长一个样的原因：不是抄袭，是收敛。',
+  };
+  var list = document.getElementById('p15Levers');
+  var badge = document.getElementById('p15BuildBadge');
+  var sw = [false, false, false];
+  list.innerHTML = LEV.map(function (l, i) {
+    return '<div class="lever" data-i="' + i + '"><span class="lever-sw"></span>'
+      + '<div class="lever-body"><h6>' + l.t + '</h6><p>' + l.p + '</p></div></div>';
+  }).join('');
+  list.addEventListener('click', function (e) {
+    var lever = e.target.closest('.lever');
+    if (!lever) return;
+    var i = +lever.dataset.i;
+    sw[i] = !sw[i];
+    lever.classList.toggle('on', sw[i]);
+    document.getElementById('p15T2').classList.toggle('show', sw[0]);
+    document.getElementById('p15T1').classList.toggle('pop', sw[1]);
+    document.getElementById('p15T0').style.opacity = sw[2] ? '1' : '.55';
+    var key = (sw[0] ? 1 : 0) + (sw[1] ? 2 : 0) + (sw[2] ? 4 : 0);
+    var d = STATE[key];
+    document.getElementById('p15MidN').textContent = d[0] + '%';
+    document.getElementById('p15MidF').style.width = d[0] + '%';
+    document.getElementById('p15ArpuN').textContent = '¥' + d[1];
+    document.getElementById('p15ArpuF').style.width = Math.round(d[1] / 1.5) + '%';
+    var on = sw.filter(Boolean).length;
+    document.getElementById('p15BNote').innerHTML = NOTES[key] ||
+      ('<b>已开 ' + on + ' 个开关：</b>指标在涨，注意每个开关动的都不是价格本身，是用户看价格时的参照物。');
+    badge.textContent = on + ' / 3';
+    if (on === 3) { badge.textContent = '3 / 3 搭完'; badge.classList.add('solved'); }
+    else badge.classList.remove('solved');
+  });
+  document.getElementById('p15T0').style.opacity = '.55';
+})();
+
+/* ── 价格歧视红线 ──
+   背景：版本化与杀熟的分界要读者自己判出来：核心标准是
+   「差价是否基于用户可选择、可见的差异」。
+   设计意图：五题二选一，答对绿、错红可重选；判词给出标准。
+   约束：PD 的 a 为正确键（0 敢上 1 不敢）。 */
+(function () {
+  var PD = [
+    { say: '① 学生认证半价，教师认证七折', a: 0,
+      why: '<b>敢上，教科书级的体面。</b>身份是用户主动出示的、可验证的，全社会都认这个理。支付意愿低的群体拿到低价，你多收了一批本来不会付费的用户，双赢。' },
+    { say: '② 免费版用基础模型，付费版用旗舰模型', a: 0,
+      why: '<b>敢上，这是 AI 产品独有的天然版本化。</b>传统软件做版本化要故意阉割功能（心里发虚），你的档位差异是真实的算力成本，理直气壮。模型分层即价格分层，这是本章商业化部分最重要的一句话。' },
+    { say: '③ 检测到 iPhone 用户，订阅页价格上浮 15%', a: 1,
+      why: '<b>不敢，这就是「杀熟」新闻的标准配方。</b>设备是身份代理，用户没得选、也看不见别人的价格。被截图对比的那天（一定会有那天），赔掉的品牌信任十年攒不回来。' },
+    { say: '④ 老用户续费价不动，涨价只对新用户生效', a: 0,
+      why: '<b>敢上，而且是涨价的标准姿势（祖父条款）。</b>它也是价格歧视（新老用户不同价），但方向站在忠诚用户一边，老用户会替你宣传而不是投诉。反过来「新客立减、老客原价」就危险得多：惩罚忠诚，等着被骂。' },
+    { say: '⑤ 按用户历史用量预测支付意愿，重度用户悄悄少给折扣', a: 1,
+      why: '<b>不敢。</b>和第 ③ 条同罪且更阴：用最忠诚用户的行为数据反过来收割他们。大数据定价的铁律：<b>个体层面的暗中差价是雷，群体层面的公开规则是策略</b>。想多收重度用户的钱，光明正大出个 Max 档让他自己选。' },
+  ];
+  var list = document.getElementById('p15PdList');
+  var badge = document.getElementById('p15PdBadge');
+  var done = 0;
+  list.innerHTML = PD.map(function (t, i) {
+    return '<div class="p15-pc" data-i="' + i + '">'
+      + '<div class="say">' + t.say + '</div>'
+      + '<div class="btns"><button class="pb" data-v="0">敢上线</button><button class="pb" data-v="1">不敢，有雷</button></div>'
+      + '<div class="why">' + t.why + '</div></div>';
+  }).join('');
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest('.pb');
+    if (!btn || btn.disabled) return;
+    var card = btn.closest('.p15-pc');
+    var t = PD[+card.dataset.i];
+    if (+btn.dataset.v === t.a) {
+      card.querySelectorAll('.pb').forEach(function (b) { b.disabled = true; });
+      btn.classList.add('hit');
+      card.querySelector('.why').classList.add('show');
+      done++;
+      badge.textContent = done + ' / 5';
+      if (done === 5) { badge.textContent = '5 / 5 判完'; badge.classList.add('solved'); }
+    } else {
+      btn.classList.add('miss');
+      btn.disabled = true;
+    }
+  });
+})();
+
+/* 找茬：涨价邮件。A 成本转嫁 + 无选择，B 价值铺垫 + 祖父条款
+   （组件行为见 taste.js 注释）。 */
+tasteDuel('p15Duel', {
+  winner: 1,
+  verdict: 'A 犯了涨价通知的全部大忌：理由是「我的成本涨了」（用户凭什么为你的成本买单）、时间是「下个账单周期」（没有缓冲）、选项是零（只能受着）。B 做对了三件事：先摆价值增量（涨价的正当性来自你多给了什么，而非你多花了什么）、涨价只对新用户即刻生效（祖父条款）、给老用户一个<b>主动锁定优惠的动作</b>。最后这条最妙：本来是坏消息通知，被设计成了一次限时福利，退订邮件变成了续费按钮。'
+});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

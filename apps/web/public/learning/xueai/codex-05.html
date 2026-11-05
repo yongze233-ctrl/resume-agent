@@ -1,0 +1,1006 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-05",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-05',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>按下取消之后，各层怎么收手 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0;max-width:100%;min-width:0}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto;max-width:100%}.source code{color:var(--text);font:12.5px/1.85 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0;white-space:pre;word-break:normal}
+.snapshot{margin:14px 0 0;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text);background:rgba(0,0,0,.05)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 180px;padding-top:10px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cols{display:grid;grid-template-columns:1.05fr .95fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{font-size:11px;font-weight:600;color:var(--sub)}
+.dm-meter b{color:var(--accent-deep);font-variant-numeric:tabular-nums}
+.dm-meter.warn{color:var(--danger);font-weight:700}
+.dm-meter.hold{color:var(--accent-deep);font-weight:700}
+.dm-meter.ok{color:var(--success);font-weight:700}
+#dm-lamp{transition:opacity .4s cubic-bezier(.4,0,.2,1)}
+#dm-hist-n{display:inline-flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums}
+#dm-hist-n:after{content:"";display:block;height:3px;width:28px;margin-top:5px;border-radius:99px;background:currentColor;transform:scaleX(var(--hist-bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:10px;min-height:320px}
+.dm-ly{display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--card);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-ly em{flex:0 0 28px;width:28px;height:28px;border-radius:8px;background:var(--bg);color:var(--faint);display:grid;place-items:center;font:800 12px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-ly b{display:block;font-size:13px;color:var(--text);margin-bottom:2px}
+.dm-ly span{display:block;font-size:12px;line-height:1.7;color:var(--sub)}
+.dm-ly .tag{display:inline-block;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 8px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(220,38,38,.08);color:var(--danger);transition:max-height .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1),margin .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+#dm-layers.is-live .dm-ly{opacity:.4;transform:scale(.98)}
+#dm-layers.is-live .dm-ly.on{opacity:1;transform:scale(1)}
+#dm-layers.is-live .dm-ly.done{opacity:.55;transform:scale(.98)}
+.dm-ly.on{background:var(--accent-soft);border-color:rgba(65,75,90,.4)}
+.dm-ly.on em{background:var(--accent);color:#fff}
+.dm-ly.on b,.dm-ly.on span{color:var(--accent-deep)}
+.dm-ly.irrev.on{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.35)}
+.dm-ly.irrev.on em{background:var(--danger);color:#fff}
+.dm-ly.irrev.on .tag{max-height:28px;opacity:1;margin-top:6px;padding:2px 8px}
+.dm-ly.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-ly .tag.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-hist{position:relative;display:flex;flex-direction:column;gap:10px}
+.dm-h{padding:12px 14px;border-radius:9px;border:1px solid var(--border);background:var(--card);transition:transform .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1)}
+.dm-h b{display:block;font-size:12.5px;color:var(--accent-deep);margin-bottom:4px}
+.dm-h span{display:block;font-size:12px;line-height:1.7;color:var(--sub)}
+.dm-h.keep{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07)}
+.dm-h.abort{border-color:rgba(217,119,6,.35);background:rgba(217,119,6,.07)}
+.dm-h.mark{border-color:rgba(65,75,90,.4);background:var(--accent-soft)}
+.dm-h.bg{border-style:dashed}
+.dm-h.is-enter{opacity:0;transform:translateY(8px)}
+.dm-h.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-h.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-empty{padding:36px 12px;text-align:center;font-size:13px;color:var(--faint);line-height:1.8}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:background .35s cubic-bezier(.4,0,.2,1),opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+#dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+#dm-trace.is-live li.on{opacity:1;transform:scale(1);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1),margin .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:560px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-budget .dm-b-label{padding-top:0}.source,.demo,.visual,.cmp-card{max-width:100%;min-width:0}.source pre{overflow-x:auto}.lesson code{overflow-wrap:anywhere;word-break:break-word}}
+</style>
+<meta name="description" content="工具失败回给模型，用户按 Esc 才停 turn。取消令牌从任务传到采样再传到工具，已完成的结果留在历史里，100 毫秒之后的硬拆不可逆">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="按下取消之后，各层怎么收手"><meta property="og:description" content="工具失败回给模型，用户按 Esc 才停 turn。取消令牌从任务传到采样再传到工具，已完成的结果留在历史里，100 毫秒之后的硬拆不可逆"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-05.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 取消与错误</div>
+    <h1>按下取消之后，各层怎么收手</h1>
+    <p class="subtitle">工具失败回给模型，用户按 Esc 才停 turn。取消令牌从任务传到采样再传到工具。已完成的结果留在历史里，100 毫秒之后的硬拆不可逆。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>工具失败回给模型，用户按 Esc 才停 turn。取消令牌从任务传到采样再传到工具。已完成的结果留在历史里，100 毫秒之后的硬拆不可逆。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。工具失败为什么继续对话。用户按 Esc 之后，任务、采样、工具按什么顺序收手。哪一层的收手一旦落下就回不去。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 按下 Esc，看谁先停</div>
+  <div class="demo reveal" id="demo-cancel">
+    <div class="demo-top">
+      <div class="demo-title">同一轮对话，用户中途按 Esc</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">按 Esc 时</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-mode="running" class="on">工具还在跑</button>
+        <button type="button" data-mode="done">工具已经跑完</button>
+      </div>
+      <span class="dm-b-hint">拨到另一档，看历史里成功回执会不会被覆盖，以及哪一步标了不可逆。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">收手顺序</span><span class="dm-meter" id="dm-lamp">等待开始</span></div>
+        <div class="dm-body" id="dm-layers">
+          <div class="dm-ly" data-i="0"><em>1</em><div><b>协议入口</b><span>Op::Interrupt 到达</span></div></div>
+          <div class="dm-ly" data-i="1"><em>2</em><div><b>任务令牌</b><span>cancellation_token.cancel</span></div></div>
+          <div class="dm-ly" data-i="2"><em>3</em><div><b>采样收手</b><span>or_cancel 变成 TurnAborted</span></div></div>
+          <div class="dm-ly" data-i="3"><em>4</em><div><b>工具收手</b><span>子令牌取消，看 handler 走没走完</span></div></div>
+          <div class="dm-ly irrev" data-i="4"><em>5</em><div><b>硬拆</b><span>100 毫秒后 task.handle.abort</span><i class="tag">不可逆</i></div></div>
+          <div class="dm-ly" data-i="5"><em>6</em><div><b>落盘与事件</b><span>先写片段，再发 TurnAborted</span></div></div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">历史与副作用</span><span class="dm-meter" id="dm-hist-n">0 条</span></div>
+        <div class="dm-body"><div class="dm-hist" id="dm-hist"></div></div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>协议入口是 Interrupt，不杀后台 terminal</span><span class="ln">protocol.rs L546</span></li>
+        <li><span>任务令牌先 cancel，这是信号还不是硬拆</span><span class="ln">tasks/mod.rs L887</span></li>
+        <li><span>采样用子令牌盯着流，or_cancel 变成 TurnAborted</span><span class="ln">turn.rs L2273</span></li>
+        <li><span>工具派发再 child 一次，父令牌取消则一起取消</span><span class="ln">stream_events_utils.rs L319</span></li>
+        <li><span>handler 已走完就保留真实结果，没走完才 abort</span><span class="ln">parallel.rs L182</span></li>
+        <li><span>等 100 毫秒，没收完就 task.handle.abort</span><span class="ln">tasks/mod.rs L913</span></li>
+        <li><span>追加 turn_aborted 片段，立刻 flush_rollout</span><span class="ln">tasks/mod.rs L927</span></li>
+        <li><span>最后才发 EventMsg::TurnAborted</span><span class="ln">tasks/mod.rs L955</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看 Esc 之后各层按什么顺序收手，哪一层不可逆。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>收手顺序</b>令牌先发信号，采样和工具各自收尾，最后才硬拆、写片段、发事件。界面上的中止，是这条链走完之后才出现的。</div>
+      <div class="dm-s"><b>不可逆的那一层</b>100 毫秒之后的 <code>task.handle.abort</code> 没有回切。已经完成的工具回执也不会被改写成 aborted。后台 terminal 继续跑，要杀它走另一条操作。</div>
+      <div class="dm-s"><b>拨到另一档</b>工具已经跑完时，历史里留下成功回执加中止标记。工具还在跑时，留下 aborted by user 加中止标记。两种都是追加，都不是回滚。</div>
+    </div>
+    <div class="demo-caption">教学示意：步骤时序按源码调用链编排，耗时被拉成可点的单步。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 工具失败回给模型，引擎失败才停 turn</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你让 Codex 改一个测试文件。模型先跑 <code>cargo test</code>，编译器吐了两屏 rustc 报错，退出码是 1。下一秒对话停了，界面弹出 <code>turn aborted</code>。很多人第一次写 agent 会这么干：工具返回 <code>Err</code>，整轮跟着死。模型还没看见 stderr，会话已经结束。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">分诊发生在工具回到对话的那道门上，一共三层门槛。</p>
+  <p class="reveal">最浅一层：进程已经跑过。退出码非零、命令超时、沙箱拒绝，都收成工具回执。<code>success</code> 写成 <code>true</code>，意思是 handler 跑完了，回执可以喂给模型。命令成不成功写在正文里。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/tools/context.rs</code> 第 344 至 353 行</p>
+  <p class="reveal">中间一层：调用没做成。参数坏了、进程没拉起来、<code>apply_patch</code> 上下文对不上，走 <code>RespondToModel</code>。回执 <code>success</code> 才是 <code>false</code>。模型读到文案，自己改再试。</p>
+  <p class="reveal">最深一层：payload 对不上、任务 join 失败，才写 <code>Fatal</code>，升成 <code>CodexErr</code>，停 turn。</p>
+  <p class="reveal">工具层自己的枚举只有两档。<code>RespondToModel</code> 把字符串喂回模型。<code>Fatal</code> 才升成引擎错误。默认把非 Fatal 折成 <code>Ok</code>。想停对话，得写出 <code>Fatal</code> 或 <code>CodexErr</code>。</p>
+  <div class="source reveal">
+    <div class="source-head"><span>codex-rs/tools/src/function_call_error.rs</span><span>第 1 至 10 行</span></div>
+    <pre><code>use thiserror::Error;
+
+/// Error returned while executing a model-visible tool invocation.
+#[derive(Debug, Error, PartialEq)]
+pub enum FunctionCallError {
+    #[error("{0}")]
+    RespondToModel(String),
+    #[error("Fatal error: {0}")]
+    Fatal(String),
+}</code></pre>
+  </div>
+  <div class="snapshot">源码快照说明：依据本地仓库 <code>openai/codex</code>，核对文件 <code>codex-rs/tools/src/function_call_error.rs</code>，commit <code>4f39251a01</code>，核对日期 2026-08-22。这段枚举本身就是分诊合同：两档，没有第三档警告或重试。</div>
+  <p class="reveal paywall-locked xa-peek" style="margin-top:20px"><code>cargo test</code> 退出码 1 停在最浅一层，连错误枚举的门槛都没迈过。沙箱拒绝同样走 <code>Ok</code>。代理拦请求时给命令进程回 HTTP 403，也停在最浅一层。模型 API 的 403 才是引擎错误。两处 403 不要并成一档。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/handlers/unified_exec/exec_command.rs</code> 第 384 至 411 行；<code>codex-rs/network-proxy/src/responses.rs</code> 第 76 至 83 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 360" role="img" aria-label="工具失败的三层门槛">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="40" y="36" fill="#262d38" font-size="14" font-weight="800">最浅 · 进程已经跑过</text>
+      <rect x="40" y="50" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="84" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">cargo test 退出码 1</text>
+      <path fill="none" d="M250 78H330" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="338" y="50" width="280" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="478" y="74" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">工具回执 success true</text>
+      <text x="478" y="94" fill="#6b7280" text-anchor="middle" font-size="12">命令成败写在正文里</text>
+      <path fill="none" d="M628 78H706" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="714" y="50" width="186" height="56" rx="12" fill="#eef0f4" stroke="rgba(22,163,74,.45)"></rect>
+      <text x="807" y="84" fill="#166534" text-anchor="middle" font-size="13" font-weight="700">对话继续</text>
+      <text x="40" y="156" fill="#262d38" font-size="14" font-weight="800">中间 · 调用没做成</text>
+      <rect x="40" y="170" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="204" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">patch 上下文对不上</text>
+      <path fill="none" d="M250 198H330" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="338" y="170" width="280" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="478" y="194" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">RespondToModel</text>
+      <text x="478" y="214" fill="#6b7280" text-anchor="middle" font-size="12">回执 success false</text>
+      <path fill="none" d="M628 198H706" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="714" y="170" width="186" height="56" rx="12" fill="#eef0f4" stroke="rgba(22,163,74,.45)"></rect>
+      <text x="807" y="204" fill="#166534" text-anchor="middle" font-size="13" font-weight="700">对话继续</text>
+      <text x="40" y="276" fill="#262d38" font-size="14" font-weight="800">最深 · 引擎事故</text>
+      <rect x="40" y="290" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="324" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">payload 对不上 / Esc</text>
+      <path fill="none" d="M250 318H330" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="338" y="290" width="280" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="478" y="314" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Fatal 或 TurnAborted</text>
+      <text x="478" y="334" fill="#6b7280" text-anchor="middle" font-size="12">升成 CodexErr</text>
+      <path fill="none" d="M628 318H706" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="714" y="290" width="186" height="56" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="807" y="324" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">停 turn</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：失败从工具回到对话，先过三道门。默认停在最浅一层。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">handler 里一个 IO 错误如果直接冒到 turn 循环，整轮对话跟着死。默认回灌，想停必须显式写出。这条线换语言重写也用得上。自己做内部 agent，先抄这一档：工具失败回灌，引擎失败停循环。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 取消做成一棵令牌树</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">用户按 Esc，要停的不只是当前那次采样。采样可能还在读流，工具可能正在写文件，后台 terminal 可能已经拉起来了。只杀采样，工具会继续改磁盘。一刀切杀掉所有进程，unified exec 的后台任务也会被误杀。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">任务启动时现造一张取消令牌。采样请求用 <code>child_token()</code>，工具派发再 child 一次。父令牌一取消，子令牌一起取消。子令牌自己取消，不影响父令牌。这就是取消树。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn.rs</code> 第 1399 行；<code>codex-rs/core/src/stream_events_utils.rs</code> 第 319 至 324 行</p>
+  <p class="reveal paywall-locked"><code>or_cancel</code> 把谁先到写成固定形状。任意 future 配一张令牌。取消先到，返回 <code>CancelErr</code>，一律变成 <code>TurnAborted</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/async-utils/src/lib.rs</code> 第 4 至 31 行；<code>codex-rs/protocol/src/error.rs</code> 第 269 至 273 行</p>
+  <p class="reveal paywall-locked">用户按 Esc，协议入口是 <code>Op::Interrupt</code>。合同写死：中止当前任务，不杀后台 terminal。<code>handle_task_abort</code> 先 <code>cancel()</code>，再等 100 毫秒。超时就 <code>task.handle.abort()</code>。令牌先发信号，任务有机会自己收尾。收不完，再硬拆。硬拆这一步不可逆。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/protocol/src/protocol.rs</code> 第 546 至 548 行；<code>codex-rs/core/src/tasks/mod.rs</code> 第 66 行、第 880 至 913 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="Esc 之后取消令牌从上往下传">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="40" y="40" width="150" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="115" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">用户 Esc</text>
+      <text x="115" y="88" fill="#6b7280" text-anchor="middle" font-size="12">Op::Interrupt</text>
+      <path fill="none" d="M200 72H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="276" y="40" width="170" height="64" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="361" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">任务令牌 cancel</text>
+      <text x="361" y="88" fill="#6b7280" text-anchor="middle" font-size="12">信号，还可收尾</text>
+      <path fill="none" d="M361 104V132" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="200" y="140" width="150" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="275" y="168" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">采样 or_cancel</text>
+      <text x="275" y="188" fill="#6b7280" text-anchor="middle" font-size="12">child token</text>
+      <rect x="372" y="140" width="150" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="447" y="168" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">工具子令牌</text>
+      <text x="447" y="188" fill="#6b7280" text-anchor="middle" font-size="12">再 child 一次</text>
+      <path fill="none" d="M326 172H364" stroke="#414b5a" stroke-width="2"></path>
+      <path fill="none" d="M522 172H590" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="598" y="40" width="150" height="64" rx="12" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="673" y="68" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">handle.abort</text>
+      <text x="673" y="88" fill="#dc2626" text-anchor="middle" font-size="12">100ms 后，不可逆</text>
+      <path fill="none" d="M673 104V132" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="598" y="140" width="150" height="64" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="673" y="168" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">turn_aborted</text>
+      <text x="673" y="188" fill="#6b7280" text-anchor="middle" font-size="12">先落盘再发事件</text>
+      <path fill="none" d="M748 172H800" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="808" y="140" width="96" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="856" y="178" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">事件</text>
+      <text x="40" y="250" fill="#6b7280" font-size="13">后台 terminal 不在这棵树上。Interrupt 的合同就是不杀它。</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：一份用户意图往下传，硬拆是最后一刀，也是不可逆的那一刀。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">令牌先发信号，硬拆才不可逆。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">一份用户意图，多层各自收尾。合作式取消加硬期限，是并发系统的通用形状。Python 里用 <code>asyncio.Event</code> 就能做最小版。不必抄 37 个变体的 <code>CodexErr</code>。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 中止只追加，不回滚</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">取消发生在工具已经改了文件之后，历史里怎么记。如果把已经完成的输出改写成 <code>aborted by user</code>，模型下一轮会以为写入没做成，可能再打一遍补丁。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">工具 future 同时等派发结果和令牌。令牌先到，还要看 handler 是否已经走到终态。已经走完，就保留真实结果。没走完，才 abort，再造一条 <code>AbortedToolOutput</code>，正文是 <code>aborted by user after Xs</code>。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/parallel.rs</code> 第 177 至 206 行、第 243 至 260 行</p>
+  <p class="reveal paywall-locked">然后追加一段模型可见标记，包在 <code>&lt;turn_aborted&gt;</code> 里。文案承认两件事：unified exec 可能还在后台跑，被中止的工具可能已经执行了一部分。标记写进历史之后立刻 <code>flush_rollout()</code>。有的客户端收到 <code>TurnAborted</code> 会同步重读 rollout，标记必须先落盘。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/context/turn_aborted.rs</code> 第 1 至 35 行；<code>codex-rs/core/src/tasks/mod.rs</code> 第 920 至 962 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">历史只追加、不改写。中止只往后面加片段，已落盘的工具输出不动。下一轮模型能同时看见完成的输出、被中止工具的回执、以及中止标记。上下文治理的第一条就是这个形状。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>AGENTS.md</code> 第 91 至 100 行</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：throw 折成 isError，循环 throw 才停 turn</h4>
+      <p>DSH 每轮新建一个 <code>AbortController</code>。工具 body 的 throw 不会穿过循环。执行器把它收成 <code>isError: true</code> 回执，轮次继续。bash 的注释写成产品合同：Non-zero exits are reported, not errored。循环自己的失败才停 turn。用户取消写成 <code>turn/end aborted</code>。</p>
+      <p>DSH 省掉两档枚举，因为执行器 catch 已经分了模型能看见和引擎必须终止。代价是约定：漏过 <code>dispatchToolBody</code> 的 throw 仍会变成 <code>turn/end error</code>。Codex 用类型把这条路收窄。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · DSH agent.ts / tools/index.ts / tool-bash/render.ts</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok：整份 ToolError 回模型，引擎停靠 SamplingError</h4>
+      <p>Grok 的 <code>ToolError</code> 模块头把 <code>detail</code> 写成必须回给模型的说明。<code>Cancelled</code>、<code>Timeout</code>、<code>Execution</code> 都是同一种回灌。工具层没有 Fatal 档。会话层把执行失败收成 <code>tool_result</code>，turn 继续。</p>
+      <p>引擎停靠另一套类型。<code>SamplingError</code> 不可重试才停采样。Actor 上的 <code>CancellationToken</code> 触发是关机，单次工具取消走 <code>CancelRegistry</code>。令牌不承担 Codex 那种工具分诊。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · xai-tool-runtime / xai-grok-sampling-types / xai-grok-shell</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>Esc 落在两种时刻，历史里各留下什么</h3>
+      <p><code>apply_patch</code> 已经写入文件，成功回执还在飞。这时用户按 Esc。下一轮模型会在历史里看见什么：成功回执、<code>aborted by user</code>、<code>&lt;turn_aborted&gt;</code> 片段，这三样各会不会出现？后台 terminal 还在不在？</p>
+      <p>再把时刻改成 handler 还在跑，重答一遍。哪一步是不可逆的，为什么已经落盘的文件不会跟着中止事件一起消失。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>工具失败回给模型，默认停在最浅一层。用户按 Esc，令牌从上往下传，已完成的结果留下，100 毫秒之后硬拆不可逆。中止只追加片段，不回滚历史。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var mode = 'running';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var layersBox = document.getElementById('dm-layers');
+  var layers = Array.prototype.slice.call(document.querySelectorAll('#dm-layers .dm-ly'));
+  var histEl = document.getElementById('dm-hist');
+  var lamp = document.getElementById('dm-lamp');
+  var histN = document.getElementById('dm-hist-n');
+  var traceBox = document.getElementById('dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '点播放，看 Esc 之后各层按什么顺序收手，哪一层不可逆。';
+  function allowMotion(){
+    return !window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function buildSteps(m){
+    var running = m === 'running';
+    var intro = running
+      ? 'cargo test 还在跑，采样还在读流。用户准备按 Esc。'
+      : 'apply_patch 已经写完文件，成功回执还在飞。用户准备按 Esc。';
+    var toolCap = running
+      ? '工具子令牌取消。handler 没走完，派发被 abort，回执写成 aborted by user。'
+      : '工具子令牌取消。handler 已经走完，真实结果留下，不覆盖成 aborted by user。';
+    var toolItem = running
+      ? {k:'abort', t:'AbortedToolOutput', d:'aborted by user after 1.2s。文件可能已经写了一部分。'}
+      : {k:'keep', t:'apply_patch 成功回执', d:'文件已在磁盘上。历史里保留真实结果。'};
+    var startItem = running
+      ? {k:'run', t:'exec_command 进行中', d:'cargo test 还没返回。'}
+      : {k:'run', t:'apply_patch 已完成', d:'成功回执还在飞，尚未写入历史。'};
+    return [
+      {cap: intro, trace: null, on: [], hist: [startItem], lamp: '对话进行中', lampK: 'ok'},
+      {cap: '用户按 Esc。协议入口是 Interrupt，合同写死：中止当前任务，不杀后台 terminal。', trace: 0, on: [0], hist: [startItem], lamp: '收到 Interrupt', lampK: 'hold'},
+      {cap: 'handle_task_abort 先给任务令牌发 cancel。这是信号，还不是硬拆。', trace: 1, on: [0,1], hist: [startItem], lamp: '令牌已取消', lampK: 'hold'},
+      {cap: '采样侧盯着子令牌。or_cancel 先到，立刻变成 TurnAborted。', trace: 2, on: [0,1,2], hist: [startItem], lamp: '采样已停', lampK: 'hold'},
+      {cap: '工具派发用的是再 child 出来的令牌。父令牌一取消，它一起取消。', trace: 3, on: [0,1,2,3], hist: [startItem], lamp: '工具令牌取消', lampK: 'hold'},
+      {cap: toolCap, trace: 4, on: [0,1,2,3], hist: [toolItem], lamp: running ? '工具已中止' : '工具结果保留', lampK: running ? 'warn' : 'ok'},
+      {cap: '等了 100 毫秒，任务没收完。task.handle.abort。这一刀不可逆。', trace: 5, on: [0,1,2,3,4], hist: [toolItem], lamp: '硬拆已落下', lampK: 'warn', irrev: true},
+      {cap: '追加 turn_aborted 片段，立刻 flush_rollout。有的客户端收到中止事件会同步重读。', trace: 6, on: [0,1,2,3,4,5], hist: [toolItem, {k:'mark', t:'<turn_aborted>', d:'承认后台进程可能还在跑，工具可能已经执行了一部分。'}], lamp: '标记已落盘', lampK: 'hold'},
+      {cap: '发出 EventMsg::TurnAborted。后台 terminal 还在跑。要杀它得走另一条 CleanBackgroundTerminals。', trace: 7, on: [0,1,2,3,4,5], hist: [toolItem, {k:'mark', t:'<turn_aborted>', d:'承认后台进程可能还在跑，工具可能已经执行了一部分。'}, {k:'bg', t:'后台 terminal 仍在', d:'Interrupt 不杀它。这一层也没有回滚。'}], lamp: 'turn 已中止', lampK: 'warn', fin: true}
+    ];
+  }
+
+  function spawnGhost(el){
+    var box = histEl.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    histEl.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function rollCount(el, to, animate){
+    var from = parseInt(el.textContent, 10);
+    if (isNaN(from)) from = 0;
+    el.style.setProperty('--hist-bar', String(to / 3));
+    if (!animate || from === to) {
+      el.textContent = to + ' 条';
+      return;
+    }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = Math.round(from + (to - from) * eased) + ' 条';
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function fadeText(el, text, animate){
+    if (!animate) { el.textContent = text; el.style.opacity = '1'; return; }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function flipMove(el, oldRect, extra){
+    var now = el.getBoundingClientRect();
+    var dx = oldRect.left - now.left;
+    var dy = oldRect.top - now.top;
+    if (!dx && !dy) return;
+    el.style.transition = 'none';
+    el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)' + (extra || '');
+    requestAnimationFrame(function(){
+      el.style.transition = '';
+      el.style.transform = '';
+    });
+  }
+
+  function paintLayers(st, animate){
+    var oldRects = {};
+    layers.forEach(function(el){
+      oldRects[el.getAttribute('data-i')] = el.getBoundingClientRect();
+    });
+    layers.forEach(function(el, i){
+      var on = st.on.indexOf(i) !== -1;
+      var last = on && i === st.on[st.on.length - 1];
+      var wasOn = el.classList.contains('on');
+      el.classList.toggle('on', last);
+      el.classList.toggle('done', on && !last);
+      if (animate && last && !wasOn) {
+        el.classList.remove('firing');
+        void el.offsetWidth;
+        el.classList.add('firing');
+        var tag = el.querySelector('.tag');
+        if (tag) {
+          tag.classList.remove('pop');
+          void tag.offsetWidth;
+          tag.classList.add('pop');
+        }
+      }
+    });
+    if (animate) {
+      layers.forEach(function(el){
+        var old = oldRects[el.getAttribute('data-i')];
+        var extra = el.classList.contains('on') ? ' scale(1)' : ' scale(.98)';
+        flipMove(el, old, extra);
+      });
+    }
+  }
+
+  function paintHist(items, animate){
+    var oldEls = Array.prototype.slice.call(histEl.querySelectorAll('.dm-h'));
+    var oldRects = {};
+    oldEls.forEach(function(el){
+      oldRects[el.getAttribute('data-k')] = el.getBoundingClientRect();
+    });
+    var empty = histEl.querySelector('.dm-empty');
+    if (empty) empty.remove();
+    var want = {};
+    items.forEach(function(it){ want[it.k] = it; });
+    oldEls.forEach(function(el){
+      var k = el.getAttribute('data-k');
+      if (!want[k]) {
+        if (animate) spawnGhost(el);
+        el.remove();
+      }
+    });
+    items.forEach(function(item){
+      var el = histEl.querySelector('[data-k="' + item.k + '"]');
+      if (el) return;
+      el = document.createElement('div');
+      el.className = 'dm-h' + (item.k ? ' ' + item.k : '');
+      el.setAttribute('data-k', item.k);
+      var b = document.createElement('b');
+      b.textContent = item.t;
+      var s = document.createElement('span');
+      s.textContent = item.d;
+      el.appendChild(b);
+      el.appendChild(s);
+      histEl.appendChild(el);
+      if (animate) {
+        el.classList.add('is-enter');
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            el.classList.add('in');
+            if (item.k === 'keep' || item.k === 'abort' || item.k === 'mark') {
+              el.classList.add('pop');
+            }
+          });
+        });
+      }
+    });
+    if (animate) {
+      Array.prototype.slice.call(histEl.querySelectorAll('.dm-h')).forEach(function(el){
+        var old = oldRects[el.getAttribute('data-k')];
+        if (old) flipMove(el, old, '');
+      });
+    }
+    if (!items.length && !histEl.querySelector('.dm-empty')) {
+      var blank = document.createElement('div');
+      blank.className = 'dm-empty';
+      blank.textContent = '历史还是空的。';
+      histEl.appendChild(blank);
+    }
+  }
+
+  function paintTrace(n, animate){
+    traceRows.forEach(function(el, i){
+      var nowOn = n === i;
+      var wasOn = el.classList.contains('on');
+      el.classList.toggle('on', nowOn);
+      if (animate && nowOn && !wasOn) {
+        el.classList.remove('firing');
+        void el.offsetWidth;
+        el.classList.add('firing');
+      }
+    });
+  }
+
+  function paint(st, animate){
+    animate = !!animate && allowMotion();
+    layersBox.classList.add('is-live');
+    traceBox.classList.add('is-live');
+    paintLayers(st, animate);
+    paintHist(st.hist, animate);
+    rollCount(histN, st.hist.length, animate);
+    fadeText(lamp, st.lamp, animate);
+    lamp.className = 'dm-meter' + (st.lampK ? ' ' + st.lampK : '');
+    paintTrace(st.trace, animate);
+    fadeText(captionText, st.cap, animate);
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.irrev) return 2000;
+    if (st.trace === 4) return 2000;
+    if (st.trace === 0) return 1600;
+    if (st.trace === null) return 1200;
+    if (st.trace === 6) return 1600;
+    return 1300;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function idleHist(){
+    histEl.innerHTML = '';
+    var empty = document.createElement('div');
+    empty.className = 'dm-empty';
+    empty.textContent = '按 Esc 之前，历史里还没有这一轮的中止痕迹。';
+    histEl.appendChild(empty);
+  }
+  function reset(){
+    stop(); idx = 0;
+    steps = buildSteps(mode);
+    layersBox.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    layers.forEach(function(el){
+      el.classList.remove('on', 'done', 'firing');
+      el.style.transition = '';
+      el.style.transform = '';
+      var tag = el.querySelector('.tag');
+      if (tag) tag.classList.remove('pop');
+    });
+    Array.prototype.slice.call(histEl.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    idleHist();
+    histN.textContent = '0 条';
+    histN.style.setProperty('--hist-bar', '0');
+    lamp.textContent = '等待开始';
+    lamp.className = 'dm-meter';
+    lamp.style.opacity = '1';
+    traceRows.forEach(function(el){ el.classList.remove('on', 'firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    mode = b.getAttribute('data-mode');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-cancel'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

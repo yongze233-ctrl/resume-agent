@@ -1,0 +1,1084 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"lei-8",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=lei-8',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="雷军创业课第 8 节：账上有钱才能融到钱，钱花一半就要启动融资；VC 要赚十倍不是贪婪，是投十家死九家的游戏规则；目标要直接，资本不缺钱，缺能帮他们挣钱的人。">
+<meta name="author" content="洛小山">
+<title>融资时机：有钱才能融到钱 | 雷军创业课</title>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+<style>
+:root{--lei:#f97316;--lei-deep:#c2410c;--lei-soft:rgba(249,115,22,.08)}
+.lesson-header .kicker{color:var(--lei)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chips span{font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep)}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+em.hl{font-style:normal;font-weight:700;color:var(--lei-deep)}
+
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.pt-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--lei-soft);color:var(--lei);font-size:13px;font-weight:800;margin-bottom:8px}
+.pt-grid h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.pt-grid p{font-size:14px;color:var(--sub);line-height:1.7}
+
+/* 烧钱模拟器 */
+.burn-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:14px;box-shadow:var(--shadow-card)}
+.burn-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.burn-head h4{font-size:15px;font-weight:800}
+.burn-head .cash{font-size:14px;font-weight:700;color:var(--sub)}
+.burn-head .cash b{font-family:"SF Mono",Menlo,monospace;font-size:18px;color:var(--text)}
+.burn-track{position:relative;height:26px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden}
+.burn-fill{position:absolute;top:0;bottom:0;right:0;width:100%;border-radius:999px;background:linear-gradient(90deg,#16a34a,#4ade80);transition:width .15s,background .3s}
+.burn-mark{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--lei);left:50%}
+.burn-mark-label{font-size:11.5px;font-weight:800;color:var(--lei-deep);position:absolute;top:-22px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.burn-track-outer{position:relative;margin:26px 2px 8px}
+input[type=range].burn-range{width:100%;margin-top:10px;accent-color:var(--lei);height:32px;cursor:pointer}
+.burn-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.burn-stat{border-radius:12px;padding:12px 16px;background:rgba(0,0,0,.03)}
+.burn-stat .bl{font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--sub);margin-bottom:4px}
+.burn-stat .bv{font-size:19px;font-weight:800;line-height:1.35;transition:color .25s}
+.burn-advice{margin-top:12px;border-radius:12px;padding:14px 17px;font-size:14.5px;line-height:1.75;transition:all .25s}
+.burn-advice.z0{background:rgba(22,163,74,.07);color:#14532d}
+.burn-advice.z1{background:var(--lei-soft);color:var(--lei-deep)}
+.burn-advice.z2{background:rgba(217,119,6,.09);color:#92400e}
+.burn-advice.z3{background:rgba(220,38,38,.08);color:var(--danger)}
+.burn-advice b{font-weight:800}
+
+/* VC 账本 */
+.vc-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:14px;box-shadow:var(--shadow-card)}
+.vc-firms{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin:12px 0 4px}
+.vc-firm{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;background:rgba(220,38,38,.08)}
+.vc-firm.alive{background:rgba(22,163,74,.12)}
+.vc-firm-labels{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin-bottom:10px}
+.vc-firm-labels span{text-align:center;font-size:11px;color:var(--sub);font-weight:700}
+.vc-slider-row{display:flex;align-items:center;gap:14px;margin-top:10px}
+.vc-slider-row .mult{font-family:"SF Mono",Menlo,monospace;font-size:22px;font-weight:800;color:var(--lei-deep);min-width:74px;text-align:center;background:var(--lei-soft);border-radius:10px;padding:6px 0}
+input[type=range].vc-range{flex:1;accent-color:var(--lei);height:32px;cursor:pointer}
+.vc-ledger{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}
+.vc-cell{border-radius:12px;padding:12px 14px;background:rgba(0,0,0,.03);text-align:center}
+.vc-cell .cl{font-size:12px;font-weight:800;color:var(--sub);margin-bottom:4px}
+.vc-cell .cv{font-family:"SF Mono",Menlo,monospace;font-size:21px;font-weight:800}
+.vc-verdict{margin-top:12px;border-radius:12px;padding:14px 17px;font-size:14.5px;line-height:1.75;transition:all .25s}
+.vc-verdict.lose{background:rgba(220,38,38,.07);color:var(--danger)}
+.vc-verdict.even{background:rgba(217,119,6,.08);color:#92400e}
+.vc-verdict.win{background:rgba(22,163,74,.07);color:#14532d}
+.vc-verdict b{font-weight:800}
+
+/* 直接说做手机 */
+.goal-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.goal-card{border-radius:14px;padding:17px 20px;border:1.5px solid var(--border);background:var(--card);box-shadow:var(--shadow-card)}
+.goal-card.bad{border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.03)}
+.goal-card.good{border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.04)}
+.goal-card .gt{font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.goal-card.bad .gt{color:var(--danger)}
+.goal-card.good .gt{color:var(--lei-deep)}
+.goal-card h3{font-size:16.5px;font-weight:800;margin-bottom:6px}
+.goal-card p{font-size:14px;color:var(--sub);line-height:1.75}
+
+.lei-callout{background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.28);border-radius:14px;padding:18px 22px}
+.lei-callout b{color:var(--lei-deep)}
+.lei-callout p{line-height:1.8}
+
+.hint{font-size:13px;color:var(--sub)}
+.src-note{margin-top:28px;font-size:13px;color:var(--sub)}
+
+@media (max-width:768px){
+  .pt-grid,.burn-stats,.goal-cols{grid-template-columns:1fr}
+  .vc-ledger{grid-template-columns:1fr}
+  .vc-firms,.vc-firm-labels{grid-template-columns:repeat(5,1fr)}
+}
+
+/* OPC 视角卡片组 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--lei-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--lei)}
+/* 本节要点清单 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--lei-soft);color:var(--lei);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--lei-deep)}
+@media(max-width:768px){.opc-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="融资时机：有钱才能融到钱"><meta property="og:description" content="雷军创业课第 8 节：账上有钱才能融到钱，钱花一半就要启动融资；VC 要赚十倍不是贪婪，是投十家死九家的游戏规则；目标要直接，资本不缺钱，缺能帮他们挣钱的人。"><meta property="og:url" content="https://xueai.miyang.cn/slides/lei-8.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/lei-8.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">雷军创业课 · 8 / 14</div>
+    <h1>融资时机：有钱才能融到钱</h1>
+    <p class="subtitle">这个世界很纠结：只有有钱才能融到钱。账上留足现金、钱花一半就启动、让投资人来找你。再看懂 VC 的账本，明白他要赚十倍为什么不是贪婪，你就知道该在什么时候、用什么姿态谈钱。</p>
+    <div class="chips"><span>花一半就启动</span><span>让投资人来找你</span><span>VC 要赚十倍</span><span>目标要直接</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>钱花掉一半就启动融资；让投资人来找你；VC 凭什么要赚十倍</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">核心判断</div>
+    <div class="pt-grid">
+      <div class="l-card"><span class="pt-num">01</span><h3>留足账面现金</h3><p>不缺钱的情况下，融资会很轻松。职业 VC 和 PE 的钱是要投出去的，这是他们的工作，每天都在寻找赚钱的机会。所以让他们来找你，比你去找他们容易得多。</p></div>
+      <div class="l-card"><span class="pt-num">02</span><h3>钱花一半就要启动</h3><p>第一轮拿了一百万，花了五十万就要赶紧去融下一轮。千万别花完，「花完了一点戏都没有」。账面没钱的时候是融资最痛苦的时候：他明天不给你钱，你后天就死了，还有什么议价能力？</p></div>
+      <div class="l-card"><span class="pt-num">03</span><h3>四小时谈定四十亿美金</h3><p>小米上一轮作价十亿美金融了九千万，只过了五个月就有人上门。「要不要融钱？」不需要。「下一轮什么时候？」年底再考虑。「什么价？」最少四十亿美金。「我今天给你四十亿美金，做还是不做？」公司被市场证明、账上不缺钱，谈判才会这么从容。</p></div>
+      <div class="l-card"><span class="pt-num">04</span><h3>谦和地表达自信</h3><p>交流和谈判的过程中，怎么在很谦和、很愿意沟通的前提下表达你的自信，很关键。底气来自业务和现金，不是来自嗓门。</p></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 烧钱进度条</div>
+    <p class="desc">假设你第一轮融了 100 万。拖动滑块模拟钱花掉的比例，看你的谈判筹码怎么随着账面现金流走。</p>
+    <div class="burn-wrap">
+      <div class="burn-head">
+        <h4>账上现金</h4>
+        <span class="cash">剩余 <b id="burnCash">100 万</b></span>
+      </div>
+      <div class="burn-track-outer">
+        <div class="burn-track">
+          <div class="burn-fill" id="burnFill"></div>
+          <div class="burn-mark"></div>
+        </div>
+        <div class="burn-mark-label">50%：启动融资线</div>
+      </div>
+      <input type="range" class="burn-range" id="burnRange" min="0" max="100" value="20" oninput="burnUpdate(this.value)" aria-label="已花费比例">
+      <div class="burn-stats">
+        <div class="burn-stat"><div class="bl">已花费</div><div class="bv" id="burnSpent">20%</div></div>
+        <div class="burn-stat"><div class="bl">谈判筹码</div><div class="bv" id="burnPower">充足</div></div>
+      </div>
+      <div class="burn-advice z0" id="burnAdvice"></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">看懂对面：VC 要十倍不是贪婪</div>
+    <p class="desc">投一个公司希望挣十倍，听起来很贪心。但雷军替 VC 算过账：他投的是创业公司，百分之八九十都会死。投十家，成功的那家挣了十倍，其他九家全死光，<em class="hl">不才刚打平吗</em>。而且从创办到 IPO 再到 VC 能卖掉股份，平均最少八到十年。游戏规则就是「赢的人赚十倍，输的人全死光」，正因为这样他们才愿意冒险，这个结构对整个国家的自主创新都有巨大推动。</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示二 · VC 账本计算器</div>
+    <p class="desc">一支基金投了 10 家公司，每家 1 份本金，9 家死光，只有 1 家活下来。拖动滑块设定这家活下来的公司的回报倍数，看整支基金是亏是赚。</p>
+    <div class="vc-wrap">
+      <div class="vc-firms" id="vcFirms"></div>
+      <div class="vc-firm-labels" id="vcLabels"></div>
+      <div class="vc-slider-row">
+        <input type="range" class="vc-range" id="vcRange" min="1" max="20" value="5" oninput="vcUpdate(this.value)" aria-label="活下来公司的回报倍数">
+        <span class="mult" id="vcMult">5×</span>
+      </div>
+      <div class="vc-ledger">
+        <div class="vc-cell"><div class="cl">总投入</div><div class="cv">10 份</div></div>
+        <div class="vc-cell"><div class="cl">总回收</div><div class="cv" id="vcBack">5 份</div></div>
+        <div class="vc-cell"><div class="cl">基金盈亏</div><div class="cv" id="vcNet">−5 份</div></div>
+      </div>
+      <div class="vc-verdict lose" id="vcVerdict"></div>
+    </div>
+    <div class="lei-callout" style="margin-top:14px">
+      <p><b>所以 VC 最想知道的，是你怎么能帮他挣十倍</b>，特别是 A 轮的早期 VC。你要帮他算明白能挣十倍，让他相信，还要让他回去能说服投资委员会。还有一条底线：<b>钱可以输，人不能输。</b>公司搞砸了，也要维护好投资者的关系。他们不会认为输钱丢人，他们每天都在干输钱的事情，最重要的是让他相信你这个人值得信赖。</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">目标要直接：想做手机就说做手机</div>
+    <p class="desc">雷军几乎每天都听到这样的故事：「我的目标是做手机，但在做手机之前，我先要做电话机。」他每次都问：你为什么不直接做手机？对方说，做手机竞争激烈，需要很多钱。可今天的资本市场真的不缺钱：全球的资本都在发了疯地挖掘赚钱的机会，只要有一丝机会，钱就像水一样涌过来。缺的是能帮他们挣钱的人。</p>
+    <div class="goal-cols">
+      <div class="goal-card bad">
+        <div class="gt">绕着说</div>
+        <h3>「我先做电话机，做好了再做手机」</h3>
+        <p>投资人听到的是：你自己都不敢赌这个目标。迂回路线消耗的是时间和信心，争取不到资源时，该想的是拿什么换资源，而不是把目标降级。</p>
+      </div>
+      <div class="goal-card good">
+        <div class="gt">直接说</div>
+        <h3>「我要做手机」</h3>
+        <p>投资者并不关心你现在值多少钱，只关心你未来几年能不能帮他挣一倍、三倍、五倍。小米创办两年作价四十亿美金融了 2.16 亿。投资者做了两个月 DD，最后只说了一句话：「没有任何外部因素阻碍你们成为下一个一千亿美金的公司。」干不到，就是你的问题。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">跑道 · 花一半就启动</span>
+        <p><b>一人公司的「账上现金」是你的跑道：订阅收入加积蓄。</b>「花一半就启动」翻译过来是：当存款加月收入只够撑六个月，就要动手开新的收入线、谈 sponsor、接顾问单。</p>
+        <p style="margin-top:8px"><b>别等断粮才找活</b>：那时候接什么单都没底气，报价直接对折。雷军说毫无议价能力的创业者「他明天不给你钱，你后天就死了」，缺钱的独立开发者面对甲方是一模一样的处境。</p>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">让机会来找你</span>
+        <p><b>「让投资人来找你」的 OPC 版本，是让机会来找你。</b>产品数据拿得出手、公开 build 有持续声量，sponsor 和客户会主动上门，这时候谈条件从容得多。</p>
+        <p style="margin-top:8px"><b>谈的时候记住 VC 账本的逻辑：</b>对方想听的不是你多需要这笔钱，是你怎么帮他挣钱：sponsor 买的是转化，客户买的是省下的时间。把这笔账替他算明白，比任何恳求都有效。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>「找钱的诀窍是账上有钱才能找到钱。」</b>钱花一半就启动融资，千万别等花完。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>让投资人来找你</b>：专注把业务做好，谈判时谦和地表达自信。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>看懂 VC 的账本</b>：十倍回报背后是九死一生的游戏规则，把「怎么帮他挣钱」替他算清楚。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>目标直接说</b>：资本不缺钱，缺能帮他们挣钱的人。</p></div>
+    </div>
+    <p class="src-note">素材来源：雷军创业公开课口述整理</p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 交互一：烧钱进度条 ── */
+function burnUpdate(v) {
+  v = Number(v);
+  var left = 100 - v;
+  document.getElementById('burnCash').textContent = left + ' 万';
+  document.getElementById('burnSpent').textContent = v + '%';
+  document.getElementById('burnFill').style.width = left + '%';
+
+  var fill = document.getElementById('burnFill');
+  var power = document.getElementById('burnPower');
+  var advice = document.getElementById('burnAdvice');
+  var zone, powerText, powerColor, html;
+
+  if (v < 50) {
+    zone = 'z0'; powerText = '充足'; powerColor = 'var(--success)';
+    fill.style.background = 'linear-gradient(90deg,#16a34a,#4ade80)';
+    html = '<b>从容期。</b>不缺钱的时候融资最轻松。现在该干的是专注把业务做好，让投资者上门来找你：他们的钱是要投出去的，这是他们的工作。';
+  } else if (v < 65) {
+    zone = 'z1'; powerText = '该动了'; powerColor = 'var(--lei-deep)';
+    fill.style.background = 'linear-gradient(90deg,#f97316,#fb923c)';
+    html = '<b>启动线到了。</b>雷军的做法：「你花了一半的钱，你就要开始找钱了。」拿了一百万花了五十万，就要赶紧去融下一轮，千万别等花完。';
+  } else if (v < 90) {
+    zone = 'z2'; powerText = '流失中'; powerColor = 'var(--amber)';
+    fill.style.background = 'linear-gradient(90deg,#d97706,#fbbf24)';
+    html = '<b>被动区。</b>跑道越短，对面越清楚你等不起。每晚一个月启动，条款就差一分。现在开始谈，还来得及，但已经是在追着钱跑，而不是钱追着你跑。';
+  } else {
+    zone = 'z3'; powerText = '几乎为零'; powerColor = 'var(--danger)';
+    fill.style.background = 'linear-gradient(90deg,#dc2626,#f87171)';
+    html = '<b>最痛苦的时候。</b>「当你账面没钱的时候，你是融资最痛苦的时候，你几乎没有任何谈判的能力，因为他明天不给你钱，你后天就死了，你还有什么议价能力吗？」';
+  }
+  power.textContent = powerText;
+  power.style.color = powerColor;
+  advice.className = 'burn-advice ' + zone;
+  advice.innerHTML = html;
+}
+
+/* ── 交互二：VC 账本 ── */
+(function initFirms(){
+  var firms = document.getElementById('vcFirms');
+  var labels = document.getElementById('vcLabels');
+  for (var i = 0; i < 10; i++) {
+    var alive = i === 9;
+    var d = document.createElement('div');
+    d.className = 'vc-firm' + (alive ? ' alive' : '');
+    d.textContent = alive ? '🌱' : '💀';
+    firms.appendChild(d);
+    var s = document.createElement('span');
+    s.textContent = alive ? '活了' : '死了';
+    labels.appendChild(s);
+  }
+})();
+
+function vcUpdate(m) {
+  m = Number(m);
+  document.getElementById('vcMult').textContent = m + '×';
+  document.getElementById('vcBack').textContent = m + ' 份';
+  var net = m - 10;
+  var netEl = document.getElementById('vcNet');
+  netEl.textContent = (net > 0 ? '+' : net < 0 ? '−' : '±') + Math.abs(net) + ' 份';
+  var verdict = document.getElementById('vcVerdict');
+  if (m < 10) {
+    netEl.style.color = 'var(--danger)';
+    verdict.className = 'vc-verdict lose';
+    verdict.innerHTML = '<b>基金亏损。</b>唯一活下来的公司只赚 ' + m + ' 倍，填不上九家死掉的窟窿。这样的基金募不到下一期，这个 VC 就出局了。';
+  } else if (m === 10) {
+    netEl.style.color = 'var(--amber)';
+    verdict.className = 'vc-verdict even';
+    verdict.innerHTML = '<b>刚刚打平。</b>「成功的人挣了十倍，其他九家全死光，不才刚打平吗？」而且这一折腾，从创办到 IPO 再到卖掉股份，平均最少八到十年。十倍只是不亏本的门槛。';
+  } else {
+    netEl.style.color = 'var(--success)';
+    verdict.className = 'vc-verdict win';
+    verdict.innerHTML = '<b>基金盈利 ' + net + ' 份。</b>超过十倍才开始真正赚钱。这就是为什么 VC 开口要十倍不是贪婪，是九死一生的游戏规则算出来的生存线。';
+  }
+}
+
+burnUpdate(20);
+vcUpdate(5);
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

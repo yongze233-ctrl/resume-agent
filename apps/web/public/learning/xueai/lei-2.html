@@ -1,0 +1,1053 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"lei-2",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=lei-2',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="雷军创业课第 2 节：90% 以上的创业公司都会死。小米创立第一天就在想公司会怎么死，三条保命策略：静悄悄地干、早死早超生、只给自己四年。">
+<meta name="author" content="洛小山">
+<title>心理准备：第一天就想好怎么死 | 雷军创业课</title>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+<style>
+:root{--lei:#f97316;--lei-deep:#c2410c;--lei-soft:rgba(249,115,22,.08)}
+.lesson-header .kicker{color:var(--lei)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:13px;font-weight:700}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+.quote-callout{background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.28);border-radius:14px;padding:18px 22px}
+.quote-callout b{color:var(--lei-deep)}
+
+/* 大数字 */
+.big-stat{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:20px 24px;margin-top:12px;box-shadow:var(--shadow-card)}
+.big-stat .bn{font-size:52px;font-weight:800;color:var(--lei);line-height:1;font-family:"SF Mono",Menlo,monospace}
+.big-stat p{font-size:14.5px;color:var(--sub);line-height:1.75}
+.big-stat p b{color:var(--lei-deep)}
+
+/* 三条保命策略模拟器 */
+.sv-list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.sv-item{border:1.5px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden;box-shadow:var(--shadow-card)}
+.sv-head{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;min-height:44px}
+.sv-badge{width:32px;height:32px;border-radius:9px;background:var(--lei-soft);color:var(--lei);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.sv-item.open .sv-badge{background:var(--lei);color:#fff}
+.sv-head h4{font-size:15.5px;font-weight:800;color:var(--text);flex:1}
+.sv-arrow{font-size:13px;color:var(--sub);transition:transform .2s}
+.sv-item.open .sv-arrow{transform:rotate(90deg)}
+.sv-body{display:none;padding:0 16px 16px 60px}
+.sv-item.open .sv-body{display:block}
+.sv-quote{background:rgba(0,0,0,.035);border-radius:10px;padding:12px 15px;font-size:14px;line-height:1.75;color:var(--text)}
+.sv-quote b{color:var(--lei-deep)}
+.sv-note{margin-top:10px;font-size:13.5px;color:var(--sub);line-height:1.7}
+.sv-done{margin-top:14px;display:none}
+.sv-done.show{display:block}
+@media (max-width:768px){.sv-body{padding-left:16px}}
+
+/* 年龄滑块 */
+.slider-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-top:12px;box-shadow:var(--shadow-card)}
+.slider-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.slider-row label{font-size:14px;font-weight:700;color:var(--text);flex-shrink:0}
+.slider-row input[type=range]{flex:1;min-width:180px;accent-color:var(--lei);height:32px;cursor:pointer}
+.age-val{font-size:26px;font-weight:800;color:var(--lei);font-family:"SF Mono",Menlo,monospace;min-width:80px;text-align:right}
+.budget-stage{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin-top:18px}
+.budget-num{font-size:46px;font-weight:800;line-height:1.1;font-family:"SF Mono",Menlo,monospace;color:var(--lei-deep);min-width:130px;text-align:center;transition:all .2s}
+.budget-num span{display:block;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:1px;margin-top:2px}
+.budget-bar{height:14px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden}
+.budget-fill{height:100%;border-radius:999px;background:var(--lei);transition:width .25s ease}
+.budget-quote{margin-top:16px;background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.25);border-radius:12px;padding:14px 17px;font-size:14.5px;line-height:1.8;color:var(--text)}
+.budget-quote b{color:var(--lei-deep)}
+@media (max-width:768px){.budget-stage{grid-template-columns:1fr}.budget-num{text-align:left}}
+
+/* 危机感案例 */
+.crisis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.crisis-grid h3{font-size:16px;font-weight:800;margin-bottom:6px;color:var(--lei-deep)}
+.crisis-grid p{font-size:14px;color:var(--sub);line-height:1.75}
+
+.src-note{margin-top:28px;font-size:13px;color:var(--sub)}
+@media (max-width:768px){
+  .crisis-grid{grid-template-columns:1fr}
+  .big-stat{grid-template-columns:1fr;gap:8px}
+}
+
+/* OPC 视角卡片组 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--lei-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--lei)}
+/* 本节要点清单 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--lei-soft);color:var(--lei);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--lei-deep)}
+@media(max-width:768px){.opc-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="心理准备：第一天就想好怎么死"><meta property="og:description" content="雷军创业课第 2 节：90% 以上的创业公司都会死。小米创立第一天就在想公司会怎么死，三条保命策略：静悄悄地干、早死早超生、只给自己四年。"><meta property="og:url" content="https://xueai.miyang.cn/slides/lei-2.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/lei-2.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">雷军创业课 · 2 / 14</div>
+    <h1>心理准备：第一天就想好怎么死</h1>
+    <p class="subtitle">大多数创业者第一天想的是公司会多成功，雷军创办小米的第一天想的是公司会怎么死。这一节讲他 40 岁再创业的动机、对失败率的清醒认知，以及三条具体的保命策略。</p>
+    <div class="chips"><span class="chip">硅谷之火</span><span class="chip">90% 会死</span><span class="chip">三条保命策略</span><span class="chip">危机感</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>90% 的创业公司都会死；静悄悄地干、早死早超生、只给自己四年。危机感才是护身符</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">动机：一本书点的火</div>
+    <p class="desc">1987 年，大学一年级的雷军在图书馆看了一本《硅谷之火》，书里讲乔布斯这样的硅谷英雄怎么创业、怎么引领一个时代，「看得让你热血沸腾」。带着办一家世界一流公司的念头，他创办了金山。</p>
+    <p class="desc">到 40 岁，该做的事都做得差不多了，他发现小时候的梦想还没实现。「我这一生算基本快结束了，在快结束的时候，我可不可以去试一点与众不同的东西？」</p>
+    <div class="quote-callout" style="margin-top:12px">
+      <p><b>「你可以说我狂妄，但是哪个创业者在内心不是狂妄的呢？他们不狂妄，怎么能自信呢？」</b>小米的最初动力就一条：办一家世界一流的公司。</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">清醒：热血之后看数字</div>
+    <div class="big-stat">
+      <div class="bn">90%+</div>
+      <p>做了几年天使投资之后，雷军说：「我觉得创业一点都不好。而且我几乎可以肯定<b>百分之九十以上的创业公司都会死掉</b>。」所以他跟绝大部分创业者相反：「我在创业的第一天就在想，我们的公司会怎么死。我说我们一定会出问题的。」动员团队时他不讲宏图，他说的是：你能不能信任我，跟我一起干四年，如果输了，咱们就散摊。</p>
+    </div>
+    <p class="desc" style="margin-top:12px">这和他做金山时完全相反。当年他把思想工作做得「极其透彻」，有人离开就觉得是背叛，「背叛了我们伟大的事业」，所有人都活得无比纠结。后来他想明白了：你不能把你的事业，变成每一个人矢志不渝的终身事业。</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 三条保命策略</div>
+    <p class="desc">想清楚「一定会死」之后，怎么才能不死？雷军给小米定了三条。逐条点开，看原话和背后的算计。</p>
+    <div class="sv-list">
+      <div class="sv-item" id="sv0">
+        <button class="sv-head" onclick="svToggle(0)">
+          <span class="sv-badge">一</span>
+          <h4>静悄悄地干</h4>
+          <span class="sv-arrow">▶</span>
+        </button>
+        <div class="sv-body">
+          <div class="sv-quote">「咱得静悄悄地干，输了呢，就当没干过。<b>咱说了就没干过不就得了吗？偷偷干就行。</b>」</div>
+          <p class="sv-note">听着像玩笑，实际是精神防御工事：不官宣、不造势，失败的成本里就少了一项「颜面扫地」。雷军说你的精神要无比强大才行，要有一整套逻辑说服自己。这套逻辑的第一条，就是把退路先修好。</p>
+        </div>
+      </div>
+      <div class="sv-item" id="sv1">
+        <button class="sv-head" onclick="svToggle(1)">
+          <span class="sv-badge">二</span>
+          <h4>方向不对，早死早超生，动作要快</h4>
+          <span class="sv-arrow">▶</span>
+        </button>
+        <div class="sv-body">
+          <div class="sv-quote">「咱们得给自己留有时间，如果不对呢，<b>早死早超生</b>。第一年咱们创办的方向不对，马上关门再接着干，<b>动作要快，千万不要将就</b>。」</div>
+          <p class="sv-note">死不可怕，慢慢死才可怕。方向错了硬撑，烧掉的不只是钱，是你最值钱的东西：时间。关门重来不是失败，是把子弹省下来打下一枪。</p>
+        </div>
+      </div>
+      <div class="sv-item" id="sv2">
+        <button class="sv-head" onclick="svToggle(2)">
+          <span class="sv-badge">三</span>
+          <h4>只给自己四年</h4>
+          <span class="sv-arrow">▶</span>
+        </button>
+        <div class="sv-body">
+          <div class="sv-quote">「如果我们四年干不起来，我们坚持要干四十年才能干起来的话，这个人生太纠结了。<b>以我们的商业经验，如果四年干不成的事情一定要用四十年来干的话，这件事太不经济了。</b>」</div>
+          <p class="sv-note">给项目设死线不是不坚持，是承认时间有机会成本。四年是雷军 40 岁时给自己的预算：「也许我没有四十年时间了」。下面的滑块可以看他对不同年龄的算法。</p>
+        </div>
+      </div>
+    </div>
+    <div class="sv-done" id="svDone">
+      <div class="quote-callout">
+        <p>三条看完了。结果小米「运气好到罕见」，从大的战略点来说几乎一步没错。但雷军的总结里没有庆幸，他接着问的是：<b>我们未来还会不会遇到什么样的坎坷？</b>保命策略的尽头，是永远保持危机感。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示二 · 你给自己几年？</div>
+    <p class="desc">雷军的时间预算跟年龄挂钩：「如果我二十岁创业，我会坚持告诉你们，坚持干四十年。如果我到了四十岁创业，我说你干四年就够了。」拖动滑块，换成你的年龄算一遍。</p>
+    <div class="slider-card">
+      <div class="slider-row">
+        <label for="ageRange">你打算创业时的年龄</label>
+        <input type="range" id="ageRange" min="20" max="50" value="28" oninput="ageRender()">
+        <div class="age-val" id="ageVal">28 岁</div>
+      </div>
+      <div class="budget-stage">
+        <div class="budget-num" id="budgetNum">— <span>时间预算</span></div>
+        <div>
+          <div class="budget-bar"><div class="budget-fill" id="budgetFill"></div></div>
+          <p class="desc" style="margin-top:8px;font-size:13px" id="budgetHint"></p>
+        </div>
+      </div>
+      <div class="budget-quote" id="budgetQuote"></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">二次创业更容易死</div>
+    <div class="quote-callout">
+      <p>「我看过很多很多二次创业失败的案例。有过第一次成功的经验，再创业的时候，失败的概率其实比第一次更高。为什么？<b>因为你觉得你自己了不起。往往你很得意的时候，你就离死不远了。</b>像我这样觉得自己创业挺牛的、还经常当所谓创业导师的人，我觉得死起来更容易。所以在我创办小米的时候，我就提醒我自己：我一定会死的。」</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">烧不死的鸟是凤凰</div>
+    <p class="desc">雷军非常喜欢任正非的一句话：一个企业只有死过三次才能叫真正的成功，「烧不死的鸟叫凤凰」。人生有顺境就一定有逆境，而在高度竞争的互联网行业，每个企业最重要的就是危机感。他举的两个「血淋淋、活生生」的例子：</p>
+    <div class="crisis-grid">
+      <div class="l-card"><h3>雅虎</h3><p>「我们谁能够想象当年的雅虎如日中天，会遇到今天的困境？」曾经定义了互联网门户时代的公司，几年之间从标杆变成了教训。</p></div>
+      <div class="l-card"><h3>诺基亚</h3><p>「谁想过短短几年前，诺基亚在今天会遇到压力？」功能机时代的绝对霸主，倒在了它自己看不上的智能机浪潮里。</p></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">保命策略 · 独立开发者版</span>
+        <ul class="opc-list">
+          <li><b>静悄悄地干</b>：产品没跑通之前不必到处官宣 build in public，失败成本里最贵的一项，是当众失败带来的自我怀疑。</li>
+          <li><b>早死早超生</b>：AI 时代重写一个 MVP 可能只要一两周，砍项目的合理门槛比雷军当年低得多：数据证明方向不对，就砍，千万不要将就。</li>
+          <li><b>只给自己四年</b>：给每个产品设验证死线，比如三个月内没有第一批付费用户就换方向，把「再坚持一下」从一种情绪，变成有截止日期的决定。</li>
+        </ul>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">危机感 · 一人公司版</span>
+        <p><b>危机感的一人公司版本是平台依赖。</b>雅虎和诺基亚死于看不见的浪潮；独立开发者的雅虎时刻是：模型 API 涨价十倍、平台改推荐算法、某天大厂把你的功能做成了免费标配。</p>
+        <p style="margin-top:8px"><b>第一天就想好「我的产品会怎么死」</b>：答案往往就是你该分散的那个单点。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>热血是入场券，清醒才是保命符</b>：90% 以上的创业公司会死，所以第一天就要想好怎么死。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>三条保命策略</b>：静悄悄地干、方向不对早死早超生、只给自己四年。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>成功过的人更危险</b>：「你很得意的时候，你就离死不远了。」</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>烧不死的鸟是凤凰</b>：危机感本身就是创业成功的关键。</p></div>
+    </div>
+    <p class="src-note">素材来源：雷军创业公开课口述整理</p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 交互一：三条保命策略 ── */
+var svOpened = [false, false, false];
+
+function svToggle(idx) {
+  var item = document.getElementById('sv' + idx);
+  item.classList.toggle('open');
+  if (item.classList.contains('open')) svOpened[idx] = true;
+  if (svOpened[0] && svOpened[1] && svOpened[2]) {
+    document.getElementById('svDone').classList.add('show');
+  }
+}
+
+/* 进入视野时自动展开第一条 */
+lessonOnView(document.getElementById('sv0'), function () {
+  if (!svOpened[0] && !svOpened[1] && !svOpened[2]) svToggle(0);
+});
+
+/* ── 交互二：你给自己几年 ── */
+function ageRender() {
+  var age = parseInt(document.getElementById('ageRange').value, 10);
+  document.getElementById('ageVal').textContent = age + ' 岁';
+
+  /* 雷军给的两个锚点：20 岁 → 40 年；40 岁 → 4 年。40 岁以上不再多给。 */
+  var years;
+  if (age <= 20) years = 40;
+  else if (age >= 40) years = 4;
+  else years = Math.round(40 - (age - 20) * (36 / 20));
+
+  document.getElementById('budgetNum').innerHTML = years + ' 年 <span>时间预算</span>';
+  document.getElementById('budgetFill').style.width = (years / 40 * 100) + '%';
+  document.getElementById('budgetHint').textContent = '预算条以 20 岁创业的 40 年为满格';
+
+  var q;
+  if (age < 27) {
+    q = '雷军对 20 岁创业者的版本：<b>「如果我二十岁创业，我会坚持告诉你们，坚持干四十年。」</b>年轻最大的资产是输得起：你有足够的时间把一件事从不成干到成。';
+  } else if (age < 36) {
+    q = '你在两个锚点之间。雷军的算法核心是一句话：<b>「如果四年干不成的事情一定要用四十年来干的话，这件事太不经济了。」</b>年龄越大，时间的机会成本越高，预算就该越紧。';
+  } else {
+    q = '雷军 40 岁创办小米时给自己的答案：<b>「你干四年就够了。」</b>他跟团队的约定也是四年：「你能不能相信我四年，跟我一起干四年，如果输了，咱们就散摊。」原因很坦白：「也许我没有四十年时间了。」';
+  }
+  document.getElementById('budgetQuote').innerHTML = q;
+}
+ageRender();
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

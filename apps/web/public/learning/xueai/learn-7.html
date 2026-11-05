@@ -1,0 +1,779 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-7",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-7',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 的回答先过三道检查 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+.lesson .clause mark{background:rgba(180,83,9,.24)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl ol{margin:0;padding:0;list-style:none;counter-reset:tpl}
+.tpl li{counter-increment:tpl;position:relative;padding-left:34px;margin-bottom:18px}
+.tpl li:last-child{margin-bottom:0}
+.tpl li:before{content:counter(tpl);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tpl li b{display:block;font-size:12.5px;font-weight:700;color:var(--accent-deep);margin-bottom:5px}
+.tpl li q{display:block;quotes:"「" "」";font-size:13.5px;line-height:1.95;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:12px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 150px;padding-top:12px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-dot{width:9px;height:9px;border-radius:50%;background:var(--faint);transform:scale(.8);transition:background .3s cubic-bezier(.4,0,.2,1),transform .3s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on .dm-dot{background:#fff;transform:scale(1)}
+.dm-track{height:4px;border-radius:99px;background:var(--border);margin:0 0 20px;overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s cubic-bezier(.25,1,.5,1)}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{display:flex;align-items:center;gap:8px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-count{min-width:24px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:12px;font-weight:800;text-align:center;transition:color .3s cubic-bezier(.4,0,.2,1)}
+.dm-count.pop{animation:countPop .7s ease}
+@keyframes countPop{0%{transform:scale(.7)}35%{transform:scale(1.2)}100%{transform:scale(1)}}
+.dm-pane{padding:14px;display:flex;flex-direction:column;gap:10px;min-height:210px;overflow-wrap:anywhere;word-break:break-word}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.it{padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.25,1,.5,1),background .4s cubic-bezier(.4,0,.2,1),border-color .4s cubic-bezier(.4,0,.2,1)}
+.demo.playing .it{opacity:.42}
+.demo.playing .it.cur{opacity:1}
+.it-t{font-size:13px;line-height:1.75;color:var(--text);font-weight:600}
+.it-body{max-height:0;margin-top:0;opacity:0;overflow:hidden;transition:max-height .45s cubic-bezier(.25,1,.5,1),margin-top .35s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1)}
+.it.open .it-body{max-height:170px;margin-top:9px;opacity:1}
+.it-badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(180,83,9,.25)}
+.it-badge.pop{animation:badgePop .7s ease}
+@keyframes badgePop{0%{transform:scale(.75)}32%{transform:scale(1.16)}100%{transform:scale(1)}}
+.it-why{display:block;margin-top:8px;font-size:12px;line-height:1.75;color:var(--sub)}
+.it.gsrc,.it.gcross{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.22)}
+.it.gsrc .it-badge,.it.gcross .it-badge{background:rgba(220,38,38,.09);color:var(--danger);border-color:rgba(220,38,38,.26)}
+.it.gflag{background:var(--accent-soft);border-color:rgba(180,83,9,.3)}
+.it.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.32)}
+.it.ok .it-badge{background:rgba(22,163,74,.1);color:var(--success);border-color:rgba(22,163,74,.3)}
+.it.ok.glow{animation:okGlow .9s ease}
+@keyframes okGlow{0%{box-shadow:0 0 0 0 rgba(22,163,74,.28)}50%{box-shadow:0 0 18px 5px rgba(22,163,74,.18)}100%{box-shadow:none}}
+.it.read{background:rgba(217,119,6,.08);border-color:rgba(217,119,6,.38)}
+.it.read .it-badge{background:rgba(217,119,6,.12);color:var(--amber);border-color:rgba(217,119,6,.34)}
+.it.read.warn{animation:readPulse 1.6s ease infinite}
+@keyframes readPulse{0%,100%{box-shadow:0 0 0 0 rgba(217,119,6,0)}50%{box-shadow:0 0 0 5px rgba(217,119,6,.13)}}
+.it.loose{border-style:dashed}
+.dm-enter{opacity:0;transform:translateY(10px)}
+.dm-enter.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:260px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}
+.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo,.tpl{max-width:100%;min-width:0}.dm-seg{width:100%}.dm-seg button{flex:1 1 auto}.dm-budget .dm-b-label{padding-top:0}}
+@media(prefers-reduced-motion:reduce){.it,.it-body,.dm-bar,.dm-enter,.dm-enter.show,.dm-summary,.dm-seg button,.dm-dot,.dm-count{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="要出处、交叉验证、标注不确定。同一段回答过三道闸门，每开一道筛掉的东西不一样，三道全开之后还剩一条得自己翻原文。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 的回答先过三道检查"><meta property="og:description" content="要出处、交叉验证、标注不确定。同一段回答过三道闸门，每开一道筛掉的东西不一样，三道全开之后还剩一条得自己翻原文。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-7.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-7.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="none"></path><path d="M9 12l2 2 4-4" fill="none"></path></svg>AI 教我学习 · 防幻觉</div>
+    <h1>让 AI 的回答先过三道检查</h1>
+    <p class="subtitle">要出处、交叉验证、标注不确定。同一段回答过三道闸，每开一道筛掉的不一样，三道全开还剩一条得自己翻原文。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>要出处、交叉验证、标注不确定。同一段回答过三道闸，每开一道筛掉的不一样，三道全开还剩一条得自己翻原文。</p></aside><!--seo:end-->  <p class="reveal">后面还有 <strong>6 个人排队</strong>。柜台把两页资费说明推过来，你要把每月 129 元的手机套餐换成 59 元的，快下班了。你拍下这两页纸发给 AI：「帮我看看这个套餐，合约多久、提前取消要多少钱、以后能不能在 App 里销户？」</p>
+  <p class="reveal">不到半分钟，它给回六条判断。每条都有数字，最后一条还带着看起来很像出处的名字。</p>
+  <p class="reveal"><span class="clause">回答摘要（教学示意）：套餐包含 30GB 流量，合约期 24 个月，提前取消赔 200 元；达到用量后会降速到 1Mbps；国际漫游要另行开通；异地可以在 App 里销户，依据是「服务协议第九条」。</span></p>
+  <p class="reveal">你算了一遍，每月省 70 元，就算提前取消赔 200 元也能接受。更关键的是异地可以线上销户。你在 <strong>5 点 47 分点了确认</strong>，拿着新套餐离开。</p>
+  <p class="reveal">三个月后搬家，你在出发当天早上 8 点 20 分打开 App，里面没有销户入口。客服说需要回号码归属地的营业厅办理，那两页资费说明也没有「App 销户」这句话。你 10 点 05 分的车票已经买好，只能先让套餐继续扣费。</p>
+  <p class="reveal">当时会信，是因为 AI 把常见套餐的做法、眼前材料里的数字和一个协议名称排在了同一张清单里。<strong>具体到第九条的出处</strong>又给了你一种已经核过原文的感觉。你问的是「帮我看看」，它的任务只是生成一份顺畅答案，没有被要求把依据、矛盾和推测分开。</p>
+  <div class="sec-label">同一段回答，多加三句话会怎样</div>
+  <p class="reveal">如果当时接着加三句：「每条标出处」「换一种问法再答一次」「把确定和推测分开」，结果会变成三层清单：</p>
+  <ol class="four reveal">
+    <li><b>先把没有材料依据的两条移出去</b>，降速和国际漫游暂时标成未核实。</li>
+    <li><b>再把两次回答不一致的一条移出去</b>，合约期一会儿是 24 个月，一会儿是 12 个月。</li>
+    <li><b>最后把从字面推出来的一条单列</b>，「当月有效」推不出赠送流量一定清零。</li>
+  </ol>
+  <p class="reveal"><mark>一句话都不加，六条判断会以同样的口气进入你的笔记；三句话加上去，四条先被停在待核区。</mark></p>
+  <p class="reveal paywall-locked xa-peek">还有两条留在结论里，其中「App 销户」甚至带着协议名称。它为什么没有被三道防线拦住？下面把三道开关逐个打开，看六条判断怎么移动。</p>
+
+  <div class="sec-label paywall-locked">先玩一遍 · 看三道防线各自拦下什么</div>
+  <div class="demo reveal paywall-locked" id="demo-gates">
+    <div class="demo-top">
+      <div class="demo-title">同一份套餐回答，逐道检查六条判断</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">这次要打开哪几道检查</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-gate="src" class="on"><i class="dm-dot"></i>请它标出每条出处</button>
+        <button type="button" data-gate="cross" class="on"><i class="dm-dot"></i>换一种问法再核一次</button>
+        <button type="button" data-gate="flag" class="on"><i class="dm-dot"></i>把推测单独列出来</button>
+      </div>
+      <span class="dm-b-hint">把三道检查都关掉，六条判断会原样留在结论里。</span>
+    </div>
+    <div class="dm-track"><div class="dm-bar" id="dm-bar"></div></div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">检查之后还留在结论里的判断<span class="dm-count" id="dm-n-keep">0</span></div>
+        <div class="dm-pane" id="dm-keep"><div class="dm-empty">点播放，六条判断会先从这里进入检查。</div></div>
+      </div>
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">检查时被移出结论的判断<span class="dm-count" id="dm-n-out">0</span></div>
+        <div class="dm-pane" id="dm-out"><div class="dm-empty">每打开一道检查，这里会显示它拦下了哪一条。</div></div>
+      </div>
+    </div>
+    <div class="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">先选择要打开的检查，再点播放看六条判断怎样移动。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>三道检查分别拦下了什么</b>指不到材料的判断、换个问法就改变的判断、混在结论里的推测。</div>
+      <div class="dm-s"><b>三道检查做完后为什么还剩一条</b>它能给出一个协议名称，协议那一节究竟写了什么，还需要你打开原文确认。</div>
+    </div>
+    <div class="demo-caption">教学示意：条款与回答都是为演示写的简化文本，不对应任何真实套餐。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">它答完了，接着贴哪三句</div>
+  <p class="reveal paywall-locked">下面三句可以整段接在任何回答后面。它们不会保证答案正确，作用是把原来挤在一起的内容分层，让你先看见最值得核的地方。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <ol>
+      <li><b>请它把每条判断指回原始材料</b><q>请把刚才回答中的每条判断逐条列出，并标明它来自我提供材料的哪一段。引用对应原句；如果找不到直接依据，就写「未找到依据」，不要补一个出处。</q></li>
+      <li><b>换一种问法重新回答同一件事</b><q>请先放下刚才的结论，按照「包含什么、限制什么、退出要付出什么」重新检查这份材料。把新答案和上一版逐条对照，只列出两次不一致的地方。</q></li>
+      <li><b>把能确认的内容与推测分开</b><q>请把剩下的判断分成「材料直接写明」和「根据材料推测」两栏。每条推测写清依据和还缺哪份信息；没有依据的内容继续留在待核区。</q></li>
+    </ol>
+    <p class="tpl-note">材料很长时，可以一次只检查一个小节。三句按顺序发，上一句得到的清单就是下一句的输入。</p>
+  </div>
+  <p class="reveal paywall-locked">第一句里的<strong>引用对应原句</strong>是关键。只让 AI 写出处名称，它可能给出「服务协议第九条」这样完整却还没核过的标签。要求同时贴出对应原句，你才能看到名称下面有没有文字支撑。</p>
+  <p class="reveal paywall-locked">第二句检查的是<strong>回答能不能稳定复现</strong>。两次一致仍然可能一起写错；两次不一致已经足够提醒你先停下。开头那条合约期就在这一步从结论里移了出去。</p>
+  <p class="reveal paywall-locked">第三句里的「材料直接写明」把判断标准落在字面证据上。「当月有效」最多说明有效期，赠送流量是否清零仍然缺一条明确规则，所以它要留在推测栏。</p>
+
+  <div class="sec-label paywall-locked">三道都过了，还剩什么</div>
+  <p class="reveal paywall-locked">最后剩两条。30GB 那条能在资费说明第三条找到对应原句，可以先用。App 销户那条给出了协议名称，却没有贴出支持异地办理的原句，需要打开协议确认。</p>
+  <p class="reveal paywall-locked"><mark>三道防线负责缩小待核范围，原文负责给最后那条定案。</mark>它们都是经验做法，能拦下一部分编造，也可能放过写得很像出处的内容。什么时候值得离开对话，下一页接着讲。</p>
+  <p class="reveal paywall-locked">哪五类地方最容易被编，在 <a href="/dashboard/learning?lesson=learn-6" data-lesson-id="learn-6">让 AI 标出最可能编错的五类信息</a>。这三道的工程化版本在 <a href="/dashboard/learning?view=courses" data-learning-view="courses">校验脚本要同时盯数量和正确性</a>，出处换成文件加行号。</p>
+
+  <div class="key-line reveal paywall-locked">三道筛完剩下的那一条，得翻开原文才能定。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var GATES = [
+    {k:'src',   cls:'gsrc',   name:'第一道 · 请它标出每条出处',     cap:'第一道检查每条判断能否指回材料原句。两条找不到直接依据，先按未核实移出结论。'},
+    {k:'cross', cls:'gcross', name:'第二道 · 换一种问法再核一次',   cap:'第二道把同一件事换个问法重新回答。合约期那条两次答案不同，所以也要移出结论。'},
+    {k:'flag',  cls:'gflag',  name:'第三道 · 把推测单独列出来', cap:'第三道把材料写明的内容和推测分开。定向流量清零是从字面推出来的，需要单独放进待核区。'}
+  ];
+  var ITEMS = [
+    {id:'a', t:'套餐内 30GB，超出按 5 元 1GB', gate:null, mark:'ok',
+     why:'指到资费说明第三条，换个问法答得一样'},
+    {id:'b', t:'达量后降速到 1Mbps', gate:'src',
+     why:'它写「一般套餐都这样」，条款里指不到'},
+    {id:'c', t:'国际漫游要先单独开通', gate:'src',
+     why:'出处那一栏它留空了'},
+    {id:'d', t:'合约 24 个月，提前退赔 200 元', gate:'cross',
+     why:'换个问法变成 12 个月、按剩余月数赔'},
+    {id:'e', t:'赠送的定向流量当月清零', gate:'flag',
+     why:'它自己写这是从「当月有效」推出来的'},
+    {id:'f', t:'异地能在 App 里销户', gate:null, mark:'read',
+     why:'出处指到服务协议第九条，名字给得利索，那一节里写了什么，闸门查不了'}
+  ];
+  var MARK = {
+    ok:   {badge:'这条通过了三次检查'},
+    read: {badge:'还是要自己去看原文'}
+  };
+  var IDLE = '先选择要打开的检查，再点播放看六条判断怎样移动。';
+  var CAP_INTAKE = '六条判断先原样进入结论。它们读起来一样顺，单看字面分不出哪一条能指回材料。';
+  var CAP_ALL = '六条判断剩下两条。30GB 那条能找到对应原句，可以先用；App 销户那条只有协议名称，还需要打开原文确认。';
+  var CAP_SOME = '虚线框里的判断没有经过对应检查。过几天再看笔记，它们很容易和已经核过的内容混在一起。';
+  var CAP_NONE = '三道检查全部关掉，六条判断都会放行。过几天你只会记得结论，很难再分清哪些内容有材料依据。';
+
+  var on = {src:true, cross:true, flag:true};
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var timers = [];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-gates');
+  var keepEl = document.getElementById('dm-keep');
+  var outEl = document.getElementById('dm-out');
+  var barEl = document.getElementById('dm-bar');
+  var nKeep = document.getElementById('dm-n-keep');
+  var nOut = document.getElementById('dm-n-out');
+  var summary = document.getElementById('dm-summary');
+  var captionText = document.getElementById('dm-caption-text');
+  var map = {};
+
+  function clearTimers(){
+    timers.forEach(function(t){ clearTimeout(t); });
+    timers = [];
+  }
+
+  function dropEmpty(box){
+    var e = box.querySelector('.dm-empty');
+    if (e && e.parentNode) e.parentNode.removeChild(e);
+  }
+
+  function setCount(el, n){
+    if (el.textContent === String(n)) return;
+    el.textContent = n;
+    el.classList.remove('pop');
+    requestAnimationFrame(function(){ el.classList.add('pop'); });
+  }
+
+  function fill(el, badge, why){
+    var b = el.querySelector('.it-badge');
+    b.textContent = badge;
+    b.classList.remove('pop');
+    el.querySelector('.it-why').textContent = why;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        el.classList.add('open');
+        b.classList.add('pop');
+      });
+    });
+  }
+
+  function makeItem(it){
+    var el = document.createElement('div');
+    el.className = 'it dm-enter cur';
+    el.innerHTML = '<div class="it-t"></div><div class="it-body"><span class="it-badge"></span><span class="it-why"></span></div>';
+    el.querySelector('.it-t').textContent = it.t;
+    return el;
+  }
+
+  // 六条一起插进来，靠 double-rAF 让它们逐条淡入，不然浏览器会把两次改动合并、动画不播
+  function intake(){
+    keepEl.innerHTML = '';
+    outEl.innerHTML = '<div class="dm-empty">每打开一道检查，这里会显示它拦下了哪一条。</div>';
+    map = {};
+    ITEMS.forEach(function(it, i){
+      var el = makeItem(it);
+      map[it.id] = el;
+      keepEl.appendChild(el);
+      var t = setTimeout(function(){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ el.classList.add('show'); });
+        });
+      }, reduce ? 0 : i * 80);
+      timers.push(t);
+    });
+    setCount(nKeep, ITEMS.length);
+    setCount(nOut, 0);
+    captionText.textContent = CAP_INTAKE;
+  }
+
+  // 条目换栏用 FLIP：先记旧位置，挪完再反向位移回去放开，元素自己滑过去，
+  // 留在原栏的那几条也跟着平滑补位
+  function moveOut(list, cls, badge){
+    var stay = Array.prototype.slice.call(keepEl.querySelectorAll('.it'));
+    var old = stay.map(function(e){ return {e:e, r:e.getBoundingClientRect()}; });
+    dropEmpty(outEl);
+    list.forEach(function(it){
+      var el = map[it.id];
+      el.classList.add(cls);
+      outEl.appendChild(el);
+      fill(el, badge, it.why);
+    });
+    old.forEach(function(p){
+      var r = p.e.getBoundingClientRect();
+      var dx = p.r.left - r.left, dy = p.r.top - r.top;
+      if (!dx && !dy) return;
+      p.e.style.transition = 'none';
+      p.e.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      requestAnimationFrame(function(){
+        p.e.style.transition = '';
+        p.e.style.transform = '';
+      });
+    });
+  }
+
+  function focusOnly(list){
+    Object.keys(map).forEach(function(k){ map[k].classList.remove('cur'); });
+    list.forEach(function(it){ map[it.id].classList.add('cur'); });
+  }
+
+  function paint(st, i){
+    demoEl.classList.add('playing');
+    barEl.style.width = (i / (steps.length - 1) * 100) + '%';
+    if (st.type === 'intake') {
+      intake();
+      summary.classList.remove('on');
+      return;
+    }
+    if (st.type === 'gate') {
+      var hit = ITEMS.filter(function(it){ return it.gate === st.g.k; });
+      focusOnly(hit);
+      moveOut(hit, st.g.cls, st.g.name);
+      setCount(nKeep, keepEl.querySelectorAll('.it').length);
+      setCount(nOut, outEl.querySelectorAll('.it').length);
+      captionText.textContent = st.g.cap;
+      return;
+    }
+    var left = ITEMS.filter(function(it){ return !it.gate || !on[it.gate]; });
+    focusOnly(left);
+    left.forEach(function(it){
+      var el = map[it.id];
+      if (it.gate) {
+        el.classList.add('loose');
+        fill(el, gateOf(it.gate).name + ' 没开', it.why);
+      } else if (it.mark === 'ok') {
+        el.classList.add('ok', 'glow');
+        fill(el, MARK.ok.badge, it.why);
+      } else {
+        el.classList.add('read', 'warn');
+        fill(el, MARK.read.badge, it.why);
+      }
+    });
+    var open = GATES.filter(function(g){ return on[g.k]; }).length;
+    captionText.textContent = open === 3 ? CAP_ALL : (open === 0 ? CAP_NONE : CAP_SOME);
+    summary.classList.add('on');
+  }
+
+  function gateOf(k){
+    var r = null;
+    GATES.forEach(function(g){ if (g.k === k) r = g; });
+    return r;
+  }
+
+  function buildSteps(){
+    var s = [{type:'intake'}];
+    GATES.forEach(function(g){ if (on[g.k]) s.push({type:'gate', g:g}); });
+    s.push({type:'final'});
+    return s;
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], idx);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+
+  // 节拍不匀速：第一道闸门那一步信息量最大，收尾也要停久一点
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= steps.length) { stop(); return; }
+    var st = steps[idx];
+    paint(st, idx);
+    idx++;
+    pauseUntil = ts + (st.type === 'final' ? 3000 : (st.type === 'intake' ? 1900 : 2100));
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop();
+    idx = 0; pauseUntil = 0;
+    steps = buildSteps();
+    clearTimers();
+    demoEl.classList.remove('playing');
+    barEl.style.width = '0%';
+    keepEl.innerHTML = '<div class="dm-empty">点播放，六条判断会先从这里进入检查。</div>';
+    outEl.innerHTML = '<div class="dm-empty">每打开一道检查，这里会显示它拦下了哪一条。</div>';
+    map = {};
+    nKeep.textContent = '0';
+    nOut.textContent = '0';
+    summary.classList.remove('on');
+    captionText.textContent = IDLE;
+  }
+
+  function play(){
+    if (idx >= steps.length) reset();
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    var k = b.getAttribute('data-gate');
+    on[k] = !on[k];
+    b.classList.toggle('on', on[k]);
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

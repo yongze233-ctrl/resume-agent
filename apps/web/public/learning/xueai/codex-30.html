@@ -1,0 +1,1169 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-30",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-30',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>流式输出怎么在终端两区之间定稿 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 200px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-term{position:relative;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-term-bar{position:relative;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-term-bar:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-term-bar .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;font-weight:600;color:var(--sub)}
+.dm-meter b{color:var(--accent-deep);font-variant-numeric:tabular-nums;transition:opacity .3s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-meter b.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-term-body{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:280px}
+.dm-term-body.is-live .dm-zone{opacity:.4;transform:scale(.98)}
+.dm-term-body.is-live .dm-zone.now{opacity:1;transform:scale(1)}
+.dm-term-body.is-live .dm-buf{opacity:.4;transform:scale(.98)}
+.dm-term-body.is-live .dm-buf.now{opacity:1;transform:scale(1)}
+.dm-zone{border:1px solid var(--border);border-radius:10px;background:var(--card);transform-origin:top center;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-zone.live{background:var(--accent-soft);border-color:rgba(65,75,90,.35)}
+.dm-zone-h{padding:8px 12px;font-size:11px;font-weight:700;color:var(--sub);display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border);transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-zone.live .dm-zone-h{color:var(--accent-deep);border-bottom-color:rgba(65,75,90,.2)}
+.dm-lines{padding:10px 12px;min-height:52px;overflow-x:auto}
+.dm-lines.is-live .dm-line{opacity:.4;transform:scale(.98)}
+.dm-lines.is-live .dm-line.now,.dm-lines.is-live .dm-line.ghost{opacity:1;transform:scale(1)}
+.dm-line{font:12.5px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text);white-space:pre;display:flex;align-items:flex-start;gap:8px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-line .mark{flex:0 0 auto;width:14px;height:14px;margin-top:4px;color:var(--accent)}
+.dm-line .txt{flex:1 1 auto;transition:opacity .3s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-line.empty{color:var(--faint);font:12px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;white-space:normal}
+.dm-line.ghost .txt{color:var(--danger)}
+.dm-line.is-enter{opacity:0;transform:translateY(8px)}
+.dm-line.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-line.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-line.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-buf{padding:10px 12px;border-radius:9px;background:var(--card);border:1px dashed var(--border);font-size:12.5px;line-height:1.75;color:var(--sub);min-height:48px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-buf.on{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-buf.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-buf.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-buf.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-composer{margin-top:2px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);font-size:12px;color:var(--faint)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-term-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-meter{width:100%}.dm-budget{align-items:flex-start}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:520px}}
+</style>
+<meta name="description" content="Codex 把流式输出切成稳定区和活动尾巴：已定稿的行交给终端 scrollback，没闭合的表格扣在可变区，避免列宽反复重排">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="流式输出怎么在终端两区之间定稿"><meta property="og:description" content="Codex 把流式输出切成稳定区和活动尾巴：已定稿的行交给终端 scrollback，没闭合的表格扣在可变区，避免列宽反复重排"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-30.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 终端界面</div>
+    <h1>流式输出怎么在终端两区之间定稿</h1>
+    <p class="subtitle">模型按 token 往外推，终端却是一个写出去就改不了的字符网格。已经不会变的行交给 scrollback，还可能变的尾巴留在活动 cell，表格没闭合之前整段扣住。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>模型按 token 往外推，终端却是一个写出去就改不了的字符网格。已经不会变的行交给 scrollback，还可能变的尾巴留在活动 cell，表格没闭合之前整段扣住。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清两件事：哪些行一旦写进终端 scrollback 就不可改；以及一张还没写完的 markdown 表，为什么必须扣在活动区，等到流结束才定稿。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 哪些行已经锁死，表为什么还在抖</div>
+  <div class="demo reveal" id="demo-regions">
+    <div class="demo-top">
+      <div class="demo-title">同一段带表的短文，看它怎么在两区之间定稿</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">表格扣留</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-hold="1" class="on">开</button>
+        <button type="button" data-hold="0">关</button>
+      </div>
+      <span class="dm-b-hint">关掉后，表头按窄列先锁死，后面的长单元格改不了它。</span>
+    </div>
+    <div class="dm-term">
+      <div class="dm-term-bar">
+        <span class="dm-name">假终端 · 稳定区在上，尾巴在下</span>
+        <span class="dm-meter">
+          <span>已定稿 <b id="dm-stable-n">0</b></span>
+          <span>尾巴 <b id="dm-tail-n">0</b></span>
+          <span>扫描 <b id="dm-hs">None</b></span>
+        </span>
+      </div>
+      <div class="dm-term-body">
+        <div class="dm-zone" id="dm-stable-zone">
+          <div class="dm-zone-h"><span>稳定区</span><span>提交即固化</span></div>
+          <div class="dm-lines" id="dm-stable"></div>
+        </div>
+        <div class="dm-zone live" id="dm-tail-zone">
+          <div class="dm-zone-h"><span>活动尾巴</span><span>可变</span></div>
+          <div class="dm-lines" id="dm-tail"></div>
+        </div>
+        <div class="dm-buf" id="dm-status">等待开始。</div>
+        <div class="dm-composer">输入框停在原处。</div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>没有换行的 delta 不改可见尾巴</span><span class="ln">streaming.rs L489</span></li>
+        <li><span>收集器等到换行才提交 source</span><span class="ln">markdown_stream.rs L87</span></li>
+        <li><span>扫描器看上一行是不是表头</span><span class="ln">table_holdback.rs L23</span></li>
+        <li><span>确认表之后从 header 起整段扣在尾巴</span><span class="ln">controller.rs L384</span></li>
+        <li><span>散文行入队，等 tick 写进 scrollback</span><span class="ln">controller.rs L343</span></li>
+        <li><span>tick 把稳定行写成 HistoryCell</span><span class="ln">streaming.rs L399</span></li>
+        <li><span>insert_history 写进终端 scrollback</span><span class="ln">insert_history.rs L3</span></li>
+        <li><span>流结束才把整张表一次定稿</span><span class="ln">controller.rs L160</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看一段带表的短文怎么在稳定区和活动尾巴之间定稿。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>锁住的行</b>散文进稳定区之后，列宽再变也碰不到它。</div>
+      <div class="dm-s"><b>扣住的表</b>扣留打开时整张表在尾巴里一起重排。关掉后，表头按窄列锁死，长单元格只能另排。</div>
+      <div class="dm-s"><b>什么时候定稿</b>流还在走，表就不能进 scrollback。finalize 之后整段一次提交。</div>
+    </div>
+    <div class="demo-caption">教学示意：短文与列宽为课程化设定。轨迹行号对应 openai/codex commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 已经不会变的行，交给终端自己保管</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你盯着终端看模型写答案。散文还好，一行一行往下长。接着它开始吐一张表：先出表头，再出分隔行，再出第一行数据。列宽每来一行就变一次。刚才对齐好的 Description 被挤到下一列，上一帧的竖线还印在屏幕上。</p>
+  <p class="reveal">你往上滚想看刚才那句结论，滚轮动了，历史和正在写的尾巴叠在一起。网页换 DOM 时浏览器会保住滚动位置。终端往 stdout 写一个字，光标就往前走一格。想留住旧答案，又想让表跟着新行改列宽，就得先决定哪些格子属于过去，哪些还属于现在。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把渲染结果切成两区。能确定不再变的行进动画队列，等 commit tick 写成 HistoryCell，用转义序列塞进终端自己的 scrollback。还可能变的行只活在活动 cell 里，下一帧可以整段换掉。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/tui/src/streaming/controller.rs</code> 第 1 至 36 行</p>
+  <p class="reveal">控制器同时记两套长度。enqueued_stable_len 是交给队列的行数，emitted_stable_len 是写进 scrollback 的行数。尾巴从 enqueue 边界算起。按 emit 切的话，排队还没写出的行会在活动 cell 里再出现一次。三个指针同向移动，已经 emit 的那一截不许回头改。</p>
+  <p class="reveal">没换行的 token 连尾巴都不更新。用户看见的最小时间单位是一行 markdown source。半行表格如果先画出来，下一秒结构一对，列会立刻消失再长出来。未结束的 source 进缓冲，不能改可见尾巴。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/tui/src/chatwidget/streaming.rs</code> 第 489 至 492 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 280" role="img" aria-label="token 经过换行门和两区之后分别进入 scrollback 与活动尾巴">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="24" y="88" width="130" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="89" y="122" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">模型 delta</text>
+      <text x="89" y="144" fill="#6b7280" text-anchor="middle" font-size="13">按 token 到达</text>
+      <path fill="none" d="M162 124H214" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="222" y="88" width="150" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="297" y="122" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">换行门</text>
+      <text x="297" y="144" fill="#6b7280" text-anchor="middle" font-size="13">半行留在缓冲</text>
+      <path fill="none" d="M380 124H430" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="438" y="88" width="150" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="513" y="122" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">两区划分</text>
+      <text x="513" y="144" fill="#6b7280" text-anchor="middle" font-size="13">稳定行 / 可变尾</text>
+      <path fill="none" d="M588 108H650" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M588 140H650" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="658" y="36" width="258" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="787" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">稳定区</text>
+      <text x="787" y="92" fill="#6b7280" text-anchor="middle" font-size="13">tick 后写进终端 scrollback</text>
+      <rect x="658" y="140" width="258" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5"></rect>
+      <text x="787" y="174" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">活动尾巴</text>
+      <text x="787" y="196" fill="#6b7280" text-anchor="middle" font-size="13">下一帧可以整段替换</text>
+      <text x="470" y="248" fill="#6b7280" text-anchor="middle" font-size="13">已经 emit 的行不会被收回，尾巴从入队边界算起</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：同一条流，先过换行门，再拆成不可改的历史和还可改的尾巴。</div>
+  </div>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal">这是格子所有权的合同。已经交给终端 scrollback 的字，进程里没有可写副本。用户用滚轮、搜索、复制，用的是终端自己的能力，TUI 不必再做一份完整历史视口。代价是提交之后不能改。换个语言重写，只要界面是终端字符网格，这道题还在。</p>
+
+  <div class="sec-label paywall-locked xa-peek">思路二 · 表格没闭合，整段扣在尾巴里</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">markdown 表加一行就能改所有列宽。表头如果已经按窄列冻进 scrollback，后面的长单元格没法回去改它。竖线对不齐，残影留在原处。</p>
+  <p class="reveal paywall-locked">普通散文里的竖线也会误伤。一句 <code>status | owner | note</code> 看起来像表头，其实只是一句话。扣得太狠，这段散文会被卡住，直到流结束才放行。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">扫描器只认 header 加 delimiter。上一行像表头、下一行还没到，先乐观扣住，状态叫 PendingHeader。后面来的如果是普通散文，状态回到 None，那一行再进稳定队列。两行对上了，进入 Confirmed，从 header 起整张表留在尾巴，直到 finalize。表前面的散文可以继续提交。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/tui/src/streaming/table_holdback.rs</code> 第 21 至 32 行</p>
+  <p class="reveal paywall-locked">尾巴预算由扫描状态决定。None 时预算是 0，行直接进稳定队列。PendingHeader 和 Confirmed 则从 header 起点起整段扣住。Raw 模式预算也是 0，表格当纯文本流走，列宽问题交给用户自己的终端选区。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/tui/src/streaming/controller.rs</code> 第 384 至 412 行</p>
+  <p class="reveal paywall-locked">sh 围栏里的竖线当代码，不触发扣留。连续多张表时，第一张没结束，后面的表也不提前定稿，超长多表答案会在活动区堆到流结束。</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="表格扣留的三种状态以及各自把行送去哪里">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="40" width="200" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">None</text>
+      <text x="140" y="96" fill="#6b7280" text-anchor="middle" font-size="13">行直接进稳定队列</text>
+      <path fill="none" d="M250 76H318" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="284" y="64" fill="#6b7280" text-anchor="middle" font-size="12">像表头</text>
+      <rect x="326" y="40" width="240" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="446" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">PendingHeader</text>
+      <text x="446" y="96" fill="#6b7280" text-anchor="middle" font-size="13">先扣住，等下一行</text>
+      <path fill="none" d="M576 76H644" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="610" y="64" fill="#6b7280" text-anchor="middle" font-size="12">分隔行</text>
+      <rect x="652" y="40" width="248" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="776" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Confirmed</text>
+      <text x="776" y="96" fill="#6b7280" text-anchor="middle" font-size="13">从表头起整段留在尾巴</text>
+      <path fill="none" d="M446 120V168" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <text x="458" y="154" fill="#6b7280" font-size="12">来的是散文</text>
+      <rect x="326" y="176" width="240" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="446" y="210" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">回到 None，放行</text>
+      <path fill="none" d="M776 120V168" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="652" y="176" width="248" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="776" y="210" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">finalize 后一次定稿</text>
+      <text x="470" y="268" fill="#6b7280" text-anchor="middle" font-size="13">只认 header 加 delimiter，普通竖线散文不会被扣到流结束</text>
+    </svg>
+    <div class="visual-caption">教学化状态图：乐观扣留只多停一会儿，确认之后整张表都等流结束。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">任何按增量画表的界面都有这个问题。列宽是全局量，局部追加会改已经画过的行。把整张未闭合的表留在可变区，是这条约束的最小解。网页里对应的做法是，表格节点在闭合之前不要拆进不可变的 DOM 片段。</p>
+
+  <div class="key-line reveal paywall-locked">提交即固化。没闭合的表，先扣住。</div>
+
+  <div class="sec-label paywall-locked">思路三 · 队列用两档速度，一帧里的写入要一起走</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">稳定行入队之后，立刻全部写进终端也不对。慢流希望一行一行长出来，像打字。快流希望队列赶得上模型。只有一档速度，两端都会难受。</p>
+  <p class="reveal paywall-locked">还有一帧里的两处写入。历史行用转义序列写到 viewport 上方，ratatui 再画输入框和活动尾巴。拆成两次刷新，用户会先看见历史往上跳一截，输入框还停在旧位置。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">排水分两档。平滑档每个 tick 出一行，追赶档一次抽空当前队列。深度到 8 行，或者最老一行超过 120 毫秒，就能进追赶。退出要深度降到 2、年龄降到 40 毫秒，并且保持 250 毫秒。退出后再挡 250 毫秒，除非堆到 64 行或 300 毫秒。策略不看这段文本是标题还是表格，只看队列深度和年龄。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/tui/src/streaming/chunking.rs</code> 第 82 至 125 行</p>
+  <p class="reveal paywall-locked">定时线程只按帧间隔发 CommitTick，抽多少行是策略的事。这个间隔等于 120 FPS 的下限，平滑档上限就是每秒 120 行。写屏时，scrollback 插入和 viewport 绘制包进同一次 sync_update。双 buffer 只把变过的格子写出去。画回调必须画满整帧，少画一块，终端会留下上一帧的残字。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/tui/src/tui.rs</code> 第 954 至 973 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="平滑档与追赶档排水之后，同一帧写入 scrollback 和 viewport">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="70" width="180" height="88" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="130" y="108" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">稳定队列</text>
+      <text x="130" y="132" fill="#6b7280" text-anchor="middle" font-size="13">按到达时间排队</text>
+      <path fill="none" d="M228 92H290" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <path fill="none" d="M228 136H290" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="298" y="36" width="200" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="398" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Smooth</text>
+      <text x="398" y="92" fill="#6b7280" text-anchor="middle" font-size="13">每个 tick 一行</text>
+      <rect x="298" y="128" width="200" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="398" y="162" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">CatchUp</text>
+      <text x="398" y="184" fill="#6b7280" text-anchor="middle" font-size="13">一次抽空当前队列</text>
+      <path fill="none" d="M506 72H568" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <path fill="none" d="M506 164H568" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="576" y="70" width="324" height="88" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5"></rect>
+      <text x="738" y="108" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">一次 sync_update</text>
+      <text x="738" y="132" fill="#6b7280" text-anchor="middle" font-size="13">历史插入和 viewport 绘制一起刷新</text>
+      <text x="470" y="236" fill="#6b7280" text-anchor="middle" font-size="13">进入门槛高于退出门槛，避免在 8 行附近来回打齿</text>
+    </svg>
+    <div class="visual-caption">教学化时序图：抽多少行由队列压力决定，写出去的两处动作必须包在同一帧。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">两档齿轮对付的是同一种队列的两种压力。深度抓一下子来了很多行，年龄抓行不多但等太久。一帧里的多处写入要原子提交，终端用同步输出协议，网页用一次 DOM 替换。先清屏再画，中间帧一定会被人眼看见。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 历史放在哪，决定哪几层是必需的</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：整棵消息树都能改，同步输出先问终端</h4>
+      <p>Claude Code 的 TUI 是 Ink。每帧先调和 React 树，再对前后屏做 cell diff，最后决定要不要用 DEC 2026 的 BSU/ESU 包一层。探测函数写得很直：支持时能避免重绘闪烁；tmux 会拆包，原子性已经没了，再发这 16 个字节只是给外层终端添负担，所以直接跳过。</p>
+      <p>它没有稳定区、可变尾、表格 holdback 这套。已经画出来的节点，下一帧还能改。代价是调和发生在 JS 里。Codex 把已提交行交给终端 scrollback，活动区本来就小，所以每次 draw 都走 sync_update，不再维护一份终端白名单。</p>
+      <span class="cmp-tag">已核对 <code>restored-src/src/ink/terminal.ts</code> 第 66 至 74 行 · 2026-08-22</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build：历史留在进程里，每个 chunk 作废缓存</h4>
+      <p>Grok 的 pager 也是 ratatui TUI，历史却不交给终端 scrollback。Agent 块按 EntryId 活在进程里的 ScrollbackState。来一个 chunk，就往同一块追加文本，立刻 invalidate_cache，并标记高度脏。下一次布局按新宽度重算。</p>
+      <p>宽度一变，进程里的块能按 source 重画。Codex 已经 emit 的行属于终端，只能等 finalize 之后用完整 source 再生成一份可重绘的 cell。Grok 付的账是内存里挂着全部块，每个 chunk 都作废布局缓存。</p>
+      <span class="cmp-tag">已核对 <code>xai-grok-pager/src/scrollback/state/mod.rs</code> 第 915 至 926 行 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>超长段落一直不换行，屏幕上会停在哪</h3>
+      <p>模型在一个超长段落中间一直不吐 <code>\n</code>。对照 <code>push_delta</code> 只在看到换行才提交渲染，以及「Unterminated source is buffered by the controller and cannot change the visible tail」这行注释，写出：可见尾巴何时更新，这段文字何时进入 scrollback。</p>
+      <p>进阶一问：如果这段文字其实是表格的半截行，扣留打开和关掉时，用户分别会看见什么。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>没换行的 token 不可见。能确定不再变的行进终端 scrollback，提交即固化。还可能变的行，尤其是没闭合的表，只活在活动尾巴里，等流结束再一次定稿。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var holdOn = true;
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var lineNodes = {};
+  var prevKind = {}, prevText = {}, prevHost = {};
+  var prevHs = '', prevStKind = '', prevTrace = null;
+  var stableEl = document.getElementById('dm-stable');
+  var tailEl = document.getElementById('dm-tail');
+  var stableZone = document.getElementById('dm-stable-zone');
+  var tailZone = document.getElementById('dm-tail-zone');
+  var termBody = document.querySelector('.dm-term-body');
+  var termBar = document.querySelector('.dm-term-bar');
+  var termHost = document.querySelector('.dm-term');
+  var statusEl = document.getElementById('dm-status');
+  var nStable = document.getElementById('dm-stable-n');
+  var nTail = document.getElementById('dm-tail-n');
+  var hsEl = document.getElementById('dm-hs');
+  var traceBox = document.querySelector('.dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '点播放，看一段带表的短文怎么在稳定区和活动尾巴之间定稿。';
+  var LOCK = '<svg class="mark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none"/></svg>';
+  var LIVE = '<svg class="mark" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" fill="none"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" fill="none"/></svg>';
+
+  function pad(s, n){
+    s = String(s);
+    var extra = n - s.length;
+    if (extra < 0) extra = 0;
+    return s + Array(extra + 1).join(' ');
+  }
+  function widthsOf(rows){
+    var w = [1, 1, 1];
+    rows.forEach(function(r){
+      r.forEach(function(c, i){ if (c.length > w[i]) w[i] = c.length; });
+    });
+    return w;
+  }
+  function rowText(cells, widths){
+    return '| ' + cells.map(function(c, i){ return pad(c, widths[i]); }).join(' | ') + ' |';
+  }
+  function line(text, kind, id){
+    return { text: text, kind: kind || '', id: id || text };
+  }
+
+  function buildSteps(hold){
+    var prose = '先看结论：备份要按文件类型拆。';
+    var H = ['Type', 'Path', 'Note'];
+    var D = ['---', '---', '---'];
+    var R1 = ['src', '/app', '源码'];
+    var R2 = ['docs', '/notes', '很长的说明会把列挤开'];
+    var wHead = widthsOf([H]);
+    var w1 = widthsOf([H, D, R1]);
+    var wAll = widthsOf([H, D, R1, R2]);
+    var out = [];
+
+    out.push({
+      cap: '同一段短文交给终端：一句结论，再加一张列宽会变的表。表格扣留现在是' + (hold ? '开着的' : '关掉的') + '。',
+      trace: null, hs: 'None',
+      stable: [], tail: [],
+      st: '流还没开始，两区都空着。', stKind: ''
+    });
+    out.push({
+      cap: '模型先吐了半行。没有换行，收集器不交 source，屏幕上什么都没有。',
+      trace: 0, hs: 'None',
+      stable: [], tail: [],
+      st: '缓冲里是「先看结…」，可见尾巴不变。', stKind: 'on'
+    });
+    out.push({
+      cap: '换行到了。收集器交出这行完整 source，散文被送进稳定队列，还没写成 HistoryCell。',
+      trace: 1, hs: 'None',
+      stable: [], tail: [line(prose, 'live', 'prose')],
+      st: '新稳定行在队列里，等下一次 tick。', stKind: 'on'
+    });
+    out.push({
+      cap: 'tick 把这行写成 HistoryCell，insert_history 塞进终端 scrollback。这句结论从此不可改。',
+      trace: 5, hs: 'None',
+      stable: [line(prose, 'lock', 'prose')], tail: [],
+      st: '已定稿 1 行。用户往上滚，看到的是终端自己保存的格子。', stKind: 'ok'
+    });
+
+    if (hold) {
+      out.push({
+        cap: '表头到了。上一行像 header，扫描器进 PendingHeader。这一行先扣在尾巴里，等下一行是不是分隔行。',
+        trace: 2, hs: 'PendingHeader',
+        stable: [line(prose, 'lock', 'prose')],
+        tail: [line(rowText(H, wHead), 'live', 'th')],
+        st: '表前散文继续锁着。表头还在可变区。', stKind: 'on'
+      });
+      out.push({
+        cap: '分隔行对上了，状态变成 Confirmed。从这张表头起整段留下当尾巴。',
+        trace: 3, hs: 'Confirmed',
+        stable: [line(prose, 'lock', 'prose')],
+        tail: [line(rowText(H, wHead), 'live', 'th'), line(rowText(D, wHead), 'live', 'td')],
+        st: '整张表扣在活动区，列宽还可以改。', stKind: 'on'
+      });
+      out.push({
+        cap: '第一行数据来了，列宽在尾巴里重算。稳定区那句结论纹丝不动。',
+        trace: 3, hs: 'Confirmed',
+        stable: [line(prose, 'lock', 'prose')],
+        tail: [line(rowText(H, w1), 'live', 'th'), line(rowText(D, w1), 'live', 'td'), line(rowText(R1, w1), 'live', 'r1')],
+        st: '表还在变，所以一行都没有进 scrollback。', stKind: 'on'
+      });
+      out.push({
+        cap: '更长的单元格把列挤开。因为整张表还在尾巴里，竖线一起挪，没有残影。',
+        trace: 3, hs: 'Confirmed',
+        stable: [line(prose, 'lock', 'prose')],
+        tail: [line(rowText(H, wAll), 'live', 'th'), line(rowText(D, wAll), 'live', 'td'), line(rowText(R1, wAll), 'live', 'r1'), line(rowText(R2, wAll), 'live', 'r2')],
+        st: '列宽按当前最宽单元格重排，已定稿的散文不受影响。', stKind: 'on'
+      });
+      out.push({
+        cap: '流结束，finalize 从完整 source 重绘一次，整张表一次定稿。这些格子交给终端 scrollback，后面改不了。',
+        trace: 7, hs: 'None', fin: true,
+        stable: [line(prose, 'lock', 'prose'), line(rowText(H, wAll), 'lock', 'th'), line(rowText(D, wAll), 'lock', 'td'), line(rowText(R1, wAll), 'lock', 'r1'), line(rowText(R2, wAll), 'lock', 'r2')],
+        tail: [],
+        st: '两区合同收工：散文早锁，表晚锁，竖线对齐。', stKind: 'ok'
+      });
+    } else {
+      out.push({
+        cap: '扣留关掉了。表头按现在这几个短词定稿，锁进稳定区。列宽被冻在这一帧。',
+        trace: 2, hs: 'None',
+        stable: [line(prose, 'lock', 'prose'), line(rowText(H, wHead), 'lock', 'th')],
+        tail: [],
+        st: '表头已经不可改。后面再来更宽的单元格，也改不了这三列。', stKind: 'warn'
+      });
+      out.push({
+        cap: '分隔行也立刻提交。稳定区里已经有两行表，按窄列排好了。',
+        trace: 4, hs: 'None',
+        stable: [line(prose, 'lock', 'prose'), line(rowText(H, wHead), 'lock', 'th'), line(rowText(D, wHead), 'lock', 'td')],
+        tail: [],
+        st: '表被拆成一行一行的历史，列宽没有统一重算的机会。', stKind: 'warn'
+      });
+      out.push({
+        cap: '第一行数据还不算宽，暂时看不出事。只是这三行已经各自锁死。',
+        trace: 5, hs: 'None',
+        stable: [line(prose, 'lock', 'prose'), line(rowText(H, w1), 'lock', 'th'), line(rowText(D, w1), 'lock', 'td'), line(rowText(R1, w1), 'lock', 'r1')],
+        tail: [],
+        st: '看起来还齐，因为这一行没有把列挤开。', stKind: 'warn'
+      });
+      out.push({
+        cap: '长单元格来了。已经锁住的表头改不了。上一帧的竖线还印在原处，新行只能自己另排一列。',
+        trace: 3, hs: 'None',
+        stable: [
+          line(prose, 'lock', 'prose'),
+          line(rowText(H, wHead), 'ghost', 'th'),
+          line(rowText(D, wHead), 'ghost', 'td'),
+          line(rowText(R1, w1), 'ghost', 'r1'),
+          line(rowText(R2, wAll), 'lock', 'r2')
+        ],
+        tail: [],
+        st: '列宽每来一行就重排一次，已经定稿的行对不齐。', stKind: 'warn'
+      });
+      out.push({
+        cap: '流结束也救不回来。已经写进 scrollback 的行不会被收回，finalize 只交出还没 emit 的剩余。',
+        trace: 7, hs: 'None', fin: true,
+        stable: [
+          line(prose, 'lock', 'prose'),
+          line(rowText(H, wHead), 'ghost', 'th'),
+          line(rowText(D, wHead), 'ghost', 'td'),
+          line(rowText(R1, w1), 'ghost', 'r1'),
+          line(rowText(R2, wAll), 'lock', 'r2')
+        ],
+        tail: [],
+        st: '没有扣留，表在稳定区里永远错位。', stKind: 'warn'
+      });
+    }
+    return out;
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function spawnGhost(el){
+    if (!termHost || !el) return;
+    var box = termHost.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    termHost.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function rollNum(el, to, animate){
+    var from = parseInt(el.getAttribute('data-n') || el.textContent, 10) || 0;
+    el.setAttribute('data-n', String(to));
+    if (!animate || from === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function setEmpty(host, empty, emptyText, animate){
+    var node = host.querySelector('.dm-line.empty');
+    if (empty) {
+      if (!node) {
+        node = document.createElement('div');
+        node.className = 'dm-line empty';
+        node.textContent = emptyText;
+        host.appendChild(node);
+        if (animate) {
+          node.classList.add('is-enter');
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ node.classList.add('in'); });
+          });
+        }
+      } else {
+        node.textContent = emptyText;
+      }
+    } else if (node) {
+      node.remove();
+    }
+  }
+
+  function fillLine(d, r){
+    d.setAttribute('data-id', r.id);
+    d.setAttribute('data-kind', r.kind || '');
+    d.className = 'dm-line' + (r.kind === 'ghost' ? ' ghost' : '');
+    d.innerHTML = (r.kind === 'live' ? LIVE : LOCK) + '<span class="txt"></span>';
+    d.querySelector('.txt').textContent = r.text;
+  }
+
+  function paintLines(st, animate){
+    var oldRects = {};
+    Object.keys(lineNodes).forEach(function(id){
+      var el = lineNodes[id];
+      if (el && el.isConnected) oldRects[id] = el.getBoundingClientRect();
+    });
+    var want = {};
+    var changed = {stable: false, tail: false};
+    function place(rows, host, zoneKey){
+      rows.forEach(function(r){
+        var id = r.id;
+        want[id] = true;
+        var d = lineNodes[id];
+        var isNew = !d;
+        var moved = !!(d && d.parentNode && d.parentNode !== host);
+        var kindChanged = !isNew && (prevKind[id] || '') !== (r.kind || '');
+        var textChanged = !isNew && (prevText[id] || '') !== r.text;
+        if (isNew) {
+          d = document.createElement('div');
+          lineNodes[id] = d;
+        }
+        if (moved && animate && oldRects[id]) spawnGhost(d);
+        if (isNew || kindChanged) fillLine(d, r);
+        else {
+          d.className = 'dm-line' + (r.kind === 'ghost' ? ' ghost' : '');
+          var txt = d.querySelector('.txt');
+          if (txt) txt.textContent = r.text;
+        }
+        host.appendChild(d);
+        var now = isNew || moved || kindChanged || textChanged;
+        if (now) {
+          d.classList.add('now');
+          changed[zoneKey] = true;
+        } else {
+          d.classList.remove('now');
+        }
+        if (animate && isNew) {
+          d.classList.add('is-enter');
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ d.classList.add('in'); });
+          });
+        }
+        if (animate && !isNew && (kindChanged || textChanged)) {
+          if (r.kind === 'ghost' || kindChanged) bump(d, 'firing');
+          else bump(d, 'pop');
+        }
+        prevKind[id] = r.kind || '';
+        prevText[id] = r.text;
+        prevHost[id] = host;
+      });
+    }
+    place(st.stable, stableEl, 'stable');
+    place(st.tail, tailEl, 'tail');
+    Object.keys(lineNodes).forEach(function(id){
+      if (!want[id]) {
+        if (lineNodes[id].parentNode) lineNodes[id].remove();
+        delete lineNodes[id];
+        delete prevKind[id];
+        delete prevText[id];
+        delete prevHost[id];
+      }
+    });
+    setEmpty(stableEl, !st.stable.length, '还没有定稿的行。', animate);
+    setEmpty(tailEl, !st.tail.length, '活动区空着。', animate);
+    stableEl.classList.toggle('is-live', !!(st.stable.length || st.tail.length));
+    tailEl.classList.toggle('is-live', !!(st.stable.length || st.tail.length));
+    if (animate) {
+      Object.keys(lineNodes).forEach(function(id){
+        var el = lineNodes[id];
+        var old = oldRects[id];
+        if (!old || !el) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+    return changed;
+  }
+
+  function paint(st, animate){
+    var changed = paintLines(st, animate);
+    var hasGhost = (st.stable || []).some(function(r){ return r.kind === 'ghost'; });
+    termBody.classList.add('is-live');
+    var focusStable = !!(st.fin || hasGhost || (changed.stable && !changed.tail) || (changed.stable && st.stKind === 'ok'));
+    var focusTail = !focusStable && (changed.tail || (st.tail && st.tail.length && !st.fin));
+    var focusStatus = !focusStable && !focusTail;
+    stableZone.classList.toggle('now', focusStable);
+    tailZone.classList.toggle('now', focusTail);
+    tailZone.classList.toggle('live', !!(st.tail && st.tail.length) || (focusTail && !st.fin));
+    statusEl.classList.toggle('now', focusStatus || !!(st.stKind));
+    if (termBar) termBar.style.setProperty('--bar', String((st.stable || []).length / 5));
+    var sn = (st.stable || []).length;
+    var tn = (st.tail || []).length;
+    if (animate && parseInt(nStable.getAttribute('data-n') || '0', 10) !== sn) bump(nStable, 'pop');
+    if (animate && parseInt(nTail.getAttribute('data-n') || '0', 10) !== tn) bump(nTail, 'pop');
+    rollNum(nStable, sn, animate);
+    rollNum(nTail, tn, animate);
+    if (animate && prevHs !== st.hs) {
+      bump(hsEl, 'pop');
+      hsEl.style.opacity = '0';
+      requestAnimationFrame(function(){
+        hsEl.textContent = st.hs;
+        requestAnimationFrame(function(){ hsEl.style.opacity = ''; });
+      });
+    } else {
+      hsEl.textContent = st.hs;
+    }
+    prevHs = st.hs;
+    var sCls = 'dm-buf' + (st.stKind ? ' ' + st.stKind : '') + (statusEl.classList.contains('now') ? ' now' : '');
+    statusEl.className = sCls;
+    if (animate && st.stKind && st.stKind !== prevStKind) bump(statusEl, 'firing');
+    prevStKind = st.stKind || '';
+    if (animate && statusEl.textContent !== st.st) {
+      statusEl.style.opacity = '0';
+      requestAnimationFrame(function(){
+        statusEl.textContent = st.st;
+        requestAnimationFrame(function(){ statusEl.style.opacity = ''; });
+      });
+    } else {
+      statusEl.textContent = st.st;
+    }
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    } else {
+      traceBox.classList.remove('is-live');
+      traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+      prevTrace = null;
+    }
+    if (animate) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var ghost = (st.stable || []).some(function(r){ return r.kind === 'ghost'; });
+    if (ghost) return 2400;
+    if (st.hs === 'PendingHeader') return 2000;
+    if (st.hs === 'Confirmed' && st.tail && st.tail.length >= 4) return 2200;
+    if (st.hs === 'Confirmed') return 1800;
+    if (st.stKind === 'ok') return 2000;
+    if (st.stKind === 'warn' && st.stable && st.stable.length === 2) return 2000;
+    if (st.trace === 0) return 1400;
+    if (st.trace === null) return 1100;
+    return 1500;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    lineNodes = {}; prevKind = {}; prevText = {}; prevHost = {};
+    prevHs = ''; prevStKind = ''; prevTrace = null;
+    steps = buildSteps(holdOn);
+    stableEl.classList.remove('is-live');
+    tailEl.classList.remove('is-live');
+    termBody.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    stableEl.innerHTML = '';
+    tailEl.innerHTML = '';
+    Array.prototype.slice.call(termHost.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    setEmpty(stableEl, true, '还没有定稿的行。', false);
+    setEmpty(tailEl, true, '活动区空着。', false);
+    stableZone.classList.remove('now');
+    tailZone.classList.remove('now');
+    tailZone.classList.add('live');
+    if (termBar) termBar.style.setProperty('--bar', '0');
+    nStable.textContent = '0';
+    nTail.textContent = '0';
+    nStable.setAttribute('data-n', '0');
+    nTail.setAttribute('data-n', '0');
+    hsEl.style.opacity = '1';
+    hsEl.textContent = 'None';
+    statusEl.className = 'dm-buf';
+    statusEl.style.opacity = '1';
+    statusEl.textContent = '等待开始。';
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    holdOn = b.getAttribute('data-hold') === '1';
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-regions'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

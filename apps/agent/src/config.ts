@@ -1,0 +1,122 @@
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { z } from 'zod';
+
+const milliseconds = (fallback: number) =>
+  z.coerce.number().int().positive().max(3_600_000).default(fallback);
+const environmentSchema = z.object({
+  NODE_ENV: z.string().default('development'),
+  HOST: z.string().min(1).default('127.0.0.1'),
+  PORT: z.coerce.number().int().min(0).max(65535).default(4000),
+  AGENT_DATA_DIR: z.string().min(1).default('./data'),
+  AGENT_SKILLS_DIR: z
+    .string()
+    .min(1)
+    .default(fileURLToPath(new URL('../skills/', import.meta.url))),
+  AGENT_MAX_MODEL_CALLS: z.coerce.number().int().min(1).max(100).default(40),
+  AGENT_MAX_TOOL_CALLS: z.coerce.number().int().positive().max(300).default(60),
+  AGENT_IDLE_TIMEOUT_MS: milliseconds(120_000),
+  AGENT_RUN_TIMEOUT_MS: milliseconds(600_000),
+  AGENT_FIRST_EVENT_WAIT_MS: milliseconds(15_000),
+  AGENT_SESSION_TTL_HOURS: z.coerce.number().positive().max(8760).default(168),
+  AGENT_ATTACHMENT_TTL_HOURS: z.coerce
+    .number()
+    .positive()
+    .max(8760)
+    .default(24),
+  AGENT_ATTACHMENT_SECRET: z.string().min(32).optional(),
+  AGENT_MAX_SEARCHES: z.coerce.number().int().positive().max(30).default(5),
+  AGENT_BODY_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(33_554_432)
+    .default(2_097_152),
+  AGENT_RATE_LIMIT_PER_MINUTE: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(100_000)
+    .default(300),
+  AGENT_ALLOW_PRIVATE_MODEL_HOSTS: z.enum(['true', 'false']).default('false'),
+  AGENT_AUTH_REQUIRED: z.enum(['true','false']).default('false'),
+  AUTH_PUBLIC_ORIGIN: z.string().url().default('http://localhost:3000'),
+  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  AUTH_BOOTSTRAP_USERNAME: z.string().regex(/^[A-Za-z0-9_-]{3,30}$/).optional(),
+  AUTH_BOOTSTRAP_PASSWORD: z.string().min(12).max(128).optional(),
+});
+
+export function readSettings(env: NodeJS.ProcessEnv = process.env) {
+  const result = environmentSchema.safeParse(env);
+  if (!result.success)
+    throw new Error('Invalid agent environment configuration');
+  const data = result.data;
+  if (data.AGENT_AUTH_REQUIRED === 'true' && !data.BETTER_AUTH_SECRET) throw new Error('A stable authentication secret is required');
+  return {
+    auth: data.AGENT_AUTH_REQUIRED === 'true' ? { origin: new URL(data.AUTH_PUBLIC_ORIGIN).origin, secret: data.BETTER_AUTH_SECRET!, bootstrapUsername: data.AUTH_BOOTSTRAP_USERNAME, bootstrapPassword: data.AUTH_BOOTSTRAP_PASSWORD } : undefined,
+    host: data.HOST,
+    port: data.PORT,
+    dataDir: resolve(data.AGENT_DATA_DIR),
+    skillsDir: resolve(data.AGENT_SKILLS_DIR),
+    maxModelCalls: data.AGENT_MAX_MODEL_CALLS,
+    maxToolCalls: data.AGENT_MAX_TOOL_CALLS,
+    idleTimeoutMs: data.AGENT_IDLE_TIMEOUT_MS,
+    runTimeoutMs: data.AGENT_RUN_TIMEOUT_MS,
+    firstEventWaitMs: data.AGENT_FIRST_EVENT_WAIT_MS,
+    sessionTtlHours: data.AGENT_SESSION_TTL_HOURS,
+    attachmentTtlHours: data.AGENT_ATTACHMENT_TTL_HOURS,
+    attachmentSecret: data.AGENT_ATTACHMENT_SECRET,
+    maxSearches: data.AGENT_MAX_SEARCHES,
+    search: searchConfiguration(env),
+    bodyLimitBytes: data.AGENT_BODY_LIMIT_BYTES,
+    rateLimitPerMinute: data.AGENT_RATE_LIMIT_PER_MINUTE,
+    privateHostsRequested: data.AGENT_ALLOW_PRIVATE_MODEL_HOSTS === 'true',
+    allowPrivateModelHosts:
+      data.NODE_ENV !== 'production' &&
+      data.AGENT_ALLOW_PRIVATE_MODEL_HOSTS === 'true',
+  };
+}
+
+export type Settings = ReturnType<typeof readSettings>;
+
+export interface SearchConfiguration {
+  provider: 'tavily' | 'brave' | 'searxng';
+  baseUrl: string;
+  apiKey?: string;
+}
+function searchConfiguration(
+  env: NodeJS.ProcessEnv,
+): SearchConfiguration | undefined {
+  const provider = env.SEARCH_PROVIDER?.trim();
+  if (provider !== 'tavily' && provider !== 'brave' && provider !== 'searxng')
+    return undefined;
+  const apiKey = env.SEARCH_API_KEY?.trim();
+  if (provider !== 'searxng' && (!apiKey || /[\r\n]/.test(apiKey)))
+    return undefined;
+  const baseUrl =
+    env.SEARCH_BASE_URL?.trim() ||
+    (provider === 'tavily'
+      ? 'https://api.tavily.com'
+      : provider === 'brave'
+        ? 'https://api.search.brave.com/res/v1'
+        : undefined);
+  if (!baseUrl) return undefined;
+  try {
+    const url = new URL(baseUrl);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return undefined;
+    return {
+      provider,
+      baseUrl: url.href.replace(/\/+$/, ''),
+      ...(provider === 'searxng' ? {} : { apiKey }),
+    };
+  } catch {
+    return undefined;
+  }
+}

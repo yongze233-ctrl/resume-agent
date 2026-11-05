@@ -1,0 +1,1649 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"interview-1",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=interview-1',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>他们会这样考你 · 大模型基础 30 问 | xueai.miyang.cn</title>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* ── 开场说明 ── */
+.iq-intro{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px}
+.iq-intro-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px}
+.iq-intro-lead{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:12px}
+.iq-role-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.iq-role-row{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border-radius:9px;font-size:14px;line-height:1.6}
+.iq-role-row .rr-name{font-weight:800;flex-shrink:0;white-space:nowrap}
+.iq-role-row .rr-desc{color:var(--sub)}
+.iq-intro-foot{font-size:14px;color:var(--sub);line-height:1.7}
+.iq-intro-foot strong{color:var(--text)}
+
+/* ── 题目卡片 ── */
+.iq-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.iq-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.iq-num{font-size:13px;font-weight:900;color:var(--sub);letter-spacing:.5px;font-family:"SF Mono","Fira Code",Menlo,monospace}
+.iq-who{font-size:12px;font-weight:800;padding:3px 11px;border-radius:99px;letter-spacing:.3px}
+.iq-q{font-size:17.5px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:16px}
+
+.iq-block{margin-bottom:14px}
+.iq-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.iq-intent .iq-label{color:var(--amber)}
+.iq-intent .iq-body{font-size:14px;color:var(--sub);line-height:1.75;background:rgba(217,119,6,.05);border:1px solid rgba(217,119,6,.14);border-radius:9px;padding:10px 14px}
+.iq-intent .iq-body strong{color:var(--text)}
+
+.iq-frame .iq-label{color:var(--accent)}
+.iq-frame ol{margin:0;padding-left:0;list-style:none;counter-reset:iqstep;display:flex;flex-direction:column;gap:7px}
+.iq-frame li{counter-increment:iqstep;position:relative;padding:9px 13px 9px 40px;background:rgba(0,102,255,.04);border:1px solid rgba(0,102,255,.1);border-radius:9px;font-size:14px;color:var(--sub);line-height:1.65}
+.iq-frame li::before{content:counter(iqstep);position:absolute;left:12px;top:10px;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.iq-frame li strong{color:var(--text)}
+
+.iq-bonus{font-size:13.5px;color:var(--text);line-height:1.7;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.18);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.iq-bonus b{color:var(--success);font-weight:800;margin-right:4px}
+
+.iq-refs{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--border)}
+.iq-refs-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0}
+.iq-refs a{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;background:rgba(0,102,255,.07);padding:4px 11px;border-radius:99px;transition:background .15s}
+.iq-refs a:hover{background:rgba(0,102,255,.14)}
+
+/* 角色配色 */
+.who-hr{background:rgba(0,102,255,.1);color:var(--accent)}
+.who-boss{background:rgba(217,119,6,.12);color:var(--amber)}
+.who-dev{background:rgba(124,58,237,.1);color:var(--purple)}
+
+@media (max-width:768px){
+  .iq-card{padding:18px 16px}
+  .iq-q{font-size:16px}
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style><!-- SEO Start -->
+<meta name="description" content="大模型原理篇考察实战：面试官、老板、技术同事会怎样考你大模型基础？30 道真实场景问题，每题附考察意图、答题框架与加分点：概率预测、message list、幻觉解释、RAG vs 重训、Temperature、上下文窗口。">
+<meta name="keywords" content="AI产品经理面试题,大模型面试,幻觉,RAG,Temperature,上下文窗口,AI PM面试">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="他们会这样考你 · 大模型基础 30 问">
+<meta property="og:description" content="面试官、老板、技术同事会怎样考你大模型基础？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/interview-1.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/interview-1.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="他们会这样考你 · 大模型基础 30 问">
+<meta name="twitter:description" content="面试官、老板、技术同事会怎样考你大模型基础？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+  <header class="lesson-header">
+    <div class="kicker">他们会这样考你</div>
+    <h1>大模型基础 · 30 道灵魂拷问</h1>
+    <p class="subtitle">大模型原理篇学完了，懂了和能讲出来之间还差一场实战。这 30 个问题来自三个真实场景，先自己开口回答，再看框架。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每题附考察意图、答题框架与加分点：概率预测 / message list / 幻觉解释 / RAG vs 重训 / Temperature / 上下文窗口</p></aside><!--seo:end-->  <section>
+    <div class="iq-intro">
+      <div class="iq-intro-title">怎么用这一页</div>
+      <div class="iq-intro-lead">每道题都标注了提问者。他们问同一块知识，想听的东西却不一样。</div>
+      <div class="iq-role-rows">
+        <div class="iq-role-row" style="background:rgba(0,102,255,.05)"><span class="rr-name" style="color:var(--accent)">🎙 面试官</span><span class="rr-desc">想验证你是真懂，还是在背名词</span></div>
+        <div class="iq-role-row" style="background:rgba(217,119,6,.06)"><span class="rr-name" style="color:var(--amber)">👔 老板</span><span class="rr-desc">要的是解释和承诺</span></div>
+        <div class="iq-role-row" style="background:rgba(124,58,237,.05)"><span class="rr-name" style="color:var(--purple)">🛠 技术同事</span><span class="rr-desc">在试探你值不值得信任</span></div>
+      </div>
+      <div class="iq-intro-foot">每题给出三层：<strong>对方在考察什么 → 答题框架 → 加分点</strong>。答不上来的环节，点末尾的课程页回去补。</div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q1</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「用你自己的话说说，ChatGPT 这类大模型是怎么生成回答的？它是在思考吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">开场必问题，决定后面所有问题的深度。考的是你能不能把概率预测下一个 Token 这件事<strong>讲成人话</strong>。背名词的人会堆砌 Transformer、注意力机制，真懂的人会用一个例子把机制说清楚。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给本质：</strong>大模型是超大型概率预测机器，每次只做一件事，根据已有的所有 Token 预测下一个 Token 出现的概率，逐个生成。</li>
+          <li><strong>区分训练和推理：</strong>训练是在海量文本上学统计规律；你和它对话时参数已经冻结，它没有在学习，只是在计算。</li>
+          <li><strong>正面回答思考问题：</strong>它没有人类意义上的思考，规模够大后又确实表现出类似推理的能力。所以既不要神化，也不要贬低成复读机。</li>
+          <li><strong>落一个例子：</strong>输入「今天天气真」，模型给出好 62% / 差 18% / 冷 9% 这样的分布，按概率采样。整段回答就是这个动作重复几百次。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动指出对话不等于学习、参数是冻结的。很多 PM 以为模型会从用户对话里持续学习，能纠正这个误区，说明你理解到位了。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-base" data-lesson-id="1-2-base">Base 模型：Token 推 Token</a>
+        <a href="/dashboard/learning?lesson=train-vs-infer" data-lesson-id="train-vs-infer">训练 vs 推理</a>
+        <a href="/dashboard/learning?lesson=1-2-vocab" data-lesson-id="1-2-vocab">词表与训练</a>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q2</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「明明是聊天产品，为什么 OpenAI 的接口叫 chat/completions（补全）？多轮对话是怎么实现的？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">这是判断你<strong>有没有真正碰过 API</strong> 的分水岭题。只用过 ChatGPT 网页版的人答不出来；理解 message list 机制的人，后面聊上下文、成本、Agent 都能接得住。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>点破本质：</strong>模型底层是续写机器。所谓对话，是把历史包装成聊天记录格式，让模型续写出助手的下一句。</li>
+          <li><strong>多轮的真相：</strong>模型没有记忆。每一轮都是把完整的 message list（system + 历史 user/assistant + 当前提问）重新发一遍。</li>
+          <li><strong>补上工程环节：</strong>模型能听懂对话格式，靠的是 Chat Template + SFT 指令微调，这是 Base 模型学会说话的关键一步。</li>
+          <li><strong>拔高一层：</strong>所有 AI Harness 操作（RAG、记忆、Agent）本质都是对这个 message list 的处理。理解它，就找到了所有方案的入口。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>能顺势说出成本含义：历史每轮重发，意味着多轮对话越聊越贵。后面的成本优化方案都是冲这个来的。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-api" data-lesson-id="1-2-api">chat/completions 之谜</a>
+        <a href="/dashboard/learning?lesson=1-2-fake-chat" data-lesson-id="1-2-fake-chat">伪造聊天记录</a>
+        <a href="/dashboard/learning?lesson=1-2-sft" data-lesson-id="1-2-sft">Chat Template + SFT</a>
+        <a href="/dashboard/learning?lesson=0-why" data-lesson-id="0-why">为什么要打基础</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="paywall-locked xa-peek">
+    <!-- Q3 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q3</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「咱们的 AI 客服昨天又编了一条不存在的退款政策。你给我解释下为什么，什么时候能彻底修好？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">这题不考知识，考<strong>期望管理</strong>。你敢不敢说「彻底修不好」？说完之后，能不能马上给出让老板放心的方案和量化承诺？答「我让技术看看」是最差答案。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给结论、不回避：</strong>幻觉是概率预测机制的必然产物，无法彻底消除，但可以用工程手段压到业务可接受的水平。</li>
+          <li><strong>再解释根因：</strong>两个来源：参数知识有误（训练数据错误或过期），以及上下文理解偏差（模型总是选最可能的续写，最可能不等于最准确）。</li>
+          <li><strong>给方案组合拳：</strong>RAG 注入真实退款政策文档 + Prompt 约束「只依据文档回答」 + 调低 Temperature + 上线评测与人工审核兜底。</li>
+          <li><strong>给量化承诺方式：</strong>定义幻觉率指标（抽样审核），按周汇报收敛情况，把「什么时候修好」转化成「指标降到多少」。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句「任何承诺能彻底消除幻觉的供应商都在夸大」，帮老板建立对整个行业的正确预期，这是 AI PM 的核心价值之一。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-hallucination" data-lesson-id="1-2-hallucination">大模型幻觉演示</a>
+        <a href="/dashboard/learning?lesson=summary-1" data-lesson-id="summary-1">汇总：幻觉类型与根因</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">评测 + 人工审核</a>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q4</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「缓解幻觉的手段你知道哪些？如果资源有限只能先上一个，你选哪个，为什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">前半句考知识广度，<strong>后半句才是重点</strong>：考决策能力和成本意识。这题没有标准答案。直接给答案的人不及格，先反问一句「什么场景」的人才及格。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>列全四种手段：</strong>Prompt 约束（最便宜）、RAG（对知识型幻觉最有效但有成本）、Temperature 调低（只降随机性、不补知识）、评测 + 人工审核（外部兜底）。</li>
+          <li><strong>先反问场景：</strong>幻觉主要是编造事实，还是表达不稳定？知识库变不变？预算多少？</li>
+          <li><strong>给条件化答案：</strong>知识型幻觉（编政策、编数据）→ RAG；表达不稳定 → Prompt 约束 + 低 Temperature，几乎零成本先上。</li>
+          <li><strong>补一个原则：</strong>无论选哪个，评测先行。没有评测就无法验证效果，等于白做。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>指出实际项目里这四种要组合使用、分阶段上，单选题只存在于面试里。能说出先用 Prompt 和 Temperature 止血、再上 RAG 治本这种节奏的人很少。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-prompt" data-lesson-id="1-2-mitigation-prompt">应对 1：Prompt</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">应对 2：RAG</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-temp" data-lesson-id="1-2-mitigation-temp">应对 3：Temperature</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">应对 4：评测</a>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：决策框架</a>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q5</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「产品要接入我们内部最新的产品手册，你该不会是打算让我们重新训练一个模型吧？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">技术同事半开玩笑的挑战，实际在试探你<strong>懂不懂训练和推理的边界</strong>。答错这题（比如回一句「对啊，训练一下不行吗」），技术团队对你的信任会立刻打折；答对了，后面的合作会顺畅得多。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先接住梗：</strong>不用重训。参数冻结不代表知识进不去，上下文窗口就是知识的入口。</li>
+          <li><strong>给方案：</strong>上 RAG。手册切块、建向量索引，用户提问时检索相关段落注入上下文。手册更新只需重建索引，天级生效，成本和重训差几个数量级。</li>
+          <li><strong>说清微调的正确用途：</strong>微调改的是行为风格（语气、格式、领域话术），不适合注入时效性知识。知识一旦进权重，每次更新都要再训一次。</li>
+          <li><strong>展示成本意识：</strong>RAG 也有代价：每次请求 token 变多、延迟上升，需要配合缓存、路由、精准切块做优化。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>能说出 RAG 的代价和优化策略（语义缓存、关键词触发、模型路由），说明你真的算过账。「用 RAG」三个字谁都会背。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=train-vs-infer" data-lesson-id="train-vs-infer">训练 vs 推理</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 检索增强</a>
+        <a href="/dashboard/learning?lesson=rag-advanced" data-lesson-id="rag-advanced">RAG 的代价与优化</a>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q6</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Temperature 和 Top-P 是什么？你们的产品里会怎么设？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你<strong>有没有真的动手调过参数</strong>。后半句「你们的产品」是在等一个场景化答案。张口报一个固定数值（「设 0.7 就行」）的人，基本没实际调过。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>说清机制：</strong>Temperature 控制概率分布的陡峭程度，越低越确定、越高越发散；Top-P 控制采样的候选池范围，两者配合决定输出的随机性。</li>
+          <li><strong>给场景化设置：</strong>客服 / 事实问答 / 数据提取 → 调低（0~0.3）；创意文案 / 头脑风暴 → 调高（0.7 以上）。</li>
+          <li><strong>说清边界：</strong>这只能缓解表达上的随机性，解决不了知识缺失。低 Temperature 下模型依然会自信地胡说。</li>
+          <li><strong>给验证方法：</strong>参数值要用评测集 A/B 验证出来。拍脑袋定一个全产品共用的值，不可取。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动区分随机性幻觉和知识性幻觉，Temperature 只治前者。这个边界很多人说不清。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-temp" data-lesson-id="1-2-mitigation-temp">Temperature &amp; Top-P 交互演示</a>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q7</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「上下文窗口是什么？现在模型都到 1M Token 了，是不是窗口越大越好？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">前半句是概念题，<strong>后半句是陷阱题</strong>。顺着说「当然越大越好」就掉进去了。考的是成本意识，以及你知不知道长上下文的真实局限。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>说清概念：</strong>窗口 = 模型一次能看到的 Token 总量（输入 + 输出），超出部分被截断，对模型来说等于从未存在。</li>
+          <li><strong>戳破陷阱：</strong>更大的窗口意味着更贵的账单。Token 按量计费，把资料全塞进去，成本跟着线性上涨。</li>
+          <li><strong>给技术局限：</strong>长上下文存在中间遗忘（lost in the middle）问题：信息越多，注意力越稀释，中段内容的召回率明显下降。</li>
+          <li><strong>给正确姿势：</strong>大窗口只是能力上限。正确做法是上下文工程：检索、压缩、筛选，让窗口里只放该放的东西。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>能报出主流模型的窗口规格（Qwen 1M / Claude 200K / GPT 128K），再点一句窗口大小会影响架构选型，会显得对行业很熟。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-prompt-power" data-lesson-id="1-2-prompt-power">上下文窗口是关键</a>
+        <a href="/dashboard/learning?lesson=5-1" data-lesson-id="5-1">延伸（Harness 核心篇）：AI 的工作记忆</a>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q8</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Token 到底是什么？跟字有什么区别？你们做产品的时候为什么要在意这个东西？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">基础概念题，实际考的是<strong>成本敏感度</strong>。很多 PM 说得出 Token 这个词，算不清一段 Prompt 要花多少钱。后半句在等一个跟钱和窗口挂钩的回答。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给定义：</strong>Token 是模型处理文本的基本单元，训练第一步就是 Tokenization，把连续文本切成词表里的单元。中文一个字约对应 1 到 3 个 Token，英文一个词约 1 个 Token。</li>
+          <li><strong>连到成本：</strong>推理按 Token 计费，输入输出都算钱。一个看着只有 500 字的 Prompt 模板，实际可能吃掉 1500 Token，多轮对话每轮重发，费用跟着累积。</li>
+          <li><strong>连到窗口：</strong>上下文窗口的额度也按 Token 算，超出就截断。模板越臃肿，留给正文和历史的空间越少。</li>
+          <li><strong>落一个动作：</strong>上线前用 Tokenizer 实测关键 Prompt 的真实 Token 数，别按字数拍脑袋估。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出 Token 数同时是成本和质量的关键：System Prompt、历史消息、检索内容最终全拼成一段文本送给模型，窗口里每一个 Token 都在跟别的内容抢位置。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=summary-1" data-lesson-id="summary-1">汇总：Token 与上下文窗口</a>
+        <a href="/dashboard/learning?lesson=0-how" data-lesson-id="0-how">Token 计数的真实例子</a>
+        <a href="/dashboard/learning?lesson=train-vs-infer" data-lesson-id="train-vs-infer">按 Token 计费</a>
+        <a href="/dashboard/learning?lesson=1-2-api" data-lesson-id="1-2-api">chat/completions 之谜</a>
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q9</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「大模型的训练数据都是些什么？数据和模型能力之间到底是什么关系？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你是否理解<strong>「读了多少，就能说多少」</strong>。答得出语料构成和数量级的人很少，能把数据覆盖和幻觉联系起来的人更少。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给构成：</strong>预训练语料大头是网页文本约 70%，书籍约 12%，代码约 8%，学术论文和对话数据各约 5%。</li>
+          <li><strong>给量级直觉：</strong>约 1B Token 的小模型训练量相当于 75 万本小说，一座小型图书馆；15T Token 量级相当于把整个互联网读了两三遍。</li>
+          <li><strong>给结论：</strong>训练数据的质量和多样性决定模型世界观的上限。数据没覆盖的领域，模型要么拒答，要么编造。</li>
+          <li><strong>落一个实测：</strong>同一个小众人物问题，270M 模型直接捏造身份，1.8B 只能拒绝回答，30B 以上才答对。数据和参数够了，知识才被正确覆盖。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句大参数量不等于不幻觉：课程实测里 70B 的 Llama 在小众人物上照样答错，30B 的 Qwen 反而答对，覆盖比规模更关键。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=training-data" data-lesson-id="training-data">AI 的食物：训练数据</a>
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q10</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「老板想直接换最大参数的模型来解决幻觉，你也这么觉得？反正 API 一改就行。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">试探你会顺着老板说，还是有<strong>自己的技术判断</strong>。参数量等于能力，这是最常见的外行直觉，答错这题会被技术同事归进「不懂装懂」那一类。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给反例：</strong>课程实测里，70B 的 Llama-3.3 把歌手李知恩认成了同名女演员，出生年份差 6 年、代表作全错；30B 的 Qwen 反而答对了。参数量大不代表不幻觉。</li>
+          <li><strong>说清根因：</strong>知识边界由训练数据覆盖决定。数据没覆盖到的小众事实，多大的参数也只能编。</li>
+          <li><strong>给正确思路：</strong>知识型错误靠 RAG 注入真实资料。换模型解决不了「参数里没有」的问题。</li>
+          <li><strong>补成本账：</strong>更大的模型意味着每个 Token 更贵、延迟更高。先归因错误类型，再定方案。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说出「模型没有不知道的概念，置信度不因信息不准确而下降」，这说明你理解幻觉的本性：换多大的模型都换不掉这一点。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=training-data" data-lesson-id="training-data">参数量阶梯实测</a>
+        <a href="/dashboard/learning?lesson=1-2-hallucination" data-lesson-id="1-2-hallucination">大模型幻觉演示</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 检索增强</a>
+      </div>
+    </div>
+
+    <!-- Q11 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q11</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「Base 模型和 Chat 模型有什么区别？直接拿一个 Base 模型做客服，会发生什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你懂不懂模型的<strong>出厂形态</strong>。碰过开源模型的人立刻能答；只用过 ChatGPT 网页版的人，会卡在「Base 模型是什么」这一步。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>定义 Base：</strong>预训练结束得到的是一台 Token 推 Token 机器，只会根据前文预测下一个最可能的 Token。它不会理解问题、思考答案、查阅知识。</li>
+          <li><strong>给后果：</strong>直接问 Base 模型「紫霞仙子是谁」，它会按语料风格续写出「紫霞仙子是哥哥，哥哥你喜欢我」这类文字，完全没有在回答问题。</li>
+          <li><strong>说清跨越：</strong>从 Base 到 Chat 靠两步：先约定 Chat Template 对话格式，再用海量格式化对话数据做 SFT 指令微调，模型才学会以助理身份作答。</li>
+          <li><strong>点破本质：</strong>SFT 之后模型做的仍然是 Token 预测，变的只是训练数据，换成了格式化对话加高质量回答。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>讲出那段历史：最初的思路就是伪造一段聊天记录、助理那栏留空，让补全机器把它续写完整。知道对话能力是被构造出来的，面试官会眼前一亮。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-base" data-lesson-id="1-2-base">Base 模型：Token 推 Token</a>
+        <a href="/dashboard/learning?lesson=1-2-sft" data-lesson-id="1-2-sft">Chat Template + SFT</a>
+        <a href="/dashboard/learning?lesson=1-2-fake-chat" data-lesson-id="1-2-fake-chat">伪造聊天记录</a>
+      </div>
+    </div>
+
+    <!-- Q12 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q12</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「GPT 之前也有 CNN、RNN、BERT，为什么最后是 GPT 跑出来了？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考技术演进的理解深度。背时间线没用，面试官想听的是<strong>每代架构卡在哪里</strong>，以及 PreTraining 范式为什么是质变。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>说清旧路线：</strong>GPT 之前都是任务专用模型，先确定任务再训练，换任务就要换模型。</li>
+          <li><strong>逐个点局限：</strong>CNN 只能看滑动窗口内的词，窗口外的关系一步捕捉不到；RNN 的记忆逐步衰减，长文本开头的信息到结尾几乎消失；BERT 双向注意力理解强，但预训练目标是填空，不擅长生成。</li>
+          <li><strong>给 GPT 的答案：</strong>因果预训练目标就是预测下一词，和生成天然一致，不需要特殊任务数据，规模越大涌现的能力越惊人。</li>
+          <li><strong>拔高到范式：</strong>PreTraining 用几乎所有文字做 Token 预测，语法、常识、事实、逻辑全是副产品。预训练一次，能力迁移到任意任务，这就是 Foundation Model 的核心思路。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一句「换任务从重新训练变成了改提示词」，把架构演进和上下文窗口那页连成同一条线索，说明你看到的是全局。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-gpt" data-lesson-id="1-2-gpt">GPT 的跃进</a>
+        <a href="/dashboard/learning?lesson=1-2-prompt-power" data-lesson-id="1-2-prompt-power">上下文窗口是关键</a>
+      </div>
+    </div>
+
+    <!-- Q13 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q13</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「用户投诉 AI 客服聊着聊着就忘了前面说的话。你们天天说它多聪明，怎么连记性都没有？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你能不能把「模型没有记忆」翻译成老板能接受的解释，并<strong>马上给出产品层面的补救动作</strong>。答一句「模型就是这样的」等于没答。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先解释机制：</strong>模型参数在对话时完全冻结，它本身没有记忆。所谓多轮对话，是系统每次把完整历史重发一遍让它续写。</li>
+          <li><strong>定位这次的问题：</strong>历史超过上下文窗口就会被截断，截掉的内容对模型等于从未存在，用户的感受就是「它忘了」。</li>
+          <li><strong>给产品方案：</strong>控制历史长度、把关键信息保留在上下文里、避免臃肿的 System Prompt 和历史互相挤占窗口。</li>
+          <li><strong>给承诺方式：</strong>量化触发截断的对话轮数和字数边界，针对超长对话单独设计，别承诺「以后不会忘」。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>顺手纠正一个更深的误解：用户说过的话不会被学进模型。今天告诉它「你叫小明」，明天重开对话它照样不记得，对话只存在于上下文。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=train-vs-infer" data-lesson-id="train-vs-infer">训练 vs 推理</a>
+        <a href="/dashboard/learning?lesson=1-2-prompt-power" data-lesson-id="1-2-prompt-power">Token 截断可视化</a>
+        <a href="/dashboard/learning?lesson=1-2-api" data-lesson-id="1-2-api">多轮对话的真相</a>
+      </div>
+    </div>
+
+    <!-- Q14 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q14</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「SFT 和预训练有什么区别？Chat Template 里那些 &lt;|im_start|&gt; 标记是干嘛用的？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">典型的追问题，通常出现在你提到 SFT 之后。考你是<strong>真看过对话格式</strong>，还是只会说「微调一下就行」。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>分清两个阶段：</strong>预训练在海量通用语料上学统计规律；SFT 用格式化对话数据继续训练，让模型学会在对话格式下做助理。</li>
+          <li><strong>说清 Template：</strong>借鉴 Jinja 模板语言，用 &lt;|im_start|&gt; 和 &lt;|im_end|&gt; 这类 special token 包裹每条消息，区分 system、user、assistant 三种角色。</li>
+          <li><strong>讲生成起点：</strong>所有消息按格式拼成一段文本，模型从 &lt;|im_start|&gt;assistant 之后开始补全。SFT 训练的就是它在这个位置输出像样的回答。</li>
+          <li><strong>点破本质：</strong>SFT 本质上还是 Token 预测，只是训练数据换成了格式化对话加高质量回答。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说出「你调 API 时传的 messages 数组，最终会按 Chat Template 组装成一整段带 special token 的文本送给模型」，把 API 层和训练格式串起来，很少有 PM 能讲到这层。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-sft" data-lesson-id="1-2-sft">Chat Template + SFT</a>
+        <a href="/dashboard/learning?lesson=1-2-api" data-lesson-id="1-2-api">chat/completions 之谜</a>
+        <a href="/dashboard/learning?lesson=1-2-fake-chat" data-lesson-id="1-2-fake-chat">伪造聊天记录</a>
+      </div>
+    </div>
+
+    <!-- Q15 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q15</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「为什么现在做 AI 产品，大部分需求靠写提示词就能满足？这件事的边界在哪？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">前半句考原理，<strong>后半句考边界感</strong>。只会喊「Prompt 工程很重要」的人，说不出为什么有效，更说不出什么时候失效。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给原理链条：</strong>模型按前文推后文，提示词就是高质量前文，前文好后文就好。PreTraining 之后换任务无需重新训练，把任务描述喂进去就行。</li>
+          <li><strong>说清载体：</strong>这一切靠大上下文窗口撑着：任务说明、规则、Few-Shot 样例全塞进前文，效果等同于专门训练。</li>
+          <li><strong>给边界：</strong>Prompt 够用的前提是知识在训练数据里，适合格式、风格、语气类问题。私有知识、实时数据、知识截止后的内容要 RAG；固定领域风格和推理范式要微调。</li>
+          <li><strong>给排查习惯：</strong>Prompt 改了没用时，先查是不是 System Prompt 被截断、历史占满窗口。问题常出在上下文管理，跟 Prompt 写得好不好没关系。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>引用决策矩阵那条「重训修复错误是误区，Prompt 先试，成本低 100 倍」，展示你有按成本排序的决策习惯。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-prompt-power" data-lesson-id="1-2-prompt-power">上下文窗口是关键</a>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：决策框架</a>
+        <a href="/dashboard/learning?lesson=0-why" data-lesson-id="0-why">为什么要打基础</a>
+      </div>
+    </div>
+
+    <!-- Q16 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q16</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「竞品发布会上说他们的新模型已经解决了幻觉问题。人家都解决了，咱们怎么还天天出错？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考<strong>行业判断力和向上管理</strong>。你要在不贬低自家团队的前提下帮老板识破夸大宣传，还要给出「我们怎么自证水平」的方案。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先给判断：</strong>幻觉是概率预测机制的必然产物，不可完全消除。宣称彻底解决幻觉的说法都值得怀疑，这是行业共识，所有厂商都面对同一条边界。</li>
+          <li><strong>给拆穿方法：</strong>追问对方的评测口径：幻觉率多少、测试集覆盖什么场景。没有数字的「解决了」只是宣传话术。</li>
+          <li><strong>给自证方案：</strong>拿出我们自己的评测基线，用已知答案的测试集量化幻觉率，和竞品放在同一口径下比。</li>
+          <li><strong>给行动承诺：</strong>把幻觉率当可量化指标按周汇报收敛，写进 PRD 做验收标准，像「加载时间小于 2 秒」一样管理它。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补上本章的关键认知：正确做法是用工程手段缓解，别指望模型更聪明后幻觉自己消失。帮老板建立长期预期，就是 AI PM 的价值。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=summary-1" data-lesson-id="summary-1">汇总：幻觉不可消除</a>
+        <a href="/dashboard/learning?lesson=1-2-hallucination" data-lesson-id="1-2-hallucination">大模型幻觉演示</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">评测 + 人工审核</a>
+      </div>
+    </div>
+
+    <!-- Q17 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q17</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「幻觉都有哪些类型？别背定义，给我讲一个你印象最深的具体例子。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考知识的<strong>颗粒度</strong>。四种类型很多人背得出，能落到具体例子的很少。后半句就是在筛掉背书的人。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>列全四类：</strong>事实性幻觉捏造不存在的事实和数据；来源幻觉引用不存在的论文、链接、作者；推理幻觉前提正确但推理步骤出错；代码幻觉调用不存在的 API 或函数。</li>
+          <li><strong>给一个狠例子：</strong>让模型写 pandas 多列排序，它会把 numpy.sort 的 stable 参数错用到 sort_values 上。语法看着没问题，一运行直接抛 TypeError。</li>
+          <li><strong>说清为什么危险：</strong>代码幻觉的杀伤力在于像真的：逻辑错了，测试数据小的时候看不出来，上了生产才爆。</li>
+          <li><strong>收在根因：</strong>模型对 API 只有大致印象，按概率拼出最像的写法。概率上合理，事实上错误。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>再补一层边界：幻觉并非必然发生，prompt 和训练数据完全对应时输出是准确的，问题出在混搭不同来源。这个认知能把你和只会喊「AI 会胡说」的人区分开。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=summary-1" data-lesson-id="summary-1">汇总：四种幻觉类型</a>
+        <a href="/dashboard/learning?lesson=1-2-hallucination" data-lesson-id="1-2-hallucination">代码幻觉案例</a>
+      </div>
+    </div>
+
+    <!-- Q18 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q18</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你 PRD 里写『让模型学习我们的知识库』。我实现的时候，模型到底学没学？你自己说说。」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">抠字眼背后是<strong>抠认知</strong>。「学习」两个字暴露你以为运行时能改模型。这题答不好，技术同事以后看你的每份 PRD 都会先打个问号。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>承认措辞问题：</strong>推理时参数完全冻结，模型学不进任何东西。RAG 是运行时把检索到的文档临时注入上下文，用完就丢。</li>
+          <li><strong>给准确类比：</strong>参数是写完就封存的百科全书，上下文是放在桌上的参考资料。知识库内容进的是后者。</li>
+          <li><strong>说清工程含义：</strong>正因为是临时注入，知识库更新只要重建索引就生效，不用动模型，这恰恰是 RAG 的优点。</li>
+          <li><strong>给修正动作：</strong>PRD 改成「检索注入」，并写清每次请求注入多少 Token、检索失败时怎么兜底。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动引用课程那句「RAG 是开卷考试，模型没有变聪明，只是有了一个更好的起点」，技术同事听到这句就知道你真懂了。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=train-vs-infer" data-lesson-id="train-vs-infer">参数冻结</a>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：常见误区清单</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 检索增强</a>
+      </div>
+    </div>
+
+    <!-- Q19 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q19</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「说说 RAG 的完整流程。文档切块的粒度，你打算怎么定？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">流程题考完整性，切块追问考<strong>实操经验</strong>。能分清构建阶段和查询阶段的人不多，说得出切块 Token 数的更少。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先分两个阶段：</strong>知识库构建是一次性离线动作，文档切块后经 Embedding 模型转成向量存入向量数据库；查询阶段每次对话实时执行。</li>
+          <li><strong>走完查询链路：</strong>用户问题用同一个 Embedding 模型向量化，按余弦相似度检索 Top-K 相关块，拼进 Prompt 当参考资料，模型基于注入文档生成带来源的回答。</li>
+          <li><strong>答切块问题：</strong>粒度直接影响检索质量：太大注入冗余 Token 浪费钱，太小丢失上下文。最佳实践约 512 到 800 Token 一块，以标题、段落为边界保留语义完整。</li>
+          <li><strong>补关键细节：</strong>问题向量和文档向量必须出自同一个 Embedding 模型，才能在同一语义空间里比相似度。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>点出向量检索按语义匹配：「怎么申请退货」和「退款政策」关键词不同也能对上，这是它比关键词搜索强的根本原因。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 7 步流程</a>
+        <a href="/dashboard/learning?lesson=rag-advanced" data-lesson-id="rag-advanced">精准切块策略</a>
+      </div>
+    </div>
+
+    <!-- Q20 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q20</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「你们不是说上了 RAG 就好了吗？这个月 API 账单怎么反而涨了一截？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考<strong>成本结构的理解</strong>。RAG 换来的是准确性，代价就是花钱。答不出账单为什么涨，说明当初上 RAG 时根本没算过账。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>讲清成本大头：</strong>涨在 Prompt 增大：每次查询多注入 500 到 2000 Token，LLM 费用跟着倍增。向量化和检索本身反倒便宜，问题向量化约 0.1 元每百万 Token。</li>
+          <li><strong>给最关键的优化：</strong>先做意图识别判断要不要检索。约 70% 的对话其实不需要查文档，直接回答更快更便宜。</li>
+          <li><strong>给组合拳：</strong>关键词触发能跳过 30% 到 70% 的查询；简单问题路由到小模型，整体 LLM 费用降 60% 到 80%；相似问题走语义缓存，向量相似度 0.95 以上直接复用结果。</li>
+          <li><strong>给管理动作：</strong>把 RAG 触发率和单次对话成本做成看板，按周看优化收敛。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>一句话点透：生产级 RAG 的核心是「什么情况下不用 RAG」，做好过滤和路由才是省钱的关键。这句能让老板对你的成本意识放心。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=rag-advanced" data-lesson-id="rag-advanced">RAG 的代价与优化</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 检索增强</a>
+      </div>
+    </div>
+
+    <!-- Q21 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q21</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「你天天说 RAG 效果差要优化。真让你排查，你知道该看哪几个环节吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">试探你对 RAG 链路的掌握是真是假。说得出<strong>具体环节和指标</strong>的人，技术才愿意带着一起排查；说不出的人只配在旁边催进度。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先查检索环节：</strong>Chunking 粒度、Embedding 模型、相似度阈值，三个最常见的坏点。盯检索命中率这个指标，课程案例里 78% 对目标 85%，就是明确的未达标信号。</li>
+          <li><strong>再查知识库本身：</strong>RAG 的质量上限就是知识库质量。文档过期、内容互相矛盾，检索再准也答错。</li>
+          <li><strong>再看生成环节：</strong>注入的内容有限，模型会用训练记忆脑补文档外的部分，形成 RAG 加幻觉的混合输出，比纯幻觉更难识别。</li>
+          <li><strong>给排查抓手：</strong>强制显示引用来源，每个回答可回溯到具体文档块，坏 case 一眼能定位是检索错了还是生成飘了。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>提醒一个反直觉的风险：检索召回了错误文档时，幻觉不但没减少，还多披了一层权威出处的外衣，用户反而更容易信。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">RAG 的局限性</a>
+        <a href="/dashboard/learning?lesson=rag-advanced" data-lesson-id="rag-advanced">RAG 的代价与优化</a>
+        <a href="/dashboard/learning?lesson=0-why" data-lesson-id="0-why">不懂底层会卡在哪</a>
+      </div>
+    </div>
+
+    <!-- Q22 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q22</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「把 Temperature 调到 0，输出每次都一样了。这是不是就等于答案是对的？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">陷阱题，考<strong>确定性和正确性的区别</strong>。顺着点头的人，对采样机制的理解只停在「调低更稳」这个表面。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先拆机制：</strong>Temperature 在 softmax 之前对 logits 做等比缩放。T 越小分布越尖锐，调到 0 相当于每步都锁定概率最高的词。</li>
+          <li><strong>点破陷阱：</strong>低温锁定的是「最可能」，最可能不等于最正确。训练数据里那个答案本身是错的，模型就会极其稳定地错。</li>
+          <li><strong>给边界：</strong>Temperature 只影响每步怎么采样，不影响知识边界。模型不知道的事，低温下照样编，只是编得更一致。</li>
+          <li><strong>给结论：</strong>参数调优是成本最低的第一道防线，解决的是表达稳定问题。事实准确性要求高的场景，必须搭配 RAG 或人工审核。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>指出稳定地错比随机地错更危险：输出可复现，容易让团队误以为答案可靠，反而放松了警惕。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-temp" data-lesson-id="1-2-mitigation-temp">Temperature 的局限性</a>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：常见误区清单</a>
+      </div>
+    </div>
+
+    <!-- Q23 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q23</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「产品要求每个问题都先查一遍知识库，延迟直接多了两秒。真的每条都要查吗？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">一半是抱怨，一半是<strong>给你递台阶</strong>。他想听你主动砍掉不必要的检索，这也在检验你把 RAG 当银弹还是当工具。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先接住：</strong>确实不该全量检索。约 70% 的对话不需要查文档，「今天几号」这类问题直接答就行。</li>
+          <li><strong>给过滤方案：</strong>上意图分类器或简单规则做关键词触发，「我们的退款政策」这类才走 RAG，能跳过 30% 到 70% 的查询。</li>
+          <li><strong>给缓存方案：</strong>高频相似问题走语义缓存，问题向量相似度 0.95 以上直接返回缓存结果，跳过整条检索链路，延迟和费用都能降一半左右。</li>
+          <li><strong>给场景边界：</strong>闲聊、创意场景本来就不适合 RAG，检索注入反而让回答死板。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>把决策框架说全：知识时效性强、私有知识库、答错代价高，满足这些才值得为检索付出延迟。这个判断本来就该 PM 来做，而且要写进方案。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=rag-advanced" data-lesson-id="rag-advanced">关键词触发与语义缓存</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-rag" data-lesson-id="1-2-mitigation-rag">什么时候必须上 RAG</a>
+      </div>
+    </div>
+
+    <!-- Q24 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q24</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「AI 写的季度报告里引了一份根本不存在的行业报告，差点直接上董事会。这种事以后怎么杜绝？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">事故复盘题。重点听你敢不敢说<strong>「杜绝不了，但能拦住」</strong>，以及你的拦截网设计得够不够具体。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先定性：</strong>这是典型的来源幻觉。模型编数据和编报告名，用的是同一套概率续写能力，单靠叮嘱它「别编」解决不了。</li>
+          <li><strong>给第一道防线：</strong>System Prompt 约束：具体数字、报告名、机构名如非用户提供，必须标注「需核实」，宁可留空白让人填。</li>
+          <li><strong>给第二道防线：</strong>分级审核：对外材料属于高风险内容，AI 只做初稿，发出前必须有人签字确认。</li>
+          <li><strong>给闭环：</strong>这条 bad case 进评测集，走归因、Prompt 迭代、回归验证的流程，同类问题的复发率才会真正降下来。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>给老板一个可落地的制度句：AI 辅助生成的对外内容，一律带「需核实」清单，核对人签字后才算完成。高风险场景里人工兜底本身就是产品设计的一部分。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-prompt" data-lesson-id="1-2-mitigation-prompt">写作场景的数字幻觉</a>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">分级审核与反馈闭环</a>
+      </div>
+    </div>
+
+    <!-- Q25 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q25</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「System Prompt 里写一句『不确定就说不知道』，这到底有没有用？原理是什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考你对 Prompt 约束的理解深度。答「有用」或「没用」都不及格，面试官要的是<strong>机制层面的解释和失效条件</strong>。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>给机制：</strong>模型推每个 Token 时，上下文里的每个 Token 都在影响概率分布。约束词就是高质量前文，拉高「承认不知道」这个序列的概率，压低编造序列的概率。</li>
+          <li><strong>给有效条件：</strong>模型对问题本身有不确定感时最有效，适合超出知识范围的问题、模糊查询、时效性信息。</li>
+          <li><strong>给失效条件：</strong>模型对某个错误答案高度自信时，第一候选词就是错的，约束词干预不了。训练数据里的系统性错误、被当成事实的过时知识，都属于这类。</li>
+          <li><strong>给搭配：</strong>对「高度自信但可能错」的领域，Prompt 约束不够，要配 RAG 注入真实知识，或人工审核兜底。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>一句话点破根源：模型不知道自己不知道。约束指令改变的是概率分布，给不了它自知之明，这就是 Prompt 手段的天花板。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-prompt" data-lesson-id="1-2-mitigation-prompt">Prompt 约束为什么有效</a>
+      </div>
+    </div>
+
+    <!-- Q26 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q26</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「让你负责一个 AI 问答产品，你怎么量化它的幻觉水平？上线前后分别做什么？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">考<strong>体系化能力</strong>。零散地说「多测测」不行，面试官想看到上线前基线、上线后审核、长期闭环这个完整结构，还要有具体指标。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>上线前建基线：</strong>用一批已知正确答案的问题做幻觉测试集，量化幻觉率、设准入门槛。课程案例的口径：事实准确率 94.2%，幻觉率 5.8% 对目标小于 3%，未达标就不上线。</li>
+          <li><strong>上线后分级审核：</strong>按风险自动路由：低风险直接发出，高风险先人工审核再发送。金融、医疗这类领域 AI 只出初稿。</li>
+          <li><strong>长期做反馈闭环：</strong>审核发现的幻觉标成 bad case，走归因、Prompt 迭代、回归验证的循环。案例里发现到修复平均 3.2 天。</li>
+          <li><strong>指标进 PRD：</strong>「幻觉率小于 3%」要像「加载时间小于 2 秒」一样，成为可量化的验收标准。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>主动说出评测的盲区：测试集覆盖的是已知风险点，评测通过不等于全面可靠，长尾问题要靠线上审核持续回补进测试集。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">评测 + 人工审核</a>
+      </div>
+    </div>
+
+    <!-- Q27 -->
+    <div class="iq-card c-dev">
+      <div class="iq-head"><span class="iq-num">Q27</span><span class="iq-who who-dev">技术同事</span></div>
+      <div class="iq-q">「评测集全绿了才上的线，结果这周又冒出十几条 bad case。你那个评测是不是白做了？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">带情绪的挑战题。考你能不能解释<strong>评测的天然局限</strong>，同时把 bad case 变成流程资产，别被一句「白做了」带进防御姿态。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先正面回应：</strong>评测保证的是已知风险点不复发。测试集之外的长尾问题，模型照样可能幻觉，评测通过从来不等于全面可靠。</li>
+          <li><strong>给数据视角：</strong>看闭环速度，别只看单周新增。课程案例的节奏：本周新增 12 条 bad case，已修复归档 47 条，回归通过率 96.8%。</li>
+          <li><strong>给流程：</strong>每条 bad case 走四步：发现、归因分析、Prompt 迭代、回归验证。修完加入测试集，评测集就这样越滚越厚。</li>
+          <li><strong>给根因解释：</strong>模型没有自我检查机制，推错一个 Token 会以它为基础继续推，误差累积。评测加审核是架在输出端的外部纠错层，它拦结果，管不住生成过程本身。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>说出「前三个手段改变概率，这一手段拦截结果」这个分层，技术同事立刻明白你对四种手段的定位是清楚的。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-mitigation-eval" data-lesson-id="1-2-mitigation-eval">错误反馈闭环</a>
+      </div>
+    </div>
+
+    <!-- Q28 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q28</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「模型答错了一个问题，你怎么判断该改 Prompt，还是该做微调？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">经典排查题，考<strong>归因能力</strong>。两条修复路线成本差两个数量级，搞错方向的团队会白烧几周时间。面试官在看你有没有排查顺序。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先分错误类型：</strong>是上下文没给对，还是参数里压根没这个知识？两件事的修复方式完全不同，搞错方向浪费大量时间。</li>
+          <li><strong>给排查顺序：</strong>先试 Prompt：把任务描述、规则、示例补全再测。知识在训练数据里、问题出在格式风格语气的，Prompt 就能修，成本比重训低 100 倍。</li>
+          <li><strong>判断要不要 RAG：</strong>私有知识、实时数据、知识截止日期之后的内容，参数里没有，Prompt 写再多也没用，要检索注入。</li>
+          <li><strong>最后才是微调：</strong>固定专业领域的风格、需要改变推理范式，这类才值得微调。微调改的是行为风格，不适合注入时效性知识。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>补一个常见坑：很多「Prompt 改了没用」的 case，真相是 System Prompt 被截断或历史占满窗口。问题在上下文管理，两条修复路线都不用动。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：方案选择矩阵</a>
+        <a href="/dashboard/learning?lesson=0-why" data-lesson-id="0-why">Prompt 还是 Fine-tune</a>
+        <a href="/dashboard/learning?lesson=1-2-prompt-power" data-lesson-id="1-2-prompt-power">上下文窗口是关键</a>
+      </div>
+    </div>
+
+    <!-- Q29 -->
+    <div class="iq-card c-boss">
+      <div class="iq-head"><span class="iq-num">Q29</span><span class="iq-who who-boss">老板</span></div>
+      <div class="iq-q">「用户问 AI 晚饭吃了啥，它说自己煮了番茄鸡蛋面，截图都传到网上了。它一个程序，为什么要撒谎？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">看似吐槽，实际在问<strong>幻觉的本质</strong>。答好了能帮老板建立对生成式 AI 的正确心智；答成「这是 bug 我们修」，就把自己埋了。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>先解释机制：</strong>它没有撒谎的动机，只是在做概率续写。「吃了吗」后面接「吃了」是训练语料里最高频的应答模式，被追问时它又按语境概率编出了具体细节。</li>
+          <li><strong>说清对齐的边界：</strong>只有被用户明确质疑时，RLHF 对齐训练才让它承认自己没有身体。用户不追问，它会一直演下去，置信度不因内容虚假而下降。</li>
+          <li><strong>给关键认知：</strong>幻觉和创意同源。它能编出番茄鸡蛋面这种生动细节，和它能写文案用的是完全相同的能力，消灭幻觉的同时创意也会没了。</li>
+          <li><strong>给产品动作：</strong>分场景定策略：闲聊场景的角色扮演无伤大雅，事实场景才需要 RAG 和审核压制。全局一刀切，两头都做不好。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>用「两本书」帮老板建立心智：参数是封存的百科全书，上下文是桌上的参考资料。它永远在这两本书里找最像的续写，找不到也不会说不知道。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=1-2-hallucination" data-lesson-id="1-2-hallucination">日常对话幻觉案例</a>
+      </div>
+    </div>
+
+    <!-- Q30 -->
+    <div class="iq-card">
+      <div class="iq-head"><span class="iq-num">Q30</span><span class="iq-who who-hr">面试官</span></div>
+      <div class="iq-q">「学了这么多大模型知识，你观察下来，AI 产品经理最容易踩的认知误区有哪些？」</div>
+      <div class="iq-block iq-intent">
+        <div class="iq-label">🎯 对方在考察什么</div>
+        <div class="iq-body">收尾开放题，考<strong>知识内化程度</strong>。列举误区人人都会，面试官在听你能不能把误区和底层机制连起来，顺便看你的自我认知。</div>
+      </div>
+      <div class="iq-block iq-frame">
+        <div class="iq-label">🧭 答题框架</div>
+        <ol>
+          <li><strong>列高频误区：</strong>调高 Temperature 更聪明，实际只是更随机；RAG 让模型学习了文档，实际只是运行时临时注入；模型在调用 API，实际它只是输出了格式化文字；答错就重新训练，实际 Prompt 先试成本低 100 倍。</li>
+          <li><strong>挖共同根源：</strong>这四个误区都源于没分清训练和推理的边界。参数冻结之后，一切运行时手段都是在操作上下文。</li>
+          <li><strong>上升到方法：</strong>所有工程化操作本质都是对 message list 的处理。拿这个视角看任何新方案，都能判断它在哪一层起作用、局限在哪。</li>
+          <li><strong>给自我定位：</strong>用达克曲线收尾：刚学会名词时最危险，觉得什么都懂。持续动手、持续被打脸，才能从愚昧之巅走到平稳高原。</li>
+        </ol>
+      </div>
+      <div class="iq-bonus"><b>⭐ 加分点</b>收一句课程的原话：弱小和无知从来都不是生存的障碍，傲慢才是。面试里能自然引出认知层的话，比多背十个术语更加分。</div>
+      <div class="iq-refs">
+        <span class="iq-refs-label">用这些课程页组织答案 →</span>
+        <a href="/dashboard/learning?lesson=summary-1b" data-lesson-id="summary-1b">汇总：常见误区清单</a>
+        <a href="/dashboard/learning?lesson=0-why" data-lesson-id="0-why">message list 视角</a>
+        <a href="/dashboard/learning?lesson=0-intro" data-lesson-id="0-intro">达克效应</a>
+      </div>
+    </div>
+
+    <div class="l-callout">
+      <div style="font-size:12px;font-weight:800;color:var(--accent);letter-spacing:.5px;margin-bottom:8px">最后一个建议</div>
+      <div style="font-size:15px;color:var(--text);line-height:1.7">这 30 题的正确用法是<strong>开口讲一遍</strong>，对着同事、朋友或者录音讲。看懂不算数。讲不顺的地方，就是你以为懂了但还没懂的地方，点关联课程页回去补上。</div>
+    </div>
+  </section>
+</article>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

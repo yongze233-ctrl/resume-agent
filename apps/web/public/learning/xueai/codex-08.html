@@ -1,0 +1,1158 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-08",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-08',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>满窗之后，砍哪一段留哪一段 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-stage{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{display:flex;gap:16px;font-size:11px;font-weight:600;color:var(--sub);text-align:right}
+.dm-meter span{position:relative}
+.dm-meter span:after{content:"";display:block;height:3px;width:36px;margin-top:6px;margin-left:auto;border-radius:99px;background:var(--accent);transform:scaleX(var(--meter,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-meter b{display:block;color:var(--accent-deep);font-size:20px;line-height:1.15;font-variant-numeric:tabular-nums}
+.dm-meter b.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-hist{position:relative;display:flex;flex-wrap:wrap;gap:8px;padding:18px 16px 8px;min-height:88px}
+.dm-h{padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:12px;font-weight:600;line-height:1.5;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-h.cut{opacity:.42;transform:scale(.98);text-decoration:line-through;color:var(--faint)}
+.dm-h.keep{background:var(--accent-soft);color:var(--accent-deep);border-color:rgba(65,75,90,.4)}
+.dm-h.fresh{background:#fff;border:1px dashed var(--accent);color:var(--accent-deep)}
+.dm-h.sum{background:var(--accent-soft);color:var(--accent-deep);border-color:rgba(65,75,90,.5);font-weight:800}
+.dm-h.is-enter{opacity:0;transform:translateY(8px)}
+.dm-h.is-enter.in{opacity:1;transform:none;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-h.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-h.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-legend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:0 16px 14px;font-size:11.5px;color:var(--sub)}
+.dm-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1px solid var(--border);background:var(--card);font-style:normal}
+.dm-legend i.keep{background:var(--accent-soft);border-color:rgba(65,75,90,.4)}
+.dm-legend i.cut{opacity:.42}
+.dm-legend i.fresh{background:#fff;border-style:dashed;border-color:var(--accent)}
+.dm-badges{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
+.dm-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--sub);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-badge.on{background:var(--accent-soft);border-color:rgba(65,75,90,.4);color:var(--accent-deep)}
+.dm-badge.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-status{margin:0 16px 16px;padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:48px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-grid-wrap{margin-top:16px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+.dm-grid-tag{font-size:12px;font-weight:700;color:var(--sub);margin-bottom:12px}
+.dm-grid{display:grid;grid-template-columns:64px repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+.dm-grid .h,.dm-grid .r{font-size:11.5px;color:var(--sub);display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4}
+.dm-cell{min-height:44px;min-width:44px;padding:8px 6px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 12px/1.35 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-cell.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cell.lit{background:var(--accent-soft);border-color:rgba(65,75,90,.4);color:var(--accent-deep)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{opacity:1;transform:scale(1);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){
+  .lesson{overflow-x:hidden}
+  .compare{grid-template-columns:1fr}
+  .objective{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .demo{padding:18px}
+  .demo-ctrl{width:100%}
+  .demo-ctrl button{flex:1}
+  .visual{padding:14px}
+  .dm-trace li{flex-direction:column;gap:4px}
+  .dm-grid{grid-template-columns:52px repeat(3,minmax(0,1fr));gap:6px}
+  .dm-cell{padding:6px 4px;font-size:11px}
+  .dm-meter{gap:10px}
+  .source,.demo,.visual,.cmp-card{max-width:100%;min-width:0}
+  .lesson code{overflow-wrap:anywhere;word-break:break-word}
+}
+</style>
+<meta name="description" content="Codex 把压缩拆成三个时机乘三种实现。远端回来先过滤网，中途摘要必须停在历史最后一项，空窗开关打开则回忆不带走">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="满窗之后，砍哪一段留哪一段"><meta property="og:description" content="Codex 把压缩拆成三个时机乘三种实现。远端回来先过滤网，中途摘要必须停在历史最后一项，空窗开关打开则回忆不带走"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-08.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 上下文</div>
+    <h1>满窗之后，砍哪一段留哪一段</h1>
+    <p class="subtitle">三个时机共用一个分发器，三种实现由开关选中。同一份摘要在中途必须停在历史最后一项。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>三个时机共用一个分发器，三种实现由开关选中。同一份摘要在中途必须停在历史最后一项。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" fill="none"></circle><circle cx="12" cy="12" r="4" fill="none"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。第一，上下文满了，Codex 先问时机再问实现，九种组合共用两套入口。第二，服务端回来的 transcript 默认不可信，进门先丢掉指令包装和工具回放。第三，同一份摘要在采样前和中途要摆到不同位置，空窗开关打开则回忆不带走。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一段历史，三条管道各砍各的</div>
+  <div class="demo reveal" id="demo-compact">
+    <div class="demo-top">
+      <div class="demo-title">窗口到顶：切换时机和实现，看各自砍掉哪一段、保住哪一段</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">时机</span>
+      <div class="dm-seg" id="dm-phase">
+        <button type="button" data-phase="pre">采样前</button>
+        <button type="button" data-phase="mid" class="on">中途</button>
+        <button type="button" data-phase="manual">手动</button>
+      </div>
+      <span class="dm-b-hint">采样前和手动压完，下一轮才整包重注。中途压完还要继续采样，摘要必须停在队尾。</span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">实现</span>
+      <div class="dm-seg" id="dm-impl">
+        <button type="button" data-impl="remote" class="on">远端</button>
+        <button type="button" data-impl="local">本地</button>
+        <button type="button" data-impl="budget">空窗</button>
+      </div>
+      <span class="dm-b-hint">默认 OpenAI 会话走远端。提供方不支持就走本地再采样。空窗跳过摘要，回忆不带走。</span>
+    </div>
+    <div class="dm-stage">
+      <div class="dm-head">
+        <span class="dm-name" id="dm-path-name">中途 × 远端</span>
+        <span class="dm-meter">
+          <span><b id="dm-cut">0</b>砍掉</span>
+          <span><b id="dm-keep">0</b>保住</span>
+          <span><b id="dm-ver">3</b>版本</span>
+        </span>
+      </div>
+      <div class="dm-hist" id="dm-hist"></div>
+      <div class="dm-legend">
+        <span><i class="keep"></i>保住</span>
+        <span><i class="cut"></i>砍掉</span>
+        <span><i class="fresh"></i>新注入的环境</span>
+      </div>
+      <div class="dm-badges">
+        <span class="dm-badge" data-badge="filter">滤网</span>
+        <span class="dm-badge" data-badge="last">摘要在最后</span>
+        <span class="dm-badge" data-badge="later">下一轮重注</span>
+        <span class="dm-badge" data-badge="empty">空窗</span>
+      </div>
+      <div class="dm-status" id="dm-status">等待开始。点播放，或先换一格再走一遍。</div>
+    </div>
+    <div class="dm-grid-wrap">
+      <div class="dm-grid-tag">九宫格 · 点任一格，看这一格独有的砍法</div>
+      <div class="dm-grid" id="dm-grid">
+        <span></span>
+        <span class="h">采样前</span>
+        <span class="h">中途</span>
+        <span class="h">手动</span>
+        <span class="r">远端</span>
+        <button type="button" class="dm-cell" data-phase="pre" data-impl="remote">远端</button>
+        <button type="button" class="dm-cell on" data-phase="mid" data-impl="remote">远端</button>
+        <button type="button" class="dm-cell" data-phase="manual" data-impl="remote">远端</button>
+        <span class="r">本地</span>
+        <button type="button" class="dm-cell" data-phase="pre" data-impl="local">本地</button>
+        <button type="button" class="dm-cell" data-phase="mid" data-impl="local">本地</button>
+        <button type="button" class="dm-cell" data-phase="manual" data-impl="local">本地</button>
+        <span class="r">空窗</span>
+        <button type="button" class="dm-cell" data-phase="pre" data-impl="budget">空窗</button>
+        <button type="button" class="dm-cell" data-phase="mid" data-impl="budget">空窗</button>
+        <button type="button" class="dm-cell" data-phase="manual" data-impl="budget">空窗</button>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>看 token_limit_reached，或用户提交 Compact</span><span class="ln">context_window.rs L77</span></li>
+        <li><span>采样前走 run_pre_sampling_compact</span><span class="ln">turn.rs L1012</span></li>
+        <li><span>中途走 should_roll_over，还要有 follow-up</span><span class="ln">turn.rs L458</span></li>
+        <li><span>手动拉起 CompactTask，打断当前 turn</span><span class="ln">tasks/compact.rs L19</span></li>
+        <li><span>TokenBudget 开则换空窗，远端和本地都被跳过</span><span class="ln">turn.rs L1189</span></li>
+        <li><span>否则按远端 v2 或本地分发</span><span class="ln">turn.rs L1201</span></li>
+        <li><span>远端结果过 should_keep 滤网</span><span class="ln">compact_remote.rs L370</span></li>
+        <li><span>按 InitialContextInjection 决定插不插</span><span class="ln">compact.rs L68</span></li>
+        <li><span>replace_annotated 才把 history_version 加一</span><span class="ln">history.rs L298</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一段混杂历史在当前这一格里怎么被重排。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>远端</b>服务端回来的包装不可信。developer、工具回放先丢掉，再按时机决定环境插不插。中途必须把摘要留在最后。</div>
+      <div class="dm-s"><b>本地</b>先追加合成提示和助手输出，版本号还不变。成功之后整表换成截断后的用户原话加摘要前缀。</div>
+      <div class="dm-s"><b>空窗</b>跳过模型和服务端。新窗口里只剩当前环境，没有摘要，回忆不带走。</div>
+    </div>
+    <div class="demo-caption">教学示意：色块数量与角色为课程化设定，用来展示三条管道各自砍什么、留什么。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 时机和实现拆开</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你让 coding agent 在同一个线程里改了三十轮。前二十轮还记得工作区在哪、哪几个文件不能动。到第三十轮，它突然问你「当前目录是什么」。再过几轮，已经批准过的 <code>npm test</code> 又被问了一遍。</p>
+  <p class="reveal">用量顶到窗口边上之后，系统必须压历史。如果把什么时候压、怎么压写进同一段判断，换提供方或加一种不叫模型的空窗，判定入口都要跟着改。中途压完还要继续采样，发消息前压完则下一轮才会重注，这两件事对摘要位置的要求也不一样。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把时机写成 <code>CompactionPhase</code>：发消息前的 PreTurn、工具跑完还要续跑的 MidTurn、用户手动的 StandaloneTurn。实现写成 <code>CompactionImplementation</code>：本地再采一次样、旧的 <code>/responses/compact</code>、新的 <code>compaction_trigger</code>。分析事件另有 Trigger 和 Reason 两套标签。自动路径共用 <code>run_auto_compact</code>，手动路径共用 <code>CompactTask</code>。九宫格是乘法表，源码里没有九套并列函数。</p>
+  <p class="reveal">三个自动时机都先问同一个函数。<code>token_limit_reached</code> 在缓冲后的 compact 限额或满窗任一触发时为真。中途还要多一道闸：后面还要继续，并且模型刚请求了新窗口或 token 已经到顶。只满不续，这一轮自然结束，下一轮用户消息到来时走预采样。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/session/context_window.rs</code> 第 74 至 91 行；<code>codex-rs/core/src/session/turn.rs</code> 第 458 至 483 行</p>
+  <p class="reveal paywall-locked xa-peek">分发器第一句看 TokenBudget。开了就换空窗，远端和本地都被跳过。关了再按提供方能力选：认 <code>compaction_trigger</code> 且特性开，走远端 v2；认 V2 但特性关，走旧远端接口；Unsupported 走本地。TokenBudget 默认关，RemoteCompactionV2 默认开。默认 OpenAI 会话走远端 v2。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn.rs</code> 第 1178 至 1201 行；<code>codex-rs/features/src/lib.rs</code> 第 1428 至 1433 行、第 1542 至 1547 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 360" role="img" aria-label="压缩从判定走到换窗的分发路径">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="28" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="62" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">用量到顶或 /compact</text>
+      <path fill="none" d="M240 56H310" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="318" y="28" width="150" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="393" y="62" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">选相位</text>
+      <path fill="none" d="M468 56H538" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="546" y="28" width="170" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="631" y="62" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">同一套分发器</text>
+      <path fill="none" d="M631 84V118" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="40" y="140" width="260" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="170" y="170" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">空窗 TokenBudget</text>
+      <text x="170" y="192" fill="#6b7280" text-anchor="middle" font-size="13">第一句 if，跳过摘要</text>
+      <rect x="340" y="140" width="260" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="470" y="170" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">远端 v2 或旧接口</text>
+      <text x="470" y="192" fill="#6b7280" text-anchor="middle" font-size="13">回来要过滤网</text>
+      <rect x="640" y="140" width="260" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="770" y="170" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">本地再采样</text>
+      <text x="770" y="192" fill="#6b7280" text-anchor="middle" font-size="13">提供方 Unsupported</text>
+      <path fill="none" d="M170 210V250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M470 210V250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M770 210V250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="240" y="258" width="460" height="62" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="470" y="284" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">replace_compacted_history</text>
+      <text x="470" y="304" fill="#6b7280" text-anchor="middle" font-size="13">三条管道的安装点相同，差异在安装之前的产物</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：先选相位，再进同一套分发器，最后都在同一个安装点换窗。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">什么时候该换窗，和窗里装什么，是两件独立的事。换语言重写，仍要先选相位再选管道。提供方只有一个时，也可以先把判定和安装拆开。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 远端先过滤，摘要位置看相位</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">服务端带回的 transcript 可能夹着过期 developer 指令。不滤就和本地按当前 world state 新渲染的环境叠在一起，效果等价于有人改了旧行。中途压完还要在同一轮继续采样，模型被训练成摘要是历史上最后一项。上下文如果插到摘要后面，训练约束就破了。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">滤网是完整的穷尽 match。丢掉 developer、非用户内容的 user 包装、工具调用和压缩触发项。留下真实用户消息、持久化 hook prompt、assistant、压缩项。v2 复用同一函数。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/compact_remote.rs</code> 第 370 至 397 行</p>
+  <p class="reveal paywall-locked">然后按 <code>InitialContextInjection</code> 决定插不插。预采样和手动用 DoNotInject：替换历史里没有初始上下文，并清掉 <code>reference_context_item</code>，下一轮普通 turn 会走完整重注。中途用 BeforeLastUserMessage：当前环境和权限插到最后一条真实用户消息之上，摘要仍在队尾。插入函数还有兜底：没有真实用户就插在摘要前，再没有就插在最后一条 compaction 项前。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/compact.rs</code> 第 59 至 74 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 320" role="img" aria-label="预采样与中途压缩对初始上下文的两种安置">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="40" y="36" fill="#262d38" font-size="14" font-weight="800">采样前 / 手动 · DoNotInject</text>
+      <rect x="40" y="52" width="120" height="46" rx="9" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="100" y="80" fill="#262d38" text-anchor="middle" font-size="13">用户原话</text>
+      <rect x="176" y="52" width="120" height="46" rx="9" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="236" y="80" fill="#262d38" text-anchor="middle" font-size="13">摘要</text>
+      <path fill="none" d="M310 75H380" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="388" y="52" width="220" height="46" rx="9" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="6 4"></rect>
+      <text x="498" y="80" fill="#6b7280" text-anchor="middle" font-size="13">环境此刻不进替换表</text>
+      <text x="640" y="80" fill="#6b7280" font-size="13">下一轮普通 turn 整包重注</text>
+      <text x="40" y="176" fill="#262d38" font-size="14" font-weight="800">中途 · BeforeLastUserMessage</text>
+      <rect x="40" y="196" width="150" height="46" rx="9" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="6 4"></rect>
+      <text x="115" y="224" fill="#262d38" text-anchor="middle" font-size="13">当前环境</text>
+      <rect x="206" y="196" width="150" height="46" rx="9" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="281" y="224" fill="#262d38" text-anchor="middle" font-size="13">最后一条用户</text>
+      <rect x="372" y="196" width="150" height="46" rx="9" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="447" y="224" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">摘要必须在最后</text>
+      <text x="548" y="224" fill="#6b7280" font-size="13">同一轮接着采样，训练约束把摘要钉在队尾</text>
+    </svg>
+    <div class="visual-caption">教学化对照：同一份摘要，两种相位，两种安置。</div>
+  </div>
+  <p class="reveal paywall-locked">三种实现最后都进 <code>replace_compacted_history</code>。live history 整表替换。<code>history_version</code> 只在这时加一，追加不碰版本号。Guardian 复用 transcript 时会核对 <code>parent_history_version</code>，版本变了就不能复用旧的审查前缀。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/context_manager/history.rs</code> 第 298 至 302 行</p>
+
+  <div class="key-line reveal paywall-locked">远端回来的包装先丢掉。中途摘要停在队尾。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">远端结果只要不是本地函数吐出来的，进门先丢掉指令包装。插入点挡的是训练约束和重注时机，这两件事本来就分开。版本号只在重写时前进，因为追加每轮都发生。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 空窗也是压缩，只是不叫模型</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">有时用户只想换一扇干净的窗，不要摘要。空窗如果走另一套生命周期，hook 和 <code>ContextCompaction</code> 条目会看不见这件事。这个开关默认关，避免用户在没意识到时丢掉整段对话。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">TokenBudget 跳过模型和服务端摘要，安装一扇新窗口，摘要字段是空字符串。模型在新窗口里看不到旧对话，只看到此刻的环境和权限。这和 <code>new_context</code> 工具那句合同一致：换窗，不摘要。它仍然走压缩生命周期，pre-compact hook 若停下，窗口还没换。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/compact_token_budget.rs</code> 第 21 至 25 行</p>
+  <p class="reveal paywall-locked">本地路径自己碰上满窗，不递归调用自动压缩。它删最老的一条再打一次。只剩一条还超，就标满窗并返回错误。远端失败也不会改走本地：普通满窗触发的预压缩和中途压缩都把 fallback 传成 <code>None</code>，第一次远端失败直接返回。超时不在可重试名单里。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/compact_model_fallback.rs</code> 第 8 至 20 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">压缩是一次换窗的生命周期，产物可以是摘要，也可以是空房间。递归要自己挡住：手动任务不进 turn 循环，本地超窗靠修剪，中途路径靠压成功就会低于限额。假设不成立时，循环可以再次进入。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a5.73 5.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：不叫模型的那一刀可以先落地</h4>
+      <p>DSH 的压缩家族在 <code>packages/compaction/</code>。压力触发时先可选地 prune，再量一次。prune 之后如果已经回到阈值以下，摘要不跑。两条路径都在本地，没有 Codex 那种 compact 客户端。</p>
+      <p>溢出恢复把 <code>replaceGeneration</code> 当重试许可。prune 先落地、随后摘要抛错，只要 generation 前进了，就允许从新表层再试。generation 只在 replace 计划提交时加一，append 不加。Codex 用 <code>history_version</code> 回答同一问题，远端要么整窗安装，要么完全不装。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-4" data-lesson-id="dsh-4">DSH · Compaction</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：递归靠标签拦住，失败三次就停手</h4>
+      <p>默认自动路径仍是再叫一次模型写摘要。自动判定先挡递归：<code>session_memory</code> 和 <code>compact</code> 这两种 querySource 直接返回 false，注释写明它们是 fork 出来的 agent，再触发会死锁。连续失败 3 次之后电路熔断，注释记录过单会话连续失败上千次的事故。</p>
+      <p>Codex 的 Compact 任务不进 turn 循环，这种标签可以不存在。换来的是中途路径没有对等的连续失败计数器。作者把赌注写在注释里：压缩只要把用量压到限额以下，就不必担心死循环，于是计数器被省掉了。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>三张替换表各留下什么</h3>
+      <p>上面那一段混杂历史，分别走中途远端、走空窗、走采样前远端。写出三张替换表：各砍掉哪几块、保住哪几块、摘要在不在最后、初始上下文此时在不在表里。</p>
+      <p>进阶一问：远端第一次失败时，为什么普通满窗路径不会改走本地，换模型预压缩却可以再打一次远端。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>时机和实现拆开，九种组合共用两套入口。远端先进滤网，中途摘要必须停在队尾。空窗是压缩的一种产物，回忆不带走。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var PHASE_LABEL = {pre:'采样前', mid:'中途', manual:'手动'};
+  var IMPL_LABEL = {remote:'远端', local:'本地', budget:'空窗'};
+  var phase = 'mid';
+  var impl = 'remote';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var histEl = document.getElementById('dm-hist');
+  var statusEl = document.getElementById('dm-status');
+  var pathName = document.getElementById('dm-path-name');
+  var cutEl = document.getElementById('dm-cut');
+  var keepEl = document.getElementById('dm-keep');
+  var verEl = document.getElementById('dm-ver');
+  var traceBox = document.querySelector('.dm-trace');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var badges = Array.prototype.slice.call(document.querySelectorAll('.dm-badge'));
+  var IDLE = '点播放，看同一段混杂历史在当前这一格里怎么被重排。';
+
+  var FULL = [
+    {t:'环境', k:'env'},
+    {t:'用户·目录', k:'user'},
+    {t:'助手', k:'asst'},
+    {t:'工具', k:'tool'},
+    {t:'用户·测试', k:'user'},
+    {t:'工具', k:'tool'},
+    {t:'用户·最近', k:'user'},
+    {t:'助手', k:'asst'}
+  ];
+  var REMOTE_DIRTY = [
+    {t:'过期指令', k:'dev'},
+    {t:'用户·目录', k:'user'},
+    {t:'工具', k:'tool'},
+    {t:'用户·测试', k:'user'},
+    {t:'工具', k:'tool'},
+    {t:'用户·最近', k:'user'},
+    {t:'摘要', k:'sum'}
+  ];
+  var FILTERED = [
+    {t:'过期指令', k:'dev', s:'cut'},
+    {t:'用户·目录', k:'user', s:'keep'},
+    {t:'工具', k:'tool', s:'cut'},
+    {t:'用户·测试', k:'user', s:'keep'},
+    {t:'工具', k:'tool', s:'cut'},
+    {t:'用户·最近', k:'user', s:'keep'},
+    {t:'摘要', k:'sum', s:'sum'}
+  ];
+  var MID_DONE = [
+    {t:'当前环境', k:'env', s:'fresh'},
+    {t:'用户·目录', k:'user', s:'keep'},
+    {t:'用户·测试', k:'user', s:'keep'},
+    {t:'用户·最近', k:'user', s:'keep'},
+    {t:'摘要', k:'sum', s:'sum'}
+  ];
+  var PRE_DONE = [
+    {t:'用户·目录', k:'user', s:'keep'},
+    {t:'用户·测试', k:'user', s:'keep'},
+    {t:'用户·最近', k:'user', s:'keep'},
+    {t:'摘要', k:'sum', s:'sum'}
+  ];
+  var LOCAL_APPEND = FULL.concat([
+    {t:'压缩提示', k:'user'},
+    {t:'助手·摘要', k:'asst'}
+  ]);
+  var LOCAL_DONE = [
+    {t:'用户·目录', k:'user', s:'keep'},
+    {t:'用户·测试', k:'user', s:'keep'},
+    {t:'用户·最近', k:'user', s:'keep'},
+    {t:'摘要', k:'sum', s:'sum'}
+  ];
+  var EMPTY_DONE = [
+    {t:'当前环境', k:'env', s:'fresh'}
+  ];
+
+  function clone(list){
+    return list.map(function(x){ return {t:x.t, k:x.k, s:x.s}; });
+  }
+
+  function buildSteps(){
+    var out = [];
+    var title = PHASE_LABEL[phase] + ' × ' + IMPL_LABEL[impl];
+    out.push({
+      cap: '同一段线程已经改了三十轮。历史里混着环境、用户原话、助手和工具回放。用量顶到窗口边上。',
+      trace: 0, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+      st: '活动上下文到顶，token_limit_reached 为真。',
+      badges: []
+    });
+    if (phase === 'pre') {
+      out.push({
+        cap: '发消息前先跑预压缩。预估还没把即将写入的用户输入算进去，只看已经在历史上的用量。',
+        trace: 1, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        st: '相位 PreTurn，注入 DoNotInject。',
+        badges: []
+      });
+    } else if (phase === 'mid') {
+      out.push({
+        cap: '采样和工具跑完。后面还要续跑，并且用量已到顶，should_roll_over 打开。',
+        trace: 2, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        st: '相位 MidTurn。只满不续，不会在中途压。',
+        badges: []
+      });
+    } else {
+      out.push({
+        cap: '用户提交 /compact。提交循环打断当前普通 turn，拉起一个 CompactTask。',
+        trace: 3, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        st: '相位 StandaloneTurn，原因 UserRequested。这种任务不能 steer。',
+        badges: []
+      });
+    }
+
+    if (impl === 'budget') {
+      out.push({
+        cap: '分发器第一句 TokenBudget 为真。模型和服务端摘要都被跳过。',
+        trace: 4, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        stKind: 'hold', st: '空窗开关打开，远端和本地两条都走不到。',
+        badges: ['empty']
+      });
+      out.push({
+        cap: '历史整表换成当前环境。没有摘要。模型看不见旧对话，只看见此刻的权限和工作区。',
+        trace: 8, chips: clone(EMPTY_DONE), ver: 4, cut: FULL.length, keep: 1, fin: true,
+        stKind: 'ok', st: '新窗口已安装。回忆不带走，版本加一。',
+        badges: ['empty']
+      });
+    } else if (impl === 'remote') {
+      out.push({
+        cap: 'TokenBudget 关，提供方认 compaction_trigger，进远端。',
+        trace: 5, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        stKind: 'hold', st: title + '：请求已经出站，live history 还没动。',
+        badges: []
+      });
+      out.push({
+        cap: '服务端回来一串混杂角色，带着过期 developer 指令和工具回放。',
+        trace: 5, chips: clone(REMOTE_DIRTY), ver: 3, cut: 0, keep: 0,
+        stKind: 'hold', st: '远端产物不能直接安装。',
+        badges: []
+      });
+      out.push({
+        cap: '滤网丢掉 developer、工具回放和包装。真实用户原话和摘要留下。',
+        trace: 6, chips: clone(FILTERED), ver: 3, cut: 3, keep: 4,
+        stKind: 'hold', st: 'should_keep 是穷尽 match，没有通配分支。',
+        badges: ['filter']
+      });
+      if (phase === 'mid') {
+        out.push({
+          cap: '中途还要继续采样。当前环境插到最后一条用户原话之上，摘要停在队尾。',
+          trace: 7, chips: clone(MID_DONE), ver: 3, cut: 3, keep: 5,
+          stKind: 'hold', st: 'BeforeLastUserMessage：摘要必须是历史上最后一项。',
+          badges: ['filter', 'last']
+        });
+      } else {
+        out.push({
+          cap: '预采样和手动用 DoNotInject。替换历史没有初始上下文，下一轮普通 turn 才会整包重注。',
+          trace: 7, chips: clone(PRE_DONE), ver: 3, cut: 3, keep: 4,
+          stKind: 'hold', st: 'reference_context_item 被清空。',
+          badges: ['filter', 'later']
+        });
+      }
+      out.push({
+        cap: '整表替换，history_version 加一。' + (phase === 'mid' ? '同一轮还可以再采样。' : '下一轮会看到完整重注的环境。'),
+        trace: 8, chips: clone(phase === 'mid' ? MID_DONE : PRE_DONE), ver: 4,
+        cut: 3, keep: phase === 'mid' ? 5 : 4, fin: true,
+        stKind: 'ok', st: '新窗口已安装。追加不会加版本，只有重写才加。',
+        badges: phase === 'mid' ? ['filter', 'last'] : ['filter', 'later']
+      });
+    } else {
+      out.push({
+        cap: '提供方不支持远端压缩，进本地再采样。压缩提示被合成一条用户消息。',
+        trace: 5, chips: clone(FULL), ver: 3, cut: 0, keep: 0,
+        stKind: 'hold', st: '实现标签写成 Responses。',
+        badges: []
+      });
+      out.push({
+        cap: '流式助手输出先追加进 live history，并写入 rollout。替换还没发生，版本号仍是 3。',
+        trace: 5, chips: clone(LOCAL_APPEND), ver: 3, cut: 0, keep: 0,
+        stKind: 'hold', st: '边收边记。若此刻取消，多出的助手条目会留下。',
+        badges: []
+      });
+      out.push({
+        cap: '成功之后整表换成截断后的用户原话，再接上摘要前缀。工具回放全部丢掉。',
+        trace: 8, chips: clone(LOCAL_DONE), ver: 4, cut: 5, keep: 4, fin: true,
+        stKind: 'ok', st: '本地路径结束时会发一条 Warning，劝用户在多次压缩之后新开线程。',
+        badges: phase === 'mid' ? ['last'] : ['later']
+      });
+    }
+    return out;
+  }
+
+  function takeOld(pool, text){
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i] && pool[i].textContent === text) {
+        var hit = pool[i];
+        pool[i] = null;
+        return hit;
+      }
+    }
+    return null;
+  }
+
+  function spawnGhost(el){
+    var box = histEl.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    histEl.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function bumpAnim(el, name){
+    el.classList.remove(name);
+    void el.offsetWidth;
+    el.classList.add(name);
+  }
+
+  function rollNum(el, to, animate){
+    var from = parseInt(el.textContent, 10);
+    if (isNaN(from)) from = 0;
+    if (!animate || from === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function setMeters(cut, keep, ver){
+    cutEl.parentElement.style.setProperty('--meter', String(cut / 8));
+    keepEl.parentElement.style.setProperty('--meter', String(keep / 8));
+    verEl.parentElement.style.setProperty('--meter', String(ver - 3));
+  }
+
+  function paintChips(chips, animate){
+    var oldNodes = Array.prototype.slice.call(histEl.querySelectorAll('.dm-h:not(.dm-ghost)'));
+    var oldRects = [];
+    oldNodes.forEach(function(el){ oldRects.push({el: el, rect: el.getBoundingClientRect()}); });
+    if (!animate) {
+      histEl.innerHTML = '';
+      chips.forEach(function(c){
+        var d = document.createElement('div');
+        d.className = 'dm-h' + (c.s ? ' ' + c.s : '');
+        d.textContent = c.t;
+        histEl.appendChild(d);
+      });
+      return;
+    }
+    var pool = oldNodes.slice();
+    var nextEls = [];
+    chips.forEach(function(c){
+      var existing = takeOld(pool, c.t);
+      if (existing) {
+        var prevClass = existing.className;
+        existing.className = 'dm-h' + (c.s ? ' ' + c.s : '');
+        if (c.s === 'cut' && prevClass.indexOf('cut') === -1) bumpAnim(existing, 'firing');
+        if ((c.s === 'keep' || c.s === 'sum' || c.s === 'fresh') && prevClass.indexOf(c.s) === -1) bumpAnim(existing, 'pop');
+        nextEls.push(existing);
+      } else {
+        var d = document.createElement('div');
+        d.className = 'dm-h' + (c.s ? ' ' + c.s : '') + ' is-enter';
+        d.textContent = c.t;
+        nextEls.push(d);
+      }
+    });
+    pool.forEach(function(el){ if (el) spawnGhost(el); });
+    pool.forEach(function(el){ if (el && el.parentNode) el.remove(); });
+    nextEls.forEach(function(el){ histEl.appendChild(el); });
+    nextEls.forEach(function(el){
+      if (el.classList.contains('is-enter')) return;
+      var rec = null;
+      for (var i = 0; i < oldRects.length; i++) {
+        if (oldRects[i].el === el) { rec = oldRects[i].rect; break; }
+      }
+      if (!rec) return;
+      var now = el.getBoundingClientRect();
+      var dx = rec.left - now.left;
+      var dy = rec.top - now.top;
+      if (!dx && !dy) return;
+      var scale = el.classList.contains('cut') ? .98 : 1;
+      el.style.transition = 'none';
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + scale + ')';
+      requestAnimationFrame(function(){
+        el.style.transition = '';
+        el.style.transform = '';
+      });
+    });
+    var newborns = nextEls.filter(function(el){ return el.classList.contains('is-enter'); });
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        newborns.forEach(function(el){
+          el.classList.add('in');
+          if (el.classList.contains('fresh') || el.classList.contains('sum')) el.classList.add('pop');
+        });
+      });
+    });
+  }
+
+  function paintBadges(on, animate){
+    badges.forEach(function(el){
+      var key = el.getAttribute('data-badge');
+      var now = on.indexOf(key) !== -1;
+      var was = el.classList.contains('on');
+      el.classList.toggle('on', now);
+      if (animate && now && !was) bumpAnim(el, 'pop');
+    });
+  }
+
+  function paintGrid(){
+    var cells = document.querySelectorAll('#dm-grid .dm-cell');
+    Array.prototype.forEach.call(cells, function(el){
+      var sameImpl = el.getAttribute('data-impl') === impl;
+      var same = sameImpl && el.getAttribute('data-phase') === phase;
+      el.classList.toggle('on', same);
+      el.classList.toggle('lit', sameImpl && !same);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dm-phase button'), function(el){
+      el.classList.toggle('on', el.getAttribute('data-phase') === phase);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dm-impl button'), function(el){
+      el.classList.toggle('on', el.getAttribute('data-impl') === impl);
+    });
+    pathName.textContent = PHASE_LABEL[phase] + ' × ' + IMPL_LABEL[impl];
+  }
+
+  function paint(st, animate){
+    paintChips(st.chips, animate);
+    var prevVer = parseInt(verEl.textContent, 10);
+    rollNum(cutEl, st.cut, animate);
+    rollNum(keepEl, st.keep, animate);
+    rollNum(verEl, st.ver, animate);
+    setMeters(st.cut, st.keep, st.ver);
+    if (animate && st.ver !== prevVer) bumpAnim(verEl, 'pop');
+    statusEl.className = 'dm-status' + (st.stKind ? ' ' + st.stKind : '');
+    statusEl.textContent = st.st;
+    paintBadges(st.badges || [], animate);
+    traceBox.classList.add('is-live');
+    if (st.trace !== null && st.trace !== undefined) {
+      traceRows.forEach(function(el, n){ el.classList.toggle('on', n === st.trace); });
+    }
+    if (animate) {
+      captionText.style.opacity = '0';
+      requestAnimationFrame(function(){
+        captionText.textContent = st.cap;
+        requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+      });
+    } else {
+      captionText.textContent = st.cap;
+    }
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    var chips = st.chips || [];
+    if (chips.some(function(c){ return c.s === 'cut'; })) return 2200;
+    if (chips.some(function(c){ return c.s === 'fresh'; })) return 2000;
+    if (chips.some(function(c){ return c.t === '过期指令' || c.t === '压缩提示'; })) return 2000;
+    if (st.stKind === 'hold') return 1500;
+    return 1100;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    steps = buildSteps();
+    paintGrid();
+    Array.prototype.slice.call(histEl.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    paintChips(FULL, false);
+    cutEl.textContent = '0';
+    keepEl.textContent = '0';
+    verEl.textContent = '3';
+    setMeters(0, 0, 3);
+    statusEl.className = 'dm-status';
+    statusEl.textContent = '等待开始。点播放，或先换一格再走一遍。';
+    paintBadges([]);
+    traceBox.classList.remove('is-live');
+    traceRows.forEach(function(el){ el.classList.remove('on'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+  function setCombo(nextPhase, nextImpl){
+    phase = nextPhase;
+    impl = nextImpl;
+    reset();
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-phase').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    setCombo(b.getAttribute('data-phase'), impl);
+  });
+  document.getElementById('dm-impl').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    setCombo(phase, b.getAttribute('data-impl'));
+  });
+  document.getElementById('dm-grid').addEventListener('click', function(e){
+    var b = e.target.closest('.dm-cell');
+    if (!b) return;
+    setCombo(b.getAttribute('data-phase'), b.getAttribute('data-impl'));
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-compact'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

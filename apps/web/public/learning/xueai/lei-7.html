@@ -1,0 +1,1045 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"lei-7",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=lei-7',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="雷军创业课第 7 节：天使投资就是凑份子，第一笔钱从身边人开始。信用要在找钱之前很多年就积累，VC 基本不看商业计划书，看的是人和一句话说清的生意。">
+<meta name="author" content="洛小山">
+<title>第一笔钱：从身边人开始 | 雷军创业课</title>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+<style>
+:root{--lei:#f97316;--lei-deep:#c2410c;--lei-soft:rgba(249,115,22,.08)}
+.lesson-header .kicker{color:var(--lei)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chips span{font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep)}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+em.hl{font-style:normal;font-weight:700;color:var(--lei-deep)}
+
+/* 核心判断卡片 */
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.pt-num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--lei-soft);color:var(--lei);font-size:13px;font-weight:800;margin-bottom:8px}
+.pt-grid h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.pt-grid p{font-size:14px;color:var(--sub);line-height:1.7}
+
+/* 信用时间线 */
+.tl-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-top:14px;overflow:hidden}
+.tl-bar{padding:11px 16px;background:var(--lei-soft);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tl-bar .tl-title{font-size:14px;font-weight:800;color:var(--lei-deep)}
+.tl-body{min-height:280px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.tl-item{display:flex;gap:14px;align-items:flex-start;opacity:0;transform:translateY(8px);transition:all .35s ease}
+.tl-item.show{opacity:1;transform:translateY(0)}
+.tl-dot{width:52px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tl-dot .d{width:14px;height:14px;border-radius:50%;background:var(--lei);margin-top:4px}
+.tl-dot .y{font-size:11px;font-weight:800;color:var(--lei-deep);text-align:center;line-height:1.3}
+.tl-item.final .tl-dot .d{background:var(--success)}
+.tl-txt h4{font-size:15px;font-weight:800;margin-bottom:3px}
+.tl-txt p{font-size:14px;color:var(--sub);line-height:1.7}
+.tl-txt .q{display:inline-block;margin-top:6px;padding:8px 14px;border-radius:10px;background:var(--lei-soft);color:var(--lei-deep);font-size:13.5px;font-weight:600;line-height:1.6}
+
+.ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.btn{padding:11px 24px;border-radius:9px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px}
+.btn-p{background:var(--lei);color:#fff}
+.btn-p:hover{filter:brightness(1.06)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-r{background:rgba(0,0,0,.05);color:var(--sub);border:1px solid var(--border)}
+.hint{font-size:13px;color:var(--sub)}
+
+/* BP 体检器 */
+.bp-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.bp-item{position:relative;border:1.5px solid var(--border);border-radius:12px;background:var(--card);padding:15px 16px;cursor:pointer;text-align:left;font-family:inherit;width:100%;transition:all .25s;box-shadow:var(--shadow-card)}
+.bp-item:hover{border-color:rgba(0,0,0,.16)}
+.bp-item h4{font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px;padding-right:76px}
+.bp-item .bp-sub{font-size:13px;color:var(--sub)}
+.bp-badge{position:absolute;top:14px;right:14px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.05);color:var(--sub)}
+.bp-item .bp-note{display:none;margin-top:9px;font-size:13.5px;line-height:1.7;color:var(--text)}
+.bp-item.done .bp-note{display:block}
+.bp-item.done{cursor:default}
+.bp-item.done.v-look{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.04)}
+.bp-item.done.v-look .bp-badge{background:rgba(22,163,74,.12);color:var(--success)}
+.bp-item.done.v-skip{border-color:var(--border);background:rgba(0,0,0,.025)}
+.bp-item.done.v-skip h4{color:var(--sub)}
+.bp-item.done.v-minus{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.04)}
+.bp-item.done.v-minus .bp-badge{background:rgba(220,38,38,.1);color:var(--danger)}
+.bp-summary{display:none;margin-top:14px;background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.3);border-radius:12px;padding:15px 18px;font-size:14.5px;line-height:1.75}
+.bp-summary.show{display:block}
+.bp-summary b{color:var(--lei-deep)}
+
+.lei-callout{background:var(--lei-soft);border:1.5px solid rgba(249,115,22,.28);border-radius:14px;padding:18px 22px}
+.lei-callout b{color:var(--lei-deep)}
+.lei-callout p{line-height:1.8}
+
+.src-note{margin-top:28px;font-size:13px;color:var(--sub)}
+
+@media (max-width:768px){
+  .pt-grid,.bp-list{grid-template-columns:1fr}
+  .bp-item h4{padding-right:70px}
+}
+
+/* OPC 视角卡片组 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--lei-soft);color:var(--lei-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--lei-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--lei)}
+/* 本节要点清单 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--lei-soft);color:var(--lei);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--lei-deep)}
+@media(max-width:768px){.opc-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="第一笔钱：从身边人开始"><meta property="og:description" content="雷军创业课第 7 节：天使投资就是凑份子，第一笔钱从身边人开始。信用要在找钱之前很多年就积累，VC 基本不看商业计划书，看的是人和一句话说清的生意。"><meta property="og:url" content="https://xueai.miyang.cn/slides/lei-7.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/lei-7.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">雷军创业课 · 7 / 14</div>
+    <h1>第一笔钱：从身边人开始</h1>
+    <p class="subtitle">办公司第一件事就是需要钱。雷军的答案很朴素：天使投资在美国就是凑份子，真正的问题是人家凭什么相信你。这一节讲第一笔钱从哪来、信用怎么攒，以及为什么几百页的商业计划书没人看。</p>
+    <div class="chips"><span>天使投资 = 凑份子</span><span>只投熟人</span><span>信用先行</span><span>BP 没人看</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>天使投资的本质是熟人信用；商业计划书没那么重要，一句话说清生意才重要</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">核心判断</div>
+    <div class="pt-grid">
+      <div class="l-card"><span class="pt-num">01</span><h3>天使投资就是凑份子</h3><p>雷军前年看到一家美国公司，融了二十个天使投资人，总共几十万美金，一个人一两万美金凑起来的。中国民间一定凑得出这么多钱，只会多不会少。缺的从来不是钱。</p></div>
+      <div class="l-card"><span class="pt-num">02</span><h3>真正的问题是凭什么相信你</h3><p>跟你不够熟，凭什么给你几万块？千万不要把融资当成孤立的事情：你先得交朋友，先让别人相信你。连父母、兄弟姐妹、死党都说服不了，去找薛蛮子、找雷军要钱，「他们不有病吗」。</p></div>
+      <div class="l-card"><span class="pt-num">03</span><h3>只投熟人，和熟人的熟人</h3><p>雷军旗帜鲜明「我只投熟人」：真正的天使投资人就是熟人。扩展一层：一个靠谱朋友的靠谱朋友，基本九成靠谱，90% 靠谱的事情他也投，因为创业本来就没有百分之百靠谱。</p></div>
+      <div class="l-card"><span class="pt-num">04</span><h3>别指望在会上拦住薛蛮子</h3><p>会上拦人递简历，薛老会不会给钱？可能有，但那是他收的一万份简历中的一个。没有天上掉馅饼的运气，就从身边开始。信用的导入期，在找钱很久很久以前就开始了。</p></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 李学凌的信用时间线</div>
+    <p class="desc">雷军生平投的第二家公司是李学凌的 YY。这笔 2005 年的 830 万，是十年交往攒出来的。点击「下一步」，看信用怎么一步步积累成一张支票。</p>
+    <div class="tl-wrap">
+      <div class="tl-bar"><span class="tl-title">从记者到 Founder：十年交往</span><span class="hint" id="tlHint"></span></div>
+      <div class="tl-body" id="tlBody"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="tlNext" onclick="tlStep()">下一步</button>
+      <button class="btn btn-r" onclick="tlReset()">重播</button>
+      <span class="hint" id="tlMsg"></span>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">材料的真相：VC 基本不看 BP</div>
+    <p class="desc">雷军说他基本不怎么看商业计划书，而且绝大部分 VC 都不怎么看，这跟商学院讲的很不一致。当年做卓越网，他也「傻乎乎地写了几百页的商业计划书，中英文对照」，印刷精美，至少干了三个月，拜访了几十家投资人，没人投钱，差点绝望。原因有两个：<em class="hl">VC 都很忙</em>，而且<em class="hl">他们会假定这些东西都是编出来的</em>。</p>
+    <div class="lei-callout" style="margin-top:12px">
+      <p><b>一个靠谱的人的推荐和信用，在整个投资领域里是决定性的东西。</b>VC 有兴趣之后才会要材料。材料不是敲门砖，信用才是。</p>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示二 · BP 体检器</div>
+    <p class="desc">下面是一份典型商业计划书的目录。逐项点击，看在 VC 眼里哪些真的有人看、哪些没用、哪些还会减分。</p>
+    <div class="bp-list" id="bpList"></div>
+    <div class="bp-summary" id="bpSummary">
+      <b>体检结论：</b>一份材料里真正被看的只有三样：团队（本质投的是人，你可能只有五分钟说清 Co-founder）、一两句话说清的生意（几句话说不明白，可能是你想得不够透彻）、五到十年机会的可信描述。厚度、精美程度和时髦名词，全是无效功。<b>VC 不怕你的梦想大，就怕你梦想不够大。</b>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">信用 · 公开 build 版</span>
+        <p><b>一人公司的「天使轮」，同样从身边人开始。</b>独立开发者的第一批付费用户，几乎都来自朋友、社群和关注你很久的读者。他们买的不是产品，是对你这个人的信用。</p>
+        <ul class="opc-list" style="margin-top:10px">
+          <li><b>信用要提前很多年攒</b>：公开 build、把每个 side project 做完不烂尾、在社区认真回答问题，都是「不收车马费」式的信用存款。</li>
+          <li><b>别指望大 V 救活</b>：指望产品被一条转发救活，跟在会上拦住薛蛮子是同一件事：你只是他刷到的一万条动态之一。</li>
+        </ul>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">BP 即 Landing Page</span>
+        <p><b>OPC 的 BP 就是 Landing Page，规律完全一样：</b>没人读你的长文档，一句话说清你解决什么问题才是全部。</p>
+        <p style="margin-top:8px">写「基于大模型的智能化知识管理解决方案」等于什么都没说，写<b>「把微信收藏夹变成能搜索的笔记」</b>才有人付钱。一句话讲不清的产品，多半是还没想透。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>融资的全过程就是做人</b>：「我平时很认真地做人，很认真地工作，赢得了这么多人信任。当我要创业的时候，他们愿意赌我能不能赢。其实就这么简单。」</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>第一笔钱从身边找</b>：天使投资就是凑份子，缺的从来不是钱，是别人凭什么相信你。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>信用在找钱之前很多年就开始攒</b>：信用的导入期有多长，支票就有多大。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>把人说清楚、把生意用一两句话说清楚</b>，比几百页 BP 有用得多。</p></div>
+    </div>
+    <p class="src-note">素材来源：雷军创业公开课口述整理</p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 交互一：李学凌信用时间线 ── */
+var TL = [
+  { y:'交往初期', h:'一个经常写文章骂雷军的记者', p:'李学凌做记者时经常写文章骂雷军。雷军跟他关系不错，经常沟通、请他吃饭。但没用，照骂。', q:'' },
+  { y:'某次饭局', h:'车马费收买不了我', p:'这个人旗帜鲜明地不收车马费。雷军后来想明白了：不是嫌钱少，是他觉得将来要做巨大的事业，车马费会收买他的原则。', q:'「他有原则。」' },
+  { y:'十年交往', h:'三个印象沉淀下来', p:'每一次沟通都是在交往。十年下来，雷军对他至少奠定了三个印象：有原则、有梦想、还是个技术发烧友，他懂。', q:'「更重要是有梦想。」' },
+  { y:'2005', h:'830 万人民币', p:'李学凌有创业想法时，雷军投了 415 万人民币，再借给他 415 万，一共 830 万。这是雷军生平投的第二家公司。', q:'「我就稀里糊涂给他投了。」其实一点都不糊涂，是十年信用的兑现。' },
+  { y:'结果', h:'YY 非常成功', p:'从有一丝念头开始，两人就在交流创业的事情。这一路做下来，至少证明 2005 年的判断非常正确。', q:'信用的导入期有多长，支票就有多大。', final:true }
+];
+var tlCur = 0;
+
+function tlStep() {
+  if (tlCur >= TL.length) return;
+  var s = TL[tlCur];
+  var body = document.getElementById('tlBody');
+  var el = document.createElement('div');
+  el.className = 'tl-item' + (s.final ? ' final' : '');
+  var html = '<div class="tl-dot"><span class="d"></span><span class="y">' + s.y + '</span></div>' +
+    '<div class="tl-txt"><h4>' + s.h + '</h4><p>' + s.p + '</p>' +
+    (s.q ? '<span class="q">' + s.q + '</span>' : '') + '</div>';
+  el.innerHTML = html;
+  body.appendChild(el);
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('show'); }); });
+  tlCur++;
+  document.getElementById('tlHint').textContent = tlCur + ' / ' + TL.length;
+  if (tlCur >= TL.length) {
+    document.getElementById('tlNext').disabled = true;
+    document.getElementById('tlMsg').textContent = '找钱的功夫，全在找钱之前。';
+  }
+}
+
+function tlReset() {
+  tlCur = 0;
+  document.getElementById('tlBody').innerHTML = '';
+  document.getElementById('tlHint').textContent = '';
+  document.getElementById('tlMsg').textContent = '';
+  document.getElementById('tlNext').disabled = false;
+}
+
+/* ── 交互二：BP 体检器 ── */
+var BP = [
+  { h:'精美封面 · 中英文对照', sub:'排版讲究，印刷精良', v:'skip', badge:'没人看',
+    note:'雷军当年做卓越就这么干的，至少干了三个月，拜访几十家投资人，没人投。精美程度不产生信任。' },
+  { h:'团队介绍', sub:'Co-founder 背景与分工', v:'look', badge:'VC 真看',
+    note:'最关键的一项。本质上投的是人，而你可能只有五分钟把几个 Co-founder 说清楚。很多 PPT 里团队介绍只有一页，甚至没有，本末倒置。' },
+  { h:'一两句话说清生意', sub:'我们做的事情是…', v:'look', badge:'VC 真看',
+    note:'越成功的公司，做的生意越简单，一两句话就能说明白。整了二十页还没说明白，VC 可能就绝望了。几句话说不清，多半是你想得不够透彻。' },
+  { h:'几百页市场分析', sub:'行业规模、竞品矩阵、SWOT', v:'skip', badge:'没人看',
+    note:'VC 都很忙，而且他们会假定这些东西都是编出来的。厚度不等于可信度。' },
+  { h:'时髦名词包装', sub:'云计算、Solomo、生态赋能', v:'minus', badge:'减分',
+    note:'「你说云计算，就相当于什么都没说。」堆时髦名词只会让人更不知道你在干什么。能不能深入浅出地几句话说明白，才是本事。' },
+  { h:'五到十年的机会描述', sub:'这件事到底能做多大', v:'look', badge:'VC 真看',
+    note:'要用可信的方式回答：假如太阳从西边出来、所有条件都齐了，你的公司能做多大规模？VC 不怕你的梦想大，就怕你梦想不够大。' }
+];
+var bpDone = 0;
+var VLABEL = { look:'VC 真看', skip:'没人看', minus:'减分' };
+
+(function initBP(){
+  var list = document.getElementById('bpList');
+  BP.forEach(function(item, i){
+    var btn = document.createElement('button');
+    btn.className = 'bp-item';
+    btn.id = 'bp' + i;
+    btn.innerHTML = '<h4>' + item.h + '</h4><div class="bp-sub">' + item.sub + '</div>' +
+      '<span class="bp-badge">点击体检</span><div class="bp-note">' + item.note + '</div>';
+    btn.onclick = function(){ bpCheck(i); };
+    list.appendChild(btn);
+  });
+})();
+
+function bpCheck(i) {
+  var el = document.getElementById('bp' + i);
+  if (el.classList.contains('done')) return;
+  el.classList.add('done', 'v-' + BP[i].v);
+  el.querySelector('.bp-badge').textContent = VLABEL[BP[i].v];
+  bpDone++;
+  if (bpDone >= BP.length) {
+    document.getElementById('bpSummary').classList.add('show');
+  }
+}
+
+/* 进入视野自动走第一步 */
+lessonOnView(document.getElementById('tlBody'), function(){
+  if (tlCur === 0) tlStep();
+});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

@@ -1,0 +1,502 @@
+"use client";
+import { documentSectionTitle, isDefaultSectionLabel, resolveDocumentLanguage } from '@magic-resume-kit/resume-schema';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Section, SectionItem } from '@/types/frontend/resume';
+import { getSanitizedResume } from '@/store/useResumeStore';
+import { useResumeDocumentStore } from '@/store/resume/document';
+import { useResumeEditorUiStore } from '@/store/resume/editor-ui';
+import { useResumePersistenceStore } from '@/store/resume/persistence';
+import BasicForm from './forms/BasicForm';
+import sidebarMenu from '@/lib/constants/sidebarMenu';
+import SectionListWithModal from './forms/SectionListWithModal';
+import ResumePreviewPanel from './preview/ResumePreviewPanel';
+import FormSection from './forms/FormSection';
+import { formFieldsFor } from '@/lib/constants/dynamicFormFields';
+import { isCustomSection } from '@/lib/utils/resumeSectionOrder';
+import CustomSectionDialog from './forms/CustomSectionDialog';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import ResumeMissing, { useResumeMissing } from './ResumeMissing';
+import { Plus, SquarePen, Trash2 } from '@magic-resume-kit/icons';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { toast } from 'sonner';
+import { fromThrown } from '@/lib/errors/normalize';
+import { presentAppError } from '@/lib/errors/present';
+import ResumeEditSkeleton from './layout/ResumeEditSkeleton';
+import TemplatePanel, { rightPanelWidth } from './templates/TemplatePanel';
+import EditorFormPanel from './layout/EditorFormPanel';
+import { sectionMeta, leftPanelWidth } from './layout/OutlineRail';
+import useMobile from '@/hooks/useMobile';
+import MobileResumEdit from './mobile/MobileResumEdit';
+import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
+import HeaderTab from './layout/HeaderTab';
+import { appLifecycle } from '@/lib/extensions/app-lifecycle';
+
+// 预览面板静态引入:它本体很轻(pdf.js / @react-pdf 在更下层各自懒加载)。整个面板 dynamic
+// 会造成"spinner → dock 单独弹出 → 纸才出现"的三段跳,静态引入让它们同帧入场。
+
+type ResumeEditProps = {
+  id: string;
+};
+
+const MIN_EDITOR_STAGE_WIDTH = 420;
+
+export default function ResumeEdit({ id }: ResumeEditProps) {
+  const {
+    activeResume,
+    loadResumeForEdit,
+    updateInfo,
+    setSectionOrder: updateSectionOrder,
+    updateSectionItems,
+    addCustomSection,
+    updateCustomSection,
+    removeCustomSection,
+    updateTemplate,
+    isStoreLoading,
+    resumes,
+  } = useResumeDocumentStore();
+
+  const { saveResume: saveActiveResumeToResumes } = useResumePersistenceStore();
+  const {
+    isAiGenerating,
+    rightCollapsed,
+    setRightCollapsed,
+    leftCollapsed,
+    setLeftCollapsed,
+    activeSection,
+    setActiveSection,
+  } = useResumeEditorUiStore();
+
+  const router = useRouter();
+
+  const { isMobile } = useMobile();
+
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [isAnyModalOpen, setIsAnyModalOpen] = useState(false);
+  const [creatingSection, setCreatingSection] = useState(false);
+  const [editingSection, setEditingSection] = useState<{ key: string; label: string; icon?: string } | null>(null);
+  const [deletingSection, setDeletingSection] = useState<{ key: string; label: string } | null>(null);
+  const [currentTemplateId, setCurrentTemplateId] = useState(activeResume?.template || 'classic');
+  const resumeNotFound = useResumeMissing(id);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const openAiLab = () => router.push(`/dashboard/edit/${id}/ai-lab`);
+
+  const openJsonModal = () => router.push(`/dashboard/edit/${id}/json`);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    updateViewportWidth();
+    window.addEventListener('resize', updateViewportWidth);
+
+    return () => {
+      window.removeEventListener('resize', updateViewportWidth);
+    };
+  }, []);
+
+  const narrowWorkspace =
+    !isMobile &&
+    viewportWidth > 0 &&
+    viewportWidth <
+      leftPanelWidth(false) +
+        rightPanelWidth(false) +
+        MIN_EDITOR_STAGE_WIDTH;
+
+  const rightWorkspaceInset =
+    rightPanelWidth(rightCollapsed) + (rightCollapsed ? 0 : 1);
+
+  const toggleLeftPanel = useCallback(() => {
+    const nextCollapsed = !leftCollapsed;
+    if (!nextCollapsed && narrowWorkspace && !rightCollapsed) {
+      setRightCollapsed(true);
+    }
+    setLeftCollapsed(nextCollapsed);
+  }, [leftCollapsed, narrowWorkspace, rightCollapsed, setLeftCollapsed, setRightCollapsed]);
+
+  const setRightPanelCollapsed = useCallback(
+    (collapsed: boolean) => {
+      if (!collapsed && narrowWorkspace && !leftCollapsed) {
+        setLeftCollapsed(true);
+      }
+      setRightCollapsed(collapsed);
+    },
+    [leftCollapsed, narrowWorkspace, setLeftCollapsed, setRightCollapsed],
+  );
+
+  const handleDownloadJson = () => {
+    if (!activeResume) return;
+    const sanitized = getSanitizedResume(activeResume);
+    const jsonString = JSON.stringify(sanitized, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${activeResume.name || 'resume'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(t('editPage.notifications.jsonDownloadStarted'));
+  };
+
+  const info = activeResume?.info;
+  const sectionItems = activeResume?.sections;
+  const sectionOrder = activeResume?.sectionOrder;
+
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const leftScrollRef = useRef<HTMLDivElement | null>(null);
+  const suppressNextScroll = useRef(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  // activeSection 变化 → 滚动到对应模块(外部导航 / 轨跳转);scroll-spy 触发的变化跳过,避免回环
+  useEffect(() => {
+    if (suppressNextScroll.current) {
+      suppressNextScroll.current = false;
+      return;
+    }
+    const el = sectionRefs.current[activeSection];
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [activeSection]);
+
+  useEffect(() => {
+    const setupEditor = async () => {
+      if (!isStoreLoading) {
+        const resume = resumes.find(r => r.id === id);
+        if (resume) {
+          router.prefetch(`/dashboard/edit/${id}/json`);
+        }
+      }
+
+      const { activeResume } = useResumeDocumentStore.getState();
+      if (activeResume?.id === id && !isStoreLoading) {
+          return;
+      }
+
+      loadResumeForEdit(id);
+    };
+
+    setupEditor();
+  }, [id, loadResumeForEdit, isStoreLoading, resumes, router]); // resumes 依然保留，但靠内部 activeResume?.id === id 熔断
+
+  useEffect(() => {
+    if (activeResume?.template && activeResume.template !== currentTemplateId) {
+      setCurrentTemplateId(activeResume.template);
+    }
+  }, [activeResume?.template, currentTemplateId]);
+
+  useEffect(() => {
+    if (narrowWorkspace && !leftCollapsed && !rightCollapsed) {
+      setLeftCollapsed(true);
+    }
+  }, [leftCollapsed, narrowWorkspace, rightCollapsed, setLeftCollapsed]);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    console.log('[Save] Starting manual save process...');
+    try {
+      if (activeResume) {
+        appLifecycle.resumeSaveRequested({ source: 'manual' });
+      }
+      
+      console.log('[Save] Calling store saveResume...');
+      await saveActiveResumeToResumes('manual', activeResume || undefined);
+      console.log('[Save] Store saveResume completed.');
+    } catch (err) {
+      console.error('[Save] Manual save failed:', err);
+      // 用户按了保存按钮，然后什么都没发生——静默在这里就是 bug。
+      presentAppError(fromThrown(err, 'local'), { surface: 'inline' });
+    } finally {
+      setIsSaving(false);
+      console.log('[Save] Manual save process ended, loading state released.');
+    }
+  };
+
+  const toggleSection = useCallback((key: string) => {
+    setOpenSections(prev => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  }, []);
+
+  const jumpToSection = useCallback((key: string) => {
+    setOpenSections(prev => ({ ...prev, [key]: true }));
+    if (leftCollapsed) {
+      if (narrowWorkspace && !rightCollapsed) {
+        setRightCollapsed(true);
+      }
+      setLeftCollapsed(false);
+    }
+    setActiveSection(key);
+  }, [leftCollapsed, narrowWorkspace, rightCollapsed, setLeftCollapsed, setRightCollapsed, setActiveSection]);
+
+  const handleLeftScroll = useCallback(() => {
+    const container = leftScrollRef.current;
+    if (!container) return;
+    const top = container.getBoundingClientRect().top;
+    let current = sectionOrder?.[0]?.key ?? 'basics';
+    (sectionOrder || []).forEach(({ key }) => {
+      const el = sectionRefs.current[key];
+      if (el && el.getBoundingClientRect().top - top <= 28) current = key;
+    });
+    if (current !== activeSection) {
+      suppressNextScroll.current = true;
+      setActiveSection(current);
+    }
+  }, [sectionOrder, activeSection, setActiveSection]);
+
+  const handleSelectTemplate = useCallback((templateId: string) => {
+    if (activeResume) {
+      appLifecycle.resumeTemplateSelected({
+        previousTemplateId: currentTemplateId,
+        nextTemplateId: templateId
+      });
+    }
+    setCurrentTemplateId(templateId);
+    updateTemplate(templateId);
+  }, [activeResume, currentTemplateId, updateTemplate]);
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id && sectionOrder) {
+      const oldIndex = sectionOrder.findIndex(item => item.key === active.id);
+      const newIndex = sectionOrder.findIndex(item => item.key === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(sectionOrder, oldIndex, newIndex);
+        updateSectionOrder(newOrder);
+        // 这里是模块之间的排序；模块内条目排序是另一个高频动作，不走这里。
+        appLifecycle.editorSectionReordered();
+      }
+    }
+  }
+
+  if (resumeNotFound) {
+    return <ResumeMissing />;
+  }
+
+  if (isStoreLoading || !activeResume || !info || !sectionItems || !sectionOrder) {
+    return <ResumeEditSkeleton />;
+  }
+
+  function renderSections() {
+    return (
+      <DndContext
+        key="dnd-context"
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={sectionOrder?.map(s => s.key) || []} strategy={verticalListSortingStrategy}>
+          {(sectionOrder || []).map(({ key, label, title: printedTitle, icon: iconName }) => {
+            const meta = sectionMeta(key, iconName);
+            const Icon = meta.icon;
+            // 兜底用存下来的 label 而非裸 key：自定义 section 没有 i18n key，
+            // 旁边的 OutlineRail 就是这么读的，两边不一致会一处显 key 一处显中文。
+            const title = meta.labelKey ? t(meta.labelKey) : label || key;
+            const custom = isCustomSection(key);
+            return (
+              <FormSection
+                key={key}
+                sectionId={key}
+                icon={<Icon size={15} />}
+                title={title}
+                actions={key !== 'basics' ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label={t('customSection.rename', { defaultValue: '重命名' })}
+                      title={t('customSection.rename', { defaultValue: '重命名' })}
+                      onClick={() => setEditingSection({ key, label: printedTitle || (custom || !isDefaultSectionLabel(key, label) ? label : documentSectionTitle(key, resolveDocumentLanguage(activeResume!))) || label || key, icon: iconName })}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-mr-surface-soft hover:text-neutral-200"
+                    >
+                      <SquarePen size={13} />
+                    </button>
+                    {custom && <button
+                      type="button"
+                      aria-label={t('common.delete', { defaultValue: '删除' })}
+                      title={t('common.delete', { defaultValue: '删除' })}
+                      onClick={() => setDeletingSection({ key, label: label || key })}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      <Trash2 size={13} />
+                    </button>}
+                  </>
+                ) : undefined}
+                open={openSections[key] ?? true}
+                onToggle={() => toggleSection(key)}
+                registerRef={(el) => { sectionRefs.current[key] = el; }}
+                disabled={key === 'basics' || isAnyModalOpen}
+              >
+                {key === 'basics' ? (
+                  <BasicForm
+                    info={info!}
+                    updateInfo={updateInfo}
+                  />
+                ) : (
+                  <SectionListWithModal
+                    // 埋点用稳定的 kind，`label` 是 i18n key，会随文案变。
+                    sectionKey={key}
+                    label={meta.labelKey || key}
+                    fields={formFieldsFor(key).map(f => ({ name: f.key, label: t(f.labelKey), placeholder: f.placeholderKey ? t(f.placeholderKey) : '', required: f.required }))}
+                    richtextKey="summary"
+                    richtextPlaceholder="..."
+                    /* eslint-disable @typescript-eslint/no-explicit-any */
+                    itemRender={sidebarMenu.find(s => s.key === key)?.itemRender as any}
+                    /* eslint-disable @typescript-eslint/no-explicit-any */
+                    items={(sectionItems?.[key as keyof Section] ?? []).map((item: { id: any; }) => ({ ...item, id: String(item.id) })) as any}
+                    setItems={(items) => updateSectionItems(key, items as SectionItem[])}
+                    onModalStateChange={setIsAnyModalOpen}
+                  />
+                )}
+              </FormSection>
+            );
+          })}
+        </SortableContext>
+
+        <button
+          type="button"
+          onClick={() => setCreatingSection(true)}
+          className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/10 py-2.5 text-mr-caption text-neutral-500 transition-colors duration-150 hover:border-sky-400/40 hover:text-sky-300"
+        >
+          <Plus size={14} />
+          {t('customSection.add', { defaultValue: '添加自定义模块' })}
+        </button>
+
+        <CustomSectionDialog
+          open={creatingSection || editingSection !== null}
+          initial={editingSection ? { label: editingSection.label, icon: editingSection.icon } : undefined}
+          onOpenChange={(open) => {
+            if (open) return;
+            setCreatingSection(false);
+            setEditingSection(null);
+          }}
+          onReset={editingSection && !isCustomSection(editingSection.key) ? () => updateSectionOrder((sectionOrder || []).map((entry) => entry.key === editingSection.key ? { ...entry, label: `sections.${entry.key}`, title: undefined } : entry)) : undefined}
+          onSubmit={({ label, icon }) => {
+            if (editingSection && !isCustomSection(editingSection.key)) {
+              updateSectionOrder((sectionOrder || []).map((entry) => entry.key === editingSection.key ? { ...entry, title: label, icon } : entry));
+            } else if (editingSection) {
+              updateCustomSection(editingSection.key, { label, icon });
+            } else {
+              const key = addCustomSection(label, icon);
+              // 立刻展开：新建的 section 不显示表单会让人以为什么都没发生。
+              if (key) setOpenSections(prev => ({ ...prev, [key]: true }));
+            }
+          }}
+        />
+
+        <ConfirmDialog
+          isOpen={deletingSection !== null}
+          onClose={() => setDeletingSection(null)}
+          title={t('customSection.deleteTitle', { defaultValue: '删除模块' })}
+          description={t('customSection.deleteHint', {
+            defaultValue: '「{{name}}」及其中的条目会一并删除，此操作无法撤销',
+            name: deletingSection?.label ?? '',
+          })}
+          confirmText={t('common.delete', { defaultValue: '删除' })}
+          onConfirm={() => {
+            if (deletingSection) removeCustomSection(deletingSection.key);
+            setDeletingSection(null);
+          }}
+        />
+      </DndContext>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <MobileResumEdit
+        activeResume={activeResume}
+        leftPanelOpen={leftPanelOpen}
+        setLeftPanelOpen={setLeftPanelOpen}
+        rightPanelOpen={rightPanelOpen}
+        setRightPanelOpen={setRightPanelOpen}
+        isJsonModalOpen={false}
+        closeJsonModal={() => router.push(`/dashboard/edit/${id}`)}
+        openJsonModal={openJsonModal}
+        handleCopyJson={handleDownloadJson}
+        renderSections={renderSections}
+        handleSave={handleSave}
+        onSelectTemplate={handleSelectTemplate}
+        currentTemplateId={currentTemplateId}
+        onShowAI={openAiLab}
+        isAiJobRunning={isAiGenerating}
+      />
+    );
+  }
+
+  return (
+    <>
+      <main
+        data-magic-editor-canvas
+        // 编辑器内的所有上报（含 AI 面板、分享弹窗）都自动带上这份简历 id，控件不必各自传。
+        data-magic-context={JSON.stringify({
+          resumeId: activeResume.id,
+          templateId: currentTemplateId,
+        })}
+        className="flex h-screen min-w-0 overflow-hidden bg-desk text-white flex-1"
+      >
+        {/* 左侧:大纲轨 + 可折叠表单面板(入场:opacity-only,不动 fixed 定位) */}
+        <div className="editor-enter-left">
+          <EditorFormPanel
+            renderSections={renderSections}
+            // 原样传，**别再 `.map(s => ({ key, label }))` 重建一遍**——那样会把用户
+            // 选的 `icon` 抹掉，于是同一个 section 在表单里是他选的图标、在侧栏里是
+            // 一张通用文档纸。`normalizeResumeSectionOrder` 里踩过同一个坑。
+            sectionOrder={sectionOrder || []}
+            activeSection={activeSection}
+            collapsed={leftCollapsed}
+            onToggleCollapse={toggleLeftPanel}
+            onJump={jumpToSection}
+            scrollRef={leftScrollRef}
+            onScroll={handleLeftScroll}
+          />
+        </div>
+        <div
+          className='min-w-0 flex-1 flex items-center justify-center bg-desk relative overflow-hidden transition-all duration-300 editor-enter-stage'
+          style={{
+            marginLeft: leftPanelWidth(leftCollapsed),
+            marginRight: rightWorkspaceInset
+          }}
+        >
+          <HeaderTab />
+          {/* 简历预览面板 */}
+          <ResumePreviewPanel
+            activeResume={activeResume}
+            onJsonClick={openJsonModal}
+            onShowAI={openAiLab}
+            isAiJobRunning={isAiGenerating}
+          />
+        </div>
+      </main>
+
+      {/* 模板面板(入场:opacity-only,不动 fixed 定位) */}
+      <div className="editor-enter-right">
+        <TemplatePanel
+          rightCollapsed={rightCollapsed}
+          setRightCollapsed={setRightPanelCollapsed}
+          onSelectTemplate={handleSelectTemplate}
+          currentTemplateId={currentTemplateId}
+        />
+      </div>
+    </>
+  );
+}

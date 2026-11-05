@@ -1,0 +1,1 @@
+- Embedded resume agents can read native canvas comments, replies and pin locations alongside the current design.

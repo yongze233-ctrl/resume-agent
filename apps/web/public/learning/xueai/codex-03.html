@@ -1,0 +1,1037 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-03",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-03',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>流还在走，工具已经开工 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+/* ── 交互演示 ── */
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s cubic-bezier(.4,0,.2,1)}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 180px;padding-top:10px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-rail{margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-ticks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.dm-tick{min-height:44px;padding:8px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 12px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;text-align:left;opacity:.4;transform:scale(.98);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-tick b{display:block;font-size:11px;font-weight:700;color:var(--faint);margin-bottom:2px}
+.dm-tick.on{opacity:1;transform:scale(1);background:var(--accent-soft);border-color:rgba(65,75,90,.45);color:var(--accent-deep)}
+.dm-tick.passed{opacity:.72;transform:scale(.98);border-color:rgba(65,75,90,.3)}
+.dm-tick.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-slider{width:100%;height:44px;margin:0;accent-color:#414b5a;cursor:pointer}
+.dm-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-meter{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;color:var(--sub)}
+.dm-meter b{color:var(--accent-deep);font-variant-numeric:tabular-nums}
+.dm-m-bar{display:block;height:4px;width:36px;border-radius:99px;background:var(--accent);transform:scaleX(0);transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:12px;min-height:260px}
+.dm-lanes{display:flex;flex-direction:column;gap:8px}
+.dm-lane{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--card);font-size:12.5px;color:var(--sub);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-lane b{color:var(--text);font-weight:700}
+.dm-lanes.is-live .dm-lane{opacity:.4;transform:scale(.98)}
+.dm-lanes.is-live .dm-lane.run,.dm-lanes.is-live .dm-lane.done,.dm-lanes.is-live .dm-lane.abort,.dm-lanes.is-live .dm-lane.queue{opacity:1;transform:scale(1)}
+.dm-lane.run{background:var(--accent-soft);border-color:rgba(65,75,90,.4);color:var(--accent-deep);font-weight:600}
+.dm-lane.done{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4);color:var(--success);font-weight:600}
+.dm-lane.abort{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35);color:var(--danger);font-weight:600}
+.dm-lane.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-hist{display:flex;flex-wrap:wrap;gap:6px;min-height:36px}
+.dm-chip{padding:6px 10px;border-radius:999px;border:1px solid rgba(65,75,90,.28);background:var(--accent-soft);font-size:11.5px;font-weight:700;color:var(--accent-deep)}
+.dm-chip.out{background:var(--card);border-style:dashed}
+.dm-chip.abort{border-color:rgba(220,38,38,.35);color:var(--danger);background:rgba(220,38,38,.05)}
+.dm-chip.is-enter{opacity:0;transform:translateY(8px)}
+.dm-chip.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-chip.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-empty{font-size:12px;color:var(--faint);line-height:1.7}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:62px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-status.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-status.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-trace.is-live li.on{opacity:1;transform:scale(1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-budget .dm-b-label{padding-top:0}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:520px}}
+</style>
+<meta name="description" content="模型还在流式吐字，工具调用就已经被认出来了。Codex 在 OutputItemDone 一到就先写入历史再挂起执行，流的每个出口都先 drain">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="流还在走，工具已经开工"><meta property="og:description" content="模型还在流式吐字，工具调用就已经被认出来了。Codex 在 OutputItemDone 一到就先写入历史再挂起执行，流的每个出口都先 drain"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-03.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 工具闭环</div>
+    <h1>流还在走，工具已经开工</h1>
+    <p class="subtitle">模型还在打字，读文件的声音已经响了。采样循环的时序是：流内建 future，流后统一 drain。先 persist，再等结果。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>模型还在打字，读文件的声音已经响了。采样循环的时序是：流内建 future，流后统一 drain。先 persist，再等结果。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。第一，解析器在哪一帧决定工具起跑。第二，为什么请求要先写入历史，再挂到队列上。第三，流正常结束、提前关掉或用户按 Esc，已经开工的工具归谁收尾，历史里留下什么。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 拖进度，看哪一帧起跑</div>
+  <div class="demo reveal" id="demo-sse">
+    <div class="demo-top">
+      <div class="demo-title">同一条 SSE 流：拖进度，看工具何时开工</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">出口</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-exit="done" class="on">正常完成</button>
+        <button type="button" data-exit="stream">提前关流</button>
+        <button type="button" data-exit="esc">Esc</button>
+      </div>
+      <span class="dm-b-hint">拖滑块或点事件格。左边流内执行，右边等流结束再执行。出口开关改最后一帧怎么收场。</span>
+    </div>
+    <div class="dm-rail">
+      <div class="dm-ticks" id="dm-ticks"></div>
+      <input class="dm-slider" id="dm-slider" type="range" min="0" max="7" value="0" step="1" aria-label="流进度">
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">流内执行</span><span class="dm-meter"><b id="dm-l-n">0</b> 条已落盘</span></div>
+        <div class="dm-body">
+          <div class="dm-lanes" id="dm-left-lanes"></div>
+          <div class="dm-hist" id="dm-left-hist"></div>
+          <div class="dm-status" id="dm-left-status">等待开始。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">等流结束</span><span class="dm-meter"><b id="dm-r-n">0</b> 条已落盘</span></div>
+        <div class="dm-body">
+          <div class="dm-lanes" id="dm-right-lanes"></div>
+          <div class="dm-hist" id="dm-right-hist"></div>
+          <div class="dm-status" id="dm-right-status">等待开始。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>SSE 帧先解成通用事件，还没有业务含义</span><span class="ln">responses.rs L164</span></li>
+        <li><span>kind 是 output_item.done，就产出 OutputItemDone</span><span class="ln">responses.rs L352</span></li>
+        <li><span>采样循环一到就交给 handle_output_item_done</span><span class="ln">turn.rs L2384</span></li>
+        <li><span>先把 function_call 写入历史和 rollout</span><span class="ln">stream_events_utils.rs L316</span></li>
+        <li><span>再 pin 工具，推进有序队列</span><span class="ln">stream_events_utils.rs L320</span></li>
+        <li><span>流结束、断流或取消，都只是离开收流循环</span><span class="ln">turn.rs L2282</span></li>
+        <li><span>drain 按插入顺序把结果写入历史</span><span class="ln">turn.rs L2135</span></li>
+        <li><span>然后才看取消令牌；Stream 可重试</span><span class="ln">turn.rs L2760</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">拖进度或点播放。看解析器在哪一帧决定工具起跑。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>起跑点</b>左边在第一条 OutputItemDone 就盖章并开工。右边要等最后一帧。模型还在吐字的时候，两边已经分道。</div>
+      <div class="dm-s"><b>断流</b>左边已经落盘的请求和 drain 出来的结果都在，重试读这份历史。右边请求还没写下，重试从空历史开始。</div>
+      <div class="dm-s"><b>Esc</b>左边请求保留，输出写成中止文案，标记 TurnAborted，不会再打一轮。右边什么都没写下。</div>
+    </div>
+    <div class="demo-caption">教学示意：事件带与耗时为课程化设定，用来对照两种时序。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 请求先盖章，工具再开工</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你让模型读三个文件再写摘要。屏幕上还在打字，读文件的声音已经响了。然后你按 Esc。界面停了，历史里却留下那次请求，有时还留下结果。你以为取消等于什么都没发生。运行时并不这么记账。</p>
+  <p class="reveal">另一头更常见：模型已经发出两个 <code>function_call</code>，第三个还在路上，SSE 在 <code>response.completed</code> 到来之前关掉。下一次重试该看见空历史，还是已经落盘的调用和结果？</p>
+  <p class="reveal">若等 <code>Completed</code> 再写入，提前关流会把已经完整的调用一起扔掉。重试让模型再发一遍同样的调用。若取消时跳过写入，历史只剩半截请求，模型和界面都看见一个没闭合的调用。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal"><code>OutputItemDone</code> 是解析层把一帧 <code>response.output_item.done</code> 收成的业务事件。它一到，采样循环先把这一条写入会话历史和 rollout，再把工具执行包成 future 挂到有序队列上。取消令牌用子令牌，父令牌一亮，这个工具跟着停。取消来得再快，这一条 <code>function_call</code> 已经进历史。最多再多写一条 <code>aborted by user</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/stream_events_utils.rs</code> 第 190 至 192 行；第 316 至 327 行。类型别名上方的注释把合同写死：完成的模型输出要立刻记下来，后面 turn 被取消，历史和 rollout 也保持同步。</p>
+  <div class="visual reveal paywall-locked xa-peek">
+    <svg viewBox="0 0 940 280" role="img" aria-label="先写入历史再挂起工具，同时流还在继续">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="40" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="115" y="70" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">SSE 字节流</text>
+      <text x="115" y="92" fill="#6b7280" text-anchor="middle" font-size="13">还在继续吐帧</text>
+      <path fill="none" d="M198 75H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="276" y="32" width="200" height="86" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="376" y="62" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">OutputItemDone</text>
+      <text x="376" y="86" fill="#6b7280" text-anchor="middle" font-size="13">一条完整的工具请求</text>
+      <path fill="none" d="M484 62H554" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M484 88H554" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="562" y="24" width="168" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="646" y="50" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">写入历史</text>
+      <text x="646" y="72" fill="#6b7280" text-anchor="middle" font-size="13">function_call 先落盘</text>
+      <rect x="562" y="104" width="168" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="646" y="130" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">挂起 future</text>
+      <text x="646" y="152" fill="#6b7280" text-anchor="middle" font-size="13">工具已经在跑</text>
+      <path fill="none" d="M738 56H800" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="808" y="36" width="92" height="120" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5"></rect>
+      <text x="854" y="88" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">后续</text>
+      <text x="854" y="110" fill="#6b7280" text-anchor="middle" font-size="13">delta</text>
+      <text x="854" y="132" fill="#6b7280" text-anchor="middle" font-size="13">仍在路上</text>
+      <text x="470" y="220" fill="#6b7280" text-anchor="middle" font-size="13">输入是一条已经完成的工具请求。输出是回执：历史多了一条，队列多了一个还在跑的 future。</text>
+      <text x="470" y="248" fill="#6b7280" text-anchor="middle" font-size="13">模型后面的字还没说完。请求已经盖章。</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：同一帧里先 persist，再 pin。后面的打字和工具时间重叠。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">历史只能往上加，不能改写。工具已经读了磁盘，这条事实已经发生。取消树可以打断执行，打断不了已经写下的请求。先写请求、后写结果，transcript 始终闭合。这条合同不依赖 Rust，换 TypeScript 也是先 <code>append</code> 再 <code>push</code> 一个 promise。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>AGENTS.md</code> 第 91 至 100 行，Model visible context 第一条：No history rewrite。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 流内挂起，每个出口都 drain</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">模型常常先发出读文件，再继续写一段说明。等收工哨再开工，等于把读文件的延迟和打字的延迟串起来。流内开工能让这两段时间重叠。代价是取消和断流必须认领已经开工的 future。没有认领人，就会出现孤儿任务：工具还在跑，历史对不上。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">收流循环无论正常 <code>Completed</code>、提前关流还是 <code>or_cancel</code>，都只是离开 <code>loop</code>。函数还没返回。随后固定调用 <code>drain_in_flight</code>，按插入顺序等到每条 future 给出结果，再写入历史。然后才检查取消令牌。</p>
+  <p class="reveal paywall-locked">断流走 <code>Stream</code>，可重试。重试从 <code>clone_history</code> 重建 prompt，已经写下的调用和结果都在。Esc 走 <code>TurnAborted</code>，不可重试。正在跑的工具写出中止文案，drain 把它当普通输出写入。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn.rs</code> 第 2282 至 2284 行；第 2744 至 2762 行。<code>codex-rs/protocol/src/error.rs</code> 第 88 至 93 行、第 364 至 390 行。</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 300" role="img" aria-label="成功、断流、取消三条出口都先经过 drain">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="370" y="24" width="200" height="56" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="470" y="58" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">收流循环</text>
+      <path fill="none" d="M390 80V110" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M470 80V110" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M550 80V110" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="290" y="118" width="120" height="48" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="350" y="148" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Completed</text>
+      <rect x="410" y="118" width="120" height="48" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="470" y="148" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">提前关流</text>
+      <rect x="530" y="118" width="120" height="48" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="590" y="148" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">Esc</text>
+      <path fill="none" d="M350 166V196" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M470 166V196" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M590 166V196" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="350" y="204" width="240" height="56" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="470" y="228" fill="#262d38" text-anchor="middle" font-size="14" font-weight="800">drain_in_flight</text>
+      <text x="470" y="248" fill="#6b7280" text-anchor="middle" font-size="13">按插入顺序写结果，然后才看取消令牌</text>
+    </svg>
+    <div class="visual-caption">教学化出口图：三条路先汇到 drain，再分出跟进、重试或中止。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">流内建 future，流后统一 drain。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">中途开工就必须在每个出口等齐。所有权留在采样函数的局部变量里，没有另一条后台回收队列。成功、错误、取消共用这一段收尾。换语言也一样：离开异步循环之后先 <code>allSettled</code>，再决定重试还是中止。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 执行可以并行，历史按发出顺序写</div>
+  <p class="reveal paywall-locked">三个工具可以同时跑。谁先跑完，历史仍按模型发出的顺序写结果。按完成顺序写，同一段会话重放两次可能对不上，prompt cache 也会更脆。有序队列把观测顺序和执行顺序拆开。并发闸门在别的一层，这里只记：挂起顺序就是日后 drain 的顺序。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/turn.rs</code> 第 2130 至 2154 行；第 2391 至 2397 行。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：默认等流结束，另有一扇流内闸门</h4>
+      <p>默认路径里，流式循环只收集 <code>tool_use</code>，<code>for await</code> 结束后才进入 <code>runTools</code>。流断了只需丢掉已经收集的 block，省掉每个出口都 drain 的局部所有权。代价是工具延迟和打字延迟串行。</p>
+      <p><code>streamingToolExecution</code> 打开时，行为靠近 Codex：流内 <code>addTool</code>，立刻开工。失败回退要 <code>discard</code> 已经开工的工具，避免旧 id 漏进重试。Codex 没有对等的 discard，因为它选择先 persist，重试读历史。</p>
+      <span class="cmp-tag">两侧均已核对源码 · query.ts 第 551 至 568 行、第 1380 至 1382 行</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：三段瀑布加单调 Guard，管的是谁能拒绝</h4>
+      <p>DSH 的入口是一条已经成型的工具调用。pre / guard / around / post 回答谁能拒绝，拒绝之后结果还在不在。Guard 只有拒绝理由或弃权，没有放行这个选项。它的 <code>drained</code> 是单次 <code>execute</code> 内部的收尾。SSE 还在飞的时候，这套瀑布还没开始。</p>
+      <p>两边词面相近，出口不同。一边护权限单调，一边护流式 transcript 闭合。把 Guard 搬进 Codex，挡不住断流丢 transcript。把 persist-then-drain 搬进 DSH，也回答不了插件能不能把拒绝改成放行。</p>
+      <span class="cmp-tag">两侧均已核对源码 · tools/src/index.ts 第 1 至 4 行、第 703 至 711 行、第 1328 至 1337 行 · <a href="/dashboard/learning?lesson=dsh-12" data-lesson-id="dsh-12">DSH · 三段瀑布与单调 Guard</a></span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>把写入和挂起对调</h3>
+      <p>在 <code>handle_output_item_done</code> 的工具分支里，把 <code>record_completed_response_item</code> 和 <code>Box::pin(handle_tool_call)</code> 对调。取消发生在 pin 之前、persist 之前。下一轮采样和会话恢复会看见什么？</p>
+      <p>把答案落到历史只能增量追加，以及 <code>drain_in_flight</code> 的写入时机上。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b><code>OutputItemDone</code> 一到就先写入再开工。流的每个出口先 drain，结果按发出顺序写。取消打断执行，已经写下的 transcript 留在原处。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var TOOLS = ['A', 'B', 'C'];
+  var FRAMES = [
+    { tag: 'Created', sub: '流打开', trace: 0 },
+    { tag: 'delta', sub: '我先看 main.rs', trace: 0 },
+    { tag: 'ItemDone', sub: '读文件 A', trace: 3 },
+    { tag: 'delta', sub: '然后看 lib', trace: 4 },
+    { tag: 'ItemDone', sub: '读文件 B', trace: 4 },
+    { tag: 'ItemDone', sub: '读文件 C', trace: 4 },
+    { tag: 'delta', sub: '再写摘要', trace: 5 },
+    { tag: '出口', sub: '收场', trace: 6 }
+  ];
+  var CAP = {
+    0: '流刚打开。解析器在等下一帧，队列是空的。',
+    1: '模型开始打字。这是 delta，只服务界面，不往队列里塞东西。',
+    2: 'OutputItemDone 到了。左边立刻盖章并开工。右边只记下这条，等收工哨。',
+    3: '模型还在写说明。左边的读文件已经跑起来了。',
+    4: '第二条调用落地。左边并行开工。右边继续排队。',
+    5: '三条都到了。左边三条泳道都在跑，历史里已有三块请求。',
+    6: '流还没结束。工具时间和打字时间正在重叠。',
+    done: '收工哨响了。两边都写入结果。左边早就跑完大半。',
+    stream: '流提前关掉。左边 drain 后准备重试，色块一块不撤。右边请求还没落盘。',
+    esc: '取消打断执行。左边请求保留，输出写成中止。右边什么都没写下。'
+  };
+  var ST = { idle: '空闲', queue: '排队', run: '执行中', done: '完成', abort: '中止' };
+  var exitMode = 'done';
+  var idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ticks = document.getElementById('dm-ticks');
+  var slider = document.getElementById('dm-slider');
+  var lLanes = document.getElementById('dm-left-lanes');
+  var rLanes = document.getElementById('dm-right-lanes');
+  var lHist = document.getElementById('dm-left-hist');
+  var rHist = document.getElementById('dm-right-hist');
+  var lN = document.getElementById('dm-l-n'), rN = document.getElementById('dm-r-n');
+  var lStatus = document.getElementById('dm-left-status');
+  var rStatus = document.getElementById('dm-right-status');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '拖进度或点播放。看解析器在哪一帧决定工具起跑。';
+
+  function buildTicks(){
+    ticks.innerHTML = '';
+    FRAMES.forEach(function(fr, i){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'dm-tick';
+      b.setAttribute('data-i', String(i));
+      b.innerHTML = '<b>' + fr.tag + '</b>' + fr.sub;
+      ticks.appendChild(b);
+    });
+  }
+
+  function laneClass(s){
+    if (s === 'run') return 'dm-lane run';
+    if (s === 'done') return 'dm-lane done';
+    if (s === 'abort') return 'dm-lane abort';
+    if (s === 'queue') return 'dm-lane queue';
+    return 'dm-lane';
+  }
+
+  function ensureLanes(host){
+    if (host.children.length === TOOLS.length) return;
+    host.innerHTML = '';
+    TOOLS.forEach(function(name){
+      var d = document.createElement('div');
+      d.className = 'dm-lane';
+      d.setAttribute('data-tool', name);
+      d.setAttribute('data-s', 'idle');
+      d.innerHTML = '<b>工具 ' + name + '</b><span>' + ST.idle + '</span>';
+      host.appendChild(d);
+    });
+  }
+
+  function paintLanes(host, map, animate){
+    ensureLanes(host);
+    var live = TOOLS.some(function(name){ return map[name] !== 'idle'; });
+    host.classList.toggle('is-live', live);
+    TOOLS.forEach(function(name){
+      var d = host.querySelector('[data-tool="'+name+'"]');
+      var s = map[name];
+      var prev = d.getAttribute('data-s') || 'idle';
+      d.className = laneClass(s);
+      d.querySelector('span').textContent = ST[s];
+      d.setAttribute('data-s', s);
+      if (animate && !reduce && prev !== s && (s === 'run' || s === 'queue' || s === 'done' || s === 'abort')) {
+        d.classList.remove('firing');
+        void d.offsetWidth;
+        d.classList.add('firing');
+      }
+    });
+  }
+
+  function ensureBar(meter){
+    var bar = meter.querySelector('.dm-m-bar');
+    if (bar) return bar;
+    bar = document.createElement('i');
+    bar.className = 'dm-m-bar';
+    meter.appendChild(bar);
+    return bar;
+  }
+
+  function setBar(meter, n){
+    ensureBar(meter).style.transform = 'scaleX(' + (n / 6) + ')';
+  }
+
+  function rollNum(el, to, animate){
+    var from = parseInt(el.textContent, 10);
+    if (isNaN(from)) from = 0;
+    if (!animate || reduce || from === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(from + (to - from) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function paintHist(host, items, animate){
+    var chips = Array.prototype.slice.call(host.querySelectorAll('.dm-chip'));
+    var same = chips.length <= items.length;
+    var i;
+    for (i = 0; i < chips.length && same; i++) {
+      if (chips[i].textContent !== items[i].label) same = false;
+    }
+    if (!same || chips.length > items.length) {
+      host.innerHTML = '';
+      chips = [];
+    }
+    if (!items.length) {
+      if (!host.querySelector('.dm-empty')) {
+        host.innerHTML = '';
+        var e = document.createElement('div');
+        e.className = 'dm-empty';
+        e.textContent = '历史还是空的。';
+        host.appendChild(e);
+      }
+      return;
+    }
+    var empty = host.querySelector('.dm-empty');
+    if (empty) empty.remove();
+    var oldRects = chips.map(function(el){ return el.getBoundingClientRect(); });
+    items.slice(chips.length).forEach(function(it){
+      var s = document.createElement('span');
+      s.className = 'dm-chip' + (it.kind === 'out' ? ' out' : '') + (it.kind === 'abort' ? ' abort' : '');
+      s.textContent = it.label;
+      if (animate && !reduce) s.classList.add('is-enter');
+      host.appendChild(s);
+      if (animate && !reduce) {
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            s.classList.add('in');
+            s.classList.add('pop');
+          });
+        });
+      }
+    });
+    if (animate && !reduce) {
+      chips.forEach(function(el, n){
+        var now = el.getBoundingClientRect();
+        var dx = oldRects[n].left - now.left;
+        var dy = oldRects[n].top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function setStatus(el, text, kind, animate){
+    var prev = el.getAttribute('data-k') || '';
+    el.className = 'dm-status' + (kind ? ' ' + kind : '');
+    el.textContent = text;
+    el.setAttribute('data-k', kind || '');
+    if (animate && !reduce && kind && kind !== prev) {
+      el.classList.remove('firing');
+      void el.offsetWidth;
+      el.classList.add('firing');
+    }
+  }
+
+  function setCaption(text, animate){
+    if (!animate || reduce) {
+      captionText.style.opacity = '1';
+      captionText.textContent = text;
+      return;
+    }
+    captionText.style.opacity = '0';
+    requestAnimationFrame(function(){
+      captionText.textContent = text;
+      requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+    });
+  }
+
+  function snapshot(f){
+    var L = { A: 'idle', B: 'idle', C: 'idle' };
+    var R = { A: 'idle', B: 'idle', C: 'idle' };
+    var lh = [], rh = [];
+    var ls = '等待下一帧。', rs = '等待收工哨。';
+    var lsK = '', rsK = '';
+    if (f >= 1) { ls = '模型在打字。'; }
+    if (f >= 2) {
+      L.A = 'run'; R.A = 'queue';
+      lh.push({ kind: 'call', label: 'call A' });
+      ls = 'A 已落盘并开工。'; rs = 'A 在排队，历史还空。';
+    }
+    if (f >= 4) {
+      L.B = 'run'; R.B = 'queue';
+      lh.push({ kind: 'call', label: 'call B' });
+      ls = 'A、B 并行跑。'; rs = 'A、B 排队。';
+    }
+    if (f >= 5) {
+      L.C = 'run'; R.C = 'queue';
+      lh.push({ kind: 'call', label: 'call C' });
+      ls = '三条都在跑，历史里已有三块请求。'; rs = '三条排队，仍等收工哨。';
+    }
+    if (f >= 6 && f < 7) {
+      ls = '流还没结束，工具已经跑起来了。';
+      rs = '还在等最后一帧。';
+    }
+    if (f >= 7) {
+      if (exitMode === 'done') {
+        L.A = L.B = L.C = 'done';
+        R.A = R.B = R.C = 'done';
+        lh = lh.concat([
+          { kind: 'out', label: 'out A' },
+          { kind: 'out', label: 'out B' },
+          { kind: 'out', label: 'out C' }
+        ]);
+        rh = [
+          { kind: 'call', label: 'call A' }, { kind: 'out', label: 'out A' },
+          { kind: 'call', label: 'call B' }, { kind: 'out', label: 'out B' },
+          { kind: 'call', label: 'call C' }, { kind: 'out', label: 'out C' }
+        ];
+        lsK = 'ok'; rsK = 'ok';
+        ls = 'drain 按 A、B、C 写入结果。准备再问模型。';
+        rs = '收工哨后才开工，现在一次写完。';
+      } else if (exitMode === 'stream') {
+        L.A = L.B = L.C = 'done';
+        R.A = R.B = R.C = 'idle';
+        lh = lh.concat([
+          { kind: 'out', label: 'out A' },
+          { kind: 'out', label: 'out B' },
+          { kind: 'out', label: 'out C' }
+        ]);
+        lsK = 'hold'; rsK = 'warn';
+        ls = 'Stream，准备重试。历史色块一块不撤。';
+        rs = '请求从未落盘。重试从空历史开始。';
+      } else {
+        L.A = L.B = L.C = 'abort';
+        R.A = R.B = R.C = 'idle';
+        lh = lh.concat([
+          { kind: 'abort', label: 'aborted A' },
+          { kind: 'abort', label: 'aborted B' },
+          { kind: 'abort', label: 'aborted C' }
+        ]);
+        lsK = 'warn'; rsK = 'warn';
+        ls = 'TurnAborted。请求还在，输出是中止文案。不重试。';
+        rs = '工具还没开工。历史是空的。';
+      }
+    }
+    var cap = f < 7 ? CAP[f] : CAP[exitMode];
+    var trace = FRAMES[Math.min(f, 7)].trace;
+    if (f >= 7) trace = exitMode === 'esc' ? 7 : 6;
+    if (f === 2) trace = 3;
+    return { L: L, R: R, lh: lh, rh: rh, ls: ls, rs: rs, lsK: lsK, rsK: rsK, cap: cap, trace: trace };
+  }
+
+  function paint(f, animate){
+    var st = snapshot(f);
+    paintLanes(lLanes, st.L, animate);
+    paintLanes(rLanes, st.R, animate);
+    paintHist(lHist, st.lh, animate);
+    paintHist(rHist, st.rh, animate);
+    rollNum(lN, st.lh.length, animate);
+    rollNum(rN, st.rh.length, animate);
+    setBar(lN.parentNode, st.lh.length);
+    setBar(rN.parentNode, st.rh.length);
+    setStatus(lStatus, st.ls, st.lsK, animate);
+    setStatus(rStatus, st.rs, st.rsK, animate);
+    setCaption(st.cap, animate);
+    slider.value = String(f);
+    Array.prototype.forEach.call(ticks.children, function(el, n){
+      var wasOn = el.classList.contains('on');
+      el.classList.toggle('on', n === f);
+      el.classList.toggle('passed', n < f);
+      if (animate && !reduce && n === f && !wasOn) {
+        el.classList.remove('firing');
+        void el.offsetWidth;
+        el.classList.add('firing');
+      }
+    });
+    document.querySelector('.dm-trace').classList.add('is-live');
+    traceRows.forEach(function(el, n){ el.classList.toggle('on', n === st.trace); });
+    summary.classList.toggle('on', f >= 7);
+  }
+
+  function holdFor(f){
+    if (f === 2) return 2000;
+    if (f === 5) return 2000;
+    if (f === 7) return 2400;
+    if (f === 4) return 1600;
+    if (f === 1 || f === 3 || f === 6) return 1100;
+    return 900;
+  }
+
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+
+  function go(f, animate){
+    idx = f;
+    if (idx < 0) idx = 0;
+    if (idx > 7) idx = 7;
+    paint(idx, !!animate);
+    if (idx >= 7) stop();
+  }
+
+  function tick(){
+    if (idx >= 7) { stop(); return; }
+    go(idx + 1, true);
+  }
+
+  function loop(ts){
+    if (idx >= 7) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    go(idx + 1, true);
+    pauseUntil = ts + holdFor(idx);
+    if (idx >= 7) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop();
+    idx = 0;
+    paint(0, false);
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+    summary.classList.remove('on');
+    document.querySelector('.dm-trace').classList.remove('is-live');
+    traceRows.forEach(function(el){ el.classList.remove('on'); });
+  }
+
+  function play(){
+    if (idx >= 7) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  buildTicks();
+  ticks.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    stop();
+    go(parseInt(b.getAttribute('data-i'), 10), true);
+  });
+  slider.addEventListener('input', function(){
+    stop();
+    go(parseInt(slider.value, 10), false);
+  });
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    exitMode = b.getAttribute('data-exit');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-sse'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

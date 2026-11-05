@@ -1,0 +1,1127 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-32",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-32',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>两种安全视角：同一条命令，两套判词 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card);overflow:hidden}
+.visual svg{width:100%;height:auto;display:block;max-width:100%}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px;min-width:0}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card{min-width:0;overflow-wrap:anywhere}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cmp-card h4 svg{color:var(--accent);flex:0 0 auto}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.lesson code,.src-note code{overflow-wrap:anywhere;word-break:break-all}
+.visual{overflow:hidden}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card);overflow:hidden;max-width:100%}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 160px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cmd{margin-bottom:20px;padding:14px 16px;border-radius:10px;background:var(--bg);border:1px dashed var(--border);font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent-deep);word-break:break-all}
+#dm-cmd,#dm-hint,#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-cols.is-live .dm-col{opacity:.4;transform:scale(.98)}
+.dm-cols.is-live .dm-col.now{opacity:1;transform:scale(1)}
+.dm-head{position:relative;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head.tweening:after{transition:none}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-stamp{font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--border);color:var(--sub);transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+.dm-stamp.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.4);color:var(--success)}
+.dm-stamp.bad{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.35);color:var(--danger)}
+.dm-stamp.hold{background:var(--accent-soft);border-color:rgba(65,75,90,.4);color:var(--accent-deep)}
+.dm-stamp.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-stamp.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:12px;min-height:230px}
+.dm-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dm-ck{min-height:44px;padding:8px 6px;border-radius:9px;border:1px solid var(--border);background:var(--card);text-align:center;font-size:12px;font-weight:600;color:var(--faint);display:flex;align-items:center;justify-content:center;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-checks.is-live .dm-ck{opacity:.4;transform:scale(.98)}
+.dm-checks.is-live .dm-ck.now{opacity:1;transform:scale(1)}
+.dm-ck.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-ck.ok{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success)}
+.dm-ck.bad{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger)}
+.dm-ck.skip{opacity:.55}
+.dm-checks.is-live .dm-ck.skip.now{opacity:1}
+.dm-ck.is-enter{opacity:0;transform:translateY(8px)}
+.dm-ck.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-ck.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-ck.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-sheet{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:62px;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-sheet.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-sheet.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-sheet.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-sheet.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-verdict{margin-top:20px;padding:16px 18px;border-radius:12px;border:1px solid var(--border);background:var(--bg);text-align:center;font-size:14px;font-weight:800;line-height:1.7;color:var(--sub);min-height:52px;display:flex;align-items:center;justify-content:center;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-verdict.on{border-color:rgba(65,75,90,.35);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-verdict.opp{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger)}
+.dm-verdict.same{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success)}
+.dm-verdict.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-verdict.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.dm-checks{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-seg{width:100%}.dm-seg button{flex:1}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:520px}}
+</style>
+<meta name="description" content="同一条危险命令，可回放问能不能复原现场，可拒绝问出事之前有没有门。两套视角会一致，也会给出相反结论">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="两种安全视角：同一条命令，两套判词"><meta property="og:description" content="同一条危险命令，可回放问能不能复原现场，可拒绝问出事之前有没有门。两套视角会一致，也会给出相反结论"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-32.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 两种安全视角</div>
+    <h1>两种安全视角：同一条命令，两套判词</h1>
+    <p class="subtitle">出事之前有没有门可以拒绝，出事之后能不能复原模型当时看见的世界。同一条危险命令上，这两套视角会一致，也会给出相反结论。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>出事之前有没有门可以拒绝，出事之后能不能复原模型当时看见的世界。同一条危险命令上，这两套视角会一致，也会给出相反结论。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清两件事。可回放要的是模型当时看见的世界还能从日志里拼回来。可拒绝要的是命令跑起来之前，策略、审批、沙箱、代理里至少有一道门能说不。同一条命令上，它们在哪里一致，在哪里互相让路。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一条命令，两套法官</div>
+  <div class="demo reveal" id="demo-two-views">
+    <div class="demo-top">
+      <div class="demo-title">同一个危险操作，两套安全视角各自怎么判</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">事故</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-case="reset" class="on">git reset --hard</button>
+        <button type="button" data-case="token">带令牌出站</button>
+        <button type="button" data-case="sandbox">沙箱拦住危险写</button>
+      </div>
+      <span class="dm-b-hint" id="dm-hint">策略写过 Forbidden。看两边会不会给出相反结论。</span>
+    </div>
+    <div class="dm-cmd" id="dm-cmd">git reset --hard HEAD~3</div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">可回放</span><span class="dm-stamp" id="dm-l-stamp">审理中</span></div>
+        <div class="dm-body">
+          <div class="dm-checks" id="dm-left-checks"></div>
+          <div class="dm-sheet" id="dm-left-sheet">问的是：出事之后，现场还能不能拼回来。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">可拒绝</span><span class="dm-stamp" id="dm-r-stamp">审理中</span></div>
+        <div class="dm-body">
+          <div class="dm-checks" id="dm-right-checks"></div>
+          <div class="dm-sheet" id="dm-right-sheet">问的是：出事之前，有没有一道门能说不。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-verdict" id="dm-verdict">两份判词还没对上。</div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>同一条 argv 同时交给两套视角</span><span class="ln">L场景</span></li>
+        <li><span>可拒绝先看 Decision 三态，用最严的那一档</span><span class="ln">decision.rs L9</span></li>
+        <li><span>审批缓存的 key 带完整 argv，不认前缀</span><span class="ln">unified_exec.rs L92</span></li>
+        <li><span>Guardian 超时或坏输出就关闸</span><span class="ln">guardian/mod.rs L11</span></li>
+        <li><span>平台沙箱三套后端，Windows 关着就是 None</span><span class="ln">manager.rs L37</span></li>
+        <li><span>可回放认 JSONL 原文，SQLite 只是镜像</span><span class="ln">README.md L22</span></li>
+        <li><span>fork 必须撞到真实的 TurnStarted</span><span class="ln">thread_rollout_truncation.rs L187</span></li>
+        <li><span>失败写成观察，success 仍为 true</span><span class="ln">context.rs L351</span></li>
+        <li><span>代理 403 回给命令进程，循环继续</span><span class="ln">responses.rs L80</span></li>
+        <li><span>对照两份判词：一致还是相反</span><span class="ln">L验收</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一条命令在两套视角下怎么被判。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s" id="dm-s1"><b>两份判词</b></div>
+      <div class="dm-s" id="dm-s2"><b>缺口在哪</b></div>
+      <div class="dm-s" id="dm-s3"><b>换一条命令</b>切到另外两起事故，看一致和相反会不会换边。</div>
+    </div>
+    <div class="demo-caption">教学示意：命令文本为课程化样例，演示不调用真实 shell，也不连真实代理。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 出事之后，现场还在不在</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">周一早上，安全同事把一段聊天记录甩到群里。模型昨晚连了外部 API，请求头带着仓库里的部署令牌。他问：当时模型究竟看见了什么环境变量。你打开会话，标题还在，点进去对不上。SQLite 里有一行元数据，JSONL 缺了半截。</p>
+  <p class="reveal">可回放要回答的就是这件事。出事之后，你能不能精确复现模型当时看见的世界。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 把历史写成两份。JSONL 是原文，只追加已经定稿的条目，不从内容里推断元数据。SQLite 是镜像，给列表和检索用。元数据丢了可以再抽。JSONL 丢了，恢复必须读文件。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/thread-store/README.md</code> 第 22 至 28 行</p>
+  <p class="reveal">然后还有一道筛选。持久化策略会丢掉流式增量、审批弹窗、警告和 MCP 启动进度。TurnStarted 留下。你能回放 turn 边界和完成态，回放不了当时屏幕上闪过的审批文案。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/rollout/src/policy.rs</code> 第 86 至 105 行</p>
+  <p class="reveal">fork 认的也是这条物理边界。目标 turn 必须在有效历史里，文件里真有一条 TurnStarted，进行中的 turn 直接拒绝。投影出来的合成 ID 不能当切点。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/thread_rollout_truncation.rs</code> 第 187 至 191 行</p>
+  <p class="reveal">所以真相也经过筛选。列表能告诉你有过这个线程。只有 JSONL 能告诉你模型当时看见了哪几条消息。</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 300" role="img" aria-label="DSH 与 Codex 谁是原文、谁是投影">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="24" y="36" fill="#262d38" font-size="14" font-weight="800">DSH：先落成事件，再投影给模型</text>
+      <rect x="24" y="52" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="99" y="86" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">模型可见输入</text>
+      <path fill="none" d="M174 80H230" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="230" y="52" width="150" height="56" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="305" y="86" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">写入会话日志</text>
+      <path fill="none" d="M380 80H436" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="436" y="52" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="511" y="86" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">deriveMessages</text>
+      <path fill="none" d="M586 80H642" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="642" y="52" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="717" y="86" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">发给模型</text>
+      <text x="24" y="168" fill="#262d38" font-size="14" font-weight="800">Codex：先发给模型，定稿后再落原文</text>
+      <rect x="24" y="184" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="99" y="218" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">组装上下文</text>
+      <path fill="none" d="M174 212H230" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="230" y="184" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="305" y="218" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">发给模型</text>
+      <path fill="none" d="M380 212H436" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="436" y="184" width="150" height="56" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="511" y="218" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">JSONL 原文</text>
+      <path fill="none" d="M586 212H642" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="642" y="184" width="150" height="56" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="717" y="218" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">SQLite 镜像</text>
+      <text x="470" y="268" fill="#6b7280" text-anchor="middle" font-size="13">审批过程可能被策略丢掉</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：两家都有原文和投影，DSH 把落事件放在发给模型之前。</div>
+  </div>
+
+  <div class="q-tag reveal">为什么长期成立</div>
+  <p class="reveal">原文和投影拆开，投影坏了可以重建，原文坏了现场就没了。换一套存储，该问的还是谁是原文。这份合同不随语言变。</p>
+
+  <div class="sec-label">思路二 · 出事之前，任何一道门都可以说不</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal paywall-locked xa-peek">周三下午，另一台机器上的 agent 跑完了 <code>git reset --hard</code>。策略文件写过禁止。审批弹窗那天太多，有人点了记住。沙箱开着，那条命令没碰受保护的路径，内核没拦。你事后能把 rollout 完整回放一遍。回放告诉你它做过什么，没有在它做之前把路堵上。</p>
+  <p class="reveal paywall-locked">可拒绝要回答的是：出事之前，有没有一道门可以拒绝。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">一条命令要从模型提议走到进程启动，Codex 至少经过四道可以拒绝的门。execpolicy 的 Decision 只有 Allow、Prompt、Forbidden，用序取最严。规则文件里的 <code>not_match</code> 加载器真的跑一遍，反例被命中，会话开不起来。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/execpolicy/src/decision.rs</code> 第 9 至 16 行</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/execpolicy/src/rule.rs</code> 第 281 至 306 行</p>
+  <p class="reveal paywall-locked">第二道是审批。会话缓存认精确 key，带上规范化后的完整 argv、工作目录、权限。早期常把记住同类理解成前缀缓存。当前源码里，<code>npm run test</code> 和 <code>npm run lint</code> 是两把 key。这道门挡住同一条精确命令的重复弹窗。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/runtimes/unified_exec.rs</code> 第 86 至 97 行</p>
+  <p class="reveal paywall-locked">第三道用模型换弹窗。Guardian 超时、坏输出就关闸，只认明确的 allow 或 deny。它挡住审批疲劳。用户本人点批准，这道门会让路。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/guardian/mod.rs</code> 第 1 至 12 行</p>
+  <p class="reveal paywall-locked">第四道才是操作系统。macOS 拼 SBPL，Linux 默认 bubblewrap 加 seccomp，失败不回退到遗留 Landlock。Windows 走受限令牌，开关关着就返回 None。进程启动之后，出站再过代理。代理拒绝时把头带 <code>x-proxy-error</code> 的 403 回给命令进程，循环继续。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/manager.rs</code> 第 36 至 42 行</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/src/responses.rs</code> 第 76 至 83 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="一条命令穿过四道可以拒绝的门">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <rect x="24" y="36" width="130" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="89" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">模型提出 argv</text>
+      <path fill="none" d="M154 62H200" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="200" y="36" width="130" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="265" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">execpolicy</text>
+      <path fill="none" d="M330 62H376" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="376" y="36" width="130" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="441" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">审批与缓存</text>
+      <path fill="none" d="M506 62H552" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="552" y="36" width="130" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="617" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">沙箱</text>
+      <path fill="none" d="M682 62H728" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="728" y="36" width="188" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="822" y="68" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">出站代理</text>
+      <path fill="none" d="M265 88V148" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <path fill="none" d="M441 88V148" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <path fill="none" d="M617 88V148" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <path fill="none" d="M822 88V148" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="200" y="156" width="130" height="44" rx="9" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="265" y="183" fill="#dc2626" text-anchor="middle" font-size="13">Forbidden</text>
+      <rect x="376" y="156" width="130" height="44" rx="9" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="441" y="183" fill="#dc2626" text-anchor="middle" font-size="13">deny 或 Abort</text>
+      <rect x="552" y="156" width="130" height="44" rx="9" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="617" y="183" fill="#dc2626" text-anchor="middle" font-size="13">启动失败</text>
+      <rect x="728" y="156" width="188" height="44" rx="9" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="822" y="183" fill="#dc2626" text-anchor="middle" font-size="13">进程收到 403</text>
+      <text x="470" y="236" fill="#6b7280" text-anchor="middle" font-size="13">任何一道都可以拒绝。代理挡的是出站，不是 argv。</text>
+      <text x="470" y="260" fill="#6b7280" text-anchor="middle" font-size="13">DNS rebinding 这一层自己承认防不住。</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：四道门加一道出站漏斗，每一道只锁住一类风险。</div>
+  </div>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/network-proxy/README.md</code> 第 234 至 238 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">每一层看的东西不一样。策略看 argv，审批看人，内核看路径和 syscall，代理看域名。一层看不清，就停在这一层。规则只写在人读的文件里、没有加载期例子，就会和源码一起漂。<code>AGENTS.md</code> 第 35 行还指向 <code>mcp_connection_manager.rs</code>，仓库里没有这个文件。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>AGENTS.md</code> 第 35 行</p>
+
+  <div class="sec-label paywall-locked">思路三 · 拒绝过了，观察还要留下</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">命令退出码非零，按直觉像错误。若把沙箱拒绝升级成引擎错误，模型看不到退出码，只会换一条更绕的命令。代理 403 若打到引擎，整轮对话停，模型无法改域名再试。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">工具层只允许两种失败：回喂模型，或打断引擎。沙箱拒绝走的是成功的工具输出。<code>process_id</code> 被清掉，<code>exit_code</code> 留在正文里。记日志时成功位恒为 true。失败写在 Exit code 那一行。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/tools/src/function_call_error.rs</code> 第 1 至 10 行</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/context.rs</code> 第 340 至 353 行</p>
+  <p class="reveal paywall-locked">可回放要的是观察还在。可拒绝已经在启动前或内核里做过了。这里不再用错误把 turn 打断。代理 403 是同一合同的网络版：命令进程读到人话，输出进 JSONL，模型再决定下一步。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tools/handlers/unified_exec/exec_command.rs</code> 第 383 至 411 行</p>
+
+  <div class="key-line reveal paywall-locked">拒绝先把门关上。回放把收据留下。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">把工具错和引擎错分开，是任何 agent 循环都用得上的形状。退出码、超时、策略拒绝，默认走第一档。只有编排自己坏了，才停整轮对话。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>回放：DSH 把看见的必须能重建写成红线</h4>
+      <p>DSH 仓库用同一句话写进 <code>AGENTS.md</code>（<code>CLAUDE.md</code> 是指向它的符号链接）和架构文档：凡是进模型请求的输入，都必须能从会话日志重建。只追加的日志是真相，给模型看的是投影。审批策略只有 <code>ask</code> 和 <code>never</code>，没有 Guardian，也没有进程内出站代理。</p>
+      <p>Codex 的可回放停在定稿历史。DSH 往前推了一步：新的模型可见输入必须先成为一条会话事件。回放侧的合同更硬，拒绝侧更薄。</p>
+      <p class="src-note" style="margin:12px 0 0">出处：<code>AGENTS.md</code> 第 107 行</p>
+      <p class="src-note" style="margin:4px 0 0">出处：<code>docs/architecture.md</code> 第 92 至 96 行</p>
+      <p class="src-note" style="margin:4px 0 0">出处：<code>packages/interaction/user-approval/src/index.ts</code> 第 84 至 94 行</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-2" data-lesson-id="dsh-2">DSH · Model-visible ⟺ logged</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>拒绝：Grok 在启动时装一次隔离</h4>
+      <p>Grok 用 <code>nono</code> 在进程启动时装一次 Landlock 或 Seatbelt，网络在进程级保持打开，子进程用 seccomp 拦网。<code>web_fetch</code> 空名单全拦，loopback 默认放行。Codex 怕的是工具打到本机管理口。Grok 怕的是模型乱访外网，仍给本机开发留门。</p>
+      <p class="src-note" style="margin:12px 0 0">出处：<code>crates/codegen/xai-grok-sandbox/src/lib.rs</code> 第 8 至 12 行</p>
+      <p class="src-note" style="margin:4px 0 0">出处：<code>crates/codegen/xai-grok-tools/src/implementations/grok_build/web_fetch/ssrf.rs</code> 第 14 至 18 行</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>两份判词何时相反</h3>
+      <p>打开上面的演示，切到带令牌出站。推演可拒绝为什么四道门过完仍然放行，可回放为什么有 JSONL 也拼不回环境变量。</p>
+      <p>再切到沙箱拦住危险写，看同一套机制这次为什么给出一致的判词。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>可回放问出事之后能不能复原。可拒绝问出事之前有没有门。先问三个问题再决定抄哪一侧：跑在谁的机器上，处理谁的数据，失败的代价是密钥泄漏、仓库被改，还是评测不可复现。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var LEFT_LABELS = ['JSONL 原文', '审批过程', '环境变量', '退出码回喂'];
+  var RIGHT_LABELS = ['execpolicy', '精确缓存', '沙箱', '出站代理'];
+  var caseId = 'reset';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevLChecks = [0, 0, 0, 0], prevRChecks = [0, 0, 0, 0];
+  var prevLStamp = '', prevRStamp = '', prevTrace = null, prevV = '';
+  var leftNow = false, rightNow = false;
+  var leftHost = document.getElementById('dm-left-checks');
+  var rightHost = document.getElementById('dm-right-checks');
+  var leftCol = leftHost.closest('.dm-col');
+  var rightCol = rightHost.closest('.dm-col');
+  var colsHost = document.querySelector('.dm-cols');
+  var traceBox = document.querySelector('.dm-trace');
+  var lStamp = document.getElementById('dm-l-stamp');
+  var rStamp = document.getElementById('dm-r-stamp');
+  var lSheet = document.getElementById('dm-left-sheet');
+  var rSheet = document.getElementById('dm-right-sheet');
+  var verdict = document.getElementById('dm-verdict');
+  var cmdEl = document.getElementById('dm-cmd');
+  var hintEl = document.getElementById('dm-hint');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var s1 = document.getElementById('dm-s1');
+  var s2 = document.getElementById('dm-s2');
+  var IDLE = '点播放，看同一条命令在两套视角下怎么被判。';
+
+  var META = {
+    reset: {
+      cmd: 'git reset --hard HEAD~3',
+      hint: '策略写过 Forbidden。看两边会不会给出相反结论。'
+    },
+    token: {
+      cmd: 'curl -H "Authorization: $DEPLOY_TOKEN" https://api.example.com',
+      hint: '四道门看的是 argv。令牌在请求头里，出站没挂代理。'
+    },
+    sandbox: {
+      cmd: 'rm -rf /etc',
+      hint: '沙箱拦住之后，看失败会不会当成引擎错误。'
+    }
+  };
+
+  function buildChips(host, labels, animate){
+    var oldRects = {};
+    Array.prototype.slice.call(host.children).forEach(function(el){
+      oldRects[el.textContent] = el.getBoundingClientRect();
+    });
+    host.innerHTML = '';
+    labels.forEach(function(name){
+      var d = document.createElement('div');
+      d.className = 'dm-ck';
+      d.textContent = name;
+      host.appendChild(d);
+      if (animate) {
+        d.classList.add('is-enter');
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ d.classList.add('in'); });
+        });
+      }
+    });
+    if (animate) {
+      Array.prototype.slice.call(host.children).forEach(function(el){
+        var old = oldRects[el.textContent];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function spawnGhost(el){
+    if (!colsHost || !el) return;
+    var box = colsHost.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    colsHost.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function fadeText(el, text, animate){
+    if (!el) return;
+    if (!animate || el.textContent === text) {
+      el.textContent = text;
+      el.style.opacity = '1';
+      return;
+    }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      el.textContent = text;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function countOn(checks){
+    var n = 0;
+    checks.forEach(function(k){ if (k) n++; });
+    return n;
+  }
+
+  function setBar(col, n){
+    if (col) col.style.setProperty('--bar', String(n / 4));
+  }
+
+  function rollBar(col, fromN, toN, animate){
+    if (!col) return;
+    var head = col.querySelector('.dm-head');
+    if (!animate || fromN === toN) {
+      setBar(col, toN);
+      return;
+    }
+    if (head) head.classList.add('tweening');
+    var start = null;
+    var dur = 520;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      setBar(col, fromN + (toN - fromN) * eased);
+      if (t < 1) requestAnimationFrame(frame);
+      else if (head) head.classList.remove('tweening');
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function side(stamp, stampKind, checks, sheet, sheetKind){
+    return { stamp: stamp, stampKind: stampKind, checks: checks, sheet: sheet, sheetKind: sheetKind };
+  }
+
+  function buildSteps(id){
+    if (id === 'token') {
+      return [
+        { cap: '模型要用仓库里的部署令牌打外部 API。同一条请求同时交给两套视角。',
+          trace: 0, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,0,0,0], '先问：这条请求留下的现场，事后能不能拼回来。', 'hold'),
+          R: side('审理中', 'hold', [0,0,0,0], '先问：argv、审批、沙箱、代理，哪一道会说不。', 'hold') },
+        { cap: 'execpolicy 看的是 argv。curl 不在 Forbidden 名单，Decision 放行。',
+          trace: 1, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,0,0,0], '回放还没开口。拒绝侧第一道门已经看过 argv。', ''),
+          R: side('审理中', 'hold', [2,0,0,0], '第一道门放行。它锁的是命令字面量，不管请求头。', 'hold') },
+        { cap: '用户点过批准。缓存认完整 argv，下次同一条会跳过弹窗。这次是第一次，弹窗过了。',
+          trace: 2, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,1,0,0], '审批弹窗按策略不会落进 JSONL。事后看不见当时的文案。', 'warn'),
+          R: side('审理中', 'hold', [2,2,0,0], '精确缓存记下了这一条。换一个域名或换一个头，会再问。', 'hold') },
+        { cap: '沙箱拦的是路径和 syscall。请求头里的令牌，这一层看不见。',
+          trace: 4, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,1,0,0], '内核层没有这份观察。令牌会不会出站，沙箱不记。', ''),
+          R: side('审理中', 'hold', [2,2,2,0], '沙箱放行。它不是出站漏斗。', 'hold') },
+        { cap: '没有出站代理。四道门过完，效果已经发生。可拒绝给出判词：没拦住。',
+          trace: 8, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,1,1,0], '代理这一层缺席，403 不会出现，也没有 x-proxy-error 可回放。', 'warn'),
+          R: side('没拦住', 'bad', [2,2,2,1], '出站漏斗不在。挡得住 argv，挡不住已经发出的头。', 'warn') },
+        { cap: '可回放打开会话：标题在，JSONL 缺半截，环境变量拼不回来。',
+          trace: 5, v: '两份判词还没对上。', vk: '',
+          L: side('拼不齐', 'bad', [1,1,1,0], '镜像还在。原文缺了，模型当时看见的世界回不去。', 'warn'),
+          R: side('没拦住', 'bad', [2,2,2,1], '拒绝侧已经宣判。回放侧在找现场。', 'warn') },
+        { cap: '两边一致：都没守住。一个没把门焊上，一个没把现场留下来。',
+          trace: 9, v: '一致 · 都没守住', vk: 'same', fin: true,
+          L: side('拼不齐', 'bad', [1,1,1,0], '回放失败。缺的是原文和环境变量，不是列表标题。', 'warn'),
+          R: side('没拦住', 'bad', [2,2,2,1], '拒绝失败。四道门看的都不是请求头。', 'warn'),
+          sum1: '两份判词一致，都是没守住。拒绝说门不在出站这一层，回放说现场拼不齐。',
+          sum2: '缺口可以用源码指出来：代理 README 自己写了 Limitations，JSONL 策略会丢掉审批过程。' }
+      ];
+    }
+    if (id === 'sandbox') {
+      return [
+        { cap: '模型提出一条会碰受保护路径的写。同一条 argv 同时交给两套视角。',
+          trace: 0, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,0,0,0], '先问：就算被拦，观察会不会留下来。', 'hold'),
+          R: side('审理中', 'hold', [0,0,0,0], '先问：哪一道门会在启动时说不。', 'hold') },
+        { cap: 'execpolicy 给出 Prompt，不是 Forbidden。第一道门要人来看。',
+          trace: 1, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,0,0,0], '回放还没开口。', ''),
+          R: side('审理中', 'hold', [3,0,0,0], 'Decision 是 Prompt。加载期反例没有挡住这条。', 'hold') },
+        { cap: '用户点了批准。缓存记下一把精确 key。Guardian 这轮没上场。',
+          trace: 2, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,1,0,0], '审批过程按策略不会落盘。回放看不到弹窗原文。', ''),
+          R: side('审理中', 'hold', [3,2,0,0], '人放行了。精确缓存只对这一条 argv 生效。', 'hold') },
+        { cap: 'Linux 沙箱用 bubblewrap 加 seccomp 拦住受保护路径。进程没能写下去。',
+          trace: 4, v: '两份判词还没对上。', vk: '',
+          L: side('审理中', 'hold', [0,1,0,0], '效果没发生。回放要看拒绝有没有收成观察。', 'hold'),
+          R: side('拦住了', 'ok', [3,2,4,3], '第四道门说了不。transform 失败，启动被拒。', 'ok') },
+        { cap: 'SandboxDenied 收成成功的工具输出。exit_code 留在正文，process_id 被清掉。',
+          trace: 7, v: '两份判词还没对上。', vk: '',
+          L: side('能复原', 'ok', [4,1,3,4], '观察还在。失败写在 Exit code 那一行，不写在成功位里。', 'ok'),
+          R: side('拦住了', 'ok', [3,2,4,3], '可拒绝已经做过了。这里不再升级成引擎错误。', 'ok') },
+        { cap: '记日志时 success 恒为 true。可回放要的是收据。可拒绝要的是门已经关过。',
+          trace: 7, v: '两份判词还没对上。', vk: '',
+          L: side('能复原', 'ok', [4,1,3,4], 'JSONL 里有这条输出。循环继续，模型看得见退出码。', 'ok'),
+          R: side('拦住了', 'ok', [3,2,4,3], '效果没有发生。下一层代理用不上。', 'ok') },
+        { cap: '两边一致：门关过，收据还在。这是互补，不是互相拆台。',
+          trace: 9, v: '一致 · 互补', vk: 'same', fin: true,
+          L: side('能复原', 'ok', [4,1,3,4], '回放通过。它要的不是命令做成了，是观察还在。', 'ok'),
+          R: side('拦住了', 'ok', [3,2,4,3], '拒绝通过。内核把路堵上了。', 'ok'),
+          sum1: '两份判词一致，而且互补。拒绝把门关上，回放把收据留下。',
+          sum2: '若把这次拒绝升级成引擎错误，模型看不到退出码，只会换一条更绕的命令。' }
+      ];
+    }
+    return [
+      { cap: '模型提出 git reset --hard HEAD~3。同一条 argv 同时交给两套视角。',
+        trace: 0, v: '两份判词还没对上。', vk: '',
+        L: side('审理中', 'hold', [0,0,0,0], '先问：事后能不能复原模型当时看见的世界。', 'hold'),
+        R: side('审理中', 'hold', [0,0,0,0], '先问：策略、审批、沙箱、代理，哪一道会说不。', 'hold') },
+      { cap: 'execpolicy 的 Decision 是 Forbidden。后面的门不用走了。',
+        trace: 1, v: '两份判词还没对上。', vk: '',
+        L: side('审理中', 'hold', [0,0,0,0], '命令还没启动。回放还没有可写的效果。', ''),
+        R: side('拦住了', 'ok', [4,3,3,3], '第一道门关上。反例若写成 git reset --keep，这条 --hard 进不来。', 'ok') },
+      { cap: '审批缓存没被问到。Forbidden 比弹窗更早。',
+        trace: 2, v: '两份判词还没对上。', vk: '',
+        L: side('审理中', 'hold', [0,0,0,0], '没有弹窗，也就没有审批原文可回放。', ''),
+        R: side('拦住了', 'ok', [4,3,3,3], '精确缓存这层用不上。门已经在策略里关上。', 'ok') },
+      { cap: '可回放打开 JSONL。Turn 边界还在。审批过程和未启动的命令效果，策略不会落盘。',
+        trace: 5, v: '两份判词还没对上。', vk: '',
+        L: side('审理中', 'hold', [4,1,3,3], '原文在，筛选也在。你能看见 turn，看不见当时的拒绝文案。', 'hold'),
+        R: side('拦住了', 'ok', [4,3,3,3], '拒绝侧已经宣判。回放侧在找现场。', 'ok') },
+      { cap: 'fork 仍认 TurnStarted。你能切这条 turn，切出来的历史里没有当时的审批原文。',
+        trace: 6, v: '两份判词还没对上。', vk: '',
+        L: side('拼不齐', 'bad', [4,1,3,3], '切点找得到。审批弹窗按策略被丢掉，现场缺一块。', 'warn'),
+        R: side('拦住了', 'ok', [4,3,3,3], '可拒绝说门关上了。可回放说现场不齐。', 'ok') },
+      { cap: '两边宣判。拒绝说门关上了。回放说现场缺一块。这是相反的判词。',
+        trace: 9, v: '相反 · 一边拦住，一边拼不齐', vk: 'opp', fin: true,
+        L: side('拼不齐', 'bad', [4,1,3,3], '回放失败。它要的是模型当时看见的世界，策略把审批过程筛掉了。', 'warn'),
+        R: side('拦住了', 'ok', [4,3,3,3], '拒绝通过。Forbidden 在启动前就把路堵上。', 'ok'),
+        sum1: '两份判词相反。拒绝做成了，回放缺一块。门关上和现场还在，是两件独立的事。',
+        sum2: '持久化策略会丢掉审批弹窗。TurnStarted 还在，所以 fork 切得动，只是切出来的历史没有当时的文案。' }
+    ];
+  }
+
+  function paint(st, animate){
+    function apply(stampEl, sheetEl, host, sideObj, prevChecks, animateSide){
+      var stampChanged = stampEl.textContent !== sideObj.stamp;
+      stampEl.className = 'dm-stamp' + (sideObj.stampKind ? ' ' + sideObj.stampKind : '');
+      stampEl.textContent = sideObj.stamp;
+      if (animateSide && stampChanged) {
+        bump(stampEl, 'pop');
+        if (sideObj.stampKind === 'ok' || sideObj.stampKind === 'bad') bump(stampEl, 'firing');
+      }
+      var sheetChanged = sheetEl.textContent !== sideObj.sheet;
+      sheetEl.className = 'dm-sheet' + (sideObj.sheetKind ? ' ' + sideObj.sheetKind : '');
+      fadeText(sheetEl, sideObj.sheet, animateSide);
+      if (animateSide && sheetChanged && (sideObj.sheetKind === 'warn' || sideObj.sheetKind === 'ok')) {
+        bump(sheetEl, 'firing');
+      }
+      host.classList.add('is-live');
+      var nodes = host.children;
+      var i;
+      for (i = 0; i < nodes.length; i++) {
+        (function(node, k, prev){
+          var cls = 'dm-ck';
+          if (k === 1) cls += ' bad';
+          else if (k === 2 || k === 3) cls += ' skip';
+          else if (k === 4) cls += ' ok';
+          else if (k === 5) cls += ' on';
+          if (k !== prev) cls += ' now';
+          node.className = cls;
+          if (animateSide && k !== prev) {
+            if (k === 1) {
+              bump(node, 'firing');
+              spawnGhost(node);
+            } else {
+              bump(node, 'pop');
+            }
+          }
+        })(nodes[i], sideObj.checks[i] || 0, prevChecks[i] || 0);
+      }
+    }
+    var lCheckChanged = st.L.checks.some(function(k, i){ return k !== (prevLChecks[i] || 0); });
+    var rCheckChanged = st.R.checks.some(function(k, i){ return k !== (prevRChecks[i] || 0); });
+    var lStampChanged = st.L.stamp !== prevLStamp;
+    var rStampChanged = st.R.stamp !== prevRStamp;
+    if (st.fin) {
+      leftNow = true;
+      rightNow = true;
+    } else if (lCheckChanged || lStampChanged || rCheckChanged || rStampChanged) {
+      leftNow = lCheckChanged || lStampChanged;
+      rightNow = rCheckChanged || rStampChanged;
+    }
+    colsHost.classList.add('is-live');
+    leftCol.classList.toggle('now', leftNow);
+    rightCol.classList.toggle('now', rightNow);
+    apply(lStamp, lSheet, leftHost, st.L, prevLChecks, animate);
+    apply(rStamp, rSheet, rightHost, st.R, prevRChecks, animate);
+    rollBar(leftCol, countOn(prevLChecks), countOn(st.L.checks), animate);
+    rollBar(rightCol, countOn(prevRChecks), countOn(st.R.checks), animate);
+    prevLChecks = st.L.checks.slice();
+    prevRChecks = st.R.checks.slice();
+    prevLStamp = st.L.stamp;
+    prevRStamp = st.R.stamp;
+    var vCls = 'dm-verdict' + (st.vk ? ' on ' + st.vk : '');
+    verdict.className = vCls;
+    fadeText(verdict, st.v, animate);
+    if (animate && st.v !== prevV && st.vk) {
+      bump(verdict, 'pop');
+      bump(verdict, 'firing');
+    }
+    prevV = st.v;
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    fadeText(captionText, st.cap, animate);
+    if (st.fin) {
+      s1.innerHTML = '<b>两份判词</b>' + (st.sum1 || '');
+      s2.innerHTML = '<b>缺口在哪</b>' + (st.sum2 || '');
+      summary.classList.add('on');
+    } else {
+      summary.classList.remove('on');
+    }
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.trace === 0) return 1100;
+    if (st.L.stamp !== '审理中' || st.R.stamp !== '审理中') {
+      if (st.L.stampKind === 'bad' || st.R.stampKind === 'bad') return 2000;
+      if (st.L.stampKind === 'ok' || st.R.stampKind === 'ok') return 1900;
+    }
+    if (st.trace === 5 || st.trace === 6 || st.trace === 7 || st.trace === 8) return 1900;
+    if (st.trace === 2) return 1300;
+    return 1500;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    prevLChecks = [0, 0, 0, 0];
+    prevRChecks = [0, 0, 0, 0];
+    prevLStamp = '';
+    prevRStamp = '';
+    prevTrace = null;
+    prevV = '';
+    leftNow = false;
+    rightNow = false;
+    var meta = META[caseId];
+    fadeText(cmdEl, meta.cmd, true);
+    fadeText(hintEl, meta.hint, true);
+    steps = buildSteps(caseId);
+    buildChips(leftHost, LEFT_LABELS, true);
+    buildChips(rightHost, RIGHT_LABELS, true);
+    leftHost.classList.remove('is-live');
+    rightHost.classList.remove('is-live');
+    colsHost.classList.remove('is-live');
+    leftCol.classList.remove('now');
+    rightCol.classList.remove('now');
+    setBar(leftCol, 0);
+    setBar(rightCol, 0);
+    Array.prototype.slice.call(colsHost.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    lStamp.className = 'dm-stamp'; lStamp.textContent = '审理中';
+    rStamp.className = 'dm-stamp'; rStamp.textContent = '审理中';
+    lSheet.className = 'dm-sheet'; lSheet.style.opacity = '1';
+    lSheet.textContent = '问的是：出事之后，现场还能不能拼回来。';
+    rSheet.className = 'dm-sheet'; rSheet.style.opacity = '1';
+    rSheet.textContent = '问的是：出事之前，有没有一道门能说不。';
+    verdict.className = 'dm-verdict'; verdict.style.opacity = '1';
+    verdict.textContent = '两份判词还没对上。';
+    traceBox.classList.remove('is-live');
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    caseId = b.getAttribute('data-case');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-two-views'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

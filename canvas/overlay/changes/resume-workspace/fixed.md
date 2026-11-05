@@ -1,0 +1,1 @@
+- Embedded resume canvases use the host chat without displaying a duplicate floating-chat button.

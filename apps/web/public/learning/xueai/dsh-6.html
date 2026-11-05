@@ -1,0 +1,1260 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-6",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-6',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profile / Bundle / Patch：配置三层结构 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.25);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.05),0 0 0 52px rgba(77,107,254,.03)}
+.sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.prose{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+.ask{font-size:15px;font-weight:800;color:var(--accent-deep);margin:32px 0 12px;display:flex;align-items:center;gap:8px}
+.ask svg{flex:none;color:var(--accent)}
+.src-note{font-size:12px;color:var(--sub);line-height:1.8;margin:0 0 20px}
+.src-note code{color:var(--sub)}
+.stress{margin:32px auto;padding:24px;max-width:640px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--accent-deep);font-size:18px;font-weight:800;text-align:center;line-height:1.8}
+.core-visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:var(--shadow-card);margin:24px 0}
+.core-visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12px;color:var(--sub);text-align:center;margin-top:12px}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin:16px 0 20px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow-card)}
+.compare-card:last-child{grid-column:1/-1}
+.compare-card h3{margin:0 0 10px;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.compare-card h3 svg{color:var(--accent)}
+.compare-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:0 0 10px}.compare-card p:last-child{margin-bottom:0}
+.compare-card .tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;margin-bottom:10px;background:var(--accent-soft);color:var(--accent-deep)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,var(--accent-soft),var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:16px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 10px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin-bottom:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--text);display:flex;gap:14px;line-height:1.9;font-size:14px}.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+/* ── 交互演示：Patch 叠层沙盘（浅色） ── */
+.demo{background:var(--card);border:1px solid rgba(77,107,254,.25);border-radius:18px;padding:24px;box-shadow:var(--shadow-card)}
+.demo-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.demo-bar .grow{flex:1}
+.demo button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:9px 15px;border-radius:11px;border:1px solid rgba(77,107,254,.3);background:var(--bg);color:var(--accent-deep);font:600 13px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .2s}
+.demo button:hover{border-color:var(--accent)}
+.demo button.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(77,107,254,.3)}
+.demo button svg{flex:none}
+.demo-stage{display:grid;grid-template-columns:1.15fr 1fr;gap:20px;align-items:start;margin-top:4px}
+.layer-stack{display:flex;flex-direction:column-reverse;gap:10px}
+.layer{border:1.5px solid var(--border);background:var(--bg);border-radius:12px;padding:13px 16px;transition:all .35s;position:relative}
+.layer .lyr-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.layer .lyr-name{font-weight:800;font-size:13px;color:var(--text)}
+.layer .lyr-file{font:10.5px ui-monospace,Menlo,monospace;color:var(--sub);word-break:break-all}
+.layer .lyr-desc{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--sub)}
+.layer.on{border-color:rgba(77,107,254,.45);background:var(--accent-soft)}
+.layer.applying{border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,107,254,.18)}
+.layer.skipped{opacity:.38;filter:grayscale(1)}
+.lyr-toggle{margin-left:auto;min-height:32px!important;min-width:64px;padding:4px 10px!important;font-size:11px!important;border-radius:999px!important}
+.lyr-order{position:absolute;left:-9px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font:800 11px/20px sans-serif;text-align:center;opacity:0;transition:opacity .3s}
+.layer.applying .lyr-order,.layer.done .lyr-order{opacity:1}
+.layer.done{border-color:rgba(77,107,254,.35)}
+.result-pane{border:1.5px solid var(--border);border-radius:14px;background:var(--bg);overflow:hidden}
+.result-head{padding:9px 14px;background:var(--accent-soft);color:var(--accent-deep);font:700 11.5px ui-monospace,Menlo,monospace}
+.result-body{padding:12px 14px;min-height:150px}
+.field-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:9px;margin-bottom:6px;background:var(--card);border:1px solid var(--border);font:12px ui-monospace,Menlo,monospace;transition:all .35s}
+.field-row .fk{color:var(--sub);min-width:96px}
+.field-row .fv{color:var(--text);font-weight:700;word-break:break-all}
+.field-row .fsrc{margin-left:auto;font:700 9.5px sans-serif;letter-spacing:.4px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);white-space:nowrap}
+.field-row.gone{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.35)}
+.field-row.gone .fv{color:var(--danger);text-decoration:line-through;font-weight:600}
+.field-row.gone .fsrc{background:rgba(220,38,38,.12);color:var(--danger)}
+.field-row.fresh{border-color:rgba(77,107,254,.5);box-shadow:0 0 0 2px rgba(77,107,254,.15)}
+.field-row.kept{border-color:rgba(22,163,74,.45);background:rgba(22,163,74,.07)}
+.field-row.kept .fsrc{background:rgba(22,163,74,.12);color:var(--success)}
+.result-empty{font-size:12.5px;color:var(--sub);padding:10px 4px}
+.demo-caption{margin-top:20px;padding:14px 18px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.2);font-size:14px;line-height:1.8;color:var(--text);display:flex;gap:10px;align-items:flex-start;min-height:56px}
+.demo-caption svg{flex:0 0 auto;color:var(--accent);margin-top:3px}
+.demo-note{font-size:12px;color:var(--sub);margin-top:16px;line-height:1.8}
+.mode-hint{font:700 11px sans-serif;color:var(--sub);letter-spacing:.4px;margin-right:2px}
+@media(max-width:760px){
+  .compare{grid-template-columns:1fr}
+  .demo-stage{grid-template-columns:1fr}
+  .demo-bar{flex-direction:column;align-items:stretch}
+  .demo-bar .grow{display:none}
+  .demo button{width:100%}
+  .lyr-toggle{width:auto!important}
+  .source-head{flex-direction:column;gap:2px}
+  .objective{grid-template-columns:1fr}
+  .exercise{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+}
+</style>
+<meta name="description" content="DSH 的配置三层结构：Bundle 发行版默认、Profile 与 Home 用户覆盖、--patch 一次性实验，以及 patch 整条替换的取舍。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="Profile / Bundle / Patch：用户能把产品改到什么程度"><meta property="og:description" content="DSH 的配置三层结构：Bundle 发行版默认、Profile 与 Home 用户覆盖、--patch 一次性实验，以及 patch 整条替换的取舍。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-6.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 系统地图</div>
+    <h1>Profile / Bundle / Patch：用户能把产品改到什么程度</h1>
+    <p class="subtitle">不改源码也能换掉深层能力：配置由四层 patch 对着空数组叠出来，晚应用的赢，命中同一条就整条替换。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>配置三层结构怎么让用户不改源码就换掉深层能力</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：DSH 的配置为什么拆成 Bundle（发行版默认）、用户 patch（Profile 层 + Home 层）、<code>--patch</code>（一次性实验）这几层，层与层怎么排优先级；patch 命中同一条目时为什么是整条替换，这个选择会造成哪个反直觉结果；以及 <code>dsh --dump-config</code> 怎么把最终生效的配置摊开给你看。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · Patch 叠层沙盘</div>
+  <p class="reveal prose">下面的沙盘把四层配置做成了可开关的卡片，从下往上是应用顺序。点播放，看每一层怎么把自己的改动刷到右边的最终条目上。重点看第三层：它只写了一个字段，结果把下面两层辛苦设好的字段刷没了。玩完可以切到 deep-merge 对照模式，看同一份改动在合并语义下的另一种结局。</p>
+
+  <div id="demo-profile" class="demo reveal">
+    <div class="demo-bar">
+      <span class="mode-hint">语义</span>
+      <button class="md active" data-md="replace" type="button">整条替换（DSH 真实行为）</button>
+      <button class="md" data-md="merge" type="button">deep-merge 对照（假设）</button>
+      <span class="grow"></span>
+      <button id="dp-play" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>播放</button>
+      <button id="dp-step" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+      <button id="dp-reset" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+    </div>
+    <div class="demo-stage">
+      <div class="layer-stack" id="dp-stack"></div>
+      <div class="result-pane">
+        <div class="result-head">合成后的最终条目 · id: conversation-model</div>
+        <div class="result-body" id="dp-result"><div class="result-empty">空条目列表。DSH 的根配置就是一个空数组，插件树从零开始由 patch 一层层刷出来。</div></div>
+      </div>
+    </div>
+    <div class="demo-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg><span id="dp-status">点播放开始叠层，或点每层右侧的开关先改变参战名单。滚动到这里会自动播放一遍。</span></div>
+    <div class="demo-note">演示为教学化模拟：条目 id、字段与文件名做了简化，叠层顺序与替换语义对应 <code>apps/cli/src/profile-boot.ts</code> 第 121 至 129 行与 <code>vendor/include/src/index.ts</code> 第 58 至 128 行。deep-merge 模式是教学假设，DSH 未实现该语义。</div>
+  </div>
+
+  <div class="sec-label">先搞清楚三个名词</div>
+  <p class="reveal prose">先给结论：DSH 没有一个大而全的配置文件。它的产品形态是由一摞一摞的 patch 列表叠出来的，每一摞都有明确的归属方。</p>
+  <p class="reveal prose">Bundle 是发行版默认。它是一个 npm 包，实体就是包里带的那份 patch 列表。内置的三个是 base（共享核心）、web-app（浏览器表层）、headless（一次性任务模式）。</p>
+  <p class="reveal prose">Profile 是用户的一套组装。它是 <code>$DSH_HOME/profiles/&lt;name&gt;</code> 下的一个目录，manifest 里排好要用哪些 bundle、按什么顺序，旁边放一份用户自己的 patch 文件。首次使用 web 或 headless 这两个名字会自动初始化模板。</p>
+  <p class="reveal prose">Patch 是改动的最小单位。一条 patch 按 id 找到目标条目，改配置、禁用、或者 insert 新条目。树外插件也从这里进来：用 <code>dsh plugin add</code> 装进 profile，之后它就是普通的一层 patch。</p>
+  <p class="src-note reveal">出处：三个内置 bundle 与 package.json 里的 bundle 声明方式见 <code>packages/bundle/README.zh.md</code>；profile 模板自动初始化在 <code>apps/cli/src/profile.ts</code> 第 114 至 117 行。</p>
+
+  <div class="sec-label">设计思路一 · 每一层配置都有归属方</div>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>它解决什么问题</h3>
+  <p class="prose reveal">想象反面做法：一个大配置文件，发行版默认、这套组装的定制、个人偏好、临时实验全写在里面。三个月后升级发行版，新默认和你的旧改动搅在同一个文件里，你说不清哪一行是谁写的、哪一行能动，升级变成一场手工比对。</p>
+  <p class="prose reveal">还有更日常的翻车：想临时试一个实验模型，顺手改了配置忘了改回来，第二天整套环境跑的都是实验配置。根源是改动没有归属，谁写的、跟着什么走、什么时候该消失，一个文件说不清这三件事。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path><circle cx="12" cy="12" r="4"></circle></svg>思路是什么</h3>
+  <p class="prose reveal">DSH 把配置拆成四层，每层一个归属方：Bundle 跟着发行版走，Profile 跟着这套组装走，Home 跟着这台机器走，<code>--patch</code> 跟着这一次命令走。启动时对着一个空数组，按固定顺序把四层 patch 依次刷上去，晚应用的赢。</p>
+  <p class="prose reveal">起点真的是空数组：根配置文件的内容就是 <code>[]</code>，模板注释直接写着别改这个文件，去改 patch 文件。所有实际内容都由 patch insert 进来，所以最终插件树里的每一行配置都能回答自己从哪层来。</p>
+  <div class="core-visual reveal">
+    <svg viewBox="0 0 940 370" role="img" aria-label="配置四层叠加顺序示意图">
+      <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d6bfe"></path></marker></defs>
+      <text x="470" y="38" fill="var(--sub)" text-anchor="middle" font-size="13">四层 patch 按 1 到 4 依次应用，晚应用的赢</text>
+      <rect x="40" y="280" width="260" height="62" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="170" y="306" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">1 · Bundle 层</text>
+      <text x="170" y="328" fill="var(--sub)" text-anchor="middle" font-size="13">发行版默认，随 dsh 安装走</text>
+      <rect x="40" y="208" width="260" height="62" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="170" y="234" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">2 · Profile 用户层</text>
+      <text x="170" y="256" fill="var(--sub)" text-anchor="middle" font-size="13">跟着这套组装走</text>
+      <rect x="40" y="136" width="260" height="62" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="170" y="162" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">3 · Home 用户层</text>
+      <text x="170" y="184" fill="var(--sub)" text-anchor="middle" font-size="13">全机偏好，对每个 profile 生效</text>
+      <rect x="40" y="64" width="260" height="62" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="170" y="90" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">4 · --patch 覆盖层</text>
+      <text x="170" y="112" fill="var(--sub)" text-anchor="middle" font-size="13">一次性实验，随命令走</text>
+      <path d="M300 95 H350 V311 M300 167 H350 M300 239 H350 M300 311 H350" stroke="#4d6bfe" stroke-width="2" fill="none"></path>
+      <path d="M350 203 H392" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#ar)"></path>
+      <rect x="400" y="158" width="240" height="90" rx="14" fill="var(--accent-soft)" stroke="#4d6bfe"></rect>
+      <text x="520" y="194" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">对空数组按序应用</text>
+      <text x="520" y="220" fill="var(--sub)" text-anchor="middle" font-size="13">全库唯一的 patch 算法</text>
+      <path d="M640 188 H668 V121 H692" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#ar)"></path>
+      <rect x="700" y="86" width="210" height="70" rx="13" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="805" y="114" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">最终插件树</text>
+      <text x="805" y="138" fill="var(--sub)" text-anchor="middle" font-size="13">boot() 挂载运行</text>
+      <path d="M640 218 H668 V289 H692" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#ar)"></path>
+      <rect x="700" y="254" width="210" height="70" rx="13" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="805" y="282" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">dsh --dump-config</text>
+      <text x="805" y="306" fill="var(--sub)" text-anchor="middle" font-size="13">同一算法离线合成</text>
+    </svg>
+    <div class="visual-caption">同一摞 patch、同一个算法，挂载和 dump 的结果不可能漂移。</div>
+  </div>
+  <p class="prose reveal">两层用户 patch 的分工也讲究：Profile 层跟着这套组装走，Home 层是机器本地偏好，对每个 profile 都生效，所以排在 Profile 层之后、压过它。两层改同一个 id 时，赢家是 Home 层那条。<code>--patch</code> 排最后，用来做不想写进文件的一次性实验，可以重复传多份，按命令行顺序应用。长会话里两个用户层的文件还被 watch 着，改一下保存，运行中的树就按同样的层序重组一次。</p>
+  <p class="reveal prose">层序在源码里就是一个数组字面量：launcher 把组合好的 profile 摊平成一个 patch 数组，数组顺序就是应用顺序。这段函数短到能当金句看，它证明四层的先后被写死在一个数组里，没有任何条件分支：</p>
+  <div class="source reveal">
+    <div class="source-head"><span>apps/cli/src/profile-boot.ts</span><span>第 121 至 129 行</span></div>
+    <pre><code><span class="cm">/** The full patch stack of one composed profile, in application order. */</span>
+<span class="kw">function</span> <span class="fn">allPatches</span>(composed: <span class="ty">ComposedProfile</span>): <span class="ty">PatchOptions</span>[] {
+  <span class="kw">return</span> [
+    ...composed.bundlePatches,
+    ...composed.profile.patches,
+    ...composed.homePatches,
+    ...composed.overlays,
+  ]
+}</code></pre>
+  </div>
+  <div class="snapshot"><b>源码快照说明：</b>依据本地仓库 deepseek-harness-master，核对文件 <code>apps/cli/src/profile-boot.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+
+  <p class="src-note reveal">出处：根配置为空数组与模板注释在 <code>apps/cli/src/profile-boot.ts</code> 第 60 至 64 行；Home 层压过 Profile 层的理由在 <code>packages/boot/app-boot/README.zh.md</code> 第 43 行；--patch 可重复传在 <code>apps/cli/src/args.ts</code> 第 132 行；热重载见同包 <code>watchUserPatches</code>。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>为什么长期成立</h3>
+  <p class="prose reveal">分层覆盖是配置系统的通则：CSS 的层叠、systemd 的 drop-in 目录、编辑器里用户设置压过默认设置，全是同一个结构。只要一份产品同时被发行方、团队、个人、单次命令四种角色修改，层就必须分开，否则升级和回滚都无从下手。换个语言重写整个 harness，这四层还是这四层。</p>
+
+  <div class="sec-label">设计思路二 · 命中就整条替换</div>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>它解决什么问题</h3>
+  <p class="prose reveal">叠层还剩一个关键决定：两层 patch 改到同一个条目时怎么办？直觉答案是 deep-merge，字段级合并，上层只写想改的字段，其余字段自动保留，写起来省事。</p>
+  <p class="prose reveal">省事的代价有两个。第一，合并表达不了删除：下层设了一个字段，上层想把它去掉，merge 语义下没有这个动作，只能覆盖成别的值。第二，最终结果和任何一份文件的字面内容都对不上，排查配置时你得在脑子里把所有层的合并算法跑一遍，才知道现在生效的到底是什么。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path><circle cx="12" cy="12" r="4"></circle></svg>思路是什么</h3>
+  <p class="prose reveal">DSH 选了整条替换。patch 按 id 命中目标条目后，把 patch 里除 id 之外的每个顶层键直接赋值过去。<code>config</code> 是一个顶层键，所以旧 config 对象被整个换掉，里面的字段一个都不保留。想只改一个字段，也得把要保留的字段重新写一遍，这是官方文档明说的已知限制，原话是「profile 覆盖必须重述需要保留的组合包字段」。</p>
+  <p class="prose reveal">由此产生最容易踩的反直觉结果，就是演示第三层演的那一幕：Home 层只写了 model 一个字段，下面两层设好的 provider 和 temperature 被刷没了，而且没有任何警告，只有结果不对。顺带记三条行为边界：patch 指向不存在的 id 只警告不报错，一行 stderr 提示后跳过；patch 文件内容为空或只有注释会直接抛异常，因为解析结果不是列表；想让某一层什么都不做，写一个 <code>[]</code>。</p>
+  <p class="prose reveal">替换语义的回报在可预测性。这个算法全库只有一份：挂载用它，<code>dsh --dump-config</code> 的离线合成也用它，dump 出来的结果和真正启动的内容不可能漂移。算法的输入永远不被改动、结果永远是深拷贝，这样配置热重载时撤掉一条 patch 才能真的还原，早先的值不会被烤进缓存。配套还有一份所见即可改的地图：<code>docs/config-catalog.zh.md</code>，3152 行的生成文档，把每个可加载包的 config 类型原样列出来，想知道某条 patch 能写哪些键，查这份目录就行。</p>
+  <div class="stress reveal">dump 里看到什么，改配置就能得到什么。</div>
+  <p class="src-note reveal">出处：替换语义（顶层键逐个赋值）在 <code>vendor/include/src/index.ts</code> 第 110 至 124 行，唯一算法与不可变输入的承诺在同文件第 43 至 52 行的 JSDoc；整条替换的官方说明在 <code>packages/boot/app-boot/README.zh.md</code> 第 60 行。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>为什么长期成立</h3>
+  <p class="prose reveal">这是声明式配置里的一道老选择题：merge 的省事，还是 replace 的可读。替换语义让每个条目有唯一的最后作者，出了问题只要找到最后那条 patch，字面内容就是生效内容；代价是写的时候要重述。DSH 把账算在了可预测性这边。只要一个配置系统允许多方叠加、又要求用户能自助排查，这道题就存在，和实现语言没有关系。</p>
+
+  <div class="sec-label">横向对比 · 三家怎么做配置分层</div>
+  <div class="compare">
+    <div class="compare-card reveal">
+      <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness</h3>
+      <span class="tag">插件条目级 · 整条替换</span>
+      <p>层的单位是插件条目：一条 patch 换掉一整条 config。四层从 Bundle 到 --patch 顺序固定，根配置是空数组，一切内容可溯源到某一层。</p>
+      <p>换掉深层能力等于换掉一行条目：把 compaction 插件的 config 整条替换，甚至 insert 一个第三方实现。</p>
+    </div>
+    <div class="compare-card reveal">
+      <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code</h3>
+      <span class="tag">设置字段级 · 五层来源</span>
+      <p>SETTING_SOURCES 排了五层：userSettings、projectSettings、localSettings、flagSettings、policySettings，越靠后越大（settings/constants.ts 第 7 至 22 行）。管理员的 policy 层永远压顶，还有一批字段只在 managed 来源生效。</p>
+      <p>分层的对象是设置字段，改的是行为参数；插件树本身没有摆上配置台面。</p>
+    </div>
+    <div class="compare-card reveal">
+      <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build</h3>
+      <span class="tag">TOML 字段级 · deep merge</span>
+      <p>xai-grok-config 用 <code>deep_merge_toml</code> 递归合并（loader.rs 第 415 至 426 行）：表合并、数组替换、上层字段赢。层序是 system_managed、managed、user，requirements 与 MDM 管控层最后压顶（loader.rs 第 234 至 248 行）。</p>
+      <p>它选了 DSH 演示里那个 deep-merge 对照：改一个字段不用重述，但上层没法删掉下层的字段。</p>
+    </div>
+  </div>
+  <p class="reveal prose" style="margin-top:20px">对比焦点在两处。第一是合并语义：Grok 与 Claude Code 都是字段级合并，写起来省事；DSH 是条目级替换，写起来啰嗦，换来 dump 与文件字面一致的可预测性。第二是分层对象：那两家分的是设置字段，DSH 分的是插件树本身，所以用户能改到的深度不一样，patch 一条 insert 就能把第三方 compaction 实现接进主循环，这在前两家的配置系统里没有对应物。Claude Code 有 DSH 没有的东西也要说：管理员策略层和只在 managed 来源生效的锁定字段，DSH 目前没有等价机制，这一条基于已公开材料。</p>
+
+  <div class="sec-label">课堂练习</div>
+  <div class="exercise reveal">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>手推一次两层冲突</h3>
+      <p>Profile 层写 <code>id: conversation-model, config: { provider: deepseek, model: v3.2, temperature: 0.2 }</code>，Home 层写 <code>id: conversation-model, config: { temperature: 0 }</code>。</p>
+      <p>问题一：按整条替换语义写出最终条目的 config，指出哪些字段消失了、会不会有任何警告提示你。</p>
+      <p>问题二：把这两条 patch 对调所在层，结果变成什么？</p>
+      <p>问题三：用 <code>dsh --dump-config</code> 的思路说明怎么在不启动的情况下验证你的答案。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>DSH 的配置是四层 patch 对着空数组刷出来的，顺序是 Bundle、Profile、Home、--patch，晚应用的赢。patch 命中同一 id 时整条替换 config，不做字段合并，想保留的字段必须重述。同一个算法既管挂载也管 dump，所以 --dump-config 看到什么，改配置就能得到什么。</span>
+  </div>
+</article>
+<script>
+(function () {
+  'use strict';
+  var stackEl = document.getElementById('dp-stack');
+  var resultEl = document.getElementById('dp-result');
+  var statusEl = document.getElementById('dp-status');
+  var mode = 'replace';
+  var steps = [];
+  var idx = 0;
+  var timer = null;
+  var playing = false;
+  var runId = 0;
+  var FIELDS = ['provider', 'model', 'temperature'];
+
+  var LAYERS = [
+    { key: 'bundle', name: '1 · Bundle 层（发行版默认）', file: 'dsh-base/cordis.patch.yml', on: true, fixed: true,
+      yaml: '新建条目，写入整条 config：provider 是 deepseek，model 是 v3.2，temperature 是 0.7',
+      patch: { provider: 'deepseek', model: 'v3.2', temperature: '0.7' }, insert: true },
+    { key: 'profile', name: '2 · Profile 用户层', file: 'profiles/web/cordis.patch.yml', on: true, fixed: false,
+      yaml: '重写整条 config：温度降到 0.2，要保留的 provider 和 model 也重新写了一遍',
+      patch: { provider: 'deepseek', model: 'v3.2', temperature: '0.2' } },
+    { key: 'home', name: '3 · Home 用户层（全机偏好）', file: '$DSH_HOME/cordis.patch.yml', on: true, fixed: false,
+      yaml: '只写了一个字段：model 换成 r1，别的什么都没写',
+      patch: { model: 'r1' } },
+    { key: 'overlay', name: '4 · --patch 覆盖层（一次性实验）', file: 'dsh web --patch ./exp.yml', on: false, fixed: false,
+      yaml: '重写整条 config：换实验模型 v3.2-exp，provider 和 temperature 都重述了',
+      patch: { provider: 'deepseek', model: 'v3.2-exp', temperature: '0.2' } }
+  ];
+
+  function buildStack() {
+    stackEl.innerHTML = '';
+    LAYERS.forEach(function (l, i) {
+      var card = document.createElement('div');
+      card.className = 'layer' + (l.on ? ' on' : ' skipped');
+      card.setAttribute('data-k', l.key);
+      var head = document.createElement('div');
+      head.className = 'lyr-head';
+      var nm = document.createElement('span'); nm.className = 'lyr-name'; nm.textContent = l.name;
+      head.appendChild(nm);
+      if (!l.fixed) {
+        var tg = document.createElement('button');
+        tg.type = 'button';
+        tg.className = 'lyr-toggle' + (l.on ? ' active' : '');
+        tg.textContent = l.on ? '参与' : '关闭';
+        tg.addEventListener('click', function () { l.on = !l.on; reset(); });
+        head.appendChild(tg);
+      }
+      var file = document.createElement('div'); file.className = 'lyr-file'; file.textContent = l.file;
+      var yml = document.createElement('div'); yml.className = 'lyr-desc'; yml.textContent = l.yaml;
+      var ord = document.createElement('span'); ord.className = 'lyr-order'; ord.textContent = String(i + 1);
+      card.appendChild(ord);
+      card.appendChild(head);
+      card.appendChild(file);
+      card.appendChild(yml);
+      stackEl.appendChild(card);
+    });
+  }
+
+  function layerCard(key) { return stackEl.querySelector('[data-k="' + key + '"]'); }
+
+  function renderResult(state, marks) {
+    resultEl.innerHTML = '';
+    var any = false;
+    FIELDS.forEach(function (f) {
+      var cell = state[f];
+      var row = document.createElement('div');
+      var cls = 'field-row';
+      if (marks && marks.gone && marks.gone.indexOf(f) !== -1) cls += ' gone';
+      if (marks && marks.fresh && marks.fresh.indexOf(f) !== -1) cls += ' fresh';
+      if (marks && marks.kept && marks.kept.indexOf(f) !== -1) cls += ' kept';
+      row.className = cls;
+      var srcName = cell ? cell.src : (marks && marks.goneSrc && marks.goneSrc[f] ? marks.goneSrc[f] : '');
+      row.innerHTML = '<span class="fk">' + f + '</span><span class="fv">' + (cell ? cell.v : '已丢失') + '</span>'
+        + (srcName ? '<span class="fsrc">' + srcName + '</span>' : '');
+      if (cell || (marks && marks.gone && marks.gone.indexOf(f) !== -1)) { resultEl.appendChild(row); any = true; }
+    });
+    if (!any) {
+      resultEl.innerHTML = '<div class="result-empty">空条目列表。DSH 的根配置就是一个空数组，插件树从零开始由 patch 一层层刷出来。</div>';
+    }
+  }
+
+  var SRC_LABEL = { bundle: 'Bundle', profile: 'Profile', home: 'Home', overlay: '--patch' };
+
+  function buildSteps() {
+    var list = [];
+    var state = {};
+    list.push({
+      caption: '起点：composeEntries 拿到的是空条目列表。四层 patch 将按 1 到 4 的顺序刷上去，语义是' + (mode === 'replace' ? '整条替换（DSH 真实行为）' : 'deep-merge（教学对照，DSH 未实现）') + '。',
+      run: function () { renderResult({}); markLayer(null); }
+    });
+    LAYERS.forEach(function (l) {
+      if (!l.on) return;
+      list.push({
+        caption: captionFor(l, state),
+        run: (function (snapshot, layer) {
+          return function () {
+            markLayer(layer.key);
+            renderResult(snapshot.state, snapshot.marks);
+          };
+        })(applyLayer(state, l), l)
+      });
+    });
+    var finalCap;
+    if (mode === 'replace') {
+      var homeOn = LAYERS[2].on, overlayOn = LAYERS[3].on;
+      if (homeOn && !overlayOn) finalCap = '终局：Home 层只写了 model，整条替换把 provider 和 temperature 刷没了。没有报错、只有结果不对，这就是最容易踩的坑。修法：在 Home 层把要保留的字段重新写一遍。';
+      else if (overlayOn) finalCap = '终局：--patch 是最后一层，实验配置整条生效。命令行一撤，下次启动自动回到文件层的结果，一次性实验不留痕。';
+      else finalCap = '终局：Profile 层重述了所有字段，所以替换语义下没丢任何东西。重述就是整条替换语义下的正确姿势。';
+    } else {
+      finalCap = '终局：deep-merge 语义下 Home 层只改了 model，其余字段保留，看起来更贴心。但 DSH 没选它：合并没法表达删除，而且最终结果和任何一份文件的字面内容都对不上，dump 的可预测性就没了。';
+    }
+    list.push({ caption: finalCap, run: function () { markLayer(null, true); } });
+    return list;
+  }
+
+  function applyLayer(state, l) {
+    var marks = { fresh: [], kept: [], gone: [], goneSrc: {} };
+    if (l.insert || mode === 'merge') {
+      FIELDS.forEach(function (f) {
+        if (l.patch[f] !== undefined) {
+          state[f] = { v: l.patch[f], src: SRC_LABEL[l.key] };
+          marks.fresh.push(f);
+        } else if (state[f] && mode === 'merge') {
+          marks.kept.push(f);
+        }
+      });
+    } else {
+      FIELDS.forEach(function (f) {
+        if (l.patch[f] !== undefined) {
+          state[f] = { v: l.patch[f], src: SRC_LABEL[l.key] };
+          marks.fresh.push(f);
+        } else if (state[f]) {
+          marks.gone.push(f);
+          marks.goneSrc[f] = '被 ' + SRC_LABEL[l.key] + ' 替换掉';
+          delete state[f];
+        }
+      });
+    }
+    return { state: JSON.parse(JSON.stringify(state)), marks: marks };
+  }
+
+  function captionFor(l, state) {
+    if (l.key === 'bundle') return '第 1 层 Bundle：发行版默认。insert 一条 conversation-model，三个字段都有值。这层随 dsh 安装走，用户不改它。';
+    if (l.key === 'profile') return '第 2 层 Profile：用户想把温度降到 0.2。注意写法：provider 和 model 也重新写了一遍，这是整条替换语义下的自保动作。';
+    if (l.key === 'home') {
+      return mode === 'replace'
+        ? '第 3 层 Home：全机偏好想换成 r1 模型，但只写了 model 一个字段。整条替换发动：新 config 就是 { model: r1 }，下面两层设好的 provider 和 temperature 被刷掉了。'
+        : '第 3 层 Home：同一份只写 model 的 patch，在 deep-merge 语义下只更新 model 字段，provider 和 temperature 原样保留（绿色标注）。';
+    }
+    return '第 4 层 --patch：命令行传入的一次性实验配置，排在最后、压过所有文件层。重述了三个字段，所以两种语义下结果相同。';
+  }
+
+  function markLayer(key, doneAll) {
+    var kids = Array.prototype.slice.call(stackEl.children);
+    var keyIdx = -1;
+    kids.forEach(function (el, i) { if (el.getAttribute('data-k') === key) keyIdx = i; });
+    kids.forEach(function (el, i) {
+      el.classList.remove('applying');
+      if (doneAll) { if (!el.classList.contains('skipped')) el.classList.add('done'); return; }
+      if (key === null) { el.classList.remove('done'); return; }
+      if (i === keyIdx) {
+        el.classList.add('applying');
+      } else if (i < keyIdx && !el.classList.contains('skipped')) {
+        el.classList.add('done');
+      }
+    });
+  }
+
+  function setStatus(t) { statusEl.textContent = t; }
+
+  function reset() {
+    runId++;
+    playing = false;
+    clearTimeout(timer);
+    idx = 0;
+    buildStack();
+    renderResult({});
+    steps = buildSteps();
+    setStatus('已重置。点播放按当前的层开关与语义跑一遍，或点单步逐层推进。');
+  }
+
+  function doStep() {
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    setStatus(s.caption);
+    if (s.run) s.run();
+    if (playing) timer = setTimeout(doStep, 2100);
+  }
+  function play() {
+    if (playing) return;
+    if (idx >= steps.length) reset();
+    playing = true;
+    doStep();
+  }
+  function stepOnce() {
+    playing = false;
+    clearTimeout(timer);
+    if (idx >= steps.length) { reset(); return; }
+    doStep();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#demo-profile .md'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#demo-profile .md'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      mode = btn.getAttribute('data-md');
+      reset();
+    });
+  });
+  document.getElementById('dp-play').addEventListener('click', play);
+  document.getElementById('dp-step').addEventListener('click', stepOnce);
+  document.getElementById('dp-reset').addEventListener('click', reset);
+
+  reset();
+  (function hookAutoplay(tries) {
+    if (typeof window.lessonOnView === 'function') {
+      window.lessonOnView(document.getElementById('demo-profile'), play);
+    } else if (tries > 0) {
+      setTimeout(function () { hookAutoplay(tries - 1); }, 120);
+    }
+  })(50);
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

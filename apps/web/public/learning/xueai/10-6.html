@@ -1,0 +1,1209 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"10-6",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=10-6',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Think Tool：让 AI 先想后做 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}} body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+.desc{font-size:16px;color:var(--sub);line-height:1.8;margin-bottom:8px}
+
+/* 问题场景卡 */
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px}
+@media(max-width:768px){.scenario-grid{grid-template-columns:1fr}}
+.scenario-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:10px}
+.scenario-card .sc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scenario-card .sc-icon.red{background:rgba(220,38,38,.08);color:var(--danger)}
+.scenario-card .sc-icon.amber{background:rgba(217,119,6,.08);color:var(--amber)}
+.scenario-card .sc-icon.purple{background:rgba(124,58,237,.08);color:var(--purple)}
+.scenario-card h4{font-size:15px;font-weight:800;color:var(--text);margin:0}
+.scenario-card p{font-size:13.5px;color:var(--sub);line-height:1.7;margin:0}
+
+/* 思考模式对比 */
+.think-compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+@media(max-width:768px){.think-compare{grid-template-columns:1fr}}
+.think-box{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:14px}
+.think-box h3{font-size:17px;font-weight:800;margin:0;display:flex;align-items:center;gap:8px}
+.think-box.ext h3{color:var(--purple)}
+.think-box.tool h3{color:var(--accent)}
+.think-tag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.5px}
+.think-tag.ext{background:rgba(124,58,237,.1);color:var(--purple)}
+.think-tag.tool{background:rgba(0,102,255,.1);color:var(--accent)}
+
+/* 时间线 */
+.timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:24px}
+.timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.tl-node{position:relative;padding:8px 0 8px 16px;font-size:13px;line-height:1.5}
+.tl-node::before{content:'';position:absolute;left:-20px;top:12px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--card)}
+.tl-node.think::before{background:rgba(0,102,255,.15);border-color:var(--accent)}
+.tl-node.ext-think::before{background:rgba(124,58,237,.15);border-color:var(--purple)}
+.tl-node.action::before{background:rgba(22,163,74,.15);border-color:var(--success)}
+.tl-node .tl-label{font-weight:700;font-size:12px;letter-spacing:.3px;margin-bottom:2px}
+.tl-node.think .tl-label{color:var(--accent)}
+.tl-node.ext-think .tl-label{color:var(--purple)}
+.tl-node.action .tl-label{color:var(--success)}
+.tl-node .tl-content{color:var(--sub)}
+
+/* 代码块 */
+.code-panel{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card);margin-top:8px}
+.code-header{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg);font-size:13px;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:8px}
+.code-body{padding:16px 20px;font-family:"SF Mono","Fira Code",Menlo,monospace;font-size:13px;line-height:1.7;color:var(--text);overflow-x:auto;white-space:pre-wrap}
+.code-body .hl-key{color:var(--accent);font-weight:700}
+.code-body .hl-str{color:var(--success)}
+.code-body .hl-comment{color:var(--sub);font-style:italic}
+
+/* 数据卡 */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+@media(max-width:768px){.stat-grid{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);text-align:center;display:flex;flex-direction:column;gap:8px}
+.stat-card .stat-label{font-size:13px;font-weight:700;color:var(--sub);letter-spacing:.3px}
+.stat-card .stat-row{display:flex;align-items:baseline;justify-content:center;gap:12px;flex-wrap:wrap}
+.stat-card .stat-before{font-size:22px;font-weight:700;color:var(--sub);text-decoration:line-through;opacity:.6}
+.stat-card .stat-arrow{color:var(--sub)}
+.stat-card .stat-after{font-size:28px;font-weight:900;color:var(--success)}
+.stat-card .stat-delta{font-size:15px;font-weight:800;color:var(--success);background:rgba(22,163,74,.08);padding:3px 12px;border-radius:6px;display:inline-block}
+
+/* 场景列表 */
+.use-cases{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+@media(max-width:768px){.use-cases{grid-template-columns:1fr}}
+.use-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-card)}
+.use-card h4{font-size:15px;font-weight:800;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.use-card.good h4{color:var(--success)}
+.use-card.bad h4{color:var(--danger)}
+.use-card ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.use-card li{font-size:13.5px;color:var(--sub);line-height:1.6;padding-left:20px;position:relative}
+.use-card.good li::before{content:'';position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:rgba(22,163,74,.2);border:2px solid var(--success)}
+.use-card.bad li::before{content:'';position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:50%;background:rgba(220,38,38,.2);border:2px solid var(--danger)}
+
+/* takeaway */
+.takeaway{background:rgba(0,102,255,.04);border:1.5px solid rgba(0,102,255,.18);border-radius:var(--radius);padding:16px 20px;font-size:15px;color:var(--text);display:flex;gap:10px;line-height:1.7;margin-top:20px}
+.takeaway b{color:var(--accent)}
+
+/* 更新标记 */
+.update-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(217,119,6,.1);color:var(--amber);margin-left:6px;vertical-align:2px}
+
+/* ===== 交互演示 ===== */
+.sim-demo{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card)}
+.sim-tabs{display:flex;border-bottom:1.5px solid var(--border);background:var(--bg)}
+.sim-tab{flex:1;padding:12px 16px;font-size:14px;font-weight:700;border:none;background:none;cursor:pointer;color:var(--sub);transition:all .2s}
+.sim-tab.active{color:var(--accent);background:var(--card);box-shadow:inset 0 -2.5px 0 var(--accent)}
+.sim-tab:hover:not(.active){background:rgba(0,102,255,.03)}
+.sim-scene{padding:12px 20px;background:rgba(0,102,255,.03);border-bottom:1px solid var(--border)}
+.sim-scene-label{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:8px;line-height:1.6}
+.sim-chat{padding:20px;min-height:120px;display:flex;flex-direction:column;gap:12px}
+.sim-msg{padding:12px 16px;border-radius:12px;font-size:13.5px;line-height:1.7;max-width:88%;opacity:0;transform:translateY(12px);transition:opacity .3s ease,transform .3s ease}
+.sim-msg.show{opacity:1;transform:translateY(0)}
+.sim-msg.user{background:var(--bg);border:1px solid var(--border);align-self:flex-end;color:var(--text)}
+.sim-msg.agent{background:rgba(0,102,255,.06);border:1px solid rgba(0,102,255,.15);align-self:flex-start;color:var(--text)}
+.sim-msg.think{background:rgba(234,179,8,.06);border:2px dashed rgba(234,179,8,.4);align-self:flex-start;color:var(--text)}
+.sim-msg.tool{background:rgba(22,163,74,.04);border:1px solid rgba(22,163,74,.2);align-self:flex-start;font-family:"SF Mono","Fira Code",Menlo,monospace;font-size:12.5px;color:var(--text)}
+.sim-msg.result-bad{background:rgba(220,38,38,.05);border:2px solid rgba(220,38,38,.4);align-self:flex-start;color:var(--danger);font-weight:600}
+.sim-msg.result-good{background:rgba(22,163,74,.05);border:2px solid rgba(22,163,74,.4);align-self:flex-start;color:var(--success);font-weight:600}
+.sim-msg-label{font-size:11px;font-weight:700;letter-spacing:.3px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.sim-msg.user .sim-msg-label{color:var(--sub)}
+.sim-msg.agent .sim-msg-label{color:var(--accent)}
+.sim-msg.think .sim-msg-label{color:rgba(180,130,0,1)}
+.sim-msg.tool .sim-msg-label{color:var(--success)}
+.sim-msg.result-bad .sim-msg-label{color:var(--danger)}
+.sim-msg.result-good .sim-msg-label{color:var(--success)}
+.sim-controls{padding:16px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg)}
+.sim-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:1.5px solid var(--accent);background:rgba(0,102,255,.06);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.sim-btn:hover{background:var(--accent);color:#fff}
+.sim-btn:disabled{opacity:.4;cursor:not-allowed}
+.sim-btn:disabled:hover{background:rgba(0,102,255,.06);color:var(--accent)}
+.sim-btn-reset{border-color:var(--border);background:none;color:var(--sub)}
+.sim-btn-reset:hover{background:var(--border);color:var(--text)}
+.sim-step-count{font-size:12px;color:var(--sub);margin-left:auto}
+</style>
+<meta name="description" content="Think Tool 是一种特殊工具：没有副作用，只让 Agent 在行动中暂停思考。在复杂工具链和策略密集场景中，效果提升 54%。">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="Think Tool：让 AI 先想后做">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/10-6.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/10-6.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><meta property="og:description" content="Think Tool 是一种特殊工具：没有副作用，只让 Agent 在行动中暂停思考。在复杂工具链和策略密集场景中，效果提升 54%。"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+
+  <header class="lesson-header">
+    <div class="kicker">工具设计的艺术</div>
+    <h1>Think Tool：让 AI 先想后做</h1>
+    <p class="subtitle">Agent 在执行长工具链时，经常忘记前面的信息，或者在需要权衡多条规则时犯错。实践证明，给 Agent 一个停下来想一想的工具，就能大幅提升准确率。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>在复杂工具链中给 Agent 一个暂停思考的空间，τ-bench 性能提升 54%</p></aside><!--seo:end-->  <!-- ===== 问题场景 ===== -->
+  <div class="sec-label">问题场景：Agent 为什么会犯错</div>
+
+  <div class="scenario-grid">
+    <div class="scenario-card reveal">
+      <div class="sc-icon red">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <h4>信息在工具链中丢失</h4>
+      <p>Agent 调用了 5 个工具后，早期工具返回的关键信息被后续的大量上下文淹没，模型不再关注它。</p>
+    </div>
+    <div class="scenario-card reveal">
+      <div class="sc-icon amber">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      </div>
+      <h4>策略密集型决策</h4>
+      <p>客服场景有 20 条退款政策、6 种例外情况。Agent 需要同时考虑多条规则才能做出正确判断，但它常常只看到了最近的几条。</p>
+    </div>
+    <div class="scenario-card reveal">
+      <div class="sc-icon purple">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+      </div>
+      <h4>串行依赖决策</h4>
+      <p>每一步都基于前一步的结果。Agent 在第 3 步做决策时，需要回忆第 1 步的上下文，但那已经在 2000 个 Token 之前了。</p>
+    </div>
+  </div>
+
+  <!-- ===== Think Tool 是什么 ===== -->
+  <div class="sec-label">什么是 Think Tool</div>
+
+  <div class="l-callout reveal">
+    <b>一句话：</b>Think Tool 是一个没有副作用的特殊工具。它不会查数据库、不会调 API、不会改任何状态。它唯一的作用是让 Agent <b>把思考过程写下来</b>，强制自己想清楚再行动。
+  </div>
+
+  <div class="think-compare" style="margin-top:16px">
+    <div class="think-box ext reveal">
+      <h3><span class="think-tag ext">Extended Thinking</span></h3>
+      <div style="font-size:14px;color:var(--sub);line-height:1.7">模型在<b>生成回复之前</b>进行深度思考。适合需要一次性想清楚的复杂推理问题。</div>
+      <div class="timeline">
+        <div class="tl-node ext-think"><div class="tl-label">THINK</div><div class="tl-content">深度思考，规划方案</div></div>
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">调用工具 A</div></div>
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">调用工具 B</div></div>
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">生成回复</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--purple);font-weight:600">思考发生在开头，之后一路执行</div>
+    </div>
+    <div class="think-box tool reveal">
+      <h3><span class="think-tag tool">Think Tool</span></h3>
+      <div style="font-size:14px;color:var(--sub);line-height:1.7">Agent 在<b>执行过程中</b>随时暂停思考。适合需要中途整理信息、重新评估策略的长链场景。</div>
+      <div class="timeline">
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">调用工具 A，获取用户订单</div></div>
+        <div class="tl-node think"><div class="tl-label">THINK</div><div class="tl-content">结合政策 3 和 7，这种情况...</div></div>
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">调用工具 B，查退款记录</div></div>
+        <div class="tl-node think"><div class="tl-label">THINK</div><div class="tl-content">用户已退过 2 次，触发规则 12...</div></div>
+        <div class="tl-node action"><div class="tl-label">ACTION</div><div class="tl-content">做出最终决策</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--accent);font-weight:600">思考穿插在行动之间，步步为营</div>
+    </div>
+  </div>
+
+  <!-- ===== 实现 ===== -->
+  <div class="sec-label">实现：极其简单</div>
+
+  <p class="desc reveal">Think Tool 的实现简单到令人惊讶：它就是一个只接受一段文字、什么都不做的工具。</p>
+
+  <div class="code-panel reveal paywall-locked xa-peek">
+    <div class="code-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+      Think Tool 定义 (JSON)
+    </div>
+    <div class="code-body">{
+  <span class="hl-key">"name"</span>: <span class="hl-str">"think"</span>,
+  <span class="hl-key">"description"</span>: <span class="hl-str">"Use the tool to think about something.
+    It will not obtain new information or change
+    the database, but just append the thought
+    to the log."</span>,
+  <span class="hl-key">"input_schema"</span>: {
+    <span class="hl-key">"type"</span>: <span class="hl-str">"object"</span>,
+    <span class="hl-key">"properties"</span>: {
+      <span class="hl-key">"thought"</span>: {
+        <span class="hl-key">"type"</span>: <span class="hl-str">"string"</span>,
+        <span class="hl-key">"description"</span>: <span class="hl-str">"A thought to think about."</span>
+      }
+    },
+    <span class="hl-key">"required"</span>: [<span class="hl-str">"thought"</span>]
+  }
+}</div>
+  </div>
+
+  <div class="l-callout reveal paywall-locked" style="margin-top:16px">
+    <b>为什么不直接在 System Prompt 里说「请先想清楚」？</b>因为 Agent 在工具调用模式下，思考和调用工具是两种不同的输出格式。把思考包装成一个工具调用，能让 Agent 在工具链的流程中自然地插入一段思考，保持工具调用的节奏。
+  </div>
+
+  <!-- ===== 效果数据 ===== -->
+  <div class="sec-label paywall-locked">效果：有多好用数据说话</div>
+
+  <p class="desc reveal paywall-locked">在 <b>τ-bench</b>（一个模拟真实客服场景的 Agent 评测基准）上测试 Think Tool 的效果：</p>
+
+  <div class="stat-grid paywall-locked">
+    <div class="stat-card reveal">
+      <div class="stat-label">τ-bench Airline（航空客服）</div>
+      <div class="stat-row">
+        <span class="stat-before">0.570</span>
+        <span class="stat-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+        <span class="stat-after">0.878</span>
+      </div>
+      <div class="stat-delta">+54% 提升</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-label">τ-bench Retail（零售客服）</div>
+      <div class="stat-row">
+        <span class="stat-before">0.812</span>
+        <span class="stat-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+        <span class="stat-after">0.904</span>
+      </div>
+      <div class="stat-delta">+11% 提升</div>
+    </div>
+  </div>
+
+  <div class="l-callout reveal paywall-locked" style="margin-top:16px">
+    <b>注意航空场景的提升幅度。</b>航空退改签政策比零售复杂得多（不同舱位、不同时段、不同会员等级），策略密度越高，Think Tool 的价值越大。
+  </div>
+
+  <!-- ===== 交互演示 ===== -->
+  <div class="sec-label paywall-locked">动手试试：模拟客服 Agent</div>
+
+  <p class="desc reveal paywall-locked">点击下方 Tab 切换模式，然后逐步展开 Agent 的处理过程。看看有没有 Think Tool，结果会有多大差异。</p>
+
+  <div class="sim-demo reveal paywall-locked">
+    <div class="sim-tabs">
+      <button class="sim-tab active" data-tab="no-think">无 Think Tool</button>
+      <button class="sim-tab" data-tab="with-think">有 Think Tool</button>
+    </div>
+    <div class="sim-scene">
+      <div class="sim-scene-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        场景：用户要退一张 36 小时前购买的机票（政策：24 小时内全额退款，超过扣手续费）
+      </div>
+    </div>
+    <div class="sim-chat" id="sim-chat">
+      <!-- messages injected by JS -->
+    </div>
+    <div class="sim-controls">
+      <button class="sim-btn" id="sim-next">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        下一步
+      </button>
+      <button class="sim-btn sim-btn-reset" id="sim-reset">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        重置
+      </button>
+      <span class="sim-step-count" id="sim-step-count"></span>
+    </div>
+  </div>
+
+  <!-- ===== 适用场景 ===== -->
+  <div class="sec-label paywall-locked">什么时候用 Think Tool <span class="update-badge">2025.12 更新</span></div>
+
+  <div class="use-cases paywall-locked">
+    <div class="use-card good reveal">
+      <h4>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        适用场景
+      </h4>
+      <ul>
+        <li><b>复杂工具链</b>：调用 5+ 个工具，中途需要整理和重新评估</li>
+        <li><b>策略密集环境</b>：需要同时考虑多条业务规则（如客服政策、审批流程）</li>
+        <li><b>串行依赖决策</b>：每步决策依赖前一步结果，需要承上启下的思考</li>
+        <li><b>多轮信息聚合</b>：从多个工具返回中拼凑完整图景</li>
+      </ul>
+    </div>
+    <div class="use-card bad reveal">
+      <h4>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        不适用场景
+      </h4>
+      <ul>
+        <li><b>简单工具调用</b>：查天气、读文件这类一步到位的操作，Think Tool 是多余的开销</li>
+        <li><b>非序列任务</b>：各步骤相互独立、不需要前后关联的场景</li>
+        <li><b>已有 Extended Thinking 的场景</b>：如果模型支持深度思考，简单任务用 Extended Thinking 更直接</li>
+        <li><b>纯生成任务</b>：写文章、翻译等不涉及工具调用的场景</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="l-callout reveal paywall-locked" style="margin-top:16px">
+    <b>2025 年 12 月更新：</b>业界进一步明确了 Think Tool 和 Extended Thinking 的分工：简单任务直接用 Extended Thinking，<b>Think Tool 的真正价值在于长链路中的中途暂停</b>，让 Agent 在行动之间重新整理思路。
+  </div>
+
+  <!-- ===== Takeaway ===== -->
+  <div class="takeaway reveal paywall-locked">
+    <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path></svg></span>
+    <span><b>有时候最有用的工具就是停下来想一想。</b>Think Tool 不获取信息、不改变状态，但它给了 Agent 一个在行动链中暂停、整理、反思的机会。越复杂的任务，这种暂停的价值越大。</span>
+  </div>
+
+</article>
+
+
+
+<script>
+document.querySelectorAll('.reveal').forEach(function(el){
+  var ob = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('show'); ob.unobserve(e.target); }});
+  }, {threshold:0.15});
+  ob.observe(el);
+});
+
+(function(){
+  var BULB_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>';
+  var TOOL_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+  var USER_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  var AGENT_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  var WARN_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  var CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+  var flows = {
+    'no-think': [
+      {type:'user', label:USER_SVG+' 用户', text:'我要退昨天买的机票，订单号 BK-1234'},
+      {type:'agent', label:AGENT_SVG+' Agent', text:'好的，正在为您取消订单并退款...'},
+      {type:'tool', label:TOOL_SVG+' 工具调用', text:'cancel_booking(booking_id="BK-1234")'},
+      {type:'tool', label:TOOL_SVG+' 工具返回', text:'{"status": "cancelled", "refund": "$450", "message": "全额退款成功"}'},
+      {type:'result-bad', label:WARN_SVG+' 违规结果', text:'实际购买时间：36 小时前，超出 24 小时全额退款窗口。正确退款应为 $315（$450 - $135 手续费）。Agent 多退了 $135，违反退款政策。'}
+    ],
+    'with-think': [
+      {type:'user', label:USER_SVG+' 用户', text:'我要退昨天买的机票，订单号 BK-1234'},
+      {type:'think', label:BULB_SVG+' Think Tool', text:'think("用户说「昨天」买的票，但「昨天」是模糊表述。退款政策要求24小时内全额退款，超过则扣手续费。我需要先查询订单的确切购买时间，不能直接取消。")'},
+      {type:'tool', label:TOOL_SVG+' 工具调用', text:'get_booking(booking_id="BK-1234")'},
+      {type:'tool', label:TOOL_SVG+' 工具返回', text:'{"booking_id": "BK-1234", "price": "$450", "purchased_at": "36 hours ago", "status": "active"}'},
+      {type:'think', label:BULB_SVG+' Think Tool', text:'think("购买时间是 36 小时前，超过了 24 小时的全额退款窗口。根据政策，需要扣除 30% 手续费：$450 x 30% = $135。应退金额 = $450 - $135 = $315。")'},
+      {type:'tool', label:TOOL_SVG+' 工具调用', text:'cancel_booking(booking_id="BK-1234", refund_amount=315)'},
+      {type:'result-good', label:CHECK_SVG+' 正确结果', text:'退款 $315（已扣除 $135 手续费）。符合 24 小时退款政策，正确执行。'}
+    ]
+  };
+
+  var currentTab = 'no-think';
+  var currentStep = 0;
+  var chatEl = document.getElementById('sim-chat');
+  var nextBtn = document.getElementById('sim-next');
+  var resetBtn = document.getElementById('sim-reset');
+  var countEl = document.getElementById('sim-step-count');
+
+  function render(){
+    chatEl.innerHTML = '';
+    var flow = flows[currentTab];
+    for(var i = 0; i < currentStep; i++){
+      var msg = flow[i];
+      var div = document.createElement('div');
+      div.className = 'sim-msg ' + msg.type;
+      div.innerHTML = '<div class="sim-msg-label">' + msg.label + '</div><div>' + msg.text + '</div>';
+      chatEl.appendChild(div);
+      (function(d){
+        setTimeout(function(){ d.classList.add('show'); }, 50);
+      })(div);
+    }
+    countEl.textContent = currentStep + ' / ' + flow.length;
+    nextBtn.disabled = currentStep >= flow.length;
+  }
+
+  function switchTab(tab){
+    currentTab = tab;
+    currentStep = 0;
+    document.querySelectorAll('.sim-tab').forEach(function(t){
+      t.classList.toggle('active', t.getAttribute('data-tab') === tab);
+    });
+    render();
+  }
+
+  document.querySelectorAll('.sim-tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      switchTab(this.getAttribute('data-tab'));
+    });
+  });
+
+  nextBtn.addEventListener('click', function(){
+    var flow = flows[currentTab];
+    if(currentStep < flow.length){
+      currentStep++;
+      var msg = flow[currentStep - 1];
+      var div = document.createElement('div');
+      div.className = 'sim-msg ' + msg.type;
+      div.innerHTML = '<div class="sim-msg-label">' + msg.label + '</div><div>' + msg.text + '</div>';
+      chatEl.appendChild(div);
+      setTimeout(function(){ div.classList.add('show'); }, 30);
+      countEl.textContent = currentStep + ' / ' + flow.length;
+      nextBtn.disabled = currentStep >= flow.length;
+    }
+  });
+
+  resetBtn.addEventListener('click', function(){
+    currentStep = 0;
+    render();
+  });
+
+  render();
+})();
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

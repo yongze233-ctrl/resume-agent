@@ -1,0 +1,5 @@
+- Resume assessments appear as native canvas comments with highlighted text regions alongside the editable resume.
+- Assessments explicitly select resume frames, keep version-specific reports and comments, and support reviewing several drafts independently.
+- Resume workspaces can embed the editor under the same HTTPS site's subpath without a separate editor login or an offline preload.
+- Hosted resume accounts use separate canvas, credential and preference caches, with session verification before the editor opens.
+- Hosted canvases forward JavaScript and Vue code locations to the resume host's private diagnostics without document text or raw error messages.

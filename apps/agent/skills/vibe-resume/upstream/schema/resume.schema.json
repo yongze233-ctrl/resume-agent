@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KevinYoung-Kw/vibe-resume-skill/schema/resume.schema.json",
+  "title": "Vibe Resume Data",
+  "description": "Two layers: raw.data.yaml is the full inventory (never printed). resume.data.yaml is one job's selected+polished copy, then applied to a template. jd / optimize / notes / layer / source_raw / tags never print unless they are visible facts.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Candidate name as printed (中文或英文)."
+    },
+    "name_en": {
+      "type": "string",
+      "description": "Optional Latin / English name if `name` is Chinese."
+    },
+    "title": {
+      "type": "string",
+      "description": "意向岗位 / target role line, e.g. AI 产品经理 or Software Engineer Intern."
+    },
+    "target_role": {
+      "type": "string",
+      "description": "Single-application target title for optimize mode, e.g. AI 产品经理实习. When both exist, rewrite toward target_role; keep title as the printed headline unless the user asks to replace it. Do not print a second headline by default."
+    },
+    "major": {
+      "type": "string",
+      "description": "Optional header major, e.g. 软件工程 / Computer Science."
+    },
+    "contacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "wechat": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string",
+          "description": "城市 / city, optional."
+        },
+        "website": {
+          "type": "string"
+        },
+        "github": {
+          "type": "string"
+        },
+        "portfolio": {
+          "type": "string"
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "个人介绍 / professional summary. 2–4 sentences. No fake metrics."
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/educationEntry"
+      }
+    },
+    "experience": {
+      "type": "array",
+      "description": "实习经历 or 工作经历. Do not move internship work into projects.",
+      "items": {
+        "$ref": "#/$defs/experienceEntry"
+      }
+    },
+    "projects": {
+      "type": "array",
+      "description": "项目经历 / 个人项目 / campus builds.",
+      "items": {
+        "$ref": "#/$defs/projectEntry"
+      }
+    },
+    "skills": {
+      "description": "核心能力. Either grouped objects or a flat string list.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/skillGroup"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "campus": {
+      "type": "array",
+      "description": "Optional 校园经历 / 社团 / 学生工作. Omit if empty.",
+      "items": {
+        "$ref": "#/$defs/projectEntry"
+      }
+    },
+    "honors": {
+      "type": "array",
+      "description": "Optional awards. Prefer attaching small honors under education instead.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "languages": {
+      "type": "array",
+      "description": "Optional language ability, e.g. CET-6 540 / English working proficiency.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "certificates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "avatar": {
+          "type": "string",
+          "description": "Path or filename of color headshot."
+        },
+        "qr": {
+          "type": "string",
+          "description": "Path or filename of portfolio QR."
+        },
+        "qr_caption": {
+          "type": "string"
+        }
+      }
+    },
+    "jd": {
+      "type": "string",
+      "description": "Pasted job description. Used only for keyword coverage, skill reorder, and bullet emphasis. Never invent skills, tools, or metrics from this text. Never print on the resume."
+    },
+    "optimize": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Private notes for a 润色 pass on resume.data.yaml. Never print. Raw inventory does not need this.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "polished",
+            "jd-matched"
+          ],
+          "description": "draft = raw facts; polished = tighter copy of the same facts; jd-matched = same facts reordered or rephrased for `jd`."
+        },
+        "source": {
+          "type": "string",
+          "description": "Path of the draft YAML this file was polished from."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Keyword hits, missing-ask / do-not-claim lists, weak-verb fixes. Never print."
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Private notes for the agent. Never print on the resume."
+    },
+    "layer": {
+      "type": "string",
+      "enum": [
+        "raw",
+        "resume"
+      ],
+      "description": "raw = full inventory. resume = one application export. Default resume if omitted on resume.data.yaml."
+    },
+    "source_raw": {
+      "type": "string",
+      "description": "Path of the raw.data.yaml this resume was copied from. Never print."
+    }
+  },
+  "$defs": {
+    "educationEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "school"
+      ],
+      "properties": {
+        "school": {
+          "type": "string"
+        },
+        "school_en": {
+          "type": "string"
+        },
+        "degree": {
+          "type": "string",
+          "description": "本科 / 硕士 / B.S. / M.S."
+        },
+        "major": {
+          "type": "string"
+        },
+        "dates": {
+          "type": "string",
+          "description": "YYYY.MM - YYYY.MM or present / 至今."
+        },
+        "gpa": {
+          "type": "string",
+          "description": "e.g. 3.8/5.0 or 3.7/4.0."
+        },
+        "rank": {
+          "type": "string",
+          "description": "e.g. 专业前10%."
+        },
+        "honors": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "experienceEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "org",
+        "role"
+      ],
+      "properties": {
+        "org": {
+          "type": "string",
+          "description": "Company or team name."
+        },
+        "org_en": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "dates": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "internship",
+            "full-time",
+            "part-time",
+            "research"
+          ],
+          "description": "internship → 实习经历; full-time → 工作经历."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/workItem"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Selection hints in raw, e.g. ai-product / growth. Do not print."
+        }
+      }
+    },
+    "projectEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "name_en": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "dates": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "bullets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Selection hints in raw. Do not print."
+        }
+      }
+    },
+    "workItem": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "title",
+        "body"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        }
+      }
+    },
+    "skillGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "items"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "e.g. AI 产品 / 数据工具 / Languages."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

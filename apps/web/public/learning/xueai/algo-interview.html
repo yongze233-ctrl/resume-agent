@@ -1,0 +1,1216 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"algo-interview",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=algo-interview',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>算法 · 30 道灵魂拷问 | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="算法篇考察实战：面试官、老板、技术同事会怎样考你算法？30 道真实场景问题，每题附考察意图、答题框架与加分点：Big-O 直觉、注意力 O(n²)、二分前提、Rerank 漏斗、递归风险、BFS vs DFS、贪心采样、AI 时代还要不要刷题。">
+<meta name="keywords" content="算法面试题,AI产品经理面试,Big-O,复杂度,二分查找,Rerank,递归,BFS DFS,Temperature,Beam Search">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="算法 · 30 道灵魂拷问">
+<meta property="og:description" content="面试官、老板、技术同事会怎样考你算法？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/algo-interview.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/algo-interview.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="算法 · 30 道灵魂拷问">
+<meta name="twitter:description" content="面试官、老板、技术同事会怎样考你算法？30 道真实场景问题，每题附考察意图、答题框架与加分点。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--al:#db2777}
+.lesson-header .kicker{color:var(--al)}
+
+/* ── 开场说明 ── */
+.iq-intro{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px}
+.iq-intro-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:10px}
+.iq-intro-lead{font-size:14px;color:var(--sub);line-height:1.7;margin-bottom:12px}
+.iq-role-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.iq-role-row{display:flex;align-items:baseline;gap:10px;padding:9px 13px;border-radius:9px;font-size:14px;line-height:1.6}
+.iq-role-row .rr-name{font-weight:800;flex-shrink:0;white-space:nowrap}
+.iq-role-row .rr-desc{color:var(--sub)}
+.iq-intro-foot{font-size:14px;color:var(--sub);line-height:1.7}
+.iq-intro-foot strong{color:var(--text)}
+
+/* ── 题目卡片 ── */
+.iq-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-card)}
+.iq-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.iq-num{font-size:13px;font-weight:900;color:var(--sub);letter-spacing:.5px;font-family:"SF Mono","Fira Code",Menlo,monospace}
+.iq-who{font-size:12px;font-weight:800;padding:3px 11px;border-radius:99px;letter-spacing:.3px}
+.iq-q{font-size:17.5px;font-weight:800;color:var(--text);line-height:1.55;margin-bottom:16px}
+
+.iq-block{margin-bottom:14px}
+.iq-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.5px;margin-bottom:6px}
+.iq-intent .iq-label{color:var(--amber)}
+.iq-intent .iq-body{font-size:14px;color:var(--sub);line-height:1.75;background:rgba(217,119,6,.05);border:1px solid rgba(217,119,6,.14);border-radius:9px;padding:10px 14px}
+.iq-intent .iq-body strong{color:var(--text)}
+
+.iq-frame .iq-label{color:var(--accent)}
+.iq-frame ol{margin:0;padding-left:0;list-style:none;counter-reset:iqstep;display:flex;flex-direction:column;gap:7px}
+.iq-frame li{counter-increment:iqstep;position:relative;padding:9px 13px 9px 40px;background:rgba(0,102,255,.04);border:1px solid rgba(0,102,255,.1);border-radius:9px;font-size:14px;color:var(--sub);line-height:1.65}
+.iq-frame li::before{content:counter(iqstep);position:absolute;left:12px;top:10px;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.iq-frame li strong{color:var(--text)}
+
+.iq-bonus{font-size:13.5px;color:var(--text);line-height:1.7;background:rgba(22,163,74,.06);border:1px solid rgba(22,163,74,.18);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.iq-bonus b{color:var(--success);font-weight:800;margin-right:4px}
+
+.iq-refs{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--border)}
+.iq-refs-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0}
+.iq-refs a{font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;background:rgba(0,102,255,.07);padding:4px 11px;border-radius:99px;transition:background .15s}
+.iq-refs a:hover{background:rgba(0,102,255,.14)}
+
+/* 角色配色 */
+.who-hr{background:rgba(0,102,255,.1);color:var(--accent)}
+.who-boss{background:rgba(217,119,6,.12);color:var(--amber)}
+.who-dev{background:rgba(124,58,237,.1);color:var(--purple)}
+
+@media (max-width:768px){
+  .iq-card{padding:18px 16px}
+  .iq-q{font-size:16px}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson">
+  <header class="lesson-header">
+    <div class="kicker">他们会这样考你</div>
+    <h1>算法 · 30 道灵魂拷问</h1>
+    <p class="subtitle">算法篇学完了，复杂度的直觉建立了没有，一问便知。这 30 个问题来自三个真实场景，先自己开口回答，再看框架。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每题附考察意图、答题框架与加分点：Big-O 直觉 / 二分的前提 / 递归的风险 / BFS vs DFS / 采样策略 / AI 时代还考算法吗</p></aside><!--seo:end-->  <section class="paywall-locked xa-peek">
+    <div class="iq-intro">
+      <div class="iq-intro-title">怎么用这一页</div>
+      <div class="iq-intro-lead">每道题都标注了提问者。他们问同一块知识，想听的东西却不一样。</div>
+      <div class="iq-role-rows">
+        <div class="iq-role-row" style="background:rgba(0,102,255,.05)"><span class="rr-name" style="color:var(--accent)">🎙 面试官</span><span class="rr-desc">想验证你是真懂，还是在背名词</span></div>
+        <div class="iq-role-row" style="background:rgba(217,119,6,.06)"><span class="rr-name" style="color:var(--amber)">👔 老板</span><span class="rr-desc">要的是解释和承诺</span></div>
+        <div class="iq-role-row" style="background:rgba(124,58,237,.05)"><span class="rr-name" style="color:var(--purple)">🛠 技术同事</span><span class="rr-desc">在试探你值不值得信任</span></div>
+      </div>
+      <div class="iq-intro-foot">每题给出三层：<strong>对方在考察什么 → 答题框架 → 加分点</strong>。答不上来的环节，点末尾的课程页回去补。</div>
+    </div>
+
+    <div id="iqList"></div>
+  </section>
+</article>
+
+<script>
+const QUESTIONS = [
+  // ── Big-O 直觉（4 题）──
+  {who:'hr',
+   q:'「Big-O 到底在衡量什么？为什么工程师从不说『这段代码跑 3 秒』，而说『它是 O(n²) 的』？」',
+   intent:'开场题，考你对复杂度的理解<strong>是不是停在符号层面</strong>。背名词的人会背「时间复杂度的渐进上界」；真懂的人知道 Big-O 衡量的是增长趋势——数据量翻倍时耗时怎么变——这比某台机器上的绝对秒数有用得多。',
+   frame:['<strong>先给本质：</strong>Big-O 衡量的不是快慢，是「数据变多时会恶化多快」。3 秒这个数换台机器就作废，但 O(n²) 意味着数据翻十倍慢一百倍——这条规律在哪都成立。',
+     '<strong>给一组对照：</strong>O(1) 数据再多都一样快；O(log n) 十亿条也就三十步；O(n) 同比例变慢；O(n²) 数据翻十倍耗时翻百倍——四条曲线在小数据时挤在一起，大数据时分道扬镳。',
+     '<strong>点出实用价值：</strong>它是预测工具：今天一千条数据没问题的代码，能不能撑到明年的一百万条，看一眼复杂度就有答案，不用等上线爆炸。',
+     '<strong>落到 AI 时代：</strong>AI 写的代码能跑通不等于能扛量，让它自报复杂度、再问「数据量翻十倍会怎样」，是最便宜的验收动作。'],
+   bonus:'补一句「Big-O 只看最高次项：O(n² + n) 就写 O(n²)，因为 n 一大低次项无关紧要」——顺手说清这个约定，考官知道你不是只背了符号表。',
+   refs:[{href:'algo-1.html',label:'Big-O 复杂度直觉'},{href:'algo-build.html',label:'实战：复杂度体检'}]},
+
+  {who:'boss',
+   q:'「演示的时候丝般顺滑，怎么一上线用户多了就卡成幻灯片？当初验收不是通过了吗？这种事以后怎么杜绝？」',
+   intent:'老板要的是<strong>事故解释加预防机制</strong>。答「用户太多了」是把锅甩给成功；真懂的人能讲出 Demo 和生产的本质差异——复杂度差的代码在小数据量下毫无症状——并给出「按目标量级压测」的预防制度。',
+   frame:['<strong>先给根因：</strong>Demo 用几十条测试数据，上线是几十万条真实数据。有些代码的耗时随数据量平方增长：一百条时 0.01 秒，十万条时就是几分钟——它在演示环境里根本不可能暴露。',
+     '<strong>打个比方：</strong>这就像试驾时在小区里开不出发动机的毛病，上了高速才知道跑不动。问题不是验收造假，是验收的路况不对。',
+     '<strong>给预防机制：</strong>两条制度：所有功能用目标量级的十倍数据做压测才算验收通过；让 AI 或开发自报每个关键接口的复杂度，写进技术评审清单。',
+     '<strong>给当前行动：</strong>这次的卡点已定位，是一段平方级的查重逻辑，改成哈希方案后耗时回到毫秒级，本周上线。'],
+   bonus:'补一个数字锚点：「数据量翻 10 倍，O(n) 的代码慢 10 倍，O(n²) 的慢 100 倍——我们要求核心链路必须在 O(n log n) 以内」。给老板一个能复述的验收标准，他以后开会都会引用。',
+   refs:[{href:'algo-1.html',label:'为什么 Demo 不卡上线卡'},{href:'algo-build.html',label:'压测验收'}]},
+
+  {who:'dev',
+   q:'「AI 给你写的这个『找重复客户』功能你验收过了？我看了眼代码，双重循环两两对比。现在客户表 50 万行，你猜要对比多少次？」',
+   intent:'技术同事在敲打你<strong>验收有没有走心</strong>。背名词的人听到双重循环没有生理反应；真懂的人心里立刻响警报：50 万的平方是 2500 亿次对比，必挂，而且知道正解是用哈希把 O(n²) 打回 O(n)。',
+   frame:['<strong>先算给他看：</strong>两两对比是 n²/2，50 万行就是一千多亿次对比——就算每秒一亿次也要跑二十多分钟，这个实现等于不可用。',
+     '<strong>给出正解：</strong>用哈希表：扫一遍数据，每个客户的关键字段（手机号、邮箱）进哈希表，撞上的就是重复——一遍扫完，O(n)，秒级出结果。',
+     '<strong>承认并修补流程：</strong>这次验收我只测了功能对不对，没测量级扛不扛。以后我给 AI 的提示词里默认加一句「说明复杂度，按 50 万行数据设计」。',
+     '<strong>反问补细节：</strong>顺便确认下：判重的口径是完全一致还是模糊匹配？模糊匹配是另一档复杂度，需求上我先把口径钉死。'],
+   bonus:'能主动说出「AI 特别爱写双重循环，因为它最直白、最不容易出逻辑错——所以复杂度恰恰是验收 AI 代码时最该盯的一项」，说明你已经摸清了 AI 的脾气。',
+   refs:[{href:'algo-1.html',label:'O(n²) 的爆炸'},{href:'ds-5.html',label:'哈希表查重'},{href:'algo-build.html',label:'实战：复杂度体检'}]},
+
+  {who:'hr',
+   q:'「排序至少要 O(n log n)、哈希查找是 O(1)、遍历是 O(n)。就算记不住任何公式，怎么快速看出一段代码大概是什么复杂度？」',
+   intent:'考你有没有<strong>不依赖背诵的估算直觉</strong>。背名词的人离开公式就失明；真懂的人有个简单的透视法：数循环嵌套层数——一层 n、两层 n²，再看有没有「每次砍一半」的 log 特征，几秒钟就能给出量级。',
+   frame:['<strong>先给透视法：</strong>看循环嵌套：对全量数据的一层循环是 O(n)，循环里再套一层全量循环就是 O(n²)——层数就是指数。',
+     '<strong>识别 log 特征：</strong>看到「每轮把范围砍一半」（二分、平衡树）就有 log n；「外层遍历、内层砍半」就是 n log n——好排序都长这样。',
+     '<strong>识别 O(1) 特征：</strong>不碰数据规模的操作：哈希取值、数组按下标访问、栈顶弹出，做一次是一次。',
+     '<strong>补上陷阱：</strong>小心隐藏循环：语言内置的 includes、in、切片拷贝，看着一行代码，内部可能是一次全量遍历——嵌套在循环里就悄悄变成 O(n²)。'],
+   bonus:'举一个隐藏循环的真实案例：循环里写 list.includes(x) 查重，表面一层循环实际 O(n²)——这个坑连 AI 都经常写出来。能说出具体 API 名字，直觉才算真的长在身上。',
+   refs:[{href:'algo-1.html',label:'复杂度速查'},{href:'algo-4.html',label:'排序的 n log n'}]},
+
+  // ── 注意力 O(n²)（3 题）──
+  {who:'hr',
+   q:'「Transformer 的注意力机制为什么是 O(n²)？这个平方到底是谁乘谁？」',
+   intent:'考你能不能把大模型最重要的复杂度<strong>讲出物理含义</strong>。背名词的人只会说「注意力是平方复杂度」；真懂的人能说清那个乘法：每个 Token 都要和所有 Token 计算相关性，n 个 Token 各算 n 次，就是 n×n。',
+   frame:['<strong>先给机制：</strong>注意力的本职是让每个 Token 知道该「关注」上下文里的谁：生成或理解每个 Token 时，要拿它和序列里所有 Token 逐个算一遍相关性分数。',
+     '<strong>点破平方：</strong>n 个 Token，每个都要和 n 个 Token 算一次——n × n 次计算。上下文 1 万 Token 是 1 亿次，10 万 Token 就是 100 亿次，长十倍贵百倍。',
+     '<strong>连到 KV Cache：</strong>生成阶段靠 KV Cache 把已算的中间结果存下来，新 Token 只算自己对全文的注意力——省掉重算，但每一步仍要面对越来越长的历史。',
+     '<strong>给出后果链：</strong>这个平方是长上下文又贵又慢的数学根源，也是各家拼命研究稀疏注意力、线性注意力的原因。'],
+   bonus:'补一句「O(n²) 说的是计算量，显存里的 KV Cache 是 O(n) 地涨——算力和显存两条成本曲线一起压着上下文长度」。能分开说计算和存储，深度立刻不同。',
+   refs:[{href:'algo-2.html',label:'注意力的 O(n²) 账单'},{href:'ds-6.html',label:'KV Cache'}]},
+
+  {who:'boss',
+   q:'「同样问一个问题，为什么聊到第五十轮就比第一轮又慢又贵？我们能不能规定用户聊十轮就强制开新会话，省钱？」',
+   intent:'老板给出了一个粗暴但真诚的省钱方案，考你<strong>能不能接住并优化它</strong>。只解释原理不回应方案的人打了半场；真懂的人先讲清「每轮重发全部历史 + 注意力平方」的成本机制，再把「强制开新会话」改造成体验无损的版本。',
+   frame:['<strong>先解释机制：</strong>模型没有记忆，第五十轮时要把前四十九轮全部重发重算一遍；而且注意力计算量随长度平方涨——所以越聊越慢、越聊越贵是数学规律，不是代码写得差。',
+     '<strong>正面评价方案：</strong>强制开新会话确实能省钱，但用户会当场失忆式抓狂——五十轮积累的背景全丢了，投诉比账单更贵。',
+     '<strong>给改良版：</strong>把「一刀切断」换成「压缩续聊」：超过阈值自动把早期对话摘要成几百字塞进新会话，背景保住、长度砍掉——省钱效果接近，体验几乎无损。',
+     '<strong>给数字承诺：</strong>配合 Prompt 缓存和截断策略，长会话成本预计降四到六成，我拿上线后一周的数据来验证。'],
+   bonus:'提一句「行业里这招叫 Compaction，Claude Code 这类工具都在自动做——我们不是发明方案，是采用成熟方案」，老板对「业界都这么干」的信任度远高于自研创意。',
+   refs:[{href:'algo-2.html',label:'越长越贵的根源'},{href:'algo-7.html',label:'分治与 Compaction'}]},
+
+  {who:'dev',
+   q:'「你在 PRD 里写『把全部产品文档塞进上下文，反正现在模型支持 100 万 Token』。你算过这么干一次要花多少钱、等多久吗？」',
+   intent:'技术同事在拦截一个<strong>拿窗口上限当免费资源</strong>的方案。背名词的人觉得「支持」就是「随便用」；真懂的人知道窗口是能力上限不是经济方案：百万 Token 一次请求的钱够跑几百次 RAG，延迟也要几十秒起步。',
+   frame:['<strong>先算账认账：</strong>算过之后我改主意了：百万 Token 按当前价格一次请求就是几美元，每天几千次调用月账单直接爆炸；首 Token 延迟几十秒，用户早跑了。',
+     '<strong>给出正解：</strong>该用 RAG：文档切块建向量库，每次只检索最相关的几千 Token 进上下文——成本降两个数量级，还更准，因为模型对超长上下文里中段的内容会「看丢」。',
+     '<strong>保留长窗口的正确用途：</strong>长上下文留给真需要全局视野的场景：单份长合同分析、整本代码库的一次性审查——高价值低频次，用得起。',
+     '<strong>修订 PRD：</strong>我把方案改成「RAG 为主、长上下文为特例」，并补一条成本预算和延迟指标进验收标准。'],
+   bonus:'能提到「lost in the middle」现象——超长上下文中间部分的信息模型经常忽略，塞得越多不等于答得越好——技术同事会发现你连长上下文的质量陷阱都知道。',
+   refs:[{href:'algo-2.html',label:'上下文成本'},{href:'ds-10.html',label:'RAG 向量检索'}]},
+
+  // ── 二分查找（3 题）──
+  {who:'hr',
+   q:'「1 到 100 猜数字，只告诉你大了还是小了，最笨的方法要猜 100 次。最优策略是什么？换成十亿个数呢？」',
+   intent:'考你对<strong>对数级增长的体感</strong>。背名词的人知道「二分查找」这个词但报不出步数；真懂的人脱口而出：每次猜中间、范围砍半，100 个数 7 次封顶，十亿个数也只要 30 次——log n 的魔力就是数据爆炸步数几乎不动。',
+   frame:['<strong>先给策略：</strong>每次猜剩余范围的正中间：猜 50，大了就去 1-49，小了去 51-100——每猜一次，可能性直接砍掉一半。',
+     '<strong>报出步数：</strong>100 个数最多 7 次（2 的 7 次方是 128）；十亿个数最多 30 次——数据翻了一千万倍，步数只从 7 涨到 30，这就是 O(log n)。',
+     '<strong>点出对比：</strong>逐个猜是 O(n)，十亿次；二分是 O(log n)，30 次。算法的差距不是快一点，是完全不同的物种。',
+     '<strong>落到工程：</strong>数据库索引查询、版本回归定位（git bisect）、有序日志找时间点，全是这个「砍一半」思想的变体。'],
+   bonus:'补一个震撼数字：「全宇宙原子数大约 10 的 80 次方，二分也只要 266 次」——用一个夸张但准确的例子给 log n 定锚，考官会记住这个回答。',
+   refs:[{href:'algo-3.html',label:'二分查找'},{href:'algo-1.html',label:'log n 有多快'}]},
+
+  {who:'hr',
+   q:'「二分查找这么快，为什么不是所有查找都用它？它有一个必须满足的前提，是什么？维护这个前提的代价呢？」',
+   intent:'考你知不知道<strong>快是有条件的</strong>。背名词的人只记得二分快，忘了它挑食；真懂的人知道前提是有序——「大了往左小了往右」的判断只在有序数据上成立——而排序本身 O(n log n)，数据频繁变动时维护有序可能比查找本身更贵。',
+   frame:['<strong>先给前提：</strong>数据必须有序。二分的每一步靠「中间值比目标大还是小」来决定丢左半还是右半——数据乱序时这个判断毫无意义，砍掉的那半可能正藏着目标。',
+     '<strong>算维护成本：</strong>有序不是免费的：先排序要 O(n log n)；之后每插入一条新数据都要挪位置保序，写入频繁的场景，省下的查找时间全赔在维护上。',
+     '<strong>给选型逻辑：</strong>静态或读多写少的数据（配置表、归档日志）排一次序用二分很划算；写入频繁的用哈希表（O(1) 且不要求有序）或平衡树（读写都 O(log n)）。',
+     '<strong>总结成原则：</strong>快的算法都在吃某个前提的红利，选型时先问「这个前提我维护得起吗」。'],
+   bonus:'补一句「哈希比二分还快，但哈希只能答『等于』，二分能答『大于小于、范围、最接近』——有序结构的范围查询能力是哈希永远给不了的」，把三种查找的分工一句话说清。',
+   refs:[{href:'algo-3.html',label:'二分的有序前提'},{href:'ds-5.html',label:'哈希 O(1) 查找'}]},
+
+  {who:'dev',
+   q:'「你说线上问题是最近两周某个版本引入的，两周 80 多个提交，你打算让我一个个回滚排查？还是有更聪明的办法？」',
+   intent:'技术同事在考你<strong>能不能把二分思想用出课本</strong>。背名词的人想不到二分能用在排障上；真懂的人立刻反应：提交历史按时间有序、bug 的出现是单调的（某个点之前好之后坏），完美满足二分条件——git bisect 七步定位。',
+   frame:['<strong>先给聪明办法：</strong>二分排查：80 个提交取中间那个构建验证，好就说明问题在后半，坏就在前半——每验一次砍掉一半，80 个提交 7 次内锁定元凶。',
+     '<strong>说出工具名：</strong>git 内置的 bisect 就是干这个的，标记 good 和 bad 后它自动帮你跳中点，甚至能挂上自动化测试脚本无人值守跑完。',
+     '<strong>点出前提意识：</strong>这么干有个前提：bug 是持续存在的（引入后每个版本都能复现）。偶发型 bug 不满足单调性，二分会被假阴性带偏，那得换思路加日志。',
+     '<strong>给产品侧配合：</strong>我来提供准确的「最后一个正常版本」和最小复现步骤，缩小初始范围、加快每轮验证。'],
+   bonus:'能主动说出「每轮验证成本高时（构建 20 分钟），二分的价值最大化——7 次对 80 次差的是一下午和两星期」，说明你算的是工程账，不是在背算法名。',
+   refs:[{href:'algo-3.html',label:'二分思想'},{href:'algo-build.html',label:'验证与排查'}]},
+
+  // ── 排序（3 题）──
+  {who:'hr',
+   q:'「冒泡排序和快速排序，一个 O(n²) 一个 O(n log n)。不写代码，说说它们的思路差在哪，为什么差距会这么大？」',
+   intent:'考你能不能<strong>用思想解释性能</strong>而不是背结论。背名词的人只会报两个复杂度数字；真懂的人能说出关键差异：冒泡每轮只把一个元素挪到位、大量比较被浪费；快排每次分区让所有元素同时向正确的大区间归位——一次操作的信息利用率完全不同。',
+   frame:['<strong>先讲冒泡：</strong>相邻两两比较，大的往后冒，一整轮下来只保证一个元素到位——n 个元素要 n 轮，每轮 n 次比较，n² 就是这么来的。',
+     '<strong>再讲快排：</strong>选个基准值，一轮分区让所有元素各归左右两大阵营（小于基准的、大于基准的），再对两边递归——每轮 n 次比较让全体元素都朝终点前进了一大步。',
+     '<strong>点破差距来源：</strong>同样比较一次，冒泡只换相邻两个的位置，快排把元素直接送进正确的半区——信息利用率的差距积累成 n 和 log n 轮数的差距。',
+     '<strong>给量级体感：</strong>一百万条数据：n² 是万亿次操作、分钟到小时级；n log n 是两千万次、亚秒级——这就是为什么没有生产系统用冒泡。'],
+   bonus:'补一句「快排是分治思想的代表作：拆成子问题、各自解决、天然还能并行」——把排序和分治章节串起来，展示的是知识网络而不是孤立知识点。',
+   refs:[{href:'algo-4.html',label:'排序算法赛跑'},{href:'algo-7.html',label:'分治思想'}]},
+
+  {who:'dev',
+   q:'「需求要展示『积分最高的 10 个用户』，AI 给你的实现是把一千万用户全量排序再取前十。功能没错，你看出问题了吗？」',
+   intent:'技术同事在测你<strong>能不能识别「正确但浪费」的代码</strong>。背名词的人看到结果对就放行；真懂的人会皱眉：要前 10 名却把一千万人排得整整齐齐，付了 O(n log n) 的全排代价，其实维护一个大小为 10 的候选池扫一遍就够了。',
+   frame:['<strong>先点出浪费：</strong>问题不在对错在开销：我们只要前 10 名，它却把剩下 999 万多人的相对顺序也排清楚了——那些顺序算完就扔，纯浪费。',
+     '<strong>给出正解：</strong>Top-K 问题标准解法：维护一个只装 10 人的候选池（小顶堆），全量扫一遍，比池底高的挤进去——O(n log k)，k 是 10，约等于线性扫一遍。',
+     '<strong>再进一层：</strong>如果这个榜单高频访问，连扫都不该每次扫：用有序结构（如 Redis 的 sorted set）实时维护排名，查询直接 O(1) 取头部。',
+     '<strong>转成验收习惯：</strong>这类题我以后验收时加一问：「输出只要一小部分时，你有没有在为不需要的部分付费？」'],
+   bonus:'能顺口说出「推荐系统、搜索排序全是 Top-K 场景，没人做全量排序——这是工程和课本差别最大的地方之一」，技术同事会确认你真的能对话。',
+   refs:[{href:'algo-4.html',label:'排序的代价'},{href:'algo-5.html',label:'Top-K 与精排'}]},
+
+  {who:'boss',
+   q:'「用户反馈搜索结果的排序『很随机』，想要的永远在第三页。运营天天来催，这个排序到底怎么治？」',
+   intent:'老板转述的是模糊的体验投诉，考你<strong>能不能把「排序很烂」拆成可动手的问题</strong>。背名词的人只会说「优化排序算法」；真懂的人知道搜索排序坏在排序依据（相关性分数）而不是排序算法本身，要拆信号、调权重、建评测。',
+   frame:['<strong>先纠正问题定位：</strong>排序算法本身不会错——排出来不对，是「打分」不对：每条结果的相关性分数没算好，按错误的分数排得再快也是错的。',
+     '<strong>拆出打分信号：</strong>好的排序分数是多路信号加权：文本相关性、点击率、时效性、质量分。先查现在各信号的权重，大概率是某路信号（比如时效）权重失衡把相关性淹没了。',
+     '<strong>给治理路径：</strong>三步：建评测集（运营标注一批「查询-期望结果」对）、离线调权重看指标、上线 AB 验证——每一步都有数字，不靠感觉。',
+     '<strong>给预期管理：</strong>两周出第一轮评测基线和调权结果；「想要的在第三页」这类高频坏案例先手工加规则止血，长期靠模型化排序。'],
+   bonus:'补一句「必要时在排序后段加一层 Rerank 模型精排头部几十条——AI 搜索都在这么做，成本只加在最后一小段上」，给老板一个「我们的方案和最先进做法同源」的信心。',
+   refs:[{href:'algo-5.html',label:'排序在 AI 里的真身'},{href:'algo-4.html',label:'排序思想'}]},
+
+  // ── Rerank（3 题）──
+  {who:'hr',
+   q:'「RAG 检索明明已经按相似度排好序了，为什么还要再加一层 Rerank 重排？两次排序不重复吗？」',
+   intent:'考你懂不懂<strong>粗排和精排的分工</strong>。背名词的人觉得排序就是排序，排两次是浪费；真懂的人知道两次排序用的模型完全不同：向量检索是各算各的粗筛（快而糙），Rerank 是问题和文档逐对细看（准而贵），漏斗结构让快和准兼得。',
+   frame:['<strong>先点破不同：</strong>两次排序的依据不同。向量检索里问题和文档是分别编码再算距离，像凭简历初筛；Rerank 模型把问题和每篇文档拼在一起逐对精读打分，像当面面试。',
+     '<strong>解释为什么不能只用准的：</strong>Rerank 又慢又贵，拿它扫全库等于给一百万人挨个面试——所以先用便宜的向量检索从百万里粗筛出前 50，再用 Rerank 精排出前 5。',
+     '<strong>给出漏斗本质：</strong>这是两阶段漏斗：每一层用更贵的模型处理更少的候选，总成本可控、最终质量接近全量精排。',
+     '<strong>推广到通用模式：</strong>推荐系统的召回-粗排-精排、简历的机筛-人面，全是同一个漏斗思想——计算预算有限时的标准结构。'],
+   bonus:'补一个具体感受：「向量粗筛能把正确文档带进前 50，但经常排在十几名；Rerank 一推就进前 3——而进不进前 3 决定它能不能被塞进上下文」。能说出这个细节的人显然真调过 RAG。',
+   refs:[{href:'algo-5.html',label:'Rerank 重排序'},{href:'ds-10.html',label:'向量粗筛'}]},
+
+  {who:'dev',
+   q:'「你 PRD 里写『所有检索结果都过一遍 Rerank 保证质量』。知识库 200 万条，你算过这一遍的延迟和费用吗？」',
+   intent:'技术同事在拦一个<strong>把精排当免费魔法</strong>的方案。背名词的人以为 Rerank 是开关，打开就变准；真懂的人知道 Rerank 是逐对推理，每条候选都是一次模型调用级的开销，全量过就是把漏斗倒过来用，延迟和账单都会爆。',
+   frame:['<strong>先认错并算账：</strong>没算，现在算：Rerank 对每条候选都要跑一次交叉编码推理，200 万条全过一遍是分钟级延迟加一次几十美元——用户等不起，账单更扛不住。',
+     '<strong>给出正确写法：</strong>PRD 改成漏斗：向量检索先取 Top 50 到 100，Rerank 只精排这一小撮，延迟控制在几百毫秒内，成本只增加百分之几。',
+     '<strong>定候选数的逻辑：</strong>粗排取多少条给 Rerank，拿评测集调：召回率曲线拐点通常在几十条——再多只涨成本不涨质量。',
+     '<strong>补一条监控：</strong>上线后盯两个数：正确文档进入粗排 Top 50 的比例（漏斗上游健康度）和 Rerank 后进 Top 5 的比例（下游健康度），坏了能立刻定位是哪一层。'],
+   bonus:'能说出「Rerank 的成本结构是按候选数线性涨的，所以它的位置必须在漏斗末端——这和为什么不能全库跑大模型是同一个道理」，一句话证明你理解的是原理不是配置项。',
+   refs:[{href:'algo-5.html',label:'两阶段漏斗'},{href:'algo-2.html',label:'推理成本'}]},
+
+  {who:'boss',
+   q:'「上个月刚花钱加了你说的 Rerank，这周用户又反馈搜不到东西。钱白花了？这次你怎么解释？」',
+   intent:'老板在追责，考你<strong>有没有漏斗全局观</strong>。慌着怀疑 Rerank 的人会被牵着走；真懂的人知道 Rerank 只能重排候选、不能无中生有——「搜不到」大概率是上游召回就没捞到，或者知识库里压根没有，要分层排查而不是推倒重来。',
+   frame:['<strong>先稳住定性：</strong>钱没白花，但 Rerank 只负责漏斗的最后一段：把捞上来的候选排准。它排得再好，正确答案没被上游捞进候选池，它也无米下锅。',
+     '<strong>给分层诊断：</strong>拿用户搜不到的具体案例回放三层：知识库里到底有没有这条内容？有的话向量检索捞进 Top 50 没有？捞进了 Rerank 排到前几没有？三层各有各的修法。',
+     '<strong>预判常见结论：</strong>经验上「搜不到」多数卡在前两层：内容缺失或切块太碎导致语义残缺——修法是补内容、调切块，和 Rerank 无关。',
+     '<strong>给交代节奏：</strong>三天内出诊断报告，标清每个坏案例卡在哪一层、修复动作和预计生效时间——下次反馈来之前先有数据。'],
+   bonus:'借机建立一个老板能懂的心智模型：「检索是条流水线，Rerank 是最后的质检员——货架上没货，质检员再好也变不出货」。一个好比喻能省掉未来无数次解释。',
+   refs:[{href:'algo-5.html',label:'漏斗排查'},{href:'ds-10.html',label:'召回与向量库'}]},
+
+  // ── 递归（3 题）──
+  {who:'hr',
+   q:'「递归就是自己调用自己，听起来像个死循环。一个正确的递归必须具备哪几个要素？少了哪个会发生什么？」',
+   intent:'考递归的<strong>安全三要素</strong>是否刻在你脑子里。背名词的人只记得「自己调自己」这半句危险的话；真懂的人张口就是三件套：基线条件、自我调用、问题必须变小——并且知道少了基线或问题不变小，等着你的就是爆栈。',
+   frame:['<strong>先给三要素：</strong>一是基线条件（什么时候直接给答案、不再往下调）；二是自我调用；三是每次调用问题规模必须变小——三者缺一不可。',
+     '<strong>推演缺失后果：</strong>没有基线条件，或者问题没变小，调用就永远停不下来：每层调用都在调用栈上压一帧，栈空间有限，压满就是 stack overflow，程序当场崩溃。',
+     '<strong>给一个完整例子：</strong>遍历文件夹：基线是「这是文件，直接处理」；递归是「这是文件夹，对每个子项重复此过程」；问题变小是「子文件夹层级更深、终会到底」。',
+     '<strong>落到 AI：</strong>Agent 拆任务同构：拆到「一步能执行」就是基线，拆不小的任务要设最大深度强制兜底——道理和代码一模一样。'],
+   bonus:'补一句「判断递归对不对就问两句话：它一定会停吗？每层都在逼近停点吗？」——把三要素压缩成两个可执行的检查问题，面试官会想把这句话记下来。',
+   refs:[{href:'algo-6.html',label:'递归三要素'},{href:'ds-3.html',label:'调用栈与爆栈'}]},
+
+  {who:'hr',
+   q:'「用户对 Agent 说『帮我做一个官网』，它自己拆成设计、开发、部署几十个小任务逐个完成。这个拆解过程和递归是什么关系？」',
+   intent:'考你能不能<strong>在 AI 行为里认出算法结构</strong>。背名词的人觉得 Agent 拆任务是「AI 的智能」，说不出机制；真懂的人能指出这就是递归下降：大任务拆成同类的小任务，拆到可直接执行为止，执行顺序由调用栈管理。',
+   frame:['<strong>先给对应关系：</strong>结构上就是递归：「完成任务 X」的方法是把 X 拆成几个子任务、对每个子任务重复同样的方法——自己调用自己，直到任务小到一步能做完（基线条件）。',
+     '<strong>指出栈的角色：</strong>执行时天然是栈语义：主任务挂起、先做子任务、子任务完成弹出、回到父任务继续——Agent 的任务树遍历就是压栈弹栈。',
+     '<strong>点出工程差异：</strong>和代码递归不同的是，Agent 的「拆」由模型即兴决定，不保证问题一定变小——所以必须外加最大深度、步数上限、预算上限这些护栏。',
+     '<strong>给产品含义：</strong>理解这个结构就知道该盯什么指标：拆解深度分布、单任务重试次数、失控中断率——Agent 产品的可靠性工程就从这里开始。'],
+   bonus:'补一句「Agent 拆任务是递归的『不保证收敛』变体：代码递归的基线是程序员写死的，Agent 的基线靠模型判断，所以护栏必须放在模型外面」。能点出这一层差异，就超越了类比达到了洞察。',
+   refs:[{href:'algo-6.html',label:'Agent 拆任务'},{href:'ds-3.html',label:'栈与任务嵌套'}]},
+
+  {who:'dev',
+   q:'「你们那个『深度研究』Agent 昨晚自己给自己派活，跑了六个小时烧掉三百刀 API 费。我看了日志，它在两个子任务之间来回打转。这锅谁背？」',
+   intent:'技术同事在事故复盘里试探你<strong>是甩锅还是懂根因</strong>。背名词的人会说「模型不稳定」把锅丢给 AI；真懂的人一听「来回打转」就知道是递归没收敛：问题没有变小、也没有终止护栏，而护栏缺失是需求方和开发共同的责任。',
+   frame:['<strong>先认领责任：</strong>锅有我一半：PRD 里只写了「自动拆解并完成研究任务」，没写终止条件——等于让一个递归上线时没有基线条件。',
+     '<strong>给出根因判断：</strong>「两个子任务来回打转」说明问题规模没有单调变小：A 的产出触发 B，B 的产出又触发 A——递归三要素破了第三条，理论上就会永远跑下去。',
+     '<strong>给修复清单：</strong>四道护栏：最大拆解深度、总步数上限、预算熔断（烧到阈值自动暂停待人工确认）、循环检测（同一子任务指纹出现第二次就强制终止）。',
+     '<strong>补验收用例：</strong>上线前必测「给一个无解的任务」和「给一个会自我循环的任务」两个极端场景，跑不飞才算过。'],
+   bonus:'能报出行业惨案佐证：早期 AutoGPT 用户最常见的投诉就是任务打转烧钱，后来所有 Agent 框架都内置了步数与预算上限——说明这是结构性风险，不是我们代码特别烂。',
+   refs:[{href:'algo-6.html',label:'递归失控'},{href:'ds-3.html',label:'爆栈的秘密'}]},
+
+  // ── 分治 / Compaction（3 题）──
+  {who:'hr',
+   q:'「分治和递归经常一起出现，很多人分不清。它们是什么关系？用归并排序或者别的例子说说分治的完整套路。」',
+   intent:'考概念之间的<strong>层次关系</strong>。背名词的人把分治和递归当同义词混用；真懂的人分得清：分治是解题策略（拆-治-合三步），递归是实现手段——分治通常用递归写，但递归不一定在分治（比如单纯的遍历）。',
+   frame:['<strong>先给关系：</strong>分治是策略，递归是技术。分治说的是「怎么拆问题」：分成独立子问题、分别解决、合并结果；递归是「自己调自己」这个实现手法——分治几乎总用递归实现，反过来不成立。',
+     '<strong>走一遍套路：</strong>归并排序三步：分——数组对半切到只剩单个元素（天然有序）；治——子数组各自排序（递归做）；合——两个有序数组像拉拉链一样合并成一个。',
+     '<strong>点出分治的前提：</strong>子问题要相互独立、结果要能合并。子问题之间纠缠不清的问题（比如有全局依赖的）分治不了。',
+     '<strong>给现代注脚：</strong>分治的「独立」意味着能并行：MapReduce、大数据处理、多路 Agent 并发干活再汇总，全是分治的分布式版本。'],
+   bonus:'补一句「合并这一步最容易被轻视，归并排序的智慧全在双指针合并上；工程里分治方案的成败也往往在合并环节——比如多路摘要怎么去重去冲突」。指出套路里的隐藏难点，就和背诵者拉开了距离。',
+   refs:[{href:'algo-7.html',label:'分治思想'},{href:'algo-4.html',label:'归并与快排'}]},
+
+  {who:'boss',
+   q:'「客服 AI 聊久了会自动『压缩记忆』是吧？可用户投诉说聊到后面它把之前确认过的订单号都记错了。压缩这东西靠谱吗？」',
+   intent:'老板在问一个<strong>有损机制的可靠性</strong>问题。背名词的人只会说「压缩难免丢信息」等于没回答；真懂的人知道 Compaction 是递归摘要、天然有损，但「丢什么」是可以设计的——关键事实要结构化保全，丢的应该是寒暄和过程。',
+   frame:['<strong>先坦诚机制：</strong>压缩确实是有损的：把几十轮对话摘要成几百字，细节必然有取舍——这是为了让长对话不爆窗口、不爆账单的必要妥协。',
+     '<strong>指出问题所在：</strong>但订单号被记错不是「难免的损耗」，是压缩策略的缺陷：订单号、金额、承诺这类关键事实不该走摘要，摘要模型改写时一个数字错位就是事故。',
+     '<strong>给修复方案：</strong>分层压缩：关键事实（单号、时间、金额、已确认事项）抽取成结构化字段原样保留，永不进摘要；闲聊和过程性内容才交给摘要压缩。',
+     '<strong>给验证承诺：</strong>上线「压缩前后关键事实一致性」自动校验，抽检通过率作为周报指标——压缩靠不靠谱，用数据说话。'],
+   bonus:'补一句「这和人记事一个道理：聊天内容可以只记大意，订单号必须抄在本子上——我们就是给 AI 配那个本子」。把技术方案讲成常识，老板才真的放心。',
+   refs:[{href:'algo-7.html',label:'Compaction 压缩'},{href:'ds-2.html',label:'上下文截断'}]},
+
+  {who:'dev',
+   q:'「你要求把 500 页的招股书『切块分别摘要再合并成一份报告』。想过切块的边界问题吗？一个财务论证正好被从中间切断，两边各自摘要会发生什么？」',
+   intent:'技术同事在戳分治方案的<strong>「独立性前提」软肋</strong>。背名词的人以为切块是均匀分页那么简单；真懂的人知道分治要求子问题独立，而文档的语义单元跨页存在——从论证中间切断，两个半截各自摘要都会曲解原意，合并时错误还会叠加。',
+   frame:['<strong>先接住要害：</strong>会出胡话：前半截的「假设条件」和后半截的「结论」分了家，两边摘要各自脑补缺失的语境，合并后可能出现原文根本没说过的判断。',
+     '<strong>给切块原则：</strong>按语义边界切不按字数切：章节、小节标题是天然分割线；块间再留 10% 到 15% 的重叠区，跨边界的论证两边都能看到完整上下文。',
+     '<strong>补合并环节：</strong>合并不是拼接：先给每块摘要带上章节出处，合并时让模型做冲突检测——两块结论矛盾时标记出来回查原文，而不是随机采信一边。',
+     '<strong>给验收标准：</strong>抽取原文里跨块边界的十个关键论断做一致性核对，全对才算通过——专治切块引入的幻觉。'],
+   bonus:'能说出「块的大小还有个隐藏权衡：块越大摘要质量越好但并行度越低、单块成本越高——我倾向按章节自然大小切，不强行均匀」，说明你对分治的理解到了参数层。',
+   refs:[{href:'algo-7.html',label:'切块与递归摘要'},{href:'algo-2.html',label:'长文档成本'}]},
+
+  // ── BFS vs DFS（3 题）──
+  {who:'hr',
+   q:'「BFS 一层层扫，DFS 一条道走到黑。抛开术语，这两种性格分别适合找什么样的东西？」',
+   intent:'考你对两种搜索的<strong>选型直觉</strong>。背名词的人能画出遍历顺序却说不出何时用谁；真懂的人有清晰口诀：目标浅、要最短路径用 BFS；目标深、要遍历全部或省内存用 DFS——还能各给一个真实系统的例子。',
+   frame:['<strong>先给两种性格：</strong>BFS 从起点一圈圈向外扩，近处全看完才走远处；DFS 认准一条路扎到底，撞墙才回头换路。',
+     '<strong>BFS 的适用面：</strong>答案离起点不远、或要保证「最短路径」时用它：社交网络查两人隔几层、迷宫最短路线、爬虫按层抓网页——BFS 第一次碰到目标的那条路必然最短。',
+     '<strong>DFS 的适用面：</strong>要走遍所有角落、或目标藏得深时用它：遍历文件树、走完所有分支的可能性穷举——而且它只需记住当前这条路径，内存比 BFS 记一整层节点省得多。',
+     '<strong>给内存注脚：</strong>BFS 的队列在宽图上会膨胀得很大（每层节点数指数涨），DFS 的栈只有路径深度那么长——空间开销经常是选型的决定因素。'],
+   bonus:'补一句「工程里常用折中方案：迭代加深——用 DFS 的省内存方式实现 BFS 的按层效果；游戏 AI 和早期搜索引擎都用过」。知道两者之间还有光谱，说明理解是立体的。',
+   refs:[{href:'algo-8.html',label:'BFS 与 DFS'},{href:'ds-4.html',label:'队列'},{href:'ds-3.html',label:'栈'}]},
+
+  {who:'dev',
+   q:'「Coding Agent 要在我们仓库里找数据库配置。你觉得它该一层层扫目录，还是顺着入口文件一路钻下去？说说你的判断依据。」',
+   intent:'技术同事拿真实场景考你<strong>会不会活用搜索策略</strong>。背名词的人随便选一个说不出依据；真懂的人会先分析先验知识：配置文件通常在浅层且文件名有模式（BFS 加名字过滤快），但「顺代码引用找」本质是 DFS——两种策略对应两种线索。',
+   frame:['<strong>先给判断依据：</strong>取决于手上有什么线索。线索是「位置规律」（配置一般在根目录或 config 目录、名字带 config/env）就该 BFS：浅层扫一两层加文件名匹配，几步就中。',
+     '<strong>另一条路：</strong>线索是「代码引用」（入口文件里 import 了什么）就是 DFS：顺着引用链一路追到配置定义处——路径可能深，但每步都有确定方向，不会白扫。',
+     '<strong>给出组合策略：</strong>实际 Agent 是混合体：先 BFS 看目录结构建立地图，再用 grep 这类全局匹配直接跳跃，最后 DFS 追引用链确认——工具让它不必拘泥单一策略。',
+     '<strong>落到验收：</strong>所以评估 Agent 检索能力时我会看它的搜索轨迹是否有策略性：无脑全量读文件的实现，成本和速度都不合格。'],
+   bonus:'补一句「grep 相当于给图加了传送门，把逐层搜索变成关键词直达——这也是为什么 Coding Agent 的检索效率高度依赖代码库的命名质量」。能点出工具对算法的改写，就是工程视角。',
+   refs:[{href:'algo-8.html',label:'Agent 找文件'},{href:'ds-7.html',label:'文件树'}]},
+
+  {who:'boss',
+   q:'「同样让 AI 在公司文档库里找一份资料，有时候几秒就到，有时候等半天最后还说没找到。这种时好时坏是怎么回事？」',
+   intent:'老板在问搜索的<strong>方差从哪来</strong>。背名词的人只会说「AI 不稳定」；真懂的人能解释搜索路径和运气的关系：起点选得好、目标在浅层就快；线索误导、一条道走错要大量回溯就慢——并给出减小方差的工程手段。',
+   frame:['<strong>先给直观解释：</strong>AI 找资料像人在陌生仓库找货：有时一进门就看到，有时要一排排翻。它按线索选搜索路径，线索准就直达，线索误导就绕远路甚至遍历完才敢说没有。',
+     '<strong>拆两个具体原因：</strong>快慢差异来自搜索深度：目标在浅层或关键词独特，几步命中；「没找到」还要更久，因为宣布没有之前它必须把该看的都看完——证伪永远比证实贵。',
+     '<strong>给改善手段：</strong>降方差靠基础设施：文档规范命名和打标签（改善线索质量）、建索引和向量库（把翻找变成直达）、常见查询做缓存——让运气成分越来越小。',
+     '<strong>给预期设定：</strong>整改后设定 SLA：九成查询几秒内返回，剩下的难查询给进度提示——「时好时坏」会变成「大部分快、少数可解释地慢」。'],
+   bonus:'补一句「搜索时长的分布比平均值更重要：平均 3 秒但 5% 的查询要 3 分钟，用户记住的只有那 3 分钟」——用长尾思维谈体验，老板会意识到你懂的不只是技术。',
+   refs:[{href:'algo-8.html',label:'搜索策略'},{href:'ds-10.html',label:'向量索引直达'}]},
+
+  // ── 贪心 / 采样 / Temperature（3 题）──
+  {who:'hr',
+   q:'「贪心算法的『贪』是什么意思？它什么时候能贪出全局最优，什么时候会贪进死胡同？」',
+   intent:'考你对贪心<strong>边界条件的认识</strong>。背名词的人只会说「每步选局部最优」；真懂的人知道贪心的成立是有条件的——局部最优能拼成全局最优的问题结构才行——并能各举一个成功和翻车的例子。',
+   frame:['<strong>先给定义：</strong>贪心就是每一步都选当下看起来最好的，选完不回头。优点是简单快速，一遍扫完就出结果。',
+     '<strong>什么时候灵：</strong>问题满足「局部最优可叠加成全局最优」时贪心是正解：找零钱用最少张数（面额设计合理时）、按截止时间排任务——每步的好选择不会堵死后面的路。',
+     '<strong>什么时候翻车：</strong>当前的好选择会锁死未来时贪心就掉坑：走迷宫每步朝出口方向走可能撞进死胡同；下棋每步吃对方最大的子会中弃子陷阱。',
+     '<strong>给判断方法：</strong>用前问自己一句：「这一步选错了，后面还有救吗？」没救的问题（选择之间强依赖）别用贪心，上动态规划或搜索。'],
+   bonus:'落一个 AI 注脚：「大模型的贪心解码每步都选概率最高的词，恰恰是『局部最优不保证全局最优』的活例子——开头选了个平庸的词，整句话就平庸到底了」。用刚学的 AI 知识反哺经典算法题，是最讨喜的答法。',
+   refs:[{href:'algo-9.html',label:'贪心与采样'},{href:'algo-10.html',label:'贪心的短视'}]},
+
+  {who:'hr',
+   q:'「Temperature 这个参数，产品文档里都写『越高越有创意、越低越稳定』。从算法角度讲，它到底动了什么？」',
+   intent:'考你能不能<strong>把产品话术还原成机制</strong>。背名词的人只会重复文档里那句话；真懂的人能讲出它调节的是概率分布的形状：低温把分布削尖趋近贪心（只选最大概率），高温把分布抹平让冷门词也有机会被采样到。',
+   frame:['<strong>先给机制：</strong>模型每步输出的是候选词的概率分布，Temperature 在采样前给这个分布整形：温度低，分布被削得更尖，高概率词几乎垄断；温度高，分布被抹平，冷门词的中签率上升。',
+     '<strong>给两个极端：</strong>温度趋近 0 就是贪心解码：每步必选概率第一，同样输入几乎同样输出；温度调高，掷骰子的随机性变大，同一个问题十次十个答案。',
+     '<strong>翻译成产品语言：</strong>所谓「创意」就是敢走低概率路径，代价是胡说的风险同步上升；所谓「稳定」就是循规蹈矩，代价是千篇一律。',
+     '<strong>给配置建议：</strong>按任务定温度：客服、抽取、代码用低温（要对不要花），文案、头脑风暴用高温（要花才有惊喜）——一个产品里不同功能应该用不同温度。'],
+   bonus:'补一句「Temperature 常和 Top-p 配合：先按累计概率截掉长尾再采样，防止高温时采到彻底离谱的词——两个参数一起看才是完整的采样策略」。能主动带出参数间的联动，就不是照本宣科了。',
+   refs:[{href:'algo-9.html',label:'Temperature 的算法学'}]},
+
+  {who:'boss',
+   q:'「同一个模型，客服那边要它稳定得像复读机，营销那边嫌它写文案千篇一律。两边需求打架，我们是不是得买两个模型？」',
+   intent:'老板把参数问题理解成了模型问题，考你<strong>能不能用便宜方案解决贵问题</strong>。背名词的人可能真去调研双模型成本；真懂的人知道这就是一个 Temperature（加采样参数）按场景分配的事——同一个模型、两套调用配置，零额外成本。',
+   frame:['<strong>先给结论省钱：</strong>不用买两个模型。模型生成时有个「保守还是奔放」的旋钮（Temperature），是每次调用时传的参数——同一个模型，客服调用时拧低、营销调用时拧高，就是两种性格。',
+     '<strong>解释为什么可行：</strong>模型每次都在一堆候选词里做选择：拧低就永远挑最稳的词，输出高度一致；拧高就允许冒险选新奇的词，十条文案十个花样。',
+     '<strong>给落地方案：</strong>按业务线建调用配置模板：客服低温加固定话术约束；营销高温加一次生成多条供人挑选。一周内可上线，成本只是配置工作量。',
+     '<strong>给验证方式：</strong>各拿 50 个真实案例试跑：客服看回答一致性和准确率，营销看文案多样性和采用率——数据确认后再固化配置。'],
+   bonus:'替老板想到下一步：「营销那边光调温度不够的话，再加『多路生成 + 人工挑选』的工作流，创意产能能再翻几倍——这也不需要新模型」。把问题解决在参数层，钱花在刀刃上。',
+   refs:[{href:'algo-9.html',label:'贪心与采样的两种性格'},{href:'algo-10.html',label:'多候选生成'}]},
+
+  // ── Beam Search / AI 时代还要不要刷题（2 题）──
+  {who:'hr',
+   q:'「贪心解码一步错步步错，那模型怎么『多想几步再落笔』？说说 Beam Search 的思路，以及它为什么没有成为聊天产品的默认方案。」',
+   intent:'考你对解码策略的理解<strong>有没有超出 Temperature</strong>。背名词的人说不出 Beam Search 和贪心的关系；真懂的人能讲清「同时保留 K 条候选路径往前探」的机制，还知道它的代价（K 倍计算、偏保守）让聊天场景宁可用采样。',
+   frame:['<strong>先给思路：</strong>Beam Search 是贪心的宽视野版：每步不是只留概率第一的词，而是同时保留 K 条最有希望的候选句往前扩展，最后从 K 条完整路径里选整体概率最高的——用「多看几步」避免开头选错锁死全局。',
+     '<strong>给对比锚点：</strong>贪心是 K=1 的特例；K 越大越接近全局最优，计算量也按 K 倍涨。',
+     '<strong>回答后半问：</strong>它没成为聊天默认有两个原因：一是 K 倍算力在高并发下太贵；二是它偏爱「安全高概率」的句子，生成的话平淡重复，聊天要的灵动反而靠带温度的采样。',
+     '<strong>给出它的主场：</strong>机器翻译、语音识别这类「有标准答案、要整体最优」的任务里，Beam Search 至今是主力。'],
+   bonus:'补一句「现在推理模型的『先想再答』走了另一条路：不在解码层多看几步，而是先生成思考 Token 再给答案——用生成换搜索。两条路线解决的是同一个『贪心短视』问题」。能把 Beam Search 和思维链串起来，是本章最高级的融会贯通。',
+   refs:[{href:'algo-10.html',label:'Beam Search'},{href:'algo-9.html',label:'贪心解码'}]},
+
+  {who:'boss',
+   q:'「招聘要求里还写『算法基础扎实』有意义吗？AI 都能秒解 LeetCode 了，我们到底该考候选人什么？」',
+   intent:'终极观念题，老板在<strong>让你重新定义人才标准</strong>。背名词的人只会站队「要考」或「不考」；真懂的人会区分「手写算法的能力」和「用复杂度直觉做判断的能力」——前者 AI 接管了大半，后者恰恰因为 AI 大量产码而更稀缺。',
+   frame:['<strong>先给判断：</strong>有意义，但内涵变了。要淡化的是「手写红黑树」式的默写能力——AI 确实秒解；要强化的是算法直觉——能看出 AI 写的代码扛不扛得住数据量、贵不贵、会不会失控。',
+     '<strong>给理由：</strong>AI 时代代码产量暴涨，验收需求同步暴涨：不懂复杂度的人签收了 O(n²)，上线就是事故——判断力没法外包给写代码的那个 AI 自己。',
+     '<strong>给考法建议：</strong>面试题从「白板写快排」换成「这是 AI 写的方案，指出它数据量翻百倍后的问题」「这个 Agent 为什么会烧钱失控」——考的是真实工作里每天要做的判断。',
+     '<strong>按岗位分层：</strong>基础设施和算法岗仍要硬功底；产品工程和业务研发重直觉与验收能力；PM 和运营能听懂复杂度对话即可——一刀切的旧标准才该淘汰。'],
+   bonus:'给老板一句能转述的话：「以前算法好的人负责把代码写快，现在算法好的人负责不让 AI 写的慢代码上线——考核从生产能力变成了守门能力」。这句话值一次管理层会议。',
+   refs:[{href:'algo-11.html',label:'还要刷 LeetCode 吗'},{href:'algo-12.html',label:'用 AI 学算法'},{href:'algo-build.html',label:'复杂度体检'}]}
+];
+
+const WHO = {
+  hr:  {label:'面试官',   cls:'who-hr',   card:''},
+  boss:{label:'老板',     cls:'who-boss', card:' c-boss'},
+  dev: {label:'技术同事', cls:'who-dev',  card:' c-dev'}
+};
+
+document.getElementById('iqList').innerHTML = QUESTIONS.map(function(it, i){
+  const w = WHO[it.who];
+  return '<div class="iq-card' + w.card + '">'
+    + '<div class="iq-head"><span class="iq-num">Q' + (i + 1) + '</span><span class="iq-who ' + w.cls + '">' + w.label + '</span></div>'
+    + '<div class="iq-q">' + it.q + '</div>'
+    + '<div class="iq-block iq-intent"><div class="iq-label">🎯 对方在考察什么</div><div class="iq-body">' + it.intent + '</div></div>'
+    + '<div class="iq-block iq-frame"><div class="iq-label">🧭 答题框架</div><ol>'
+    + it.frame.map(function(f){ return '<li>' + f + '</li>'; }).join('')
+    + '</ol></div>'
+    + '<div class="iq-bonus"><b>⭐ 加分点</b>' + it.bonus + '</div>'
+    + '<div class="iq-refs"><span class="iq-refs-label">用这些课程页组织答案 →</span>'
+    + it.refs.map(function(r){ return '<a href="' + r.href + '">' + r.label + '</a>'; }).join('')
+    + '</div></div>';
+}).join('');
+</script>
+
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

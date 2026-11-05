@@ -1,0 +1,30 @@
+diff --git a/dist/pdf/hyphenation.js b/dist/pdf/hyphenation.js
+index 202c743456df5a1b73a2b75b3594fe6cf3e753a6..4c68302ed41ccb1f433a9c1ad200786db2e2937a 100644
+--- a/dist/pdf/hyphenation.js
++++ b/dist/pdf/hyphenation.js
+@@ -1,5 +1,9 @@
+ const cjkCharacterRegex = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/;
+ const MIN_BREAKABLE_WORD_LENGTH = 16;
++// Chinese line-breaking rules: keep closing punctuation with the preceding
++// character, and opening punctuation with the following character.
++const closingPunctuation = /^[、。，．；：？！）》】〉」』”’％%…!?;:,.)\]}]$/u;
++const openingPunctuation = /[（《【〈「『“‘(\[{]$/u;
+ export const magicPdfHyphenationCallback = (word) => {
+     if (word === ' ')
+         return [word];
+@@ -8,5 +12,14 @@ export const magicPdfHyphenationCallback = (word) => {
+     }
+     // Empty fragments expose character-level break opportunities without
+     // asking textkit to paint a hyphen at the end of the wrapped line.
+-    return Array.from(word).flatMap((character) => [character, '']);
++    const fragments = [];
++    for (const character of Array.from(word)) {
++        const previous = fragments[fragments.length - 1];
++        if (previous && (closingPunctuation.test(character) || openingPunctuation.test(previous))) {
++            fragments[fragments.length - 1] += character;
++        } else {
++            fragments.push(character);
++        }
++    }
++    return fragments.flatMap((fragment) => [fragment, '']);
+ };

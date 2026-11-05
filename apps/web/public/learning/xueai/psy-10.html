@@ -1,0 +1,1468 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-10",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-10',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>蜜月悬崖：宣传拉高的期望，要用留存来还 | AI 产品心理学</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   taste.css —— 专题篇章「审美工程」共用设计系统
+   背景：本章 12 页交互密度极高（每页 2~3 处以上可玩组件），
+   若按成本篇的做法每页各写一套样式，A/B 找茬、迷你界面、
+   点选题这些跨页组件会复制 12 遍并逐渐漂移。
+   设计意图：本章讲的就是「一致性产生系统感」，篇章样式自身
+   必须是正面教材——主题色、圆角、间距全部收敛在这一个文件里，
+   页面特有样式才允许写在各页 <style> 中。
+   约束：全章唯一主色 --ct（玫红），间距一律 8 的倍数；
+   在 lesson.css 之后引入，只做增量不覆盖骨架。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#db2777;            /* 章主色：玫红 */
+  --ct-deep:#9d174d;       /* 深玫红：正文里的强调字 */
+  --ct-soft:rgba(219,39,119,.08);
+  --ct-line:rgba(219,39,119,.25);
+  --good:#16a34a;
+  --good-soft:rgba(22,163,74,.08);
+  --bad:#dc2626;
+  --bad-soft:rgba(220,38,38,.07);
+}
+
+.lesson-header .kicker{color:var(--ct);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.chip{padding:6px 14px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);font-size:13px;font-weight:700;}
+.desc{font-size:15px;color:var(--sub);line-height:1.8;}
+.desc b{color:var(--ct-deep);}
+.quote-card{background:var(--ct-soft);border:1.5px solid var(--ct-line);border-radius:14px;padding:16px 24px;font-size:16px;line-height:1.8;}
+.quote-card b{color:var(--ct-deep);}
+
+/* ── 表格（对齐成本篇的表格语言） ── */
+.tbl-wrap{overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card);}
+.tbl th{background:var(--ct-soft);color:var(--ct-deep);font-weight:800;text-align:left;padding:12px 16px;font-size:13px;}
+.tbl td{padding:12px 16px;border-top:1px solid var(--border);color:var(--sub);line-height:1.65;vertical-align:top;}
+.tbl td b{color:var(--ct-deep);}
+
+/* ── 交互容器：所有能玩的组件统一装进 .toy ──
+   头部彩条 + 「动手」徽标是全章交互区的统一识别色，
+   读者扫一眼就知道这块能点。 */
+.toy{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-top:16px;box-shadow:var(--shadow-card);overflow:hidden;}
+.toy-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);}
+.toy-head .toy-ic{width:26px;height:26px;border-radius:8px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toy-head .toy-ic svg{width:15px;height:15px;}
+.toy-head .toy-t{font-size:14px;font-weight:800;color:var(--text);}
+.toy-head .toy-badge{margin-left:auto;font-size:11px;font-weight:800;padding:3px 12px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);white-space:nowrap;}
+.toy-head .toy-badge.solved{background:var(--good-soft);color:var(--good);}
+.toy-body{padding:20px;}
+.toy-hint{font-size:12.5px;color:var(--sub);font-weight:600;margin-bottom:12px;}
+
+/* ── A/B 对决（找茬）：两块界面选出更好的那块 ── */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.duel-side{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;background:var(--bg);}
+.duel-side:hover{border-color:var(--ct-line);transform:translateY(-2px);box-shadow:var(--shadow-pop);}
+.duel.done .duel-side{cursor:default;}
+.duel.done .duel-side:hover{transform:none;box-shadow:none;}
+.duel-side .duel-tag{position:absolute;top:8px;left:8px;z-index:2;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--sub);border:1px solid var(--border);}
+.duel-side.win{border-color:var(--good);}
+.duel-side.lose{border-color:var(--bad);opacity:.75;}
+.duel-side.win .duel-tag{background:var(--good);color:#fff;border-color:var(--good);}
+.duel-side.lose .duel-tag{background:var(--bad);color:#fff;border-color:var(--bad);}
+.duel-verdict{margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.duel-verdict.show{display:block;}
+.duel-verdict.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.duel-verdict.good b{color:var(--good);}
+.duel-verdict.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+.duel-verdict.miss b{color:var(--text);}
+
+/* ── 迷你界面积木：页内所有「假界面」的统一零件 ──
+   pointer-events 关掉，读者点的是整块卡片而不是假按钮。 */
+.mock{background:#fff;padding:16px;min-height:150px;pointer-events:none;user-select:none;font-size:12px;line-height:1.5;}
+.mock *{box-sizing:border-box;}
+.mock-bar{height:8px;border-radius:4px;background:#e5e7eb;}
+.mock-dot{width:24px;height:24px;border-radius:50%;background:#e5e7eb;flex-shrink:0;}
+.mock-h{font-weight:800;color:#111827;}
+.mock-p{color:#6b7280;}
+.mock-btn{display:inline-block;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;background:#111827;color:#fff;}
+.mock-btn.ghost{background:transparent;color:#6b7280;border:1px solid #d1d5db;}
+.mock-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;}
+.mock-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+
+/* ── 点选题（多选项挑一个） ── */
+.quiz-opts{display:flex;flex-direction:column;gap:10px;}
+.quiz-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;background:var(--card);font-size:14px;line-height:1.65;color:var(--text);}
+.quiz-opt:hover{border-color:var(--ct-line);background:var(--ct-soft);}
+.quiz-opt .qo-key{width:24px;height:24px;border-radius:8px;background:rgba(0,0,0,.05);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.quiz-opt.right{border-color:var(--good);background:var(--good-soft);cursor:default;}
+.quiz-opt.right .qo-key{background:var(--good);color:#fff;}
+.quiz-opt.wrong{border-color:var(--bad);background:var(--bad-soft);cursor:default;opacity:.8;}
+.quiz-opt.wrong .qo-key{background:var(--bad);color:#fff;}
+.quiz-fb{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.quiz-fb.show{display:block;}
+.quiz-fb.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.quiz-fb.good b{color:var(--good);}
+.quiz-fb.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+
+/* ── 迷你浏览器外壳：所有 mock 教具的统一画框 ──
+   背景：v1.3 验收打回，裸的 mock 读起来像没画完的线框图。
+   设计意图：三个圆点 + 地址栏的顶栏让读者一眼认出「这是展品」，
+   正反案例的差距才会读成档次差而非完成度差。
+   用法：<div class="mockwin"><div class="mockwin-bar"><i></i><i></i><i></i>
+   <span class="mockwin-url">yoga.example.com</span></div>
+   <div class="mock">…</div></div> */
+.mockwin{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.mockwin-bar{display:flex;align-items:center;gap:5px;padding:8px 12px;background:#f4f4f5;border-bottom:1px solid var(--border);}
+.mockwin-bar i{width:9px;height:9px;border-radius:50%;background:#d4d4d8;flex-shrink:0;}
+.mockwin-bar i:first-child{background:#fca5a5;}
+.mockwin-bar i:nth-child(2){background:#fcd34d;}
+.mockwin-bar i:nth-child(3){background:#86efac;}
+.mockwin-url{margin-left:8px;flex:1;min-width:0;font-size:10.5px;color:#a1a1aa;background:#fff;border-radius:6px;padding:3px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,monospace;}
+
+/* ── 滑块行 ── */
+.sl-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.sl-row label{font-size:14px;font-weight:700;color:var(--text);min-width:96px;}
+.sl-row input[type=range]{flex:1;min-width:160px;accent-color:var(--ct);}
+.sl-row .sl-val{font-size:14px;font-weight:800;min-width:88px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ct-deep);}
+
+/* ── 分段切换 ── */
+.seg{display:inline-flex;background:rgba(0,0,0,.05);border-radius:10px;padding:3px;gap:2px;}
+.seg button{border:none;background:transparent;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.seg button.on{background:#fff;color:var(--ct-deep);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* ── 要点回顾 ── */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card);}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px;}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0;}
+.tk-item p b{color:var(--ct-deep);}
+
+/* ── 图片对比 / 挑选 ── */
+.pic-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pic-cell{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s;background:#000;}
+.pic-cell:hover{border-color:var(--ct-line);transform:translateY(-2px);}
+.pic-cell img{width:100%;display:block;aspect-ratio:1;object-fit:cover;}
+.pic-cell .pic-tag{position:absolute;top:8px;left:8px;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px);}
+.pic-cell.win{border-color:var(--good);}
+.pic-cell.lose{border-color:var(--bad);opacity:.7;}
+.pic-grid.done .pic-cell{cursor:default;}
+.pic-grid.done .pic-cell:hover{transform:none;}
+.pic-cap{font-size:12.5px;color:var(--sub);padding:8px 4px 0;line-height:1.6;}
+
+/* ── 出处注脚 ── */
+.src-note{margin-top:32px;font-size:13px;color:var(--sub);line-height:1.85;}
+.src-note b{color:var(--text);}
+
+@media (max-width:768px){
+  .duel{grid-template-columns:1fr;}
+  .pic-grid{grid-template-columns:1fr;}
+  .toy-body{padding:16px;}
+  .toy-head .toy-badge{display:none;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   psy.css —— 专题篇章「AI 产品心理学」样式覆盖
+   背景：本章 v3 起复用审美工程的组件体系（taste.css 的
+   toy / duel / quiz / mockwin / takeaways），组件颜色全部走
+   --ct 系列变量，本文件只负责把章色从玫红换成青色，
+   并保留旧页面在用的 --psy 别名。
+   约束：必须在 taste.css 之后引入；页面特有样式写在各页 <style>。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#0d9488;            /* 章主色：青 */
+  --ct-deep:#115e59;
+  --ct-soft:rgba(13,148,136,.08);
+  --ct-line:rgba(13,148,136,.28);
+  /* 旧页面别名，v3 重做完成后可移除 */
+  --psy:#0d9488;
+  --psy-deep:#115e59;
+  --psy-soft:rgba(13,148,136,.08);
+  --psy-line:rgba(13,148,136,.28);
+}
+
+/* 本章仪表类教具的公共零件：许多页要显示一个「情绪 / 弃用率 / 折扣」仪表，
+   拨开关看指针移动是本章工程杠杆的标准演示形态。 */
+.gauge{display:flex;flex-direction:column;gap:6px;}
+.gauge-head{display:flex;align-items:baseline;justify-content:space-between;}
+.gauge-label{font-size:12.5px;font-weight:800;color:var(--sub);}
+.gauge-num{font-size:22px;font-weight:900;color:var(--ct-deep);font-variant-numeric:tabular-nums;transition:color .25s;}
+.gauge-num.bad{color:var(--bad);}
+.gauge-track{height:12px;border-radius:8px;background:rgba(0,0,0,.06);overflow:hidden;}
+.gauge-fill{height:100%;border-radius:8px;background:var(--ct);width:0;transition:width .45s cubic-bezier(.22,1,.36,1),background .3s;}
+.gauge-fill.bad{background:var(--bad);}
+.gauge-note{font-size:12px;color:var(--sub);line-height:1.7;}
+
+/* 开关行：工程杠杆的标准形态，拨一下，上面的仪表当场动 */
+.lever-list{display:flex;flex-direction:column;gap:10px;}
+.lever{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:border-color .18s,background .18s;}
+.lever:hover{border-color:var(--ct-line);}
+.lever.on{border-color:var(--ct);background:var(--ct-soft);}
+.lever-sw{width:38px;height:22px;border-radius:99px;background:rgba(0,0,0,.15);flex-shrink:0;position:relative;transition:background .2s;margin-top:2px;}
+.lever-sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.22,1,.36,1);}
+.lever.on .lever-sw{background:var(--ct);}
+.lever.on .lever-sw::after{transform:translateX(16px);}
+.lever-body h6{font-size:13.5px;font-weight:800;color:var(--text);line-height:1.5;}
+.lever-body p{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:2px;}
+.lever-body p b{color:var(--ct-deep);}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="期望确认理论：满意度等于体验减期望，宣传每拔高一档，产品就要多还一档。先玩抽卡机看懂「演示是 P99、用户拿到 P50」，再拖宣传强度滑块看注册转化和三十日留存此消彼长，最后在期望曲线编辑器上拨三个杠杆：承诺低一档、能力藏一手、改进攒着发。">
+<meta name="keywords" content="期望管理,期望确认理论,新鲜感消退,AI产品留存,用户预期,产品营销,蜜月期">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="蜜月悬崖：宣传拉高的期望，要用留存来还">
+<meta property="og:description" content="满意度 = 体验 − 期望。抽卡机、宣传滑块、期望曲线编辑器，三个教具亲手玩。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-10.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-10.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="蜜月悬崖：期望是要还的">
+<meta name="twitter:description" content="演示是 P99，用户拿到 P50，落差全记在产品头上。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+/* ── 公式卡 ── */
+.p10-eq{background:var(--card);border:1.5px solid var(--border);border-radius:14px;box-shadow:var(--shadow-card);padding:24px;text-align:center;margin-top:16px;}
+.p10-eq .line{font-size:20px;font-weight:900;color:var(--text);letter-spacing:.5px;}
+.p10-eq .line .hl{color:var(--ct);}
+.p10-eq .sub{font-size:12.5px;color:var(--sub);margin-top:8px;line-height:1.75;}
+.p10-eq .sub b{color:var(--ct-deep);}
+
+/* ── 抽卡机：演示位 vs 真实用 ── */
+.p10-gacha{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.p10-slot{padding:16px;min-height:150px;display:flex;flex-direction:column;gap:8px;}
+.p10-slot .sh{font-size:11px;font-weight:800;color:#111827;display:flex;align-items:center;gap:8px;}
+.p10-slot .sh .mock-chip{background:#f3f4f6;color:#6b7280;}
+.p10-out{border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.7;color:#374151;min-height:88px;transition:border-color .25s,background .25s;}
+.p10-out.flash{border-color:#0d9488;background:rgba(13,148,136,.05);}
+.p10-out .grade{display:inline-block;font-size:9.5px;font-weight:900;padding:1px 8px;border-radius:999px;margin-bottom:6px;}
+.p10-out .grade.s{background:#ccfbf1;color:#115e59;}
+.p10-out .grade.b{background:#fef3c7;color:#92400e;}
+.p10-out .grade.f{background:#fee2e2;color:#b91c1c;}
+.p10-draw{margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.p10-btn{padding:10px 22px;border-radius:11px;border:none;background:var(--ct);color:#fff;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:transform .12s,opacity .15s;}
+.p10-btn:hover{transform:translateY(-1px);}
+.p10-btn:disabled{opacity:.4;cursor:default;transform:none;}
+.p10-tally{font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums;}
+.p10-tally b{color:var(--ct-deep);}
+.p10-gsum{display:none;margin-top:14px;padding:14px 18px;border-radius:10px;background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);font-size:13.5px;line-height:1.8;color:var(--text);}
+.p10-gsum.show{display:block;}
+.p10-gsum b{color:var(--good);}
+
+/* ── 宣传强度滑块 ── */
+.p10-hywrap{display:grid;grid-template-columns:6fr 6fr;gap:16px;align-items:start;}
+.p10-hero{padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;min-height:170px;justify-content:center;transition:background .35s;}
+.p10-hero .hh{font-size:14px;font-weight:800;line-height:1.5;transition:color .3s;}
+.p10-hero .hp{font-size:10px;line-height:1.6;transition:color .3s;}
+.p10-hero .hb{display:inline-block;padding:6px 18px;border-radius:999px;font-size:10.5px;font-weight:800;margin-top:4px;transition:all .3s;}
+.p10-metrics{display:flex;flex-direction:column;gap:14px;}
+.p10-verdict{margin-top:14px;font-size:13px;line-height:1.8;color:var(--sub);border-top:1px dashed var(--border);padding-top:12px;}
+.p10-verdict b{color:var(--ct-deep);}
+
+/* ── 期望曲线编辑器 ── */
+.p10-curve{display:grid;grid-template-columns:7fr 5fr;gap:16px;align-items:start;}
+.p10-svgbox{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:16px;}
+.p10-svgbox svg{width:100%;height:auto;display:block;}
+.p10-cnote{font-size:12px;color:var(--sub);line-height:1.7;margin-top:10px;}
+.p10-cnote b{color:var(--ct-deep);}
+
+@media (max-width:768px){
+  .p10-gacha{grid-template-columns:1fr;}
+  .p10-hywrap{grid-template-columns:1fr;}
+  .p10-curve{grid-template-columns:1fr;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">专题篇章 · AI 产品心理学</div>
+    <h1>蜜月悬崖：宣传拉高的期望，要用留存来还</h1>
+    <p class="subtitle">发布会上的演示惊为天人，上手第一天很兴奋，第三天开始挑刺，第三十天卸载。这条曲线你在无数 AI 产品上见过。它有两个成因：<b>期望被宣传拉高了，新鲜感又天然会掉</b>。两个都能设计。</p>
+    <div class="chips"><span class="chip">抽卡机</span><span class="chip">宣传强度滑块</span><span class="chip">期望曲线编辑器</span><span class="chip">期望确认理论</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>期望确认理论：满意度等于体验减期望。先玩抽卡机看懂「演示是 P99、用户拿到 P50」，再拖宣传强度滑块看注册转化和三十日留存此消彼长，最后在期望曲线编辑器上拨三个杠杆</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">一条公式 · 满意度是道减法题</div>
+    <div class="p10-eq">
+      <div class="line">满意度 = 实际体验 <span class="hl">−</span> 事前期望</div>
+      <div class="sub">期望确认理论（Oliver，1980），消费者满意度研究用了四十年的地基。<br>体验是固定成本做出来的，期望是营销文案一句话抬上去的。<b>抬期望免费，还期望要命。</b></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">动手 · 抽卡机：演示位和真实用，差在哪</div>
+    <p class="desc">AI 产品在这道减法题上天生吃亏，原因藏在概率里。左边是发布会演示位，右边是用户真实使用。<b>两边连的是同一个模型</b>，点「生成」抽五次，看两边各拿到什么。</p>
+    <div class="toy" id="p10Gacha">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M8 12h8"></path><path d="M12 8v8"></path></svg></span>
+        <span class="toy-t">同一个模型，两个视角</span>
+        <span class="toy-badge" id="p10GachaBadge">0 / 5 抽</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">点下面的「生成一次」，连点五次</div>
+        <div class="p10-gacha">
+          <div class="mockwin">
+            <div class="mockwin-bar"><i></i><i></i><i></i><span class="mockwin-url">launch-keynote.example.com/demo</span></div>
+            <div class="mock p10-slot">
+              <div class="sh">发布会演示位<span class="mock-chip">剪辑后播出</span></div>
+              <div class="p10-out" id="p10DemoOut"><span class="grade s">S 级输出</span><div>等待生成…</div></div>
+            </div>
+          </div>
+          <div class="mockwin">
+            <div class="mockwin-bar"><i></i><i></i><i></i><span class="mockwin-url">app.example.com/workspace</span></div>
+            <div class="mock p10-slot">
+              <div class="sh">用户真实使用<span class="mock-chip">所见即所得</span></div>
+              <div class="p10-out" id="p10RealOut"><div style="color:#9ca3af">等待生成…</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="p10-draw">
+          <button class="p10-btn" id="p10DrawBtn">生成一次</button>
+          <span class="p10-tally" id="p10Tally">演示位 S 级 <b>0</b> 次 · 真实使用 S 级 <b>0</b> 次</span>
+        </div>
+        <div class="p10-gsum" id="p10GachaSum"><b>看出来了吧。</b>演示位每次都亮 S 级，因为它是从几十次生成里<b>挑出来再剪辑</b>的；真实使用拿到的是整个分布，S、B、翻车都有。宣传展示 P99，用户体验 P50，中间的落差全部记在「这产品不行」的账上。传统软件没这个问题：演示里点按钮出报表，用户点同一个按钮出同一张报表。<b>概率产品的宣传，天生自带期望泡沫。</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked xa-peek">
+    <div class="sec-label">动手 · 宣传强度滑块：转化和留存的跷跷板</div>
+    <p class="desc">既然期望是宣传抬上去的，抬多高就成了一道产品决策题。左边是你的落地页，拖滑块换五档文案；右边三个指标当场变。找找<b>转化 × 留存乘积最大</b>的那一档。</p>
+    <div class="toy" id="p10Hy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"></line><line x1="10" x2="3" y1="4" y2="4"></line><line x1="21" x2="12" y1="12" y2="12"></line><line x1="8" x2="3" y1="12" y2="12"></line><line x1="21" x2="16" y1="20" y2="20"></line><line x1="12" x2="3" y1="20" y2="20"></line><line x1="14" x2="14" y1="2" y2="6"></line><line x1="8" x2="8" y1="10" y2="14"></line><line x1="16" x2="16" y1="18" y2="22"></line></svg></span>
+        <span class="toy-t">五档宣传，三个指标</span>
+        <span class="toy-badge">拖一拖</span>
+      </div>
+      <div class="toy-body">
+        <div class="sl-row"><label>宣传强度</label><input type="range" id="p10Slider" min="0" max="4" step="1" value="2"><span class="sl-val" id="p10SliderVal">第 3 档</span></div>
+        <div class="p10-hywrap" style="margin-top:12px">
+          <div class="mockwin">
+            <div class="mockwin-bar"><i></i><i></i><i></i><span class="mockwin-url">meetnote.example.com</span></div>
+            <div class="mock p10-hero" id="p10Hero">
+              <div class="hh" id="p10HeroH"></div>
+              <div class="hp" id="p10HeroP"></div>
+              <span class="hb" id="p10HeroB">免费试用</span>
+            </div>
+          </div>
+          <div>
+            <div class="p10-metrics">
+              <div class="gauge"><div class="gauge-head"><span class="gauge-label">注册转化</span><span class="gauge-num" id="p10SignN"></span></div><div class="gauge-track"><div class="gauge-fill" id="p10SignF"></div></div></div>
+              <div class="gauge"><div class="gauge-head"><span class="gauge-label">首日满意度</span><span class="gauge-num" id="p10Day1N"></span></div><div class="gauge-track"><div class="gauge-fill" id="p10Day1F"></div></div></div>
+              <div class="gauge"><div class="gauge-head"><span class="gauge-label">三十日留存</span><span class="gauge-num" id="p10Day30N"></span></div><div class="gauge-track"><div class="gauge-fill" id="p10Day30F"></div></div></div>
+            </div>
+            <div class="p10-verdict" id="p10Verdict"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">新鲜感消退 · 悬崖的另一半</div>
+    <p class="desc">就算期望管理得当，还有一道坎：<b>新鲜感天然会掉</b>。教育技术研究里叫 novelty effect：新工具刚进课堂时效果显著，几周后回落，因为一部分效果来自「新」本身。AI 产品的蜜月期尤其短：第一次看它写诗是魔法，第十次是功能，第一百次是理所应当，出一次错就是垃圾。</p>
+    <div class="quote-card" style="margin-top:16px"><b>魔法感是消耗品。</b>靠首次惊艳撑留存，等于靠烟花取暖。</div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">动手 · 期望曲线编辑器：三个杠杆拨给你看</div>
+    <p class="desc">这是用户上手后 30 天的满意度曲线。当前状态：宣传拉满、能力首日全亮、改进悄悄挤牙膏，标准的蜜月悬崖。右边三个杠杆挨个拨开，<b>看曲线怎么被一段段接住</b>。</p>
+    <div class="toy" id="p10Curve">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg></span>
+        <span class="toy-t">30 天满意度曲线</span>
+        <span class="toy-badge" id="p10CurveBadge">0 / 3</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">拨右侧开关，曲线当场重画</div>
+        <div class="p10-curve">
+          <div class="p10-svgbox">
+            <svg viewBox="0 0 340 170" id="p10Svg" aria-label="满意度曲线图">
+              <line x1="34" y1="10" x2="34" y2="140" stroke="rgba(0,0,0,.12)" stroke-width="1"></line>
+              <line x1="34" y1="140" x2="330" y2="140" stroke="rgba(0,0,0,.12)" stroke-width="1"></line>
+              <text x="6" y="16" font-size="9" fill="#9ca3af">满意</text>
+              <text x="6" y="138" font-size="9" fill="#9ca3af">失望</text>
+              <text x="30" y="156" font-size="9" fill="#9ca3af">Day 1</text>
+              <text x="160" y="156" font-size="9" fill="#9ca3af">Day 15</text>
+              <text x="300" y="156" font-size="9" fill="#9ca3af">Day 30</text>
+              <line x1="34" y1="92" x2="330" y2="92" stroke="rgba(220,38,38,.35)" stroke-width="1" stroke-dasharray="4 4"></line>
+              <text x="240" y="88" font-size="8.5" fill="#dc2626">流失警戒线</text>
+              <polyline id="p10Line" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points=""></polyline>
+            </svg>
+            <div class="p10-cnote" id="p10CNote"></div>
+          </div>
+          <div class="lever-list" id="p10Levers"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">选一选 · 哪句文案不透支</div>
+    <div class="toy" id="p10Quiz">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></span>
+        <span class="toy-t">给 AI 法务助手写首页文案，哪句最不透支期望？</span>
+        <span class="toy-badge">单选</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">判断标准就一条：这句话立的期望，产品的 P50 输出接不接得住</div>
+        <div class="quiz-opts">
+          <div class="quiz-opt" data-k="0"><span class="qo-key">A</span><span>「你的 AI 律师，比人类更懂法条」</span></div>
+          <div class="quiz-opt" data-k="1"><span class="qo-key">B</span><span>「合同初审提速十倍，风险条款自动标出，最终判断留给你」</span></div>
+          <div class="quiz-opt" data-k="2"><span class="qo-key">C</span><span>「法律 AGI 已来，告别律师费」</span></div>
+          <div class="quiz-opt" data-k="3"><span class="qo-key">D</span><span>「智能法律助手，赋能法务新范式」</span></div>
+        </div>
+        <div class="quiz-fb"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>满意度 = 体验 − 期望：</b>抬期望免费，还期望要命。期望确认理论四十年没被推翻过。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>demo 是分布里挑的尖子：</b>宣传展示 P99，用户拿到 P50，概率产品的宣传天生自带期望泡沫，落差全记在产品头上。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>魔法感是消耗品：</b>新鲜感天然消退，靠首次惊艳撑留存等于靠烟花取暖。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>三个杠杆接住曲线：</b>承诺低一档（文案写 P50）、能力藏一手（进阶功能排期解锁）、改进攒着发（changelog 是免费的二次蜜月）。</p></div>
+    </div>
+    <p class="src-note"><b>内容来源：</b>小山学堂「AI 产品心理学」专题原创；期望确认理论出自 Oliver, <i>A Cognitive Model of the Antecedents and Consequences of Satisfaction Decisions</i>（1980）；新鲜感效应为教育技术研究通行结论。</p>
+  </section>
+
+</main>
+
+
+<script>/* ═══════════════════════════════════════════════════════════
+   taste.js —— 专题篇章「审美工程」共用交互组件
+   背景：本章多页反复用到「A/B 对决找茬」和「点选题」两种玩法，
+   逐页手写会复制大量事件绑定代码并各自漂移。
+   设计意图：只抽真正跨页复用的两个组件；页面独有的滑块、
+   开关类演示留在各页 <script> 里，避免过度抽象。
+   约束：依赖 taste.css 的 .duel / .quiz-* 类名；
+   必须在 DOM 就绪后调用（各页脚本置于 </main> 之后天然满足）。
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* 判词与标签走 i18n，否则英韩译文页一交互就冒出中文。
+     i18n.js 未加载时按中文兜底，与 build.js / lesson.js 同一套口径。 */
+  function T(key, zh) {
+    var i18n = window.XUEAI_I18N;
+    return i18n ? i18n.t(key) : zh;
+  }
+
+  /* A/B 对决：两块内容选出更好的那块。
+     背景：识别美的教学模式是「先动手判断，再听理论」（沿用 zero-3 找茬），
+     本章四个抓手页每页至少一局。
+     设计意图：答案揭晓后不锁死页面，双方标签换成「更好/欠佳」并给判词，
+     选错也给判词但语气区分——教学目标是看懂差异，不是考倒读者。
+     约束：cfg.winner 为更好一侧的索引（0 左 1 右）；
+     verdictWin / verdictMiss 支持 HTML；onDone 可选，用于页内进度统计。 */
+  window.tasteDuel = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var duel = root.querySelector('.duel');
+    var verdict = root.querySelector('.duel-verdict');
+    var badge = root.querySelector('.toy-badge');
+    var sides = duel.querySelectorAll('.duel-side');
+    duel.addEventListener('click', function (e) {
+      var side = e.target.closest('.duel-side');
+      if (!side || duel.classList.contains('done')) return;
+      var idx = Array.prototype.indexOf.call(sides, side);
+      duel.classList.add('done');
+      sides[cfg.winner].classList.add('win');
+      sides[1 - cfg.winner].classList.add('lose');
+      sides[cfg.winner].querySelector('.duel-tag').textContent = T('tasteBetter', '✓ 更好');
+      sides[1 - cfg.winner].querySelector('.duel-tag').textContent = T('tasteWorse', '✗ 欠佳');
+      var hit = idx === cfg.winner;
+      verdict.className = 'duel-verdict show ' + (hit ? 'good' : 'miss');
+      verdict.innerHTML = (hit
+        ? T('tasteDuelHit', '<b>眼力不错。</b>')
+        : T('tasteDuelMiss', '<b>这局看走眼了，正常，学完这节回来就能看出来。</b>')) + cfg.verdict;
+      if (badge) { badge.textContent = T('tasteRevealed', '✓ 已揭晓'); badge.classList.add('solved'); }
+      if (typeof cfg.onDone === 'function') cfg.onDone(hit);
+    });
+  };
+
+  /* 点选题：多个选项挑一个对的。
+     背景：审美词汇、提示词写法这类知识点，选一次比读三遍记得牢。
+     设计意图：选错立即标红并给「为什么不对」，允许继续选直到命中，
+     命中后整题锁定——试错本身就是教学过程。
+     约束：容器内选项需带 data-k（0 起）；cfg.answer 为正确索引；
+     cfg.why 数组给每个选项的判词，支持 HTML。 */
+  window.tasteQuiz = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var fb = root.querySelector('.quiz-fb');
+    var badge = root.querySelector('.toy-badge');
+    root.addEventListener('click', function (e) {
+      var opt = e.target.closest('.quiz-opt');
+      if (!opt || root.classList.contains('done')) return;
+      var k = +opt.dataset.k;
+      if (k === cfg.answer) {
+        root.classList.add('done');
+        opt.classList.add('right');
+        fb.className = 'quiz-fb show good';
+        fb.innerHTML = T('tasteQuizRight', '<b>对。</b>') + cfg.why[k];
+        if (badge) { badge.textContent = T('tasteSolved', '✓ 已解决'); badge.classList.add('solved'); }
+        if (typeof cfg.onDone === 'function') cfg.onDone();
+      } else if (!opt.classList.contains('wrong')) {
+        opt.classList.add('wrong');
+        fb.className = 'quiz-fb show miss';
+        fb.innerHTML = cfg.why[k] + T('tasteQuizRetry', ' 再挑一个。');
+      }
+    });
+  };
+})();
+</script>
+
+<script>
+/* ── 抽卡机 ──
+   背景：「宣传 P99、体验 P50」直接讲是一句抽象话，
+   要让读者连抽五次，亲眼看两边拿到的东西不一样。
+   设计意图：同一次抽取生成一个随机质量，演示位无视这个值永远播 S 级
+   （配「剪辑后播出」角标），真实位如实展示；五抽后开总结卡。
+   真实位的抽取序列固定为 [B,S,B,F,B]，保证每个读者都看到完整分布，
+   随机数只决定文案微差，教学效果不靠运气。
+   约束：S/B/F 三级文案与 grade 类名对应。 */
+(function () {
+  var DEMO = [
+    '为您起草的会议纪要已完成：三项决议、五条待办自动关联负责人，重点发言按主题归类，全文 312 字。',
+    '本季度 OKR 对齐会已总结：目标冲突两处已标出，建议的仲裁方案见附录。',
+    '跨部门周会纪要生成完毕：行动项 8 条已同步至日历，缺席人员的关注点单独成段。',
+    '客户访谈纪要完成：需求按优先级聚类，原话引用带时间戳，可一键回听。',
+    '战略讨论会纪要完成：分歧点与共识分栏呈现，附三个未决问题清单。',
+  ];
+  var REAL = [
+    { g: 'b', gt: 'B 级输出', t: '会议纪要已生成：内容基本齐全，但把「暂缓上线」记成了「确认上线」，待办漏了两条，需要手动补。' },
+    { g: 's', gt: 'S 级输出', t: '会议纪要已生成：决议、待办、负责人全部正确，摘要干净利落。就是发布会里那种效果。' },
+    { g: 'b', gt: 'B 级输出', t: '会议纪要已生成：主体可用，两位同名参会人的发言张冠李戴了，人名要自己核对一遍。' },
+    { g: 'f', gt: '翻车', t: '生成失败后重试：这次把闲聊环节当成了主议题，正经决议压缩成了一句话。删了重来吧。' },
+    { g: 'b', gt: 'B 级输出', t: '会议纪要已生成：结构没问题，但数字全是四舍五入的，财务口径的会议这么记要出事。' },
+  ];
+  var n = 0, sD = 0, sR = 0;
+  var btn = document.getElementById('p10DrawBtn');
+  btn.addEventListener('click', function () {
+    if (n >= 5) return;
+    var demoOut = document.getElementById('p10DemoOut');
+    var realOut = document.getElementById('p10RealOut');
+    var r = REAL[n];
+    demoOut.innerHTML = '<span class="grade s">S 级输出</span><div>' + DEMO[n] + '</div>';
+    realOut.innerHTML = '<span class="grade ' + r.g + '">' + r.gt + '</span><div>' + r.t + '</div>';
+    [demoOut, realOut].forEach(function (el) {
+      el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    });
+    sD++; if (r.g === 's') sR++;
+    n++;
+    document.getElementById('p10Tally').innerHTML = '演示位 S 级 <b>' + sD + '</b> 次 · 真实使用 S 级 <b>' + sR + '</b> 次';
+    var badge = document.getElementById('p10GachaBadge');
+    badge.textContent = n + ' / 5 抽';
+    if (n === 5) {
+      badge.textContent = '5 / 5 抽完';
+      badge.classList.add('solved');
+      document.getElementById('p10GachaSum').classList.add('show');
+      btn.disabled = true;
+      btn.textContent = '分布已看清';
+    }
+  });
+})();
+
+/* ── 宣传强度滑块 ──
+   背景：期望抬多高是决策题不是判断题，要给读者一个能拖的跷跷板。
+   设计意图：五档文案对应五组指标，档位切换时 hero 文案与配色、
+   三条仪表同时过渡；判词点出「转化 × 留存」的乘积逻辑。
+   约束：HY 数组顺序即档位顺序；hero 背景随档位加深传达「越吹越炸」。 */
+(function () {
+  var HY = [
+    { h: '一个能帮你整理会议纪要的小工具', p: '自动提取重点和待办，整理速度比手记快', bg: '#ffffff', hc: '#111827', sign: 3, day1: 82, day30: 41,
+      v: '宣传几乎裸奔，进来的人少，但个个期望极低，随便用用就觉得超值。留存漂亮，可惜<b>没人进来，留存高也白搭</b>。往右拉一格试试。' },
+    { h: '会议纪要交给 AI', p: '重点、待办自动提取，支持八种会议模板', bg: '#ffffff', hc: '#111827', sign: 8, day1: 78, day30: 38,
+      v: '说的都是稳定能做到的事。转化和留存的乘积在这一档附近<b>接近最优</b>：进来的人期望可兑现，用到的和听到的对得上。' },
+    { h: 'AI 会议助理，让你从此告别记笔记', p: '开会只管专注讨论，剩下的交给它', bg: '#f0fdfa', hc: '#115e59', sign: 15, day1: 69, day30: 29,
+      v: '「从此告别」开始透支了：总有会议它转写得稀烂，用户想起这句话就来气。转化涨了，<b>留存开始还债</b>。' },
+    { h: '你的 AI 参谋长：开会它全懂，决策它先行', p: '不止记录，还能替你判断', bg: '#ecfeff', hc: '#155e75', sign: 22, day1: 55, day30: 17,
+      v: '演示视频里它确实懂了一次。用户第三天发现参谋长连人名都写错，落差直接转成差评。<b>首日满意度已经撑不住了</b>，蜜月不到 72 小时。' },
+    { h: '重新定义会议：AGI 时代的第二大脑', p: '人类只负责出席', bg: '#faf5ff', hc: '#6b21a8', sign: 31, day1: 38, day30: 9,
+      v: '注册曲线是漂亮，然后是断崖。期望被抬到产品十年内到不了的地方，<b>每个新用户都是一次注定的失望</b>，顺带在社交网络帮你广播。增长的 KPI 达成了，口碑账户破产了。' },
+  ];
+  var slider = document.getElementById('p10Slider');
+  function render() {
+    var i = +slider.value, d = HY[i];
+    document.getElementById('p10SliderVal').textContent = '第 ' + (i + 1) + ' 档';
+    document.getElementById('p10Hero').style.background = d.bg;
+    var hh = document.getElementById('p10HeroH');
+    hh.textContent = '「' + d.h + '」'; hh.style.color = d.hc;
+    document.getElementById('p10HeroP').textContent = d.p;
+    var hb = document.getElementById('p10HeroB');
+    hb.style.background = d.hc; hb.style.color = '#fff';
+    document.getElementById('p10SignN').textContent = d.sign + '%';
+    document.getElementById('p10SignF').style.width = (d.sign * 3) + '%';
+    document.getElementById('p10Day1N').textContent = d.day1 + ' 分';
+    document.getElementById('p10Day1F').style.width = d.day1 + '%';
+    var d30n = document.getElementById('p10Day30N');
+    var d30f = document.getElementById('p10Day30F');
+    d30n.textContent = d.day30 + '%';
+    d30f.style.width = (d.day30 * 2) + '%';
+    d30n.classList.toggle('bad', d.day30 < 25);
+    d30f.classList.toggle('bad', d.day30 < 25);
+    document.getElementById('p10Verdict').innerHTML = d.v;
+  }
+  slider.addEventListener('input', render);
+  render();
+})();
+
+/* ── 期望曲线编辑器 ──
+   背景：三个杠杆若做成卡片就是 v2 被打回的样子，这里让它们
+   直接改写一条 SVG 满意度曲线。
+   设计意图：基线是「首日 95 分、五天跌破警戒线」的悬崖；
+   杠杆一抬升曲线整体起点合理化（首日降、后段升），
+   杠杆二在 Day7/Day15 加两个解锁峰，杠杆三在 Day22 加版本峰。
+   曲线用 31 个采样点现算，polyline 有 CSS 过渡不了就直接重绘，
+   点变化本身就是反馈；全开后给结论判词。
+   约束：分值域 0~100 映射到 y 140~20。 */
+(function () {
+  var levers = [false, false, false];
+  var LEV = [
+    { t: '承诺低一档：文案只写 P50 做得到的', d: '首日少了点烟花，但整条曲线的地基抬高了：体验不再欠期望的债。',
+      p: '宣传写「快十倍的初审」，不写「AI 律师」。' },
+    { t: '能力藏一手：进阶功能 Day 7 / Day 15 解锁', d: '两个「还有惊喜」的新峰值出现了，期望曲线上每次超预期都是一针强心剂。',
+      p: 'onboarding 只教三个最稳的场景，进阶能力排期放出。' },
+    { t: '改进攒着发：Day 22 发有感知的版本更新', d: '悄悄变好用户不会发现，宣告变好是一次可制造的峰值，顺带把「它在进化」写进心智。',
+      p: 'changelog 配对比示例：同一个输入，上月 vs 本月。' },
+  ];
+  function curve() {
+    var pts = [];
+    for (var day = 0; day <= 30; day++) {
+      var v;
+      if (!levers[0]) v = 95 - day * 6;               /* 悬崖：高开崩盘 */
+      else v = 74 - day * 1.1;                         /* 地基：合理起点缓降 */
+      if (levers[1]) {
+        if (day >= 7) v += 14 * Math.exp(-(day - 7) * (day - 7) / 8);
+        if (day >= 15) v += 12 * Math.exp(-(day - 15) * (day - 15) / 8);
+      }
+      if (levers[2] && day >= 22) v += 13 * Math.exp(-(day - 22) * (day - 22) / 8);
+      v = Math.max(8, Math.min(97, v));
+      pts.push([34 + day * (296 / 30), 140 - v * 1.2]);
+    }
+    return pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+  }
+  var list = document.getElementById('p10Levers');
+  var badge = document.getElementById('p10CurveBadge');
+  list.innerHTML = LEV.map(function (l, i) {
+    return '<div class="lever" data-i="' + i + '"><span class="lever-sw"></span>'
+      + '<div class="lever-body"><h6>' + l.t + '</h6><p>' + l.p + '</p></div></div>';
+  }).join('');
+  function note() {
+    var on = levers.filter(Boolean).length;
+    var el = document.getElementById('p10CNote');
+    if (on === 0) el.innerHTML = '<b>当前：标准蜜月悬崖。</b>首日 95 分全靠宣传和新鲜感，第 5 天跌穿流失警戒线，后面全在线下爬。';
+    else if (on < 3) el.innerHTML = '<b>' + LEV.map(function (l, i) { return levers[i] ? l.d : null; }).filter(Boolean).join('</b> <b>') + '</b>';
+    else el.innerHTML = '<b>三个杠杆全开：</b>起点是真实的，中段有两次解锁峰，尾段有版本峰，曲线全程压在警戒线上方。注意首日分数比悬崖版低了 20 分，<b>那 20 分本来就换不来第 30 天</b>。';
+    badge.textContent = on + ' / 3';
+    if (on === 3) badge.classList.add('solved'); else badge.classList.remove('solved');
+  }
+  list.addEventListener('click', function (e) {
+    var lever = e.target.closest('.lever');
+    if (!lever) return;
+    var i = +lever.dataset.i;
+    levers[i] = !levers[i];
+    lever.classList.toggle('on', levers[i]);
+    document.getElementById('p10Line').setAttribute('points', curve());
+    note();
+  });
+  document.getElementById('p10Line').setAttribute('points', curve());
+  note();
+})();
+
+/* 点选题：文案透支判断。判词按「P50 接不接得住」逐项裁决
+   （组件行为见 taste.js 注释）。 */
+tasteQuiz('p10Quiz', {
+  answer: 1,
+  why: [
+    '「比人类更懂法条」是 P99 时刻的偶发表现，用户拿它当基线之后，第一次引错法条就是背叛。何况这句话还会引来最不该来的用户：想省律师费的高风险场景。',
+    '三个承诺条条可兑现：提速是稳定的，自动标注是产品做的，「最终判断留给你」提前把责任边界画好，错了也在预期内。这句话的期望，P50 输出接得住。',
+    '「告别律师费」抬到了产品十年内到不了的地方，每个新用户都是注定的失望，出事还要吃官司。',
+    '这句的问题不在透支，在没有信息：「赋能」「新范式」立不起任何具体期望，用户拿自己的想象来填，想象通常比你的产品浪漫。',
+  ]
+});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

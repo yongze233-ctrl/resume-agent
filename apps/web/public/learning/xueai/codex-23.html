@@ -1,0 +1,1238 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-23",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-23',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>宿主拆分：程序挂在谁身上 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.dm-cols .dm-col:last-child .dm-head{position:relative}
+.dm-cols .dm-col:last-child .dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-head .dm-sub{font-size:11px;color:var(--sub)}
+.dm-body{padding:18px;display:flex;flex-direction:column;gap:12px;min-height:280px}
+.dm-stage{display:flex;align-items:stretch;justify-content:center;gap:10px;flex-wrap:wrap}
+.dm-house{flex:1 1 120px;min-width:110px;border:1px solid var(--border);border-radius:10px;background:var(--card);padding:12px;text-align:center;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-stage.is-live .dm-house{opacity:.4;transform:scale(.98)}
+.dm-stage.is-live .dm-house.now{opacity:1;transform:scale(1)}
+.dm-house b{display:block;font-size:12.5px;color:var(--accent-deep);margin-bottom:8px}
+.dm-house .slot{min-height:44px;border:1px dashed var(--border);border-radius:8px;padding:8px 6px;font-size:11.5px;line-height:1.5;color:var(--sub);background:var(--bg);opacity:1;transition:border-color .35s cubic-bezier(.4,0,.2,1),background .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-house .slot.on{border-style:solid;border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep);font-weight:700}
+.dm-house .slot.spin{border-style:solid;border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep);font-weight:700;animation:isoPulse 1.2s ease infinite}
+.dm-house .slot.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:700}
+.dm-house .slot.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-house .slot.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-house .slot.is-enter{opacity:0;transform:translateY(8px)}
+.dm-house .slot.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-house.dead,.dm-stage.is-live .dm-house.dead{opacity:.45}
+.dm-house.gone,.dm-stage.is-live .dm-house.gone{opacity:.35;background:var(--bg)}
+.dm-stage.is-live .dm-house.dead.now,.dm-stage.is-live .dm-house.gone.now{opacity:.7;transform:scale(1)}
+.dm-house.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-house.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-wire{flex:0 0 72px;max-width:72px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:700;color:var(--sub);text-align:center;min-height:44px;transition:max-width .4s cubic-bezier(.25,1,.5,1),opacity .35s cubic-bezier(.4,0,.2,1)}
+.dm-wire span{display:block;width:100%;height:2px;background:rgba(65,75,90,.35);border-radius:2px;transition:background .5s cubic-bezier(.25,1,.5,1)}
+.dm-wire.grpc span{height:2px;margin:2px 0}
+.dm-wire.off{opacity:.35;flex:0 0 40px;max-width:40px}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-cb{padding:10px 12px;border-radius:9px;border:1px dashed var(--border);background:var(--card);font-size:12px;line-height:1.6;color:var(--faint);text-align:center;min-height:42px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-cb.on{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-body.is-live .dm-cb{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-cb.now{opacity:1;transform:scale(1)}
+.dm-cb.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dm-fact{padding:10px 10px;border-radius:8px;background:var(--card);border:1px solid var(--border);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-facts.is-live .dm-fact{opacity:.4;transform:scale(.98)}
+.dm-facts.is-live .dm-fact.now{opacity:1;transform:scale(1)}
+.dm-fact.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-fact b{display:block;font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:700}
+.dm-fact span{font-size:12.5px;line-height:1.5;color:var(--text);overflow-wrap:anywhere;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-status{padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.75;background:var(--card);border:1px dashed var(--border);color:var(--sub);min-height:62px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-body.is-live .dm-status{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-status.now{opacity:1;transform:scale(1)}
+.dm-status.warn{border-style:solid;border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-status.hold{border-style:solid;border-color:rgba(65,75,90,.4);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-status.ok{border-style:solid;border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07);color:var(--success);font-weight:600}
+.dm-status.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@keyframes isoPulse{0%,100%{box-shadow:0 0 0 0 rgba(65,75,90,.16)}50%{box-shadow:0 0 0 6px rgba(65,75,90,.08)}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.dm-facts{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.dm-wire,.dm-wire.off{flex:1 1 100%;max-width:none;flex-direction:row;min-height:28px}.dm-wire span{width:24px;height:2px}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.demo,.visual,.cmp-card{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-summary.on{max-height:560px}}
+</style>
+<meta name="description" content="默认拓扑里 V8 已在独立宿主进程。同一段 JS 换四种宿主，隔离边界、生命周期和失败后果各自不同">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="宿主拆分：程序挂在谁身上"><meta property="og:description" content="默认拓扑里 V8 已在独立宿主进程。同一段 JS 换四种宿主，隔离边界、生命周期和失败后果各自不同"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-23.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 代码模式</div>
+    <h1>宿主拆分：程序挂在谁身上</h1>
+    <p class="subtitle">上一课讲 exec 和 wait 的语义。这一课问另一件事：这段 JavaScript 到底挂在谁身上，挂点换了之后，故障域和状态归属怎么变。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>上一课讲 exec 和 wait 的语义。这一课问另一件事：这段 JavaScript 到底挂在谁身上，挂点换了之后，故障域和状态归属怎么变。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="13" width="8" height="8" rx="1.5"></rect><path d="M7 11v2a4 4 0 0 0 4 4h2" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。第一，默认已经是独立宿主进程，主进程只握着会话提供方。第二，isolate 可以搬家，嵌套工具的审批还在本机。第三，宿主崩了或掉线，正在跑的 cell 和 store 一起没了，重连只能再 exec，不能接着刚才那段脚本。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一段 JS，四种宿主</div>
+  <div class="demo reveal" id="demo-hosts">
+    <div class="demo-top">
+      <div class="demo-title">同一段脚本：store、嵌套命令、再 wait</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">宿主</span>
+      <div class="dm-seg" id="dm-host">
+        <button type="button" data-host="local" class="on">本地子进程</button>
+        <button type="button" data-host="ws">WebSocket</button>
+        <button type="button" data-host="grpc">gRPC</button>
+        <button type="button" data-host="off">禁用</button>
+      </div>
+      <span class="dm-b-hint">左边固定 DSH 的进程内 worker。右边换 Codex 的提供方，看隔离边界、寿命和崩了谁还活着。</span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">中断杀 cell</span>
+      <div class="dm-seg" id="dm-kill">
+        <button type="button" data-kill="0" class="on">关 · 默认</button>
+        <button type="button" data-kill="1">开 · CodeModeInterrupt</button>
+      </div>
+      <span class="dm-b-hint">默认关。关掉时，Ctrl-C 只取消这一轮，宿主上的脚本还能接着跑。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">DSH · 进程内 worker</span><span class="dm-sub">对照，不随开关变</span></div>
+        <div class="dm-body">
+          <div class="dm-stage">
+            <div class="dm-house" id="dsh-house">
+              <b>主进程这栋楼</b>
+              <div class="slot" id="dsh-room">worker 小房间空着</div>
+            </div>
+          </div>
+          <div class="dm-facts">
+            <div class="dm-fact"><b>隔离</b><span>同一进程，不同线程</span></div>
+            <div class="dm-fact"><b>寿命</b><span id="dsh-life">一次 run 一个新 worker</span></div>
+          </div>
+          <div class="dm-status" id="dsh-status">等待开始。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">Codex · <span id="cx-name">本地子进程</span></span><span class="dm-sub" id="cx-provider">ProcessOwned</span></div>
+        <div class="dm-body">
+          <div class="dm-stage">
+            <div class="dm-house" id="cx-main">
+              <b>Codex 主进程</b>
+              <div class="slot" id="cx-main-slot">握着提供方</div>
+            </div>
+            <div class="dm-wire" id="cx-wire"><span></span><em id="cx-wire-lab">stdio</em><span></span></div>
+            <div class="dm-house" id="cx-host">
+              <b id="cx-host-title">宿主进程</b>
+              <div class="slot" id="cx-iso">isolate 还没起来</div>
+            </div>
+          </div>
+          <div class="dm-cb" id="cx-cb">工具回调还没出门</div>
+          <div class="dm-facts">
+            <div class="dm-fact"><b>隔离</b><span id="cx-iso-fact">操作系统进程</span></div>
+            <div class="dm-fact"><b>cell / store</b><span id="cx-cell-fact">还没有</span></div>
+          </div>
+          <div class="dm-status" id="cx-status">等待开始。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>thread manager 按特性挑选提供方</span><span class="ln">thread_manager.rs L455</span></li>
+        <li><span>本地提供方检查宿主文件是否存在</span><span class="ln">remote_session.rs L70</span></li>
+        <li><span>spawn 宿主，Unix 上单独进程组</span><span class="ln">connection.rs L217</span></li>
+        <li><span>握手后 session/open，宿主里 new 进程内会话</span><span class="ln">lib.rs L602</span></li>
+        <li><span>嵌套工具经 RemoteDelegate 打回本机</span><span class="ln">delegate.rs L27</span></li>
+        <li><span>app-server 按 URL 方案换成 WS 或 gRPC</span><span class="ln">code_mode_host.rs L32</span></li>
+        <li><span>gRPC 丢掉 lease 就关会话</span><span class="ln">session.rs L105</span></li>
+        <li><span>重连后 cell ID 加世代前缀</span><span class="ln">generation.rs L49</span></li>
+        <li><span>中断是否 terminate 看特性开关</span><span class="ln">tasks/mod.rs L888</span></li>
+        <li><span>宿主不可用时，工具模式退回 Direct</span><span class="ln">tools/mod.rs L79</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一段 JS 换宿主之后，崩了谁还活着、旧 cell 还能不能 wait。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>隔离边界</b>DSH 的程序和主进程住同一栋楼。Codex 默认再加一层操作系统进程，远端还可以再加一台机器。</div>
+      <div class="dm-s"><b>审批还在本机</b>求值搬家了，嵌套 <code>exec_command</code> 仍绕回 session owner。宿主里没有审批窗，也没有 execpolicy。</div>
+      <div class="dm-s"><b>失败之后</b>宿主崩了或掉线，cell 和 store 一起丢。重连能再 exec，不能接着刚才那段脚本。gRPC 第二代还会给 cell 改名。</div>
+    </div>
+    <div class="demo-caption">教学示意：四种宿主对应四个会话提供方。进程内求值仍画在宿主屋子内部，当前生产接线不再把它做成主进程上的一档。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 求值从主进程拆出去</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">模型写一段 <code>while (true) {}</code>，上一课见过，要靠 isolate 的 terminate 才能打断。这段程序如果和 Codex 事件循环抢同一个进程，卡死会从单个 cell 扩大到整条会话。</p>
+  <p class="reveal">V8 的堆、JIT、没有条目上限的 store 表，任意一项在主进程里爆炸，都会带走 TUI 或 app-server。早期资料常把默认路径写成「主进程里直接跑 isolate」。当前特性注释已经把这句话改掉了。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/features/src/lib.rs</code> 第 104 至 111 行</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">Codex 给「跑模型写的代码」留了一个提供方接口。业务层只依赖 <code>CodeModeSession</code> 和 <code>CodeModeSessionProvider</code>，自己不去 new 运行时。协议把会话收成四件事：<code>execute</code>、<code>wait</code>、<code>terminate</code>、<code>shutdown</code>。实现可以进程内，也可以远端。同会话共享 store，异会话隔离。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/code-mode-protocol/src/session.rs</code> 第 146 至 167 行</p>
+  <p class="reveal">主进程选提供方时，已经没有直接 new <code>InProcessCodeModeSession</code> 这条生产路径。<code>CodeModeHost</code> 打开，或者 <code>disable_in_process_fallback</code> 为真，都走向 <code>ProcessOwnedCodeModeSessionProvider</code>。两条都不成立，走向 <code>DisabledCodeModeSessionProvider</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/core/src/thread_manager.rs</code> 第 455 至 462 行</p>
+  <p class="reveal"><code>CodeModeHost</code> 已经是 Stable，默认打开。用户看见的默认已经是本地子进程。进程内求值还在，只是沉到宿主进程内部：宿主打开会话时 new 的就是 <code>InProcessCodeModeSession</code>。isolate 活在小屋里，房东换成了独立二进制 <code>codex-code-mode-host</code>。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/features/src/lib.rs</code> 第 921 至 925 行 · <code>codex-rs/code-mode-host/src/lib.rs</code> 第 599 至 608 行</p>
+  <div class="visual reveal">
+    <svg viewBox="0 0 940 280" role="img" aria-label="默认拓扑里一次 exec 穿过的层">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="24" y="36" width="150" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="99" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="700">Codex thread</text>
+      <text x="99" y="90" text-anchor="middle" fill="#6b7280" font-size="12">主进程</text>
+      <rect x="214" y="36" width="160" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="294" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="700">会话提供方</text>
+      <text x="294" y="90" text-anchor="middle" fill="#6b7280" font-size="12">只握接口</text>
+      <rect x="414" y="36" width="200" height="70" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="514" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="700">codex-code-mode-host</text>
+      <text x="514" y="90" text-anchor="middle" fill="#6b7280" font-size="12">独立操作系统进程</text>
+      <rect x="654" y="36" width="262" height="70" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="785" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="700">InProcess 会话</text>
+      <text x="785" y="90" text-anchor="middle" fill="#6b7280" font-size="12">V8 isolate 在这间屋里</text>
+      <path fill="none" d="M174 71H206" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M374 71H406" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M614 71H646" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M780 180H120" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrA)"></path>
+      <text x="470" y="168" text-anchor="middle" fill="#6b7280" font-size="13">嵌套工具回调回家，审批仍在主进程</text>
+      <text x="470" y="248" text-anchor="middle" fill="#6b7280" font-size="13">输入是一段 JS。发生的是跨进程求值。输出是 cell 编号和主动交出去的文本。</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：默认路径上，V8 落在宿主进程里，主进程只握着提供方。</div>
+  </div>
+  <p class="reveal paywall-locked xa-peek">拉起进程时，stdin / stdout / stderr 全管道化，Unix 上单独一个进程组，环境变量先 scrub 一遍。找不到可执行文件，<code>availability()</code> 直接失败，不会改去主进程里 new isolate。真正的回退发生在工具模式这一层：宿主不可用、请求的是普通 <code>CodeMode</code>、并且没有关掉回退时，有效工具模式变成 <code>Direct</code>。模型重新看见普通工具。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/code-mode/src/remote_session.rs</code> 第 69 至 83 行 · <code>codex-rs/core/src/tools/mod.rs</code> 第 79 至 89 行</p>
+  <p class="reveal paywall-locked"><code>disable_in_process_fallback</code> 这个名字容易让人以为还存在「回退到进程内 V8」。配置注释写的是另一件事：宿主不可用时，让 Code Mode 闭门失败。今天它控制的是「宿主没了以后，要不要从 Code Mode 退回普通工具」。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/config/mod.rs</code> 第 1089 至 1096 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">不要让不受信任的语言运行时和 agent 主进程同命运。换成 Python 的 subprocess，换成别的 isolate，该问的还是同一句：这段代码崩了，谁还活着。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 工具回调必须回家</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">你把 app-server 指到一台远端机器的 <code>--code-mode-host</code>，容易以为整段 agent 都搬家了，连 <code>exec_command</code> 的审批弹窗都该出现在远端。当前源码对不上。远端宿主只搬走了求值。嵌套工具的审批、execpolicy、Guardian 仍在本机会话上。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">宿主把 <code>CodeModeSessionDelegate</code> 做成 <code>RemoteDelegate</code>，经 IPC 打回 Codex 主进程。主进程上的 dispatch broker 才去走嵌套工具。isolate 搬家了，策略没有搬家。JS 在别处跑，副作用要绕回来问你。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/code-mode-host/src/delegate.rs</code> 第 26 至 50 行</p>
+  <p class="reveal paywall-locked">WebSocket 和 gRPC 是同一套求值、两套线。WebSocket 监听器拒绝带 Origin 头的请求，挡住浏览器页面跨源连到本机宿主。gRPC 把工具订阅、完成、执行流拆开，丢掉 <code>OpenSession</code> 那条租约流，会话关闭，正在跑的 cell 一并终止。app-server 的 <code>--code-mode-host</code> 认 <code>http</code> / <code>https</code> 为 gRPC，认 <code>ws</code> / <code>wss</code> 为 WebSocket。多个 thread 共享同一条远端连接，store 仍按会话切开。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/code-mode-host/src/transport.rs</code> 第 288 至 302 行 · <code>codex-rs/app-server/src/code_mode_host.rs</code> 第 32 至 40 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 240" role="img" aria-label="求值在远端，审批留在本机">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="36" width="360" height="160" rx="14" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="220" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">本机 · session owner</text>
+      <rect x="70" y="88" width="140" height="80" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="140" y="122" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">审批弹窗</text>
+      <text x="140" y="144" text-anchor="middle" fill="#6b7280" font-size="12">execpolicy</text>
+      <rect x="230" y="88" width="140" height="80" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="300" y="122" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">Guardian</text>
+      <text x="300" y="144" text-anchor="middle" fill="#6b7280" font-size="12">策略没搬家</text>
+      <rect x="540" y="36" width="360" height="160" rx="14" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="720" y="68" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">宿主 · 只负责求值</text>
+      <rect x="600" y="88" width="240" height="80" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5"></rect>
+      <text x="720" y="122" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">V8 isolate + store</text>
+      <text x="720" y="144" text-anchor="middle" fill="#6b7280" font-size="12">没有审批 UI</text>
+      <path fill="none" d="M400 116H532" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M532 156H408" stroke="#414b5a" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrB)"></path>
+      <text x="470" y="108" text-anchor="middle" fill="#6b7280" font-size="12">exec</text>
+      <text x="470" y="180" text-anchor="middle" fill="#6b7280" font-size="12">invoke_tool 回家</text>
+    </svg>
+    <div class="visual-caption">教学化对照：搬走的是不可信的 JS 世界，留下的是有 UI 的策略世界。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">求值可以搬家，策略还在本机。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">不可信的是 JS 世界，可信的是审批和策略。把前者搬走，后者留在有 UI 的那边。没有这条回路，远端宿主就必须复制你的整套权限系统。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 掉线等于丢掉 isolate 和 store</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">一种常见预期是：你按了中断，V8 一起掐掉，下一轮 <code>wait</code> 立刻看到终止。当前默认对不上。另一种预期是：重连之后，刚才那段脚本还在原来的 cell 里接着跑。两种预期，源码都不认。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">turn 被标成 Interrupted 时，任务取消令牌一定会取消。会不会再去 terminate 还在跑的 cell，要看 <code>CodeModeInterrupt</code>。这个开关还在开发，默认关。关掉时，中断只取消本轮工具调用和审批。宿主上的 isolate 可以继续跑，直到自己结束、被 <code>wait(terminate: true)</code> 停掉，或会话 shutdown。用户按 Ctrl-C，并不自动等于那条 terminate。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/tasks/mod.rs</code> 第 888 至 899 行</p>
+  <p class="reveal paywall-locked">掉线也一样。gRPC 丢掉 lease 就关会话。客户端可以再开一条租约，generation 从 1 往上加。第一代对外仍用原始 cell ID，第二代变成 <code>g{generation}:{cell_id}</code>。模型拿着第一代的编号去 wait，会收到 stale generation。本地子进程路径没有这套前缀，只是把状态机打回 New，再分配一个新的 <code>session-N</code>。对外 cell ID 仍从 1 数。两种重连都丢运行中的 cell 和那份 store。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/code-mode/src/grpc_session/generation.rs</code> 第 49 至 67 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="本地重连与 gRPC 世代对照">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <text x="40" y="36" fill="#262d38" font-size="14" font-weight="800">本地子进程 / WebSocket</text>
+      <rect x="40" y="52" width="120" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="100" y="84" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">Open</text>
+      <path fill="none" d="M160 78H214" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="222" y="52" width="150" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="297" y="84" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">连接死了</text>
+      <path fill="none" d="M372 78H424" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="432" y="52" width="150" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="507" y="84" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">回到 New</text>
+      <text x="620" y="84" fill="#6b7280" font-size="13">再开会话，cell 仍从 1 数</text>
+      <text x="40" y="156" fill="#262d38" font-size="14" font-weight="800">gRPC</text>
+      <rect x="40" y="172" width="120" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="100" y="204" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">lease 1</text>
+      <path fill="none" d="M160 198H214" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="222" y="172" width="150" height="52" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="297" y="204" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">丢掉流</text>
+      <path fill="none" d="M372 198H424" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="432" y="172" width="150" height="52" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="507" y="204" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">lease 2</text>
+      <text x="620" y="204" fill="#6b7280" font-size="13">对外 ID 变成 g2:1，旧 wait 作废</text>
+    </svg>
+    <div class="visual-caption">教学化状态图：两种重连都丢旧世界，gRPC 用世代把「这是新世界」暴露给调用方。</div>
+  </div>
+  <p class="reveal paywall-locked">store 表跟着宿主侧的 <code>SessionRuntime</code>。没有落盘，没有跨进程共享，没有 TTL。远端机器重启，表就没了。会话 ID 复用会被拒绝，不会把旧表偷偷接回来。重连恢复的是「还能再 exec」，不是「刚才那段脚本」。</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">cell 的寿命按会话算，不按 turn 算。中断轮次和杀掉程序是两件事。重连开的是新世界，旧身份证作废。自己做 Agent 时，如果用户按停止就期望程序立刻死，默认应该 terminate。Codex 默认不杀，是因为它还把 cell 当成可跨轮续跑的对象。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 同一道题的另一种答法</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>拓扑：DeepSeek Harness 选择同一栋楼</h4>
+      <p>DSH 把程序放进进程内的 <code>worker_threads.Worker</code>。crate 头注释第一句把立场写死：这是 containment，不是 security boundary。模型代码按 bash 等价来对待。每次 <code>run()</code> 拉起一个新 Worker，环境是空的，堆有上限。程序世界随 worker 一起死，没有跨 run 状态。</p>
+      <p>一个 worker 崩了，主进程房间还在，可 V8 漏洞或原生崩溃仍可能带走整个 Node 进程。Codex 的 isolate 已经比 Node worker 窄，没有 fs、没有 net、没有 import，仍然不信任「窄 isolate 和主进程同命运」。默认再加一层操作系统进程。代价是多了一个必须随包装分发的 <code>codex-code-mode-host</code>，多了会话 ID、世代和掉线语义。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22 · 出处：<code>packages/code-runtime/code-runtime-worker-thread/src/index.ts</code> 第 1 至 6 行 · <code>README.md</code> 第 23 行 · <a href="/dashboard/learning?lesson=dsh-5" data-lesson-id="dsh-5">DSH · Code Mode</a></span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="none"></rect><rect x="14" y="14" width="7" height="7" rx="1" fill="none"></rect><path d="M10 6h4M6 10v4" fill="none"></path></svg>对位物：Claude Code 与 Grok 把这件事留给 shell</h4>
+      <p>两边都没有「模型写一段程序、在独立运行时里编排工具」的对位实现。Claude Code 的 isolation 出现在 git worktree 和远端 CCR 会话，Grok 的 isolation 出现在子 agent 的 worktree。那是工作区隔离，不是 JS 宿主拆分。没有对位物本身就是结论：这两家把跑模型写的代码留给了普通 shell 工具。</p>
+      <p>仓库里还有 <code>exec-server</code>，搬走的是 shell、PTY 和文件系统 RPC，不跑 JavaScript。嵌套 <code>tools.exec_command</code> 仍然可以再走进去，那是下一层的执行拆分。两条路不要收成同一个远端。</p>
+      <span class="cmp-tag">检索未找到对位实现 · 2026-08-22 · 出处：<code>codex-rs/exec-server/README.md</code> 第 1 至 5 行</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>旧 cell 还能不能 wait</h3>
+      <p>同一段脚本在 gRPC 宿主上跑到一半，连接断了又连上。模型拿着原来的 <code>cell_id</code> 去 <code>wait</code>，会看到什么。本地子进程路径会不会给这个编号改名。两种路径的 store 还在不在。</p>
+      <p>然后把 <code>CodeModeInterrupt</code> 拨到关，按中断再 wait 一次。答案会不会变，为什么用户按停止并不自动等于 <code>terminate</code>。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>默认拓扑里 V8 已经不在主进程里。远端只搬走求值，审批仍回本机。宿主崩了或掉线，cell 和 store 一起没了。Ctrl-C 默认不 terminate 还在跑的 cell。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var host = 'local';
+  var killOn = false;
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevTrace = null, prevCb = false, prevDead = false, prevGone = false;
+  var prevCell = '', prevIsoKind = '', prevMainKind = '', prevDshKind = '';
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var colsHost = document.querySelector('.dm-cols');
+  var cxCol = document.getElementById('cx-host').closest('.dm-col');
+  var dshStage = document.getElementById('dsh-house').closest('.dm-stage');
+  var cxStage = document.getElementById('cx-main').closest('.dm-stage');
+  var dshBody = document.getElementById('dsh-status').closest('.dm-body');
+  var cxBody = document.getElementById('cx-status').closest('.dm-body');
+  var dshFacts = document.getElementById('dsh-life').closest('.dm-facts');
+  var cxFacts = document.getElementById('cx-cell-fact').closest('.dm-facts');
+  var IDLE = '点播放，看同一段 JS 换宿主之后，崩了谁还活着、旧 cell 还能不能 wait。';
+
+  var META = {
+    local: { name: '本地子进程', provider: 'ProcessOwned', wire: 'stdio', iso: '操作系统进程' },
+    ws: { name: 'WebSocket', provider: 'WebSocket', wire: 'ws://', iso: '网络 + Origin 门' },
+    grpc: { name: 'gRPC', provider: 'Grpc', wire: 'HTTP/2', iso: '租约流 + 独立工具流' },
+    off: { name: '禁用', provider: 'Disabled', wire: '无连接', iso: '没有求值世界' }
+  };
+
+  function el(id){ return document.getElementById(id); }
+
+  function bump(node, cls){
+    if (!node) return;
+    node.classList.remove(cls);
+    void node.offsetWidth;
+    node.classList.add(cls);
+  }
+
+  function fadeText(node, text, animate){
+    if (!node) return;
+    if (!animate || node.textContent === text) { node.textContent = text; return; }
+    node.style.opacity = '0';
+    requestAnimationFrame(function(){
+      node.textContent = text;
+      requestAnimationFrame(function(){ node.style.opacity = '1'; });
+    });
+  }
+
+  function rollText(node, text, animate){
+    var prev = node.getAttribute('data-text') || node.textContent;
+    node.setAttribute('data-text', text);
+    var numRe = /(\d+)/;
+    var m0 = prev.match(numRe);
+    var m1 = text.match(numRe);
+    var sameShape = m0 && m1 && prev.replace(numRe, '#') === text.replace(numRe, '#');
+    if (!animate || !sameShape) { fadeText(node, text, animate); return; }
+    var from = parseInt(m0[1], 10);
+    var to = parseInt(m1[1], 10);
+    if (from === to) { fadeText(node, text, animate); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      var n = Math.round(from + (to - from) * eased);
+      node.textContent = text.replace(numRe, String(n));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function spawnGhost(src, dest){
+    if (!colsHost || !src) return;
+    var box = colsHost.getBoundingClientRect();
+    var rc = src.getBoundingClientRect();
+    var ghost = src.cloneNode(true);
+    ghost.className = src.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    colsHost.appendChild(ghost);
+    var dx = 0, dy = -18;
+    if (dest) {
+      var d = dest.getBoundingClientRect();
+      dx = d.left - rc.left;
+      dy = d.top - rc.top;
+    }
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        ghost.classList.add('fly');
+        if (dest) ghost.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.9)';
+      });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function flipStage(act){
+    var nodes = document.querySelectorAll('.dm-house, .dm-wire');
+    var old = [];
+    Array.prototype.forEach.call(nodes, function(node){
+      old.push({el: node, r: node.getBoundingClientRect()});
+    });
+    act();
+    Array.prototype.forEach.call(old, function(item){
+      var now = item.el.getBoundingClientRect();
+      var dx = item.r.left - now.left;
+      var dy = item.r.top - now.top;
+      if (!dx && !dy) return;
+      item.el.style.transition = 'none';
+      item.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      requestAnimationFrame(function(){
+        item.el.style.transition = '';
+        item.el.style.transform = '';
+      });
+    });
+  }
+
+  function setBar(n){
+    if (cxCol) cxCol.style.setProperty('--bar', String(n));
+  }
+
+  function barOf(st){
+    if (st.hostGone || st.hostDead) return 0;
+    if (st.isoKind === 'spin') return 0.85;
+    if (st.isoKind === 'on') return 0.7;
+    if (st.isoKind === 'warn') return 0.25;
+    if (st.iso && st.iso.indexOf('可执行文件') !== -1) return 0.35;
+    if (st.mainKind === 'on') return 0.2;
+    return 0;
+  }
+
+  function setSlot(node, text, kind, animate){
+    var prev = node.getAttribute('data-text');
+    if (prev === null) prev = node.textContent;
+    node.setAttribute('data-text', text);
+    var isNew = animate && prev !== text;
+    node.className = 'slot' + (kind ? ' ' + kind : '');
+    if (isNew) {
+      node.classList.add('is-enter');
+      node.textContent = text;
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ node.classList.add('in'); });
+      });
+      bump(node, kind === 'warn' ? 'firing' : 'pop');
+    } else {
+      node.textContent = text;
+    }
+  }
+
+  function buildLiveSteps(){
+    var m = META[host];
+    var cell2 = host === 'grpc' ? 'g2:1' : '1';
+    var stale = host === 'grpc' ? 'stale generation，旧编号作废' : 'exec cell 1 not found';
+    var wireOpen = host === 'ws' ? '带 Origin 的浏览器请求会被 403，本机客户端可以连' : (host === 'grpc' ? 'lease、tool subscription、execute 各走一条流' : 'stdio 握手，Unix 上单独进程组');
+    var out = [];
+    out.push({
+      cap: '同一段 JS 准备出发：store("n", 1)，再 await tools.exec_command。左边 DSH 会在主进程里开一间 worker 房间，右边先挑提供方。',
+      trace: 0,
+      dshRoom: '准备新 worker', dshKind: '', dshLife: '一次 run 一个新 worker',
+      dshSt: '主进程这栋楼还在，房间还没住人。', dshSk: '',
+      main: '按特性挑选提供方', mainKind: 'on',
+      hostTitle: '宿主进程', iso: '还没起来', isoKind: '',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '工具回调还没出门', cbOn: false,
+      isoFact: m.iso, cellFact: '还没有',
+      cx: '提供方是 ' + m.provider + '。主进程里没有咖啡机。', cxk: 'hold'
+    });
+    out.push({
+      cap: host === 'ws' || host === 'grpc'
+        ? 'app-server 看见 --code-mode-host，按 URL 方案换成 ' + m.name + '。多个 thread 将共享这一条远端连接。'
+        : '本地提供方先看宿主文件在不在。看见 codex-code-mode-host，才算可用。',
+      trace: host === 'local' ? 1 : 5,
+      dshRoom: '准备新 worker', dshKind: '', dshLife: '一次 run 一个新 worker',
+      dshSt: '对照侧仍停在进程内加固。', dshSk: '',
+      main: '检查可用性', mainKind: 'on',
+      hostTitle: '宿主进程', iso: '可执行文件已找到', isoKind: '',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '工具回调还没出门', cbOn: false,
+      isoFact: m.iso, cellFact: '还没有',
+      cx: wireOpen + '。', cxk: 'hold'
+    });
+    out.push({
+      cap: '宿主里 new 的仍是 InProcessCodeModeSession。进程内求值还在，只是换了房东。cell 和 store 都在这间屋里。',
+      trace: 3,
+      dshRoom: 'worker 已拉起，程序在跑', dshKind: 'spin', dshLife: '随这次 run 一起活',
+      dshSt: '程序和主进程住同一栋楼，只是不同线程。', dshSk: 'hold',
+      main: '握着提供方', mainKind: '',
+      hostTitle: '宿主进程', iso: 'isolate 在转 · store n=1', isoKind: 'spin',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '工具回调还没出门', cbOn: false,
+      isoFact: m.iso, cellFact: 'cell 1 · store 在宿主',
+      cx: 'JS 在宿主里求值。主进程房子里没有 isolate。', cxk: 'hold'
+    });
+    out.push({
+      cap: '脚本调用 tools.exec_command。虚线从宿主绕回主进程，本机弹出审批。求值可以搬家，策略还在 session owner 身上。',
+      trace: 4,
+      dshRoom: 'worker 调 binding', dshKind: 'on', dshLife: '随这次 run 一起活',
+      dshSt: 'DSH 的工具桥也在同一进程里。', dshSk: 'hold',
+      main: '本机审批弹窗', mainKind: 'on',
+      hostTitle: '宿主进程', iso: 'isolate 等工具结果', isoKind: 'on',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: 'invoke_tool 回家 · 审批在本机', cbOn: true,
+      isoFact: m.iso, cellFact: 'cell 1 · store 在宿主',
+      cx: '宿主没有审批 UI，也没有 execpolicy。副作用必须绕回来。', cxk: 'ok'
+    });
+    out.push({
+      cap: killOn
+        ? '打开 CodeModeInterrupt 再按中断。这一轮被取消，活跃 cell 也被 terminate。咖啡机停了。'
+        : '关掉中断开关，按中断。这一轮的工具调用和审批被收掉，宿主上的 isolate 还在转。',
+      trace: 8,
+      dshRoom: 'worker 被墙钟或忙碌预算停掉', dshKind: 'warn', dshLife: '这次 run 结束',
+      dshSt: 'DSH 超时就是失败，没有跨 run 续跑。', dshSk: 'warn',
+      main: killOn ? '中断 + terminate' : '只取消这一轮', mainKind: killOn ? 'warn' : 'on',
+      hostTitle: '宿主进程', iso: killOn ? 'cell 已 terminate' : 'isolate 仍在转 · store n=1', isoKind: killOn ? 'warn' : 'spin',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '本轮审批已收掉', cbOn: false,
+      isoFact: m.iso, cellFact: killOn ? 'cell 1 已停 · store 还在' : 'cell 1 仍活着 · store 在宿主',
+      cx: killOn ? '开关打开，寿命被缩短到这一轮。' : '默认 Ctrl-C 不等于 terminate。cell 的寿命按会话算。', cxk: killOn ? 'warn' : 'hold'
+    });
+    out.push({
+      cap: killOn
+        ? '再 wait 同一个 cell。脚本已经被停掉，模型看到的是终止结果。'
+        : '再 wait 同一个 cell。宿主会话还在，模型看到的就是还在跑的脚本。',
+      trace: 8,
+      dshRoom: '房间已拆，没有旧世界', dshKind: 'warn', dshLife: '下次 run 是新 worker',
+      dshSt: '没有跨 run 状态可 wait。', dshSk: 'warn',
+      main: 'wait cell 1', mainKind: 'on',
+      hostTitle: '宿主进程', iso: killOn ? 'cell 已结束' : 'isolate 继续跑 · store n=1', isoKind: killOn ? 'warn' : 'spin',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '工具回调还没出门', cbOn: false,
+      isoFact: m.iso, cellFact: killOn ? 'cell 1 已停' : 'cell 1 仍活着 · store 在宿主',
+      cx: killOn ? 'wait 拿到的是终止结果。' : '开关关掉时，下一轮还能续上同一个编号。', cxk: killOn ? 'warn' : 'ok'
+    });
+    out.push({
+      cap: host === 'grpc'
+        ? '宿主崩了，lease 被丢掉。远处房子灭了，cell 和 store 丢失，主进程仍在。'
+        : '宿主崩了。远处房子灭了，cell 和 store 丢失，主进程仍在。重连能再 exec，不能接着刚才那段脚本。',
+      trace: host === 'grpc' ? 6 : 2,
+      dshRoom: 'worker 房间灭了，主楼还在', dshKind: 'warn', dshLife: '同楼风险还在',
+      dshSt: '房间没了。原生崩溃仍可能带走整栋楼。', dshSk: 'warn',
+      main: '主进程仍在', mainKind: 'on',
+      hostTitle: '宿主已崩溃', iso: 'isolate 没了 · store 没了', isoKind: 'warn',
+      hostDead: true, hostGone: false, wireOff: true,
+      cb: '回调断了', cbOn: false,
+      isoFact: m.iso, cellFact: '全部丢失',
+      cx: '故障域停在宿主。TUI 还在。', cxk: 'warn'
+    });
+    out.push({
+      cap: host === 'grpc'
+        ? '再开一条 lease，世代变成 2。对外 cell 改名 ' + cell2 + '。拿旧编号去 wait，收到 ' + stale + '。store 是空的。'
+        : '状态机打回 New，再握手、再 session/open。对外 cell 仍从 1 数，旧 store 不会回来。拿旧编号去 wait，走到 ' + stale + '。',
+      trace: host === 'grpc' ? 7 : 3,
+      dshRoom: '下一次 run 才有新房间', dshKind: '', dshLife: '一次 run 一个新 worker',
+      dshSt: 'DSH 本来就没有跨 run 的抽屉。', dshSk: '',
+      main: '还能再 exec', mainKind: 'on',
+      hostTitle: '新的宿主会话', iso: '新 isolate · store 是空的', isoKind: 'on',
+      hostDead: false, hostGone: false, wireOff: false,
+      cb: '工具回调还没出门', cbOn: false,
+      isoFact: m.iso, cellFact: '新 cell ' + cell2 + ' · store 空',
+      cx: '恢复的是通道，不是刚才那段脚本。', cxk: 'ok',
+      fin: true
+    });
+    return out;
+  }
+
+  function buildOffSteps(){
+    return [
+      {
+        cap: 'CodeModeHost 关掉，并且没有强制闭门时，thread manager 装上 Disabled 提供方。主进程不会去 new isolate。',
+        trace: 0,
+        dshRoom: '对照侧仍按自己的 worker 走', dshKind: '', dshLife: '一次 run 一个新 worker',
+        dshSt: 'DSH 没有这档禁用提供方。', dshSk: '',
+        main: 'Disabled 提供方', mainKind: 'on',
+        hostTitle: '没有宿主', iso: '不会启动', isoKind: '',
+        hostDead: false, hostGone: true, wireOff: true,
+        cb: '没有回调可走', cbOn: false,
+        isoFact: '没有求值世界', cellFact: '没有 cell',
+        cx: '提供方的 availability() 永远报错。', cxk: 'hold'
+      },
+      {
+        cap: '警告写死：打开 features.code_mode_host，并装上 codex-code-mode-host。普通 CodeMode 会退回 Direct，CodeModeOnly 会闭门失败。',
+        trace: 9,
+        dshRoom: '对照侧不受影响', dshKind: '', dshLife: '一次 run 一个新 worker',
+        dshSt: 'DSH 继续走进程内 worker。', dshSk: '',
+        main: '退回 Direct 工具', mainKind: 'warn',
+        hostTitle: '没有宿主', iso: '不会启动', isoKind: 'warn',
+        hostDead: false, hostGone: true, wireOff: true,
+        cb: '没有回调可走', cbOn: false,
+        isoFact: '没有求值世界', cellFact: '没有 cell',
+        cx: '模型重新看见普通工具，不再走 exec。', cxk: 'warn'
+      },
+      {
+        cap: '中断开关在这里没有对象可杀。没有 isolate，也就没有跨轮续跑的 cell，更没有要清理的 store。',
+        trace: 8,
+        dshRoom: 'worker 仍按自己的预算停', dshKind: 'warn', dshLife: '这次 run 结束',
+        dshSt: 'DSH 的失败仍停在这一次 run。', dshSk: 'warn',
+        main: '没有 code-mode 会话', mainKind: '',
+        hostTitle: '没有宿主', iso: '不会启动', isoKind: '',
+        hostDead: false, hostGone: true, wireOff: true,
+        cb: '没有回调可走', cbOn: false,
+        isoFact: '没有求值世界', cellFact: '没有 cell',
+        cx: '第四种宿主的失败后果是：根本没把 JS 世界建起来。', cxk: 'ok',
+        fin: true
+      }
+    ];
+  }
+
+  function applyMeta(){
+    var m = META[host];
+    el('cx-name').textContent = m.name;
+    el('cx-provider').textContent = m.provider;
+    el('cx-wire-lab').textContent = m.wire;
+    el('cx-wire').className = 'dm-wire' + (host === 'grpc' ? ' grpc' : '');
+    el('cx-iso-fact').textContent = m.iso;
+  }
+
+  function paint(st, animate){
+    applyMeta();
+    var dshNow = !!(st.dshKind || st.dshSk);
+    var mainNow = !!(st.mainKind) || !!st.cbOn;
+    var hostNow = !!(st.isoKind) || !!st.hostDead || !!st.hostGone || !!st.cbOn;
+    if (st.isoKind === '' && !st.hostDead && !st.hostGone && !st.cbOn && st.mainKind) hostNow = false;
+    dshStage.classList.add('is-live');
+    cxStage.classList.add('is-live');
+    dshBody.classList.add('is-live');
+    cxBody.classList.add('is-live');
+    dshFacts.classList.add('is-live');
+    cxFacts.classList.add('is-live');
+
+    setSlot(el('dsh-room'), st.dshRoom, st.dshKind, animate);
+    fadeText(el('dsh-life'), st.dshLife, animate);
+    el('dsh-status').className = 'dm-status' + (st.dshSk ? ' ' + st.dshSk : '') + (dshNow ? ' now' : '');
+    fadeText(el('dsh-status'), st.dshSt, animate);
+    el('dsh-house').className = 'dm-house' + (dshNow ? ' now' : '');
+    if (animate && st.dshKind && st.dshKind !== prevDshKind) bump(el('dsh-house'), st.dshKind === 'warn' ? 'firing' : 'pop');
+
+    setSlot(el('cx-main-slot'), st.main, st.mainKind, animate);
+    fadeText(el('cx-host-title'), st.hostTitle, animate);
+    setSlot(el('cx-iso'), st.iso, st.isoKind, animate);
+
+    flipStage(function(){
+      el('cx-main').className = 'dm-house' + (mainNow ? ' now' : '');
+      el('cx-host').className = 'dm-house' + (st.hostDead ? ' dead' : '') + (st.hostGone ? ' gone' : '') + (hostNow ? ' now' : '');
+      el('cx-wire').classList.toggle('off', !!st.wireOff);
+    });
+
+    var cbOn = !!st.cbOn;
+    fadeText(el('cx-cb'), st.cb, animate);
+    el('cx-cb').className = 'dm-cb' + (cbOn ? ' on' : '') + (cbOn ? ' now' : '');
+    fadeText(el('cx-iso-fact'), st.isoFact, animate);
+    var cellNode = el('cx-cell-fact');
+    var cellChanged = prevCell !== st.cellFact;
+    rollText(cellNode, st.cellFact, animate);
+    el('cx-cell-fact').closest('.dm-fact').classList.toggle('now', cellChanged || st.cellFact !== '还没有');
+    if (animate && cellChanged) bump(el('cx-cell-fact').closest('.dm-fact'), 'pop');
+    el('dsh-life').closest('.dm-fact').classList.toggle('now', dshNow);
+    el('cx-status').className = 'dm-status' + (st.cxk ? ' ' + st.cxk : '') + ' now';
+    fadeText(el('cx-status'), st.cx, animate);
+
+    setBar(barOf(st));
+
+    if (animate && cbOn && !prevCb) {
+      spawnGhost(el('cx-iso'), el('cx-main-slot'));
+      bump(el('cx-cb'), 'firing');
+      bump(el('cx-main'), 'firing');
+    }
+    if (animate && st.hostDead && !prevDead) {
+      spawnGhost(el('cx-iso'));
+      bump(el('cx-host'), 'firing');
+      bump(el('cx-status'), 'firing');
+    }
+    if (animate && !st.hostDead && prevDead) bump(el('cx-host'), 'pop');
+    if (animate && st.isoKind && st.isoKind !== prevIsoKind && st.isoKind !== 'warn') bump(el('cx-iso'), 'pop');
+    if (animate && st.mainKind && st.mainKind !== prevMainKind) bump(el('cx-main-slot'), st.mainKind === 'warn' ? 'firing' : 'pop');
+
+    if (st.trace !== null && st.trace !== undefined) {
+      document.querySelector('.dm-trace').classList.add('is-live');
+      traceRows.forEach(function(row, n){
+        row.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(row, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    if (animate) fadeText(captionText, st.cap, true);
+    else captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+
+    prevCb = cbOn;
+    prevDead = !!st.hostDead;
+    prevGone = !!st.hostGone;
+    prevCell = st.cellFact;
+    prevIsoKind = st.isoKind || '';
+    prevMainKind = st.mainKind || '';
+    prevDshKind = st.dshKind || '';
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.hostDead) return 2200;
+    if (st.cbOn) return 2000;
+    if (st.trace === 8) return 1900;
+    if (st.trace === 9) return 2000;
+    if (st.trace === 0) return 1100;
+    if (st.trace === 1 || st.trace === 5) return 1200;
+    return 1400;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    prevTrace = null; prevCb = false; prevDead = false; prevGone = false;
+    prevCell = ''; prevIsoKind = ''; prevMainKind = ''; prevDshKind = '';
+    steps = host === 'off' ? buildOffSteps() : buildLiveSteps();
+    applyMeta();
+    dshStage.classList.remove('is-live');
+    cxStage.classList.remove('is-live');
+    dshBody.classList.remove('is-live');
+    cxBody.classList.remove('is-live');
+    dshFacts.classList.remove('is-live');
+    cxFacts.classList.remove('is-live');
+    document.querySelector('.dm-trace').classList.remove('is-live');
+    Array.prototype.slice.call(colsHost.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    setSlot(el('dsh-room'), 'worker 小房间空着', '', false);
+    el('dsh-life').style.opacity = '1';
+    el('dsh-life').textContent = '一次 run 一个新 worker';
+    el('dsh-status').style.opacity = '1';
+    el('dsh-status').className = 'dm-status';
+    el('dsh-status').textContent = '等待开始。';
+    el('dsh-house').className = 'dm-house';
+    setSlot(el('cx-main-slot'), '握着提供方', '', false);
+    el('cx-host-title').style.opacity = '1';
+    el('cx-host-title').textContent = host === 'off' ? '没有宿主' : '宿主进程';
+    setSlot(el('cx-iso'), host === 'off' ? '不会启动' : 'isolate 还没起来', '', false);
+    el('cx-main').className = 'dm-house';
+    el('cx-host').className = 'dm-house' + (host === 'off' ? ' gone' : '');
+    el('cx-wire').classList.toggle('off', host === 'off');
+    el('cx-cb').style.opacity = '1';
+    el('cx-cb').textContent = '工具回调还没出门';
+    el('cx-cb').className = 'dm-cb';
+    el('cx-iso-fact').style.opacity = '1';
+    el('cx-cell-fact').style.opacity = '1';
+    el('cx-cell-fact').setAttribute('data-text', '还没有');
+    el('cx-cell-fact').textContent = '还没有';
+    el('cx-cell-fact').closest('.dm-fact').classList.remove('now', 'pop');
+    el('dsh-life').closest('.dm-fact').classList.remove('now', 'pop');
+    el('cx-status').style.opacity = '1';
+    el('cx-status').className = 'dm-status';
+    el('cx-status').textContent = '等待开始。';
+    setBar(0);
+    traceRows.forEach(function(row){ row.classList.remove('on'); row.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  el('dm-play').addEventListener('click', play);
+  el('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  el('dm-reset').addEventListener('click', reset);
+  el('dm-host').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(node){ node.classList.remove('on'); });
+    b.classList.add('on');
+    host = b.getAttribute('data-host');
+    reset();
+  });
+  el('dm-kill').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.children, function(node){ node.classList.remove('on'); });
+    b.classList.add('on');
+    killOn = b.getAttribute('data-kill') === '1';
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-hosts'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

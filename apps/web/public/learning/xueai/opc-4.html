@@ -1,0 +1,1198 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"opc-4",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=opc-4',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>被驳回之后：把挡路的商标拿掉 | 一人公司 OPC</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="商标被驳回不等于这个名字没了。用我们自己走完的一个真实案例讲透：驳回、撤三、复审三步怎么走，举证责任在谁身上，以及 2027 年施行的新商标法把条文号改成了什么。">
+<meta name="keywords" content="商标驳回,撤三,连续三年不使用,驳回复审,商标法2026修订,一人公司,OPC,创业合规">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="被驳回之后：把挡路的商标拿掉">
+<meta property="og:description" content="驳回、撤三、复审三步走完的真实案例复盘，附 2026 年修订商标法的新旧条文对照。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/opc-4.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/opc-4.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="被驳回之后：把挡路的商标拿掉">
+<meta name="twitter:description" content="驳回、撤三、复审三步走完的真实案例复盘。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--opc:#b45309;--opc-deep:#7c2d12;--opc-soft:rgba(180,83,9,.08);--opc-line:rgba(180,83,9,.25)}
+.lesson-header .kicker{color:var(--opc)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--opc-soft);color:var(--opc-deep);font-size:13px;font-weight:700}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+.desc b,.quote-card b{color:var(--opc-deep)}
+
+.quote-card{background:var(--opc-soft);border:1.5px solid var(--opc-line);border-radius:14px;padding:18px 22px;font-size:16px;line-height:1.8}
+
+/* 结果条 */
+.res-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.res{background:var(--card);border:1.5px solid var(--border);border-radius:13px;padding:15px 16px;box-shadow:var(--shadow-card)}
+.res .n{font-size:20px;font-weight:800;color:var(--opc-deep);letter-spacing:-.01em}
+.res .l{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.6}
+
+/* 案情卡（并排两张） */
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.case-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:17px 19px;box-shadow:var(--shadow-card)}
+.case-card h4{font-size:15px;font-weight:800;margin-bottom:6px;color:var(--opc-deep)}
+.case-card p{font-size:13.5px;color:var(--sub);line-height:1.75}
+.case-card p b{color:var(--opc-deep)}
+
+/* 引证商标记录 · 字段示意 */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.fld{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 17px;box-shadow:var(--shadow-card)}
+.fld .fname{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--opc-deep);background:var(--opc-soft);border-radius:7px;padding:4px 10px;margin-bottom:8px}
+.fld p{font-size:13.5px;color:var(--sub);line-height:1.75}
+.fld p b{color:var(--opc-deep)}
+
+/* 法条引文 */
+.law{background:var(--opc-soft);border-radius:10px;padding:13px 18px;margin-top:12px}
+.law-src{font-size:12px;font-weight:800;color:var(--opc-deep);letter-spacing:.03em;margin-bottom:5px}
+.law p{font-size:14.5px;line-height:1.85;color:var(--text)}
+
+/* ── 交互一：链路时间线 ── */
+.tl-dots{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.tl-dot{width:12px;height:12px;border-radius:50%;background:rgba(0,0,0,.1);transition:all .25s}
+.tl-dot.on{background:var(--opc)}
+.tl-stage{margin-top:14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:20px 22px;min-height:172px;box-shadow:var(--shadow-card)}
+.tl-phase{display:inline-flex;align-items:center;gap:8px;background:var(--opc-soft);color:var(--opc-deep);font-size:12px;font-weight:800;letter-spacing:.6px;border-radius:999px;padding:5px 14px;margin-bottom:10px}
+.tl-title{font-size:19px;font-weight:800;margin-bottom:6px}
+.tl-body{font-size:14.5px;color:var(--sub);line-height:1.8}
+.tl-body b{color:var(--opc-deep)}
+.ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.btn{padding:11px 24px;border-radius:9px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .2s;min-height:44px}
+.btn-p{background:var(--opc);color:#fff}
+.btn-p:hover{filter:brightness(1.08)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-r{background:rgba(0,0,0,.05);color:var(--sub);border:1px solid var(--border)}
+.hint{font-size:13px;color:var(--sub)}
+
+/* ── 交互二：撤三可行性自查 ── */
+.q-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.q{display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow-card)}
+.q-txt{flex:1;font-size:14.5px;line-height:1.7}
+.q-txt small{display:block;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.6}
+.q-opts{display:flex;gap:7px;flex-shrink:0}
+.q-opt{padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);background:transparent;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;color:var(--sub);transition:all .18s;min-height:40px}
+.q-opt.on{border-color:var(--opc);background:var(--opc-soft);color:var(--opc-deep)}
+.verdict{margin-top:14px;border-radius:12px;padding:16px 19px;font-size:15px;line-height:1.8;border:1.5px solid var(--border);background:var(--card);box-shadow:var(--shadow-card)}
+.verdict.v-go{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.05)}
+.verdict.v-warn{border-color:rgba(217,119,6,.4);background:rgba(217,119,6,.06)}
+.verdict.v-stop{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05)}
+.verdict h4{font-size:16px;font-weight:800;margin-bottom:6px}
+.verdict.v-go h4{color:var(--success)}
+.verdict.v-warn h4{color:var(--amber)}
+.verdict.v-stop h4{color:var(--danger)}
+.verdict p{color:var(--sub)}
+.verdict p b{color:var(--text)}
+
+/* 新旧条文对照 */
+.cmp{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;font-size:14px;background:var(--card);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:var(--shadow-card)}
+.cmp th,.cmp td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);line-height:1.65;vertical-align:top}
+.cmp thead th{background:var(--opc-soft);color:var(--opc-deep);font-size:13px;font-weight:800;letter-spacing:.02em}
+.cmp tbody tr:last-child td{border-bottom:none}
+.cmp td:first-child{font-weight:700}
+.cmp td b{color:var(--opc-deep)}
+.cmp-wrap{overflow-x:auto}
+
+/* OPC 视角 */
+.opc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.opc-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card)}
+.opc-tag{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;background:var(--opc-soft);color:var(--opc-deep);font-size:12px;font-weight:800;letter-spacing:.04em;margin-bottom:10px}
+.opc-card>p{font-size:14px;color:var(--sub);line-height:1.8}
+.opc-card p b,.opc-list li b{color:var(--opc-deep)}
+.opc-list{list-style:none;display:flex;flex-direction:column;gap:9px;margin:0;padding:0}
+.opc-list li{font-size:14px;line-height:1.75;color:var(--sub);padding-left:18px;position:relative}
+.opc-list li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--opc)}
+
+/* 要点 */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--opc-soft);color:var(--opc);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--opc-deep)}
+
+.src-note{margin-top:28px;font-size:13px;color:var(--sub);line-height:1.85}
+.src-note b{color:var(--text)}
+
+@media (max-width:768px){
+  .res-row{grid-template-columns:1fr}
+  .case-grid,.field-grid,.opc-grid{grid-template-columns:1fr}
+  .q{flex-direction:column;align-items:stretch;gap:11px}
+  .q-opts{justify-content:stretch}
+  .q-opt{flex:1}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">一人公司 OPC · 4 / 16</div>
+    <h1>被驳回之后：把挡路的商标拿掉</h1>
+    <p class="subtitle">「米羊数智」第一次提交就被驳回了。挡路的是一个 2015 年就注册、却早已没在使用的在先商标。这一节把从驳回、撤三到复审的完整链路拆开讲清楚，这条路是我们自己走完的一遍。</p>
+    <div class="chips"><span class="chip">驳回通知书</span><span class="chip">撤三</span><span class="chip">驳回复审</span><span class="chip">2027 新法</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>真实案例复盘：驳回、撤三、复审三步怎么走，举证责任在谁身上，十五日复审期限</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">先看这条链路</div>
+    <div class="quote-card">
+      商标被驳回，绝大多数人的第一反应是改名。但<b>驳回通知书只是告诉你有人挡路，没说这个人还站不站得住</b>。真正的胜负手，是你能不能先把挡路的那个商标拿掉。
+    </div>
+    <div class="res-row">
+      <div class="res"><div class="n">2 份驳回</div><div class="l">同一天收到，引证的是两个不同的在先商标</div></div>
+      <div class="res"><div class="n">1 次撤三</div><div class="l">对方没交使用证据，注册被撤销</div></div>
+      <div class="res"><div class="n">初步审定</div><div class="l">引证商标消失，复审直接翻盘</div></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">第一幕 · 两份驳回通知书</div>
+    <p class="desc">2023 年 4 月，同一天到了两份《商标驳回通知书》，理由都是与在先注册商标近似。驳回通知书的格式很固定：告诉你被谁挡了（引证商标的注册号和名称）、依据哪一条法条、以及你还剩多少天可以反应。</p>
+    <div class="case-grid">
+      <div class="case-card">
+        <h4>第一份 · 同名加了个后缀</h4>
+        <p>一个 2015 年就注册在第 35 类的在先商标，「米羊」后面多一个字，和「米羊数智」<b>在类似服务项上构成近似</b>。它注册得早，这一关就是躲不开。</p>
+      </div>
+      <div class="case-card">
+        <h4>第二份 · 二字颠倒过来</h4>
+        <p>挡路的是一个把「米羊」倒过来写的在先商标，<b>连字序颠倒都算近似</b>。这是很多人起名时想不到的：你以为换个顺序就避开了，审查员不这么看。</p>
+      </div>
+    </div>
+    <div class="law">
+      <div class="law-src">当时适用 ·《商标法》（2019 年修正）第三十条</div>
+      <p>申请注册的商标，凡不符合本法有关规定或者同他人在同一种商品或者类似商品上已经注册的或者初步审定的商标相同或者近似的，由商标局驳回申请，不予公告。</p>
+    </div>
+    <p class="desc" style="margin-top:14px">同一份通知书的末尾还写着一句关键的话：<b>不服的，可以自收到通知之日起十五日内申请复审</b>（依当时的第三十四条）。十五日是硬期限，过了就只能重新申请。所以收到驳回通知，第一件事是看日期。文案后面再想。</p>
+
+    <div class="sec-label" style="margin-top:26px">读懂引证商标的档案</div>
+    <p class="desc">驳回通知书只给你一个注册号。拿着它去中国商标网把引证商标的档案调出来，<b>四个字段决定你后面怎么走</b>。</p>
+    <div class="field-grid">
+      <div class="fld"><span class="fname">申请日期</span><p>决定它<b>满没满三年</b>，这是撤三的门槛。挡我们的那个 2015 年就申请了，到 2023 年早就跨过了这条线。</p></div>
+      <div class="fld"><span class="fname">国际分类 · 类似群</span><p>决定它<b>挡不挡得到你</b>。近似看的是类似群编码，行业直觉靠不住：同名不同类未必冲突，同类不同名也可能近似。</p></div>
+      <div class="fld"><span class="fname">专用期限</span><p>注册商标十年一续展。<b>快到期又没在用的商标，往往到期就不续了</b>。有时候等，比打便宜。</p></div>
+      <div class="fld"><span class="fname">核定使用商品/服务</span><p>这一栏<b>铺得越宽，越说明它是囤的，不是用的</b>。挡我们的那个，从「替他人推销」一路写到「药品零售」，典型的注而不用。</p></div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示一 · 从驳回到初审的完整链路</div>
+    <p class="desc">这条链路一共七步，跨了两年。点「下一步」走一遍，注意第五步球在谁那边。</p>
+    <div class="tl-dots" id="tlDots"></div>
+    <div class="tl-stage" id="tlStage">
+      <div class="tl-phase" id="tlPhase">准备</div>
+      <div class="tl-title" id="tlTitle">点「下一步」开始</div>
+      <div class="tl-body" id="tlBody">故事从 2015 年开始，那时候还没有米羊科技。</div>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="tlNext" onclick="tlStep()">下一步</button>
+      <button class="btn btn-r" onclick="tlReset()">重播</button>
+      <span class="hint" id="tlHint"></span>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked xa-peek">
+    <div class="sec-label">第二幕 · 撤三：举证责任在对方</div>
+    <p class="desc">撤三的全称是「撤销连续三年不使用的注册商标」。它是商标法留给后来者的一个口子：<b>商标是用品，不是藏品</b>。注册了却三年不用，任何单位或者个人都可以申请把它撤掉。</p>
+    <div class="law">
+      <div class="law-src">当时适用 ·《商标法》（2019 年修正）第四十九条第二款</div>
+      <p>注册商标成为其核定使用的商品的通用名称或者没有正当理由连续三年不使用的，任何单位或者个人可以向商标局申请撤销该注册商标。</p>
+    </div>
+    <p class="desc" style="margin-top:14px">这里有两个大多数人不知道的关键点。</p>
+    <div class="l-cols" style="margin-top:12px">
+      <div class="l-card">
+        <h3 style="font-size:16px;margin-bottom:6px;color:var(--opc-deep)">「任何单位或者个人」</h3>
+        <p class="desc" style="font-size:14px">你不需要证明自己是利害关系人，也不需要先被驳回。任何人都能提。实务中通常委托代理机构以第三方名义提出。</p>
+      </div>
+      <div class="l-card">
+        <h3 style="font-size:16px;margin-bottom:6px;color:var(--opc-deep)">举证责任是倒过来的</h3>
+        <p class="desc" style="font-size:14px">你不用证明对方没在用，那也证明不了。撤三一旦受理，是<b>商标注册人</b>要在两个月内拿出这三年的使用证据。拿不出来，就撤。</p>
+      </div>
+    </div>
+    <div class="case-grid">
+      <div class="case-card">
+        <h4>这个案子里的撤三</h4>
+        <p>5 月 5 日提出申请，举证窗口就锁定在<b>往前推整三年</b>：2020-05-05 至 2023-05-04。注册人在两个月的指定期限内，<b>一份使用证据都没交出来</b>。注册被撤销，原《商标注册证》作废并公告。</p>
+      </div>
+      <div class="case-card">
+        <h4>然后是复审</h4>
+        <p>复审查明引证商标已因连续三年停止使用被撤销、决定已生效。<b>引证商标的专用权丧失，在先权利冲突就不复存在</b>。「米羊数智」予以初步审定，名字拿回来了。</p>
+      </div>
+    </div>
+    <p class="desc" style="margin-top:14px">注意撤三申请日和举证窗口的关系：<b>窗口是从申请日往前推三年</b>。所以提撤三的时机要挑。如果对方最近刚开始零星使用，提早了反而会把证据送到窗口里。</p>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">交互演示二 · 撤三值不值得打</div>
+    <p class="desc">撤三不是万能的。它要花钱、花时间，而且可能白打。四个问题，判断你手上这一个该不该走这条路。</p>
+    <div class="q-list" id="qList"></div>
+    <div class="verdict" id="verdict" style="display:none"></div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">2027 年起，条文号得重新对一遍</div>
+    <p class="desc">商标法在 <b>2026 年 6 月 26 日经第十四届全国人大常委会第二十三次会议修订</b>。1982 年立法以来它只被修正过四次，这是第一次整体修订：章节重排，条文号大面积变动。<b>新法自 2027 年 1 月 1 日起施行</b>，在那之前办事仍然适用 2019 年修正版。上面这个案子从头到尾走的都是旧条文号，在当时都是对的。</p>
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <thead><tr><th>这一步</th><th>旧法（2019 修正，施行至 2026-12-31）</th><th>新法（2026 修订，2027-01-01 施行）</th></tr></thead>
+        <tbody>
+          <tr><td>在先近似不得注册</td><td>第三十条</td><td><b>第二十条</b></td></tr>
+          <tr><td>驳回申请、不予公告</td><td>第三十条</td><td><b>第三十四条</b></td></tr>
+          <tr><td>驳回复审（十五日内提出）</td><td>第三十四条</td><td><b>第三十七条</b>，并明确九个月内作出决定</td></tr>
+          <tr><td>撤三（连续三年不使用）</td><td>第四十九条第二款</td><td><b>第五十七条第三款</b>，并明确九个月内作出决定</td></tr>
+          <tr><td>初步审定公告</td><td>第二十八条</td><td><b>第三十二条</b></td></tr>
+          <tr><td>注册有效期十年</td><td>第三十九条</td><td><b>第四十三条</b></td></tr>
+          <tr><td>主管机关的表述</td><td>商标局 / 国家知识产权局</td><td><b>国务院商标管理部门</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="desc" style="margin-top:14px">对一人公司来说，新法里最实在的一处变化是<b>撤三有了法定审限</b>：国务院商标管理部门应当自收到申请之日起九个月内作出决定，有特殊情况经批准可以延长三个月。以前撤三要等多久是没底的，现在这段时间可以排进你的产品计划表了。</p>
+    <div class="law">
+      <div class="law-src">《中华人民共和国商标法》（2026 年修订）第五十七条第三款</div>
+      <p>注册商标成为其核定使用的商品的通用名称或者没有正当理由连续三年不使用的，任何单位或者个人可以向国务院商标管理部门申请撤销该注册商标。国务院商标管理部门应当自收到申请之日起九个月内作出决定。有特殊情况需要延长的，经国务院商标管理部门负责人批准，可以延长三个月。</p>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">OPC 视角</div>
+    <div class="opc-grid">
+      <div class="opc-card">
+        <span class="opc-tag">时机 · 查询要在起名阶段做完</span>
+        <p style="margin-bottom:10px"><b>这一整套流程，本来是可以不用走的。</b>雷军讲起名四标准的时候把「有商标」放在第一条，不是形式主义。</p>
+        <ul class="opc-list">
+          <li><b>查询成本几乎为零</b>：中国商标网免费查，半小时能把候选名单过一遍。写第一行代码之前做完，别等提交注册才发现。</li>
+          <li><b>近似的范围比你想的宽</b>：「米羊」被一个加了后缀的和一个字序颠倒的在先商标各挡过一次。查询时要把加字、减字、颠倒字序、同音字一起查。</li>
+          <li><b>看清类别</b>：驳回通知书写的是在类似服务项上近似。同名不同类未必冲突，同类不同名也可能近似，判断标准是类似群编码。</li>
+        </ul>
+      </div>
+      <div class="opc-card">
+        <span class="opc-tag">决策 · 三条路的成本账</span>
+        <p style="margin-bottom:10px">被驳回之后，摆在你面前的只有三条路。<b>选之前先算清楚哪条最便宜。</b></p>
+        <ul class="opc-list">
+          <li><b>改名</b>：金钱成本最低，品牌成本最高。域名、账号、已发出去的内容全要重来，越晚改越贵。</li>
+          <li><b>谈受让</b>：最快，但价格由对方开。对方还在用的时候，这通常是唯一的路。</li>
+          <li><b>撤三 + 复审</b>：对方不在用时性价比最高，代价是时间。新法之下撤三九个月内出决定，加上复审，可以按一年上下来排期。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>驳回不等于终局。</b>先查引证商标是谁、还在不在用，再决定改名还是打。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>撤三的举证责任在注册人。</b>你只需要提出申请，拿证据的是对方，两个月内交不出就撤。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>举证窗口从申请日往前推三年。</b>提撤三的时机会直接决定对方能不能凑出证据。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>2027 年 1 月 1 日起适用新法。</b>条文号大面积变动，撤三和驳回复审都新增了九个月的法定审限。</p></div>
+    </div>
+    <p class="src-note">
+      <b>法条来源：</b>《中华人民共和国商标法》（1982 年 8 月 23 日通过，2026 年 6 月 26 日第十四届全国人民代表大会常务委员会第二十三次会议修订，自 2027 年 1 月 1 日起施行），全文见中国人大网，公布日期 2026-06-26，本节核验日期 2026-08-10。旧条文号为《商标法》（2019 年修正）条号。<br>
+      <b>案例来源：</b>米羊科技自身的商标注册与撤三经历，讲述时已隐去相关方名称、注册号与文书文号。商标撤销与初步审定均为公开程序，读者可在中国商标网查询任一商标的档案与状态。
+    </p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 交互一：从驳回到初审的链路 ── */
+var TL = [
+  {phase:'2015 年', title:'在先商标落地',
+   body:'一家外地公司在第 35 类注册了一个和「米羊」几乎同名的商标，核定服务从「替他人推销」一路铺到「药品零售」。次年取得专用权。<b>这时候还没有米羊科技。</b>'},
+  {phase:'2023 年 4 月', title:'两份驳回通知书',
+   body:'「米羊数智」被驳回，理由是与这个在先商标在类似服务项上近似。同一天另一份通知书引证的是一个<b>把「米羊」二字颠倒过来的商标</b>，字序颠倒同样构成近似。依据是当时的《商标法》第三十条。'},
+  {phase:'岔路口', title:'三条路，选哪条',
+   body:'改名重来、直接复审、或者先把引证商标拿掉。<b>直接复审的胜算不高</b>：引证商标客观存在、确实近似，复审只是让人再看一遍同样的事实。真正的胜负手是第三条：先去查这个商标还在不在用。'},
+  {phase:'2023-05-05', title:'提出撤三',
+   body:'依《商标法》第四十九条，以「无正当理由连续三年不使用」为由，申请撤销引证商标在全部核定服务上的注册。<b>举证窗口就此锁定：2020-05-05 至 2023-05-04。</b>'},
+  {phase:'举证期', title:'球在对方半场',
+   body:'国家知识产权局受理后通知商标注册人：<b>自收到通知之日起两个月内</b>，提交这三年期间的使用证据材料。这一步是撤三的要害：<b>要拿出使用证据的是注册人，不是你</b>。'},
+  {phase:'撤三决定', title:'注册被撤销',
+   body:'注册人在指定期限内，<b>一份使用证据都没交出来</b>。引证商标的注册被撤销，原《商标注册证》作废并予公告。一个注册了七年多的商标，就这样从登记簿上消失了。'},
+  {phase:'复审决定', title:'复审翻盘',
+   body:'复审查明：引证商标已因连续三年停止使用被撤销，决定已生效。<b>引证商标专用权丧失，在先权利冲突不复存在</b>。依当时的《商标法》第二十八条，「米羊数智」予以初步审定。<b>名字拿回来了。</b>'}
+];
+var tlCur = 0;
+
+function tlRenderDots() {
+  var wrap = document.getElementById('tlDots');
+  wrap.innerHTML = '';
+  for (var i = 0; i < TL.length; i++) {
+    var d = document.createElement('span');
+    d.className = 'tl-dot' + (i < tlCur ? ' on' : '');
+    wrap.appendChild(d);
+  }
+}
+
+function tlStep() {
+  if (tlCur >= TL.length) return;
+  var s = TL[tlCur];
+  document.getElementById('tlPhase').textContent = s.phase;
+  document.getElementById('tlTitle').textContent = s.title;
+  document.getElementById('tlBody').innerHTML = s.body;
+  tlCur++;
+  tlRenderDots();
+  document.getElementById('tlHint').textContent = tlCur + ' / ' + TL.length;
+  if (tlCur >= TL.length) {
+    document.getElementById('tlNext').disabled = true;
+    document.getElementById('tlHint').textContent = '走完了。七步，跨两年，换回一个名字。';
+  }
+}
+
+function tlReset() {
+  tlCur = 0;
+  tlRenderDots();
+  document.getElementById('tlPhase').textContent = '准备';
+  document.getElementById('tlTitle').textContent = '点「下一步」开始';
+  document.getElementById('tlBody').textContent = '故事从 2015 年开始，那时候还没有米羊科技。';
+  document.getElementById('tlHint').textContent = '';
+  document.getElementById('tlNext').disabled = false;
+}
+
+/* ── 交互二：撤三可行性自查 ── */
+var QS = [
+  {k:'aged', q:'挡路的引证商标，注册公告已经满三年了吗？', s:'看注册公告的日期，别看申请日期。'},
+  {k:'used', q:'你能找到它最近三年的实际使用痕迹吗？', s:'商品链接、店铺、广告、官网、发票抬头，任何一项都算。'},
+  {k:'same', q:'你和它的类别、类似群重叠吗？', s:'驳回通知书上写的「类似服务项」就是答案。'},
+  {k:'wait', q:'你等得起大约一年吗？', s:'撤三九个月内出决定，之后还要走驳回复审。'}
+];
+var ans = {};
+
+function renderQs() {
+  var wrap = document.getElementById('qList');
+  wrap.innerHTML = '';
+  QS.forEach(function (item) {
+    var row = document.createElement('div');
+    row.className = 'q';
+    row.innerHTML = '<div class="q-txt">' + item.q + '<small>' + item.s + '</small></div>';
+    var opts = document.createElement('div');
+    opts.className = 'q-opts';
+    [['yes', '是'], ['no', '否']].forEach(function (o) {
+      var b = document.createElement('button');
+      b.className = 'q-opt' + (ans[item.k] === o[0] ? ' on' : '');
+      b.type = 'button';
+      b.textContent = o[1];
+      b.onclick = function () { ans[item.k] = o[0]; renderQs(); renderVerdict(); };
+      opts.appendChild(b);
+    });
+    row.appendChild(opts);
+    wrap.appendChild(row);
+  });
+}
+
+function renderVerdict() {
+  var box = document.getElementById('verdict');
+  if (QS.some(function (i) { return !ans[i.k]; })) { box.style.display = 'none'; return; }
+
+  var r;
+  if (ans.same === 'no') {
+    r = ['v-warn', '先确认它到底挡不挡你',
+      '类别和类似群都不重叠的话，这个商标未必构成障碍。<b>先把驳回通知书上写的类似服务项核对清楚</b>。如果确实不重叠，该做的是在复审里把区别讲透，撤三帮不上这个忙。'];
+  } else if (ans.aged === 'no') {
+    r = ['v-stop', '撤三这条路暂时走不通',
+      '注册未满三年，撤三不成立。<b>剩下两条路：谈受让，或者改名。</b>如果这个名字对你很重要，可以先算出它满三年的日子，同时准备一个备选名并行推进。别把整个产品节奏押在一个不确定的日期上。'];
+  } else if (ans.used === 'yes') {
+    r = ['v-stop', '对方在用，撤三大概率打不掉',
+      '只要注册人能拿出窗口期内的使用证据，撤三就会被驳。<b>把精力转到谈受让或者改名上。</b>硬打的结果通常是赔掉几个月和一笔代理费，名字还是拿不到。'];
+  } else if (ans.wait === 'no') {
+    r = ['v-warn', '值得打，但别把产品卡在这儿',
+      '条件是满足的，问题只是时间。<b>建议两条腿走路</b>：撤三照提，同时用一个可用的过渡名先把产品发出去。名字可以换，错过的窗口期换不回来。'];
+  } else {
+    r = ['v-go', '这一个值得打',
+      '注册满三年、找不到使用痕迹、类别重叠、时间也等得起，<b>四个条件齐了，这正是撤三设计出来要解决的情况</b>。记住举证窗口是从申请日往前推三年，提之前先确认对方最近没有突然开始使用。'];
+  }
+  box.className = 'verdict ' + r[0];
+  box.innerHTML = '<h4>' + r[1] + '</h4><p>' + r[2] + '</p>';
+  box.style.display = 'block';
+}
+
+/* 初始化 */
+tlRenderDots();
+renderQs();
+lessonOnView(document.getElementById('tlStage'), function () { tlStep(); });
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

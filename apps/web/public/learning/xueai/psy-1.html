@@ -1,0 +1,1793 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"psy-1",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=psy-1',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工程指标及格了，用户为什么还骂慢？ | xueai.miyang.cn</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   taste.css —— 专题篇章「审美工程」共用设计系统
+   背景：本章 12 页交互密度极高（每页 2~3 处以上可玩组件），
+   若按成本篇的做法每页各写一套样式，A/B 找茬、迷你界面、
+   点选题这些跨页组件会复制 12 遍并逐渐漂移。
+   设计意图：本章讲的就是「一致性产生系统感」，篇章样式自身
+   必须是正面教材——主题色、圆角、间距全部收敛在这一个文件里，
+   页面特有样式才允许写在各页 <style> 中。
+   约束：全章唯一主色 --ct（玫红），间距一律 8 的倍数；
+   在 lesson.css 之后引入，只做增量不覆盖骨架。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#db2777;            /* 章主色：玫红 */
+  --ct-deep:#9d174d;       /* 深玫红：正文里的强调字 */
+  --ct-soft:rgba(219,39,119,.08);
+  --ct-line:rgba(219,39,119,.25);
+  --good:#16a34a;
+  --good-soft:rgba(22,163,74,.08);
+  --bad:#dc2626;
+  --bad-soft:rgba(220,38,38,.07);
+}
+
+.lesson-header .kicker{color:var(--ct);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.chip{padding:6px 14px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);font-size:13px;font-weight:700;}
+.desc{font-size:15px;color:var(--sub);line-height:1.8;}
+.desc b{color:var(--ct-deep);}
+.quote-card{background:var(--ct-soft);border:1.5px solid var(--ct-line);border-radius:14px;padding:16px 24px;font-size:16px;line-height:1.8;}
+.quote-card b{color:var(--ct-deep);}
+
+/* ── 表格（对齐成本篇的表格语言） ── */
+.tbl-wrap{overflow-x:auto;}
+.tbl{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card);}
+.tbl th{background:var(--ct-soft);color:var(--ct-deep);font-weight:800;text-align:left;padding:12px 16px;font-size:13px;}
+.tbl td{padding:12px 16px;border-top:1px solid var(--border);color:var(--sub);line-height:1.65;vertical-align:top;}
+.tbl td b{color:var(--ct-deep);}
+
+/* ── 交互容器：所有能玩的组件统一装进 .toy ──
+   头部彩条 + 「动手」徽标是全章交互区的统一识别色，
+   读者扫一眼就知道这块能点。 */
+.toy{background:var(--card);border:1.5px solid var(--border);border-radius:14px;margin-top:16px;box-shadow:var(--shadow-card);overflow:hidden;}
+.toy-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);}
+.toy-head .toy-ic{width:26px;height:26px;border-radius:8px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toy-head .toy-ic svg{width:15px;height:15px;}
+.toy-head .toy-t{font-size:14px;font-weight:800;color:var(--text);}
+.toy-head .toy-badge{margin-left:auto;font-size:11px;font-weight:800;padding:3px 12px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);white-space:nowrap;}
+.toy-head .toy-badge.solved{background:var(--good-soft);color:var(--good);}
+.toy-body{padding:20px;}
+.toy-hint{font-size:12.5px;color:var(--sub);font-weight:600;margin-bottom:12px;}
+
+/* ── A/B 对决（找茬）：两块界面选出更好的那块 ── */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.duel-side{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s;background:var(--bg);}
+.duel-side:hover{border-color:var(--ct-line);transform:translateY(-2px);box-shadow:var(--shadow-pop);}
+.duel.done .duel-side{cursor:default;}
+.duel.done .duel-side:hover{transform:none;box-shadow:none;}
+.duel-side .duel-tag{position:absolute;top:8px;left:8px;z-index:2;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--sub);border:1px solid var(--border);}
+.duel-side.win{border-color:var(--good);}
+.duel-side.lose{border-color:var(--bad);opacity:.75;}
+.duel-side.win .duel-tag{background:var(--good);color:#fff;border-color:var(--good);}
+.duel-side.lose .duel-tag{background:var(--bad);color:#fff;border-color:var(--bad);}
+.duel-verdict{margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.duel-verdict.show{display:block;}
+.duel-verdict.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.duel-verdict.good b{color:var(--good);}
+.duel-verdict.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+.duel-verdict.miss b{color:var(--text);}
+
+/* ── 迷你界面积木：页内所有「假界面」的统一零件 ──
+   pointer-events 关掉，读者点的是整块卡片而不是假按钮。 */
+.mock{background:#fff;padding:16px;min-height:150px;pointer-events:none;user-select:none;font-size:12px;line-height:1.5;}
+.mock *{box-sizing:border-box;}
+.mock-bar{height:8px;border-radius:4px;background:#e5e7eb;}
+.mock-dot{width:24px;height:24px;border-radius:50%;background:#e5e7eb;flex-shrink:0;}
+.mock-h{font-weight:800;color:#111827;}
+.mock-p{color:#6b7280;}
+.mock-btn{display:inline-block;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;background:#111827;color:#fff;}
+.mock-btn.ghost{background:transparent;color:#6b7280;border:1px solid #d1d5db;}
+.mock-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;}
+.mock-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;}
+
+/* ── 点选题（多选项挑一个） ── */
+.quiz-opts{display:flex;flex-direction:column;gap:10px;}
+.quiz-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color .15s,background .15s;background:var(--card);font-size:14px;line-height:1.65;color:var(--text);}
+.quiz-opt:hover{border-color:var(--ct-line);background:var(--ct-soft);}
+.quiz-opt .qo-key{width:24px;height:24px;border-radius:8px;background:rgba(0,0,0,.05);color:var(--sub);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;margin-top:1px;}
+.quiz-opt.right{border-color:var(--good);background:var(--good-soft);cursor:default;}
+.quiz-opt.right .qo-key{background:var(--good);color:#fff;}
+.quiz-opt.wrong{border-color:var(--bad);background:var(--bad-soft);cursor:default;opacity:.8;}
+.quiz-opt.wrong .qo-key{background:var(--bad);color:#fff;}
+.quiz-fb{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:13.5px;line-height:1.8;display:none;}
+.quiz-fb.show{display:block;}
+.quiz-fb.good{background:var(--good-soft);border:1.5px solid rgba(22,163,74,.25);color:var(--text);}
+.quiz-fb.good b{color:var(--good);}
+.quiz-fb.miss{background:rgba(100,116,139,.07);color:var(--sub);}
+
+/* ── 迷你浏览器外壳：所有 mock 教具的统一画框 ──
+   背景：v1.3 验收打回，裸的 mock 读起来像没画完的线框图。
+   设计意图：三个圆点 + 地址栏的顶栏让读者一眼认出「这是展品」，
+   正反案例的差距才会读成档次差而非完成度差。
+   用法：<div class="mockwin"><div class="mockwin-bar"><i></i><i></i><i></i>
+   <span class="mockwin-url">yoga.example.com</span></div>
+   <div class="mock">…</div></div> */
+.mockwin{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.mockwin-bar{display:flex;align-items:center;gap:5px;padding:8px 12px;background:#f4f4f5;border-bottom:1px solid var(--border);}
+.mockwin-bar i{width:9px;height:9px;border-radius:50%;background:#d4d4d8;flex-shrink:0;}
+.mockwin-bar i:first-child{background:#fca5a5;}
+.mockwin-bar i:nth-child(2){background:#fcd34d;}
+.mockwin-bar i:nth-child(3){background:#86efac;}
+.mockwin-url{margin-left:8px;flex:1;min-width:0;font-size:10.5px;color:#a1a1aa;background:#fff;border-radius:6px;padding:3px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,monospace;}
+
+/* ── 滑块行 ── */
+.sl-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+.sl-row label{font-size:14px;font-weight:700;color:var(--text);min-width:96px;}
+.sl-row input[type=range]{flex:1;min-width:160px;accent-color:var(--ct);}
+.sl-row .sl-val{font-size:14px;font-weight:800;min-width:88px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ct-deep);}
+
+/* ── 分段切换 ── */
+.seg{display:inline-flex;background:rgba(0,0,0,.05);border-radius:10px;padding:3px;gap:2px;}
+.seg button{border:none;background:transparent;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.seg button.on{background:#fff;color:var(--ct-deep);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+
+/* ── 要点回顾 ── */
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card);}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px;}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0;}
+.tk-item p b{color:var(--ct-deep);}
+
+/* ── 图片对比 / 挑选 ── */
+.pic-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pic-cell{position:relative;border:2px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .18s,transform .18s;background:#000;}
+.pic-cell:hover{border-color:var(--ct-line);transform:translateY(-2px);}
+.pic-cell img{width:100%;display:block;aspect-ratio:1;object-fit:cover;}
+.pic-cell .pic-tag{position:absolute;top:8px;left:8px;font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px);}
+.pic-cell.win{border-color:var(--good);}
+.pic-cell.lose{border-color:var(--bad);opacity:.7;}
+.pic-grid.done .pic-cell{cursor:default;}
+.pic-grid.done .pic-cell:hover{transform:none;}
+.pic-cap{font-size:12.5px;color:var(--sub);padding:8px 4px 0;line-height:1.6;}
+
+/* ── 出处注脚 ── */
+.src-note{margin-top:32px;font-size:13px;color:var(--sub);line-height:1.85;}
+.src-note b{color:var(--text);}
+
+@media (max-width:768px){
+  .duel{grid-template-columns:1fr;}
+  .pic-grid{grid-template-columns:1fr;}
+  .toy-body{padding:16px;}
+  .toy-head .toy-badge{display:none;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   psy.css —— 专题篇章「AI 产品心理学」样式覆盖
+   背景：本章 v3 起复用审美工程的组件体系（taste.css 的
+   toy / duel / quiz / mockwin / takeaways），组件颜色全部走
+   --ct 系列变量，本文件只负责把章色从玫红换成青色，
+   并保留旧页面在用的 --psy 别名。
+   约束：必须在 taste.css 之后引入；页面特有样式写在各页 <style>。
+   ═══════════════════════════════════════════════════════════ */
+
+:root{
+  --ct:#0d9488;            /* 章主色：青 */
+  --ct-deep:#115e59;
+  --ct-soft:rgba(13,148,136,.08);
+  --ct-line:rgba(13,148,136,.28);
+  /* 旧页面别名，v3 重做完成后可移除 */
+  --psy:#0d9488;
+  --psy-deep:#115e59;
+  --psy-soft:rgba(13,148,136,.08);
+  --psy-line:rgba(13,148,136,.28);
+}
+
+/* 本章仪表类教具的公共零件：许多页要显示一个「情绪 / 弃用率 / 折扣」仪表，
+   拨开关看指针移动是本章工程杠杆的标准演示形态。 */
+.gauge{display:flex;flex-direction:column;gap:6px;}
+.gauge-head{display:flex;align-items:baseline;justify-content:space-between;}
+.gauge-label{font-size:12.5px;font-weight:800;color:var(--sub);}
+.gauge-num{font-size:22px;font-weight:900;color:var(--ct-deep);font-variant-numeric:tabular-nums;transition:color .25s;}
+.gauge-num.bad{color:var(--bad);}
+.gauge-track{height:12px;border-radius:8px;background:rgba(0,0,0,.06);overflow:hidden;}
+.gauge-fill{height:100%;border-radius:8px;background:var(--ct);width:0;transition:width .45s cubic-bezier(.22,1,.36,1),background .3s;}
+.gauge-fill.bad{background:var(--bad);}
+.gauge-note{font-size:12px;color:var(--sub);line-height:1.7;}
+
+/* 开关行：工程杠杆的标准形态，拨一下，上面的仪表当场动 */
+.lever-list{display:flex;flex-direction:column;gap:10px;}
+.lever{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer;transition:border-color .18s,background .18s;}
+.lever:hover{border-color:var(--ct-line);}
+.lever.on{border-color:var(--ct);background:var(--ct-soft);}
+.lever-sw{width:38px;height:22px;border-radius:99px;background:rgba(0,0,0,.15);flex-shrink:0;position:relative;transition:background .2s;margin-top:2px;}
+.lever-sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s cubic-bezier(.22,1,.36,1);}
+.lever.on .lever-sw{background:var(--ct);}
+.lever.on .lever-sw::after{transform:translateX(16px);}
+.lever-body h6{font-size:13.5px;font-weight:800;color:var(--text);line-height:1.5;}
+.lever-body p{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:2px;}
+.lever-body p b{color:var(--ct-deep);}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="AI 产品心理学第 1 课：服务器的秒表和用户的秒表走得不一样。四个可玩实验：同一个 5 秒请求用空白冻结、转圈、流式、步骤外显四种呈现并排跑，选出最难受的那个；凭体感掐 8 秒，揭晓无反馈等待被高估多少；拖 TTFT 滑块重放打字流，看首字时间怎么换体感分；三个走时怪癖逐档演示。感知性能才是用户打分的依据。">
+<meta name="keywords" content="感知性能,TTFT,首字时间,流式输出,等待体验,感知时间,AI产品心理学,AI产品经理">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="工程指标及格了，用户为什么还骂慢？">
+<meta property="og:description" content="同一个 5 秒请求，四种呈现并排跑；再掐一次 8 秒、拖一次 TTFT 滑块。感知性能才是用户打分的依据。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/psy-1.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/psy-1.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="工程指标及格了，用户为什么还骂慢？">
+<meta name="twitter:description" content="同一个 5 秒请求，四种呈现并排跑，物理时长相同，体感差三倍。四个实验亲手玩。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+/* ── 实验一：四方案并排跑 ── */
+.race-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.race-box{background:var(--card);border:2px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:border-color .15s,transform .15s;}
+.race-box:hover{transform:translateY(-2px);}
+.race-box.voted{border-color:var(--ct);box-shadow:0 0 0 2px var(--ct-line);}
+.race-head{padding:11px 15px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.015);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.race-head h4{font-size:13.5px;font-weight:800;color:var(--text);}
+.race-tag{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--ct-soft);color:var(--ct-deep);white-space:nowrap;}
+.race-stage{padding:13px 15px;min-height:132px;font-size:12.5px;line-height:1.75;color:var(--sub);flex:1;}
+.race-stage .rs-answer{color:var(--text);}
+.race-stage .rs-hint{color:#9ca3af;font-size:12px;}
+.race-spinner{width:22px;height:22px;border:3px solid var(--ct-line);border-top-color:var(--ct);border-radius:50%;animation:rspin .8s linear infinite;margin:8px 0;}
+@keyframes rspin{to{transform:rotate(360deg)}}
+.race-steps{display:flex;flex-direction:column;gap:6px;}
+.race-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);opacity:0;transform:translateX(-6px);transition:opacity .3s,transform .3s;}
+.race-step.on{opacity:1;transform:none;}
+.race-step .st-dot{width:7px;height:7px;border-radius:50%;background:var(--ct);flex-shrink:0;}
+.race-step.doing .st-dot{animation:stpulse 1s ease infinite;}
+@keyframes stpulse{50%{transform:scale(1.7);opacity:.5}}
+.race-foot{padding:9px 15px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--sub);}
+.race-foot .rf-time{font-variant-numeric:tabular-nums;}
+.race-foot .rf-feel{color:var(--ct-deep);opacity:0;transition:opacity .3s;text-align:right;}
+.race-foot .rf-feel.show{opacity:1;}
+.race-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;}
+.btn-ct{background:var(--ct);color:#fff;border:none;padding:10px 24px;border-radius:999px;font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;transition:filter .15s,transform .15s;}
+.btn-ct:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px);}
+.btn-ct:disabled{background:#c4c8cf;cursor:not-allowed;}
+.race-status{font-size:12.5px;color:var(--sub);font-weight:600;}
+.race-verdict{margin-top:14px;padding:14px 18px;background:var(--ct-soft);border:1.5px dashed var(--ct-line);border-radius:10px;font-size:13.5px;line-height:1.8;color:var(--sub);display:none;}
+.race-verdict.show{display:block;animation:psy-slide-up .35s ease;}
+.race-verdict b{color:var(--ct-deep);}
+
+/* ── 实验二：秒表估时游戏 ── */
+.sw-wrap{display:grid;grid-template-columns:7fr 5fr;gap:16px;align-items:stretch;}
+.sw-panel{border:2px solid var(--border);border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;min-height:200px;font-size:12.5px;color:#9ca3af;user-select:none;}
+.sw-panel.run{color:#d1d5db;}
+.sw-side{display:flex;flex-direction:column;gap:12px;justify-content:center;}
+.sw-side p{font-size:13px;color:var(--sub);line-height:1.75;}
+.sw-side p b{color:var(--ct-deep);}
+.sw-result{display:none;}
+.sw-result.show{display:block;animation:psy-pop .3s ease;}
+.sw-nums{display:flex;gap:10px;margin-bottom:10px;}
+.sw-num{flex:1;background:var(--ct-soft);border:1px solid var(--ct-line);border-radius:10px;padding:10px 12px;text-align:center;}
+.sw-num i{display:block;font-style:normal;font-size:10.5px;font-weight:800;color:var(--sub);margin-bottom:3px;}
+.sw-num b{font-size:16px;color:var(--ct-deep);font-variant-numeric:tabular-nums;}
+.sw-verdict{font-size:13px;line-height:1.8;color:var(--sub);}
+.sw-verdict b{color:var(--ct-deep);}
+
+/* ── 实验三：TTFT 滑块 + 聊天重放 ── */
+.tf-wrap{display:grid;grid-template-columns:6fr 6fr;gap:16px;align-items:start;}
+.tf-chat{border:2px solid var(--border);border-radius:12px;display:flex;flex-direction:column;gap:10px;min-height:216px;}
+.tf-msg{max-width:88%;padding:9px 13px;border-radius:12px;font-size:12px;line-height:1.7;}
+.tf-msg.user{align-self:flex-end;background:var(--ct);color:#fff;border-bottom-right-radius:4px;}
+.tf-msg.ai{align-self:flex-start;background:#f3f4f6;color:#374151;border-bottom-left-radius:4px;min-height:38px;min-width:130px;}
+.tf-wait::after{content:'▍';animation:tfblink .8s step-end infinite;color:#9ca3af;}
+@keyframes tfblink{50%{opacity:0}}
+.tf-ctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.tf-kv{margin-top:12px;font-size:13px;line-height:1.8;color:var(--sub);}
+.tf-kv b{color:var(--ct-deep);}
+.tf-note{margin-top:12px;font-size:12.5px;color:var(--sub);line-height:1.75;background:rgba(0,0,0,.03);border-radius:9px;padding:10px 14px;}
+.tf-note b{color:var(--ct-deep);}
+
+/* ── 实验四：三个走时怪癖 ── */
+.qk-pane{display:none;margin-top:16px;}
+.qk-pane.on{display:block;}
+.qk-cap{font-size:13px;color:var(--sub);line-height:1.8;margin-top:14px;}
+.qk-cap b{color:var(--ct-deep);}
+.tl-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;margin-top:12px;}
+.tl-label{font-size:12px;font-weight:800;color:var(--sub);}
+.tl-track{height:14px;border-radius:8px;background:rgba(0,0,0,.06);overflow:hidden;}
+.tl-fill{height:100%;width:0;border-radius:8px;background:var(--ct);}
+.tl-fill.dim{background:#94a3b8;}
+.tl-mark{grid-column:2;font-size:11.5px;font-weight:700;color:var(--ct-deep);opacity:0;transition:opacity .3s;}
+.tl-mark.show{opacity:1;}
+.fb-stage{grid-column:2;font-size:11.5px;font-weight:700;color:var(--ct-deep);min-height:17px;}
+.qk-ask{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;font-size:13px;font-weight:700;color:var(--text);}
+.qk-ask.show{display:flex;animation:psy-slide-up .3s ease;}
+.qk-ask button{padding:7px 15px;border-radius:999px;border:1.5px solid var(--border);background:transparent;font-size:12.5px;font-weight:800;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .15s;}
+.qk-ask button:hover:not(:disabled){border-color:var(--ct);color:var(--ct-deep);}
+.qk-ask button:disabled{cursor:default;opacity:.5;}
+.qk-verdict{display:none;margin-top:12px;padding:12px 16px;border-radius:10px;background:var(--ct-soft);border:1px solid var(--ct-line);font-size:13px;line-height:1.8;color:var(--sub);}
+.qk-verdict.show{display:block;animation:psy-pop .3s ease;}
+.qk-verdict b{color:var(--ct-deep);}
+.q3-quote{margin-top:14px;padding:13px 17px;border-radius:10px;background:rgba(0,0,0,.035);font-size:13px;color:var(--text);line-height:1.75;font-style:italic;}
+
+/* ── 全章地图翻卡 ── */
+.map-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.map-card{position:relative;aspect-ratio:1.06;cursor:pointer;perspective:600px;}
+.map-inner{position:absolute;inset:0;transition:transform .5s;transform-style:preserve-3d;}
+.map-card.flip .map-inner{transform:rotateY(180deg);}
+.map-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;}
+.map-front{background:var(--card);box-shadow:var(--shadow-card);}
+.map-front .mp-icon{font-size:22px;}
+.map-front .mp-name{font-size:12.5px;font-weight:800;color:var(--text);line-height:1.4;}
+.map-front .mp-hint{font-size:10px;font-weight:700;color:var(--ct);}
+.map-back{background:var(--ct-soft);border-color:var(--ct-line);transform:rotateY(180deg);}
+.map-back .mp-ai{font-size:11px;font-weight:800;color:var(--ct-deep);line-height:1.55;}
+.map-back .mp-tag{font-size:10px;font-weight:800;color:var(--sub);letter-spacing:.5px;}
+
+@media (max-width:768px){
+  .race-grid{grid-template-columns:1fr;}
+  .sw-wrap{grid-template-columns:1fr;}
+  .tf-wrap{grid-template-columns:1fr;}
+  .map-grid{grid-template-columns:repeat(2,1fr);}
+  .tl-row{grid-template-columns:76px 1fr;}
+}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">专题篇章 · AI 产品心理学</div>
+    <h1>工程指标及格了，用户为什么还骂慢？</h1>
+    <p class="subtitle">前面的章节教你把延迟压下来、把成本抠下来、把幻觉率降下来。这一章换一块秒表：<b>用户脑子里那块</b>。它和服务器的秒表走时不同，打分、续费、卸载都跟着它走。第一课先跑个实验，再把这块表的走时怪癖逐个拆开。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>同一个 5 秒请求，空白冻结、转圈、流式、步骤外显四种呈现并排跑，亲身体验物理时长相同、体感差三倍；再认识用户秒表的三个走时怪癖</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">实验一 · 同一个 5 秒，四种活法</div>
+    <p class="desc">下面四个面板背后是<b>同一次请求</b>：同一个问题，同样 5 秒出完整答案。区别只有一个：这 5 秒里给用户看什么。点按钮让四个同时开跑，留意自己的体感。</p>
+    <div class="toy" id="raceToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></span>
+        <span class="toy-t">四方案并排跑</span>
+        <span class="toy-badge" id="raceBadge">先开跑</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">跑完之后，点你觉得最难受的那个面板。</div>
+        <div class="race-grid" id="raceGrid">
+          <div class="race-box" data-mode="freeze">
+            <div class="race-head"><h4>方案 A · 空白冻结</h4><span class="race-tag">什么都不给</span></div>
+            <div class="race-stage" id="stFreeze"><span class="rs-hint">点下方按钮开始</span></div>
+            <div class="race-foot"><span class="rf-time" id="tFreeze">0.0s</span><span class="rf-feel" id="fFreeze"></span></div>
+          </div>
+          <div class="race-box" data-mode="spinner">
+            <div class="race-head"><h4>方案 B · 转圈等待</h4><span class="race-tag">告诉你它活着</span></div>
+            <div class="race-stage" id="stSpinner"><span class="rs-hint">点下方按钮开始</span></div>
+            <div class="race-foot"><span class="rf-time" id="tSpinner">0.0s</span><span class="rf-feel" id="fSpinner"></span></div>
+          </div>
+          <div class="race-box" data-mode="stream">
+            <div class="race-head"><h4>方案 C · 流式输出</h4><span class="race-tag">先给一部分</span></div>
+            <div class="race-stage" id="stStream"><span class="rs-hint">点下方按钮开始</span></div>
+            <div class="race-foot"><span class="rf-time" id="tStream">0.0s</span><span class="rf-feel" id="fStream"></span></div>
+          </div>
+          <div class="race-box" data-mode="steps">
+            <div class="race-head"><h4>方案 D · 步骤外显</h4><span class="race-tag">让你看它在干嘛</span></div>
+            <div class="race-stage" id="stSteps"><span class="rs-hint">点下方按钮开始</span></div>
+            <div class="race-foot"><span class="rf-time" id="tSteps">0.0s</span><span class="rf-feel" id="fSteps"></span></div>
+          </div>
+        </div>
+        <div class="race-controls">
+          <button class="btn-ct" id="btnRace">四个同时开跑</button>
+          <span class="race-status" id="raceStatus">物理时长一模一样：都是 5 秒</span>
+        </div>
+        <div class="race-verdict" id="raceVerdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">实验二 · 先校一校你的体内秒表</div>
+    <p class="desc">刚才多数人最难受的是空白面板。空白除了难受，还有个隐藏代价：<b>它会放大你对时长的估计</b>。感知时间研究把「一边等一边关注时间」的计时叫前瞻计时：注意力越多押在时间本身上，主观时长越膨胀，紧张情绪再把它拉长一截。Zakay 与 Block 的注意闸门模型是这条规律最常被引用的解释。结论先放这，你自己测一遍更有说服力。</p>
+    <div class="toy" id="swToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="2" x2="14" y2="2"></line><circle cx="12" cy="14" r="8"></circle><path d="M12 14l3-3"></path></svg></span>
+        <span class="toy-t">凭体感掐 8 秒</span>
+        <span class="toy-badge" id="swBadge">未开始</span>
+      </div>
+      <div class="toy-body">
+        <div class="sw-wrap">
+          <div class="sw-panel" id="swPanel">（准备好了就点右边的「开始」）</div>
+          <div class="sw-side">
+            <p>点「开始」后，左边面板会进入一段<b>没有进度、没有转圈、没有文案</b>的等待。凭体感，觉得过了 8 秒就按停。尽量别在心里数拍子，那是作弊。</p>
+            <button class="btn-ct" id="swBtn">开始</button>
+            <div class="sw-result" id="swResult">
+              <div class="sw-nums">
+                <div class="sw-num"><i>你以为的</i><b>8.0s</b></div>
+                <div class="sw-num"><i>实际走过</i><b id="swActual">0.0s</b></div>
+                <div class="sw-num"><i>偏差</i><b id="swDelta">0%</b></div>
+              </div>
+              <div class="sw-verdict" id="swVerdict"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="desc" style="margin-top:14px;">这就是空白冻结在数据后台看不见的那笔账：服务器记 5 秒，用户记 6 秒半。<b>无反馈等待的高估误差，实验里两三成很常见</b>。你产品的「体感延迟」比监控面板上的 P99 更糟，且差距由界面决定。</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">实验三 · 首字时间是根多长的杠杆</div>
+    <p class="desc">秒表既然开在用户心里，工程预算就要花在他计时的区间。下面这台聊天机器人的<b>总时长锁死 5 秒</b>，你只能动一个参数：首字时间 TTFT（从发送到看见第一个字）。拖滑块，点「重放」，右边按所选 TTFT 重演一次打字流，体感分跟着变。</p>
+    <div class="toy" id="tfToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"></path></svg></span>
+        <span class="toy-t">TTFT 滑块 · 总时长不变</span>
+        <span class="toy-badge" id="tfBadge">拖一拖再重放</span>
+      </div>
+      <div class="toy-body">
+        <div class="tf-wrap">
+          <div>
+            <div class="sl-row">
+              <label>首字时间</label>
+              <input type="range" id="tfSlider" min="0.2" max="5" step="0.1" value="2.4">
+              <span class="sl-val" id="tfVal">2.4s</span>
+            </div>
+            <div class="tf-ctrl">
+              <button class="btn-ct" id="tfBtn">重放</button>
+              <span class="race-status" id="tfStatus">总时长固定 5.0s，只动首字</span>
+            </div>
+            <div class="psy-meter">
+              <span class="pm-label">体感分</span>
+              <div class="pm-track"><div class="pm-fill" id="tfFill" style="width:64%"></div></div>
+              <span class="pm-num" id="tfNum">64</span>
+            </div>
+            <div class="tf-kv" id="tfKv"></div>
+          </div>
+          <div class="tf-chat mock">
+            <div class="tf-msg user">帮我把这段会议纪要缩成三条待办</div>
+            <div class="tf-msg ai"><span id="tfAi">点「重放」看这一档 TTFT 的体感</span></div>
+          </div>
+        </div>
+        <div class="tf-note"><b>为什么工程上先压 TTFT：</b>把首字从 5 秒压到 0.5 秒，总时长一秒没省，体感分翻了两三倍；反过来 TTFT 不动、总时长从 5 秒压到 4 秒，这根表几乎不动。接流式、先出提纲、分段返回，性价比都排在升级机器前面。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">实验四 · 用户秒表的三个走时怪癖</div>
+    <p class="desc">把前面的体感整理成三条可复用的规律。每一档都有个 mini 演示，<b>三档都切一遍</b>。</p>
+    <div class="toy" id="qkToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></span>
+        <span class="toy-t">三个走时怪癖</span>
+        <span class="toy-badge" id="qkBadge">1 / 3 档</span>
+      </div>
+      <div class="toy-body">
+        <div class="seg" id="qkSeg">
+          <button class="on" data-k="0">① 开表点在首字</button>
+          <button data-k="1">② 有反馈走得快</button>
+          <button data-k="2">③ 差结果记得长</button>
+        </div>
+
+        <div class="qk-pane on" data-k="0">
+          <button class="btn-ct" id="q1Play" style="margin-top:14px;">播放两条时间线</button>
+          <div class="tl-row"><span class="tl-label">用户的秒表</span><div class="tl-track"><div class="tl-fill" id="q1UserFill"></div></div><span class="tl-mark" id="q1UserMark">0.6s · 看见第一个字，秒表停</span></div>
+          <div class="tl-row"><span class="tl-label">服务器的秒表</span><div class="tl-track"><div class="tl-fill dim" id="q1SrvFill"></div></div><span class="tl-mark" id="q1SrvMark">5.0s · 完整答案落地</span></div>
+          <p class="qk-cap">用户的开表点在按下发送，收表点在看见第一个字。首字之后他的注意力交给了阅读，边读边到的内容几乎没被记进等待的账本。工程团队盯总时长的 P99，用户只记首字，<b>两块表对不上，差评就从缝里钻出来</b>。实验三里 TTFT 那根杠杆的长度，就是这条怪癖给的。</p>
+        </div>
+
+        <div class="qk-pane" data-k="1">
+          <button class="btn-ct" id="q2Play" style="margin-top:14px;">两根同速进度条，开跑</button>
+          <div class="tl-row"><span class="tl-label">裸奔</span><div class="tl-track"><div class="tl-fill dim" id="q2AFill"></div></div></div>
+          <div class="tl-row"><span class="tl-label">带播报</span><div class="tl-track"><div class="tl-fill" id="q2BFill"></div></div><span class="fb-stage" id="q2Stage"></span></div>
+          <div class="qk-ask" id="q2Ask"><span>同样 6 秒，哪根更煎熬？</span><button data-v="a">裸奔那根</button><button data-v="b">带播报那根</button></div>
+          <div class="qk-verdict" id="q2Verdict"></div>
+        </div>
+
+        <div class="qk-pane" data-k="2">
+          <p class="qk-cap" style="margin-top:14px;">同一次等待：5 秒后答案落地。切换两种结局，看回忆里的时长怎么变。</p>
+          <div class="seg" id="q3Seg" style="margin-top:10px;">
+            <button class="on" data-k="0">结果好 · 答案到位</button>
+            <button data-k="1">结果坏 · 答非所问</button>
+          </div>
+          <div class="q3-quote" id="q3Quote">「等了一小会儿就出来了，答案挺到位，这工具行。」</div>
+          <div class="psy-meter">
+            <span class="pm-label">回忆里的时长</span>
+            <div class="pm-track"><div class="pm-fill" id="q3Fill" style="width:42%"></div></div>
+            <span class="pm-num" id="q3Num">约 4 秒</span>
+          </div>
+          <p class="qk-cap">物理上都是那一次 5 秒。<b>追记式的时间靠事后重建，情绪越糟，重建出来的等待越长</b>。所以延迟和幻觉在差评里常常挤进同一句话：又慢又蠢。答案质量的问题会连坐到速度头上；反过来，好答案也能替你把慢遮掉一截。第 4 课峰终定律会把这条用在结尾设计上。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">立论 · 用户拿感知那块表给你打分</div>
+    <p class="desc">AI 产品有三个天生毛病：<b>慢</b>（推理要时间）、<b>会错</b>（幻觉压不净）、<b>不透明</b>（用户看不见它在干嘛）。工程手段短期内只能缓解这三样，但用户的评价由感知产生，感知可以设计。你在前面章节学的流式输出、模型路由、语义缓存、Agent 进度汇报，每一个都还有一重心理学开关的身份，这一章教你什么时候为了心理效果去拨它。</p>
+    <div class="quote-card"><b>感知性能 ≠ 真实性能。</b>服务器的 5 秒是物理事实，用户的 5 秒是心理事件；打分、续费、卸载，都发生在后一个 5 秒里。</div>
+    <div class="toy" id="vqToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span>
+        <span class="toy-t">出门考 · 预算只够动一刀</span>
+        <span class="toy-badge">选一个</span>
+      </div>
+      <div class="toy-body">
+        <div class="toy-hint">你的 AI 助手被用户骂慢，实测总时长 5 秒、首字 4.2 秒。手上的排期只够做一件事，先动哪刀？</div>
+        <div class="quiz-opts">
+          <div class="quiz-opt" data-k="0"><span class="qo-key">A</span><span>升级推理集群，把总时长从 5 秒压到 4 秒</span></div>
+          <div class="quiz-opt" data-k="1"><span class="qo-key">B</span><span>接入流式输出，首字压到 0.5 秒，总时长不变</span></div>
+          <div class="quiz-opt" data-k="2"><span class="qo-key">C</span><span>换一个更精致的加载动画，转圈升级成粒子特效</span></div>
+          <div class="quiz-opt" data-k="3"><span class="qo-key">D</span><span>弹一个提示框，向用户解释模型正在深度思考</span></div>
+        </div>
+        <div class="quiz-fb"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">全章地图 · 十六课怎么接着讲</div>
+    <p class="desc">慢、会错、不透明，每个毛病后面都排着几课；再往后是关系和钱。<b>点卡片翻面</b>，看每一课要解决用户的哪句抱怨。</p>
+    <div class="toy" id="mapToy">
+      <div class="toy-head">
+        <span class="toy-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3Z"></path><path d="M9 3v15"></path><path d="M15 6v15"></path></svg></span>
+        <span class="toy-t">十六课一张图</span>
+        <span class="toy-badge" id="mapBadge">0 / 16 已翻</span>
+      </div>
+      <div class="toy-body">
+        <div class="map-grid" id="mapGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="src-note">
+    <b>出处与延伸：</b>感知时间的注意闸门模型见 Zakay 与 Block 的系列研究（1990 年代起），无反馈与高唤起状态下的时长高估在前瞻计时实验里反复复现；等待体验的经典整理见 David Maister《The Psychology of Waiting Lines》（1985），「被占住的时间感觉更短、没解释的等待感觉更长」出自这里；界面响应的 0.1 / 1 / 10 秒三档见 Nielsen《Usability Engineering》（1993）；进度指示器让用户偏好与耐心上升的实验见 Myers（1985）。情绪改写时间记忆的机制与第 4 课峰终定律（Kahneman 等）同根。
+  </div>
+
+  <div class="takeaway-box">
+    <h3>✅ 这一课想和你分享的</h3>
+    <ul>
+      <li><b>盯两块秒表</b>：服务器计物理时长，用户从发送计到首字，考核指标里给 TTFT 单开一行</li>
+      <li><b>别让界面空白</b>：无反馈等待会被放大两三成，超过 1 秒就给反馈，超过 3 秒就给进展</li>
+      <li><b>预算先压首字</b>：接流式、先出提纲、分段返回，排期都在升级机器前面</li>
+      <li><b>错误当场兜住</b>：时间记忆跟着情绪走，答非所问会把慢一起写进差评</li>
+    </ul>
+  </div>
+
+</main>
+<script>
+/* ── 实验一：四方案并排跑 ──
+   四个面板共用一条 5 秒时间线，差异只在呈现层：冻结无输出、转圈、
+   流式（TTFT 0.6s 后逐字出）、步骤外显（四步逐条亮再流式收尾）。
+   跑完让用户投最难受的一票，按票给判词，再揭示物理时长相同。 */
+const ANSWER = '根据 2025 年 Q4 数据，退款申请集中在物流破损（41%）和尺码不符（27%）两类。建议优先上线破损件「拍照即赔」通道，预计可把人工审核量压缩三成，客服响应中位数从 4 小时降到 20 分钟。';
+const RACE_MS = 5000;
+const $ = id => document.getElementById(id);
+const stages = { freeze: $('stFreeze'), spinner: $('stSpinner'), stream: $('stStream'), steps: $('stSteps') };
+const clocks = { freeze: $('tFreeze'), spinner: $('tSpinner'), stream: $('tStream'), steps: $('tSteps') };
+const feels  = { freeze: $('fFreeze'), spinner: $('fSpinner'), stream: $('fStream'), steps: $('fSteps') };
+const FEEL_TEXT = { freeze: '体感最长，多数人以为超过 8 秒', spinner: '知道没死机，但还在干等', stream: '0.6 秒后开始读，等待感很弱', steps: '等待被翻译成了进展' };
+const VOTE_OPEN = {
+  freeze: '<b>和多数人的选择一致。</b>空白冻结连「它死了没」都不肯回答，大脑拿不到线索，只能按最坏情况焦虑。',
+  spinner: '<b>选转圈的也不少。</b>它回答了「还活着」，却没回答「还要多久」，干等的每一秒照样计进秒表。',
+  stream: '<b>你和多数人选得不一样。</b>流式的难受多半来自吊胃口：首字出得快，后面断断续续，期待被反复拉扯。',
+  steps: '<b>你和多数人选得不一样。</b>步骤外显偶尔翻车在演过头：步骤文案和实际动作对不上时，观感反而变差，第 3 课会拆这个度。',
+};
+const btnRace = $('btnRace');
+const raceStatus = $('raceStatus');
+const raceVerdict = $('raceVerdict');
+const raceBadge = $('raceBadge');
+let racing = false, raceDone = false, voted = false;
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function runClocks(){
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const s = Math.min(RACE_MS, performance.now() - t0) / 1000;
+    Object.values(clocks).forEach(c => c.textContent = s.toFixed(1) + 's');
+    if (s >= RACE_MS / 1000) clearInterval(timer);
+  }, 100);
+}
+
+async function runFreeze(){
+  stages.freeze.innerHTML = '<span class="rs-hint">（页面毫无动静）</span>';
+  await sleep(RACE_MS);
+  stages.freeze.innerHTML = '<span class="rs-answer">' + ANSWER + '</span>';
+}
+
+async function runSpinner(){
+  stages.spinner.innerHTML = '<div class="race-spinner"></div><span class="rs-hint">正在生成…</span>';
+  await sleep(RACE_MS);
+  stages.spinner.innerHTML = '<span class="rs-answer">' + ANSWER + '</span>';
+}
+
+async function runStream(){
+  stages.stream.innerHTML = '<span class="rs-hint">正在连接…</span>';
+  await sleep(600);
+  stages.stream.innerHTML = '<span class="rs-answer"></span>';
+  const el = stages.stream.querySelector('.rs-answer');
+  const step = (RACE_MS - 600) / ANSWER.length;
+  for (let i = 0; i < ANSWER.length; i++){
+    el.textContent += ANSWER[i];
+    await sleep(step);
+  }
+}
+
+async function runSteps(){
+  const STEPS = [
+    { label: '理解问题：退款流程优化', at: 300 },
+    { label: '检索知识库：命中 12 条工单记录', at: 1100 },
+    { label: '对比 3 个候选方案', at: 2200 },
+    { label: '生成回答', at: 3200 },
+  ];
+  stages.steps.innerHTML = '<div class="race-steps">' + STEPS.map(s =>
+    '<div class="race-step"><span class="st-dot"></span>' + s.label + '</div>').join('') + '</div>';
+  const rows = [...stages.steps.querySelectorAll('.race-step')];
+  STEPS.forEach((s, i) => setTimeout(() => {
+    rows.forEach(r => r.classList.remove('doing'));
+    rows[i].classList.add('on', 'doing');
+  }, s.at));
+  await sleep(3600);
+  stages.steps.innerHTML = '<span class="rs-answer"></span>';
+  const el = stages.steps.querySelector('.rs-answer');
+  const step = (RACE_MS - 3600) / ANSWER.length;
+  for (let i = 0; i < ANSWER.length; i++){
+    el.textContent += ANSWER[i];
+    await sleep(step);
+  }
+}
+
+btnRace.addEventListener('click', async () => {
+  if (racing) return;
+  racing = true; raceDone = false; voted = false;
+  raceVerdict.classList.remove('show');
+  Object.values(feels).forEach(f => { f.textContent = ''; f.classList.remove('show'); });
+  document.querySelectorAll('.race-box').forEach(b => b.classList.remove('voted'));
+  btnRace.disabled = true;
+  btnRace.textContent = '5 秒，跑着…';
+  raceBadge.textContent = '跑着…';
+  raceStatus.textContent = '留意体感：哪个面板的 5 秒最漫长？';
+  runClocks();
+  await Promise.all([runFreeze(), runSpinner(), runStream(), runSteps()]);
+  raceDone = true; racing = false;
+  btnRace.disabled = false;
+  btnRace.textContent = '再跑一遍';
+  raceBadge.textContent = '投一票';
+  raceStatus.textContent = '跑完了。点一下你觉得最难受的那个面板 ↑';
+});
+
+document.querySelectorAll('.race-box').forEach(box => {
+  box.addEventListener('click', () => {
+    if (!raceDone || voted) return;
+    voted = true;
+    box.classList.add('voted');
+    Object.keys(feels).forEach(k => { feels[k].textContent = FEEL_TEXT[k]; feels[k].classList.add('show'); });
+    raceVerdict.innerHTML = VOTE_OPEN[box.dataset.mode] + '不过四个面板在服务器侧一模一样，都是 5 秒出完整答案，差别只在这 5 秒给用户看什么。方案 C 把「等 5 秒」改写成「等 0.6 秒，然后边读边到」，方案 D 把「等待」翻译成「进展」。<b>感知性能是产品性能的一部分，也是用户唯一摸得到的那部分。</b>';
+    raceVerdict.classList.add('show');
+    raceBadge.textContent = '✓ 已揭晓';
+    raceBadge.classList.add('solved');
+    raceStatus.textContent = '物理时长相同：都是 5 秒';
+  });
+});
+
+/* ── 实验二：秒表估时游戏 ──
+   无反馈等待下凭体感掐 8 秒。计时过程不给一丝提示，
+   揭晓时算高估/低估比例，按方向给判词。 */
+const swBtn = $('swBtn'), swPanel = $('swPanel'), swBadge = $('swBadge');
+const swResult = $('swResult'), swVerdict = $('swVerdict');
+let swState = 'idle', swT0 = 0;
+
+swBtn.addEventListener('click', () => {
+  if (swState === 'idle' || swState === 'done'){
+    swState = 'run';
+    swT0 = performance.now();
+    swResult.classList.remove('show');
+    swPanel.classList.add('run');
+    swPanel.textContent = '（界面毫无动静）';
+    swBtn.textContent = '到 8 秒了？按停';
+    swBadge.textContent = '计时中…';
+    swBadge.classList.remove('solved');
+    return;
+  }
+  const e = (performance.now() - swT0) / 1000;
+  if (e < 2){
+    swPanel.textContent = '（这一下像是手滑，重新来）';
+    swState = 'idle';
+    swBtn.textContent = '开始';
+    swBadge.textContent = '未开始';
+    return;
+  }
+  swState = 'done';
+  swPanel.classList.remove('run');
+  swPanel.textContent = '（等待结束）';
+  swBtn.textContent = '再测一次';
+  const over = Math.round((8 / e - 1) * 100);
+  $('swActual').textContent = e.toFixed(1) + 's';
+  $('swDelta').textContent = over > 0 ? '高估 ' + over + '%' : over < 0 ? '低估 ' + (-over) + '%' : '正中';
+  let v;
+  if (over >= 10){
+    v = '你在 <b>' + e.toFixed(1) + ' 秒</b>就觉得 8 秒到了，这段无反馈等待在你体内被放大了约 <b>' + over + '%</b>。看走眼了，正常：注意力被时间本身占满时，多数人都会高估，实验里两三成的误差很常见。';
+  } else if (over <= -10){
+    v = '你等到 <b>' + e.toFixed(1) + ' 秒</b>才按停，把时长记短了，是少数派。猜个原因：多半在心里数了拍子，注意力被数数占住，主观时间反而缩水，这恰好从反方向验证了注意闸门的说法。';
+  } else {
+    v = '实际 <b>' + e.toFixed(1) + ' 秒</b>，误差不到一成，体内秒表相当稳，比多数被试都准。带着这份手感去看用户数据：他们没你稳，空白面板前的 5 秒，常被记成 6 秒半。';
+  }
+  swVerdict.innerHTML = v;
+  swResult.classList.add('show');
+  swBadge.textContent = '✓ 已揭晓';
+  swBadge.classList.add('solved');
+});
+
+/* ── 实验三：TTFT 滑块 + 聊天重放 ──
+   总时长锁 5 秒，滑块只动首字时间；体感分随滑块即时变化，
+   重放按所选 TTFT 真实演一遍等待与打字流。 */
+const TF_ANSWER = '给你三条待办：① 周三前把预算表发给财务复核；② 客服话术由小杨改到第二版，周五评审；③ 下周一上午约供应商确认交期。要我顺手生成日历提醒吗？';
+const tfSlider = $('tfSlider'), tfAi = $('tfAi'), tfBtn = $('tfBtn'), tfBadge = $('tfBadge');
+let tfPlaying = false, tfRun = 0;
+
+function tfScore(t){ return Math.round(97 - (t - 0.2) * 15); }
+
+function tfPaint(){
+  const t = +tfSlider.value;
+  const sc = tfScore(t);
+  $('tfVal').textContent = t.toFixed(1) + 's';
+  const fill = $('tfFill');
+  fill.style.width = sc + '%';
+  fill.className = 'pm-fill ' + (sc < 40 ? 'hot' : sc < 70 ? 'warm' : '');
+  $('tfNum').textContent = sc;
+  let kv;
+  if (t <= 0.8){
+    kv = '首字 ' + t.toFixed(1) + ' 秒：<b>秒表刚起步就停了</b>。剩下 ' + (5 - t).toFixed(1) + ' 秒用户在阅读里度过，几乎没被记进等待的账。';
+  } else if (t <= 2.5){
+    kv = '首字 ' + t.toFixed(1) + ' 秒：能忍，但秒表实打实走了 ' + t.toFixed(1) + ' 秒。<b>往 1 秒以内压，每压 0.5 秒都有明显回报</b>。';
+  } else {
+    kv = '首字 ' + t.toFixed(1) + ' 秒：前 ' + t.toFixed(1) + ' 秒和空白冻结没有区别，<b>流式的好处被挤到了尾巴上</b>。';
+  }
+  $('tfKv').innerHTML = kv;
+}
+tfSlider.addEventListener('input', tfPaint);
+tfPaint();
+
+tfBtn.addEventListener('click', async () => {
+  if (tfPlaying) return;
+  tfPlaying = true;
+  const my = ++tfRun;
+  const t = +tfSlider.value;
+  tfBtn.disabled = true;
+  tfBtn.textContent = '重放中…';
+  $('tfStatus').textContent = '本次重放：首字 ' + t.toFixed(1) + 's · 总长 5.0s';
+  tfAi.textContent = '';
+  tfAi.classList.add('tf-wait');
+  await sleep(t * 1000);
+  if (my !== tfRun) return;
+  tfAi.classList.remove('tf-wait');
+  const delay = Math.max(0, (5 - t) * 1000 / TF_ANSWER.length);
+  if (delay === 0){
+    tfAi.textContent = TF_ANSWER;
+  } else {
+    for (let i = 0; i < TF_ANSWER.length; i++){
+      tfAi.textContent += TF_ANSWER[i];
+      await sleep(delay);
+      if (my !== tfRun) return;
+    }
+  }
+  tfPlaying = false;
+  tfBtn.disabled = false;
+  tfBtn.textContent = '重放';
+  tfBadge.textContent = '✓ 玩过了';
+  tfBadge.classList.add('solved');
+});
+
+/* ── 实验四：三个走时怪癖 ── */
+const qkSeg = $('qkSeg'), qkBadge = $('qkBadge');
+const qkSeen = new Set([0]);
+qkSeg.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const k = +b.dataset.k;
+  [...qkSeg.children].forEach(x => x.classList.toggle('on', +x.dataset.k === k));
+  document.querySelectorAll('.qk-pane').forEach(p => p.classList.toggle('on', +p.dataset.k === k));
+  qkSeen.add(k);
+  if (qkSeen.size === 3){
+    qkBadge.textContent = '✓ 三档看完';
+    qkBadge.classList.add('solved');
+  } else {
+    qkBadge.textContent = qkSeen.size + ' / 3 档';
+  }
+});
+
+/* 怪癖①：两条时间线，一条 0.6s 停表，一条 5s 走完 */
+const q1Play = $('q1Play');
+q1Play.addEventListener('click', () => {
+  const uf = $('q1UserFill'), sf = $('q1SrvFill');
+  const um = $('q1UserMark'), sm = $('q1SrvMark');
+  q1Play.disabled = true;
+  [uf, sf].forEach(el => { el.style.transition = 'none'; el.style.width = '0'; });
+  [um, sm].forEach(el => el.classList.remove('show'));
+  void uf.offsetWidth;
+  uf.style.transition = 'width .6s linear';
+  uf.style.width = '12%';
+  sf.style.transition = 'width 5s linear';
+  sf.style.width = '100%';
+  setTimeout(() => um.classList.add('show'), 650);
+  setTimeout(() => {
+    sm.classList.add('show');
+    q1Play.disabled = false;
+    q1Play.textContent = '再放一遍';
+  }, 5050);
+});
+
+/* 怪癖②：两根同速进度条，一根裸奔一根带播报，跑完投票 */
+const q2Play = $('q2Play'), q2Ask = $('q2Ask'), q2Verdict = $('q2Verdict'), q2Stage = $('q2Stage');
+const Q2_STAGES = ['正在理解问题', '检索知识库：命中 12 条', '对比 3 个候选方案', '组织语言，马上好'];
+const Q2_V = {
+  a: '<b>和多数人的体感一致。</b>两根速度相同，裸奔那根少的只有信息：等到几成了、卡在哪一步、还要多久，一概不知，大脑只能自己脑补。Maister 在《排队心理学》里把这条排在第一：被占住的时间感觉更短，没解释的等待感觉更长。第 2 课拆等待的三条定律，第 3 课讲把努力演出来的劳动错觉。',
+  b: '<b>少数派，也说得通。</b>有人会盯着播报文案挑毛病，注意力反而被拉回等待本身。大样本里结论仍然稳定：带反馈的等待普遍被记得更短，Maister 的《排队心理学》把它排在第一条。第 2 课拆等待的三条定律，第 3 课讲劳动错觉。',
+};
+q2Play.addEventListener('click', () => {
+  const af = $('q2AFill'), bf = $('q2BFill');
+  q2Play.disabled = true;
+  q2Ask.classList.remove('show');
+  q2Verdict.classList.remove('show');
+  [...q2Ask.querySelectorAll('button')].forEach(b => b.disabled = false);
+  [af, bf].forEach(el => { el.style.transition = 'none'; el.style.width = '0'; });
+  q2Stage.textContent = '';
+  void af.offsetWidth;
+  [af, bf].forEach(el => { el.style.transition = 'width 6s linear'; el.style.width = '100%'; });
+  Q2_STAGES.forEach((s, i) => setTimeout(() => { q2Stage.textContent = s; }, i * 1500 + 100));
+  setTimeout(() => {
+    q2Stage.textContent = '完成';
+    q2Ask.classList.add('show');
+    q2Play.disabled = false;
+    q2Play.textContent = '再跑一遍';
+  }, 6100);
+});
+q2Ask.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  [...q2Ask.querySelectorAll('button')].forEach(x => x.disabled = true);
+  q2Verdict.innerHTML = Q2_V[b.dataset.v];
+  q2Verdict.classList.add('show');
+});
+
+/* 怪癖③：同一次 5 秒等待，结局好坏改写时间记忆 */
+const Q3 = [
+  { quote: '「等了一小会儿就出来了，答案挺到位，这工具行。」', w: 42, n: '约 4 秒', hot: false },
+  { quote: '「卡了半天才蹦出来，还答非所问，退钱。」', w: 88, n: '约 9 秒', hot: true },
+];
+const q3Seg = $('q3Seg');
+q3Seg.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const k = +b.dataset.k;
+  [...q3Seg.children].forEach(x => x.classList.toggle('on', +x.dataset.k === k));
+  const d = Q3[k];
+  $('q3Quote').textContent = d.quote;
+  const fill = $('q3Fill');
+  fill.style.width = d.w + '%';
+  fill.className = 'pm-fill' + (d.hot ? ' hot' : '');
+  $('q3Num').textContent = d.n;
+});
+
+/* ── 出门考：tasteQuiz 在 taste.js 加载后初始化 ── */
+document.addEventListener('DOMContentLoaded', () => {
+  tasteQuiz('vqToy', {
+    answer: 1,
+    why: [
+      '钱花在了用户不计时的区间：首字还卡在 4.2 秒，等待感原样躺着，省下的那一秒落在他边读边等的阶段。',
+      '用户的秒表 0.5 秒就停，剩下 4.5 秒他在阅读里度过。机器成本没涨，体感直接换档，这正是实验三量出来的杠杆。',
+      '更精致的转圈还是转圈：回答了「它活着」，没回答「还要多久」，4.2 秒的空窗一秒没少。',
+      '解释是好方向，但提示框会打断阅读，把注意力又押回时间本身。过程怎么演才加分，第 3 课劳动错觉专门拆。',
+    ],
+  });
+});
+
+/* ── 全章地图翻卡 ── */
+const MAP = [
+  { icon: '⏱', name: '感知性能', ai: '两块秒表走时不同，感知可以设计', tag: '第 1 课 · 你在这' },
+  { icon: '⏳', name: '等待心理学', ai: '等待多难受由呈现决定，三档呈现决策', tag: '第 2 课' },
+  { icon: '🔍', name: '劳动错觉', ai: '让 AI 把努力演出来，慢一点反而更可信', tag: '第 3 课' },
+  { icon: '🎢', name: '峰终定律', ai: '体验只被记住峰值和结尾，预算该砸在哪很清楚', tag: '第 4 课' },
+  { icon: '⚖️', name: '信任校准', ai: '盲信会出事故，不信等于白买，把信任调到半信半疑', tag: '第 5 课' },
+  { icon: '🤖', name: '算法厌恶', ai: '同样的错，AI 犯比人犯更招恨', tag: '第 6 课' },
+  { icon: '🛡', name: '防御心理', ai: '用户不敢传数据、不敢点确认，控制感来救', tag: '第 7 课' },
+  { icon: '📖', name: '心智模型', ai: '用户拿错说明书，把 AI 当搜索引擎用', tag: '第 8 课' },
+  { icon: '🎭', name: '拟人化与道歉', ai: '装人装到哪一档，出错之后怎么道歉', tag: '第 9 课' },
+  { icon: '🌉', name: '蜜月悬崖', ai: '新鲜感掉下去之后，靠什么留住人', tag: '第 10 课' },
+  { icon: '🏷', name: 'AI 标签折扣', ai: '同样的内容，标上 AI 就掉价', tag: '第 11 课' },
+  { icon: '🧠', name: '认知卸载', ai: '用户越用越省脑子，产品该接住还是该拦', tag: '第 12 课' },
+  { icon: '💞', name: '情感依恋', ai: '用户和 AI 处出感情之后，边界怎么画', tag: '第 13 课' },
+  { icon: '💳', name: '付费心理', ai: '用得挺爽，就是不想掏钱，卡在哪一环', tag: '第 14 课' },
+  { icon: '🧾', name: '定价', ai: '订阅、按量还是买断，价格也是心理设计', tag: '第 15 课' },
+  { icon: '📮', name: '反馈心理', ai: '用户为什么不点踩，坏消息怎么才能听见', tag: '第 16 课' },
+];
+const mapGrid = $('mapGrid');
+const mapBadge = $('mapBadge');
+const mapFlipped = new Set();
+mapGrid.innerHTML = MAP.map(m => `
+  <div class="map-card">
+    <div class="map-inner">
+      <div class="map-face map-front">
+        <div class="mp-icon">${m.icon}</div>
+        <div class="mp-name">${m.name}</div>
+        <div class="mp-hint">点开看</div>
+      </div>
+      <div class="map-face map-back">
+        <div class="mp-ai">${m.ai}</div>
+        <div class="mp-tag">${m.tag}</div>
+      </div>
+    </div>
+  </div>`).join('');
+[...mapGrid.children].forEach((card, i) => {
+  card.addEventListener('click', () => {
+    card.classList.toggle('flip');
+    mapFlipped.add(i);
+    if (mapFlipped.size === 16){
+      mapBadge.textContent = '✓ 十六张翻完';
+      mapBadge.classList.add('solved');
+    } else {
+      mapBadge.textContent = mapFlipped.size + ' / 16 已翻';
+    }
+  });
+});
+</script>
+<script>/* ═══════════════════════════════════════════════════════════
+   taste.js —— 专题篇章「审美工程」共用交互组件
+   背景：本章多页反复用到「A/B 对决找茬」和「点选题」两种玩法，
+   逐页手写会复制大量事件绑定代码并各自漂移。
+   设计意图：只抽真正跨页复用的两个组件；页面独有的滑块、
+   开关类演示留在各页 <script> 里，避免过度抽象。
+   约束：依赖 taste.css 的 .duel / .quiz-* 类名；
+   必须在 DOM 就绪后调用（各页脚本置于 </main> 之后天然满足）。
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  /* 判词与标签走 i18n，否则英韩译文页一交互就冒出中文。
+     i18n.js 未加载时按中文兜底，与 build.js / lesson.js 同一套口径。 */
+  function T(key, zh) {
+    var i18n = window.XUEAI_I18N;
+    return i18n ? i18n.t(key) : zh;
+  }
+
+  /* A/B 对决：两块内容选出更好的那块。
+     背景：识别美的教学模式是「先动手判断，再听理论」（沿用 zero-3 找茬），
+     本章四个抓手页每页至少一局。
+     设计意图：答案揭晓后不锁死页面，双方标签换成「更好/欠佳」并给判词，
+     选错也给判词但语气区分——教学目标是看懂差异，不是考倒读者。
+     约束：cfg.winner 为更好一侧的索引（0 左 1 右）；
+     verdictWin / verdictMiss 支持 HTML；onDone 可选，用于页内进度统计。 */
+  window.tasteDuel = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var duel = root.querySelector('.duel');
+    var verdict = root.querySelector('.duel-verdict');
+    var badge = root.querySelector('.toy-badge');
+    var sides = duel.querySelectorAll('.duel-side');
+    duel.addEventListener('click', function (e) {
+      var side = e.target.closest('.duel-side');
+      if (!side || duel.classList.contains('done')) return;
+      var idx = Array.prototype.indexOf.call(sides, side);
+      duel.classList.add('done');
+      sides[cfg.winner].classList.add('win');
+      sides[1 - cfg.winner].classList.add('lose');
+      sides[cfg.winner].querySelector('.duel-tag').textContent = T('tasteBetter', '✓ 更好');
+      sides[1 - cfg.winner].querySelector('.duel-tag').textContent = T('tasteWorse', '✗ 欠佳');
+      var hit = idx === cfg.winner;
+      verdict.className = 'duel-verdict show ' + (hit ? 'good' : 'miss');
+      verdict.innerHTML = (hit
+        ? T('tasteDuelHit', '<b>眼力不错。</b>')
+        : T('tasteDuelMiss', '<b>这局看走眼了，正常，学完这节回来就能看出来。</b>')) + cfg.verdict;
+      if (badge) { badge.textContent = T('tasteRevealed', '✓ 已揭晓'); badge.classList.add('solved'); }
+      if (typeof cfg.onDone === 'function') cfg.onDone(hit);
+    });
+  };
+
+  /* 点选题：多个选项挑一个对的。
+     背景：审美词汇、提示词写法这类知识点，选一次比读三遍记得牢。
+     设计意图：选错立即标红并给「为什么不对」，允许继续选直到命中，
+     命中后整题锁定——试错本身就是教学过程。
+     约束：容器内选项需带 data-k（0 起）；cfg.answer 为正确索引；
+     cfg.why 数组给每个选项的判词，支持 HTML。 */
+  window.tasteQuiz = function (rootId, cfg) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    var fb = root.querySelector('.quiz-fb');
+    var badge = root.querySelector('.toy-badge');
+    root.addEventListener('click', function (e) {
+      var opt = e.target.closest('.quiz-opt');
+      if (!opt || root.classList.contains('done')) return;
+      var k = +opt.dataset.k;
+      if (k === cfg.answer) {
+        root.classList.add('done');
+        opt.classList.add('right');
+        fb.className = 'quiz-fb show good';
+        fb.innerHTML = T('tasteQuizRight', '<b>对。</b>') + cfg.why[k];
+        if (badge) { badge.textContent = T('tasteSolved', '✓ 已解决'); badge.classList.add('solved'); }
+        if (typeof cfg.onDone === 'function') cfg.onDone();
+      } else if (!opt.classList.contains('wrong')) {
+        opt.classList.add('wrong');
+        fb.className = 'quiz-fb show miss';
+        fb.innerHTML = cfg.why[k] + T('tasteQuizRetry', ' 再挑一个。');
+      }
+    });
+  };
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

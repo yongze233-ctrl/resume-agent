@@ -1,0 +1,1283 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-15",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-15',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>审批与权限：两个旋钮，一个下拉框 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.24);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.05),0 0 0 52px rgba(77,107,254,.028)}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:18px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.facts{display:grid;grid-template-columns:1fr;gap:20px;margin-top:20px}.fact{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}.fact code{color:var(--accent);font-weight:800}.fact p{font-size:14px;line-height:1.9;color:var(--sub);margin:8px 0 0}
+.prose{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}
+.src-note code{font-size:11.5px}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:12px;box-shadow:var(--shadow-card)}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:10px 16px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:18px;overflow:auto}.source code{color:var(--text);font:12.5px/1.68 ui-monospace,SFMono-Regular,Menlo,monospace}
+.kw{color:#3450d4}.ty{color:#7c3aed}.fn{color:#0891b2}.cm{color:#9ca3af}.str{color:#16a34a}
+.snapshot{margin-top:14px;padding:13px 16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.7;color:var(--sub)}.snapshot code{color:var(--text)}
+.doc-quote{margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-card)}.doc-quote .dq-path{font:700 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);overflow-wrap:anywhere;margin-bottom:8px}.doc-quote blockquote{margin:0;font-size:14px;line-height:1.9;color:var(--text)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:16px;background:linear-gradient(135deg,#f0f3ff,var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 8px;color:var(--text);font-size:16px}.exercise p{margin:0;color:var(--sub);font-size:14px;line-height:1.9}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.28);color:var(--text);display:flex;gap:14px;line-height:1.9}.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px}.path-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow-card)}.path-card strong{color:var(--accent)}.path-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:8px 0 0}.path-card ul{margin:8px 0 0;padding-left:18px}.path-card li{font-size:14px;line-height:1.9;color:var(--sub);margin-bottom:10px}.path-card li:last-child{margin-bottom:0}
+.compare-head{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--text);margin:16px 0 8px}.compare-head svg{color:var(--accent)}
+/* ── 交互演示：双旋钮控制台 ── */
+.demo{background:var(--card);border:1px solid rgba(77,107,254,.25);border-radius:18px;padding:28px;box-shadow:0 14px 40px rgba(77,107,254,.10)}
+.demo-top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:stretch}
+.knob-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center}
+.knob-card h4{margin:0 0 2px;font-size:13.5px;color:var(--text)}
+.knob-card .kc-sub{font:11px ui-monospace,Menlo,monospace;color:var(--sub);display:block;margin-bottom:8px}
+.dial{width:120px;height:120px;margin:0 auto 10px;display:block}
+.dial .needle{transition:transform .55s cubic-bezier(.4,1.4,.5,1);transform-origin:60px 60px}
+.knob-opts{display:flex;flex-direction:column;gap:6px}
+.knob-opts button{min-height:44px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:10px;font:600 12.5px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;padding:8px 10px;transition:border-color .2s,background .2s}
+.knob-opts button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.preset-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px}
+.preset-card h4{margin:0 0 2px;font-size:13.5px;color:var(--text);text-align:center}
+.preset-card .kc-sub{font:11px ui-monospace,Menlo,monospace;color:var(--sub);display:block;text-align:center;margin-bottom:8px}
+.preset-card select{width:100%;min-height:44px;border:1px solid rgba(77,107,254,.35);border-radius:10px;background:var(--card);color:var(--text);font:700 13px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:8px 10px;cursor:pointer}
+.evlog{margin-top:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-height:86px}
+.evlog .ev-title{font:700 10.5px/1.4 ui-monospace,Menlo,monospace;color:var(--sub);letter-spacing:.06em;margin-bottom:4px}
+.evlog .ev{font:11.5px/1.7 ui-monospace,Menlo,monospace;color:var(--accent-deep);opacity:0;transform:translateY(4px);transition:opacity .4s,transform .4s}
+.evlog .ev.show{opacity:1;transform:none}
+.demo-mid{margin-top:16px}
+.op-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.op-row .op{min-height:44px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;font:600 13px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;padding:8px 14px}
+.op-row .op.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pipe{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr 28px 1fr;gap:0;align-items:center}
+.pnode{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 10px;text-align:center;min-height:74px;display:flex;flex-direction:column;justify-content:center;transition:border-color .3s,background .3s,box-shadow .3s}
+.pnode b{font-size:13px;color:var(--text)}
+.pnode span{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.5}
+.pnode.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 3px rgba(77,107,254,.12)}
+.pnode.deny{border-color:var(--danger);background:rgba(220,38,38,.06)}
+.pnode.pass{border-color:var(--success);background:rgba(22,163,74,.07)}
+.parrow{text-align:center;color:rgba(77,107,254,.6)}
+.approval-pop{margin-top:12px;background:var(--card);border:1.5px solid rgba(77,107,254,.4);border-radius:12px;padding:14px 16px;display:none;box-shadow:0 10px 28px rgba(77,107,254,.16)}
+.approval-pop.show{display:block}
+.approval-pop .ap-q{font-size:13px;color:var(--text);line-height:1.7;margin-bottom:10px}
+.approval-pop .ap-q code{color:var(--accent)}
+.approval-pop .ap-btns{display:flex;gap:8px;flex-wrap:wrap}
+.approval-pop .ap-btns button{min-height:44px;border-radius:10px;padding:8px 16px;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer}
+.ap-allow{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.ap-reject{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.verdict-row{display:flex;align-items:center;gap:8px;margin-top:12px;min-height:30px;font-weight:800;font-size:14px}
+.verdict-row.ok{color:var(--success)}.verdict-row.no{color:var(--danger)}
+.demo-caption{margin-top:14px;padding:16px 18px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;line-height:1.8;color:var(--text);min-height:52px}
+.demo-ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:46px;padding:10px 18px;border-radius:11px;border:1px solid rgba(77,107,254,.35);background:var(--accent-soft);color:var(--accent-deep);font:700 14px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:background .2s}
+.demo-ctrl button:hover{background:rgba(77,107,254,.16)}
+.demo-ctrl button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.demo-note{font-size:12px;color:var(--sub);margin-top:12px;line-height:1.7}
+@media(max-width:760px){
+  .facts{grid-template-columns:1fr}.paths{grid-template-columns:1fr}
+  .demo-top{grid-template-columns:1fr}
+  .pipe{grid-template-columns:1fr}
+  .parrow{transform:rotate(90deg);padding:2px 0}
+  .objective{grid-template-columns:1fr}.exercise{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .source-head{flex-direction:column;gap:2px}
+  .demo-ctrl button{flex:1}
+}
+</style>
+<meta name="description" content="DSH 把权限拆成沙箱模式与审批策略两个独立旋钮，预设只是常用组合的快捷方式。基于 user-approval 与 permission-presets 真实源码讲透 fail-closed 审批与派生 custom。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="审批与权限：两个旋钮，一个下拉框"><meta property="og:description" content="DSH 把权限拆成沙箱模式与审批策略两个独立旋钮，预设只是常用组合的快捷方式。基于 user-approval 与 permission-presets 真实源码讲透 fail-closed 审批与派生 custom。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-15.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 审批与沙箱</div>
+    <h1>审批与权限：两个旋钮，一个下拉框</h1>
+    <p class="subtitle">沙箱模式和审批策略是两个独立旋钮，预设只是常用组合。核心源码：<code>packages/interaction/user-approval</code> 与 <code>packages/interaction/permission-presets</code>。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>沙箱模式和审批策略是两个独立旋钮，预设只是常用组合</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：为什么 plan mode、auto-accept、YOLO 这些产品概念在 DSH 底层只拆成 <code>sandbox/mode</code> 和 <code>approval/policy</code> 两个正交变量；预设下拉框为什么只是给旋钮组合起名字，切预设时日志里到底写了哪几条事件；以及审批为什么在每个环节都 fail-closed（拿不到答案就当拒绝）。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 双旋钮控制台</div>
+  <p class="reveal prose">下面是一个可以拧的权限控制台。左边两个旋钮各管一件事，右边下拉框是预设。先选一个操作，点「播放」看这次工具调用一路闯关的过程；然后随便拧旋钮、换预设，再跑一遍，看同一个操作的命运怎么变。</p>
+
+  <div id="demo-knobs" class="demo reveal">
+    <div class="demo-top">
+      <div class="knob-card">
+        <h4>旋钮一 · 沙箱模式</h4>
+        <span class="kc-sub">sandbox/mode（管文件效果）</span>
+        <svg class="dial" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="44" fill="#fff" stroke="rgba(77,107,254,.3)" stroke-width="2"></circle>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(77,107,254,.12)" stroke-width="1.5"></circle>
+          <text x="14" y="30" font-size="9" fill="#6b7280">read-only</text>
+          <text x="60" y="12" font-size="9" fill="#6b7280" text-anchor="middle">workspace-write</text>
+          <text x="106" y="30" font-size="9" fill="#dc2626" text-anchor="end">danger</text>
+          <g class="needle" id="dk-sb-needle"><path fill="none" d="M60 60 L60 24" stroke="#4d6bfe" stroke-width="4" stroke-linecap="round"></path><circle cx="60" cy="60" r="7" fill="#4d6bfe"></circle></g>
+        </svg>
+        <div class="knob-opts" id="dk-sb-opts">
+          <button data-v="read-only">read-only<br><small>只许读，写一律拦</small></button>
+          <button data-v="workspace-write" class="active">workspace-write<br><small>工作区内可写</small></button>
+          <button data-v="danger-full-access">danger-full-access<br><small>不设防</small></button>
+        </div>
+      </div>
+      <div class="knob-card">
+        <h4>旋钮二 · 审批策略</h4>
+        <span class="kc-sub">approval/policy（管问不问人）</span>
+        <svg class="dial" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="44" fill="#fff" stroke="rgba(77,107,254,.3)" stroke-width="2"></circle>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(77,107,254,.12)" stroke-width="1.5"></circle>
+          <text x="20" y="24" font-size="10" fill="#6b7280">ask</text>
+          <text x="100" y="24" font-size="10" fill="#6b7280" text-anchor="end">never</text>
+          <g class="needle" id="dk-ap-needle"><path fill="none" d="M60 60 L60 24" stroke="#4d6bfe" stroke-width="4" stroke-linecap="round"></path><circle cx="60" cy="60" r="7" fill="#4d6bfe"></circle></g>
+        </svg>
+        <div class="knob-opts" id="dk-ap-opts">
+          <button data-v="ask" class="active">ask<br><small>需要时弹窗问人</small></button>
+          <button data-v="never">never<br><small>一律自动拒绝，绝不问</small></button>
+        </div>
+      </div>
+      <div class="preset-card">
+        <h4>预设下拉框</h4>
+        <span class="kc-sub">permission preset（旋钮快捷方式）</span>
+        <select id="dk-preset" aria-label="权限预设">
+          <option value="workspace-write">workspace-write（工作区可写 + 弹窗询问）</option>
+          <option value="danger-full-access">danger-full-access（不设防 + 从不询问）</option>
+          <option value="custom" disabled="">custom（派生态，选不了）</option>
+        </select>
+        <div class="evlog">
+          <div class="ev-title">会话日志追加的事件</div>
+          <div id="dk-evlist"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-mid">
+      <div class="op-row" id="dk-ops">
+        <button class="op" data-op="read">操作 A · 读任意文件</button>
+        <button class="op active" data-op="write-in">操作 B · 写工作区内文件</button>
+        <button class="op" data-op="write-out">操作 C · 写工作区外 /etc/hosts</button>
+      </div>
+      <div class="pipe">
+        <div class="pnode" id="dk-n0"><b>模型发起工具调用</b><span id="dk-n0-sub">write ./src/app.ts</span></div>
+        <div class="parrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+        <div class="pnode" id="dk-n1"><b>沙箱层</b><span>按旋钮一裁决文件效果</span></div>
+        <div class="parrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+        <div class="pnode" id="dk-n2"><b>审批层</b><span>被拦后想提权，按旋钮二决定问不问</span></div>
+        <div class="parrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+        <div class="pnode" id="dk-n3"><b>结局</b><span id="dk-n3-sub">等待运行</span></div>
+      </div>
+      <div class="approval-pop" id="dk-pop">
+        <div class="ap-q">审批弹窗：Agent 想为这一次调用把沙箱临时放宽到 <code id="dk-pop-mode">danger-full-access</code>，允许吗？（只授权这一个操作）</div>
+        <div class="ap-btns">
+          <button class="ap-allow" id="dk-allow">允许一次（allowed-once）</button>
+          <button class="ap-reject" id="dk-reject">拒绝（rejected）</button>
+        </div>
+      </div>
+      <div class="verdict-row" id="dk-verdict"></div>
+      <div class="demo-caption" id="dk-caption">点「播放」运行当前组合，或滚动到此处自动播放一遍。</div>
+      <div class="demo-ctrl">
+        <button class="primary" id="dk-play"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>播放</button>
+        <button id="dk-step"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 4v16l10-8z"></path><path d="M19 4v16"></path></svg>单步</button>
+        <button id="dk-reset"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="demo-note">演示为教学化模拟。旋钮取值、预设表与提权审批流程对应 <code>docs/subsystems/permission-presets.zh.md</code>、<code>docs/subsystems/approval.zh.md</code> 与 <code>packages/sandbox/sandbox/src/escalation.ts</code>；审批弹窗期间你真的可以点按钮替用户做决定。</div>
+  </div>
+
+  <div class="sec-label">先分清两个旋钮各管什么</div>
+  <p class="reveal prose">先给结论：DSH 把权限这个大词拆成了两个互不打听的小问题。旋钮一 <code>sandbox/mode</code> 回答的是这条命令的文件效果允许到什么程度，取值 read-only、workspace-write、danger-full-access 三档，只管文件系统，网络和进程可见性都不在它的词汇表里（<code>docs/subsystems/sandbox.zh.md</code> 开头的定义）。旋钮二 <code>approval/policy</code> 回答的是碰到需要人拍板的事问不问，取值 ask、never 两档。</p>
+  <p class="reveal prose">两个旋钮在日志里也是两种独立事件：<code>sandbox/mode</code> 和 <code>approval/policy</code>。执行、提示词、回放，全都只读这两种旋钮事件的折叠结果。这就是正交的实际含义：拧任何一个，另一个纹丝不动。</p>
+  <div class="paths">
+    <div class="path-card reveal"><strong>旋钮一 · sandbox/mode</strong>
+      <ul>
+        <li>read-only：后端必须拒绝写入，只保留 <code>/dev/null</code> 这类 shell 必需的接收器。</li>
+        <li>workspace-write：工作区根目录与后端承诺的临时区可写，界外一律拦。</li>
+        <li>danger-full-access：绕过隔离。消费方直接 spawn 原始命令，根本不调用 <code>ctx.sandbox</code>。</li>
+      </ul>
+    </div>
+    <div class="path-card reveal"><strong>旋钮二 · approval/policy</strong>
+      <ul>
+        <li>ask（默认）：交给组合的应答者链。一个应答者都没有？链走到头返回 unavailable，照样按拒绝处理。</li>
+        <li>never：确定性返回 rejected，不分发任何应答者。CI 与无人值守的标准姿势。</li>
+        <li>唯一的放行值是 allowed-once，且只授权所询问的那一个操作。rejected、cancelled、unavailable 三种结果调用方全部执行拒绝。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sec-label">预设：只是给格子起名字</div>
+  <p class="reveal prose">然后是那个下拉框。<code>ctx.permissionPresets</code> 维护一张表：名字映射到一个旋钮组合。默认表就两行，workspace-write 对应 workspace-write 加 ask，danger-full-access 对应 danger-full-access 加 never（<code>permission-presets/src/index.ts</code> 第 167 至 176 行的默认配置）。它是可选能力，不在 agent loop 主干上，也不拥有任何强制执行。</p>
+  <p class="reveal prose">切预设时发生什么？三条事件，顺序固定：先追加一条只记日志的 <code>permission/preset</code> 记下你的意图，再通过两个旋钮各自的规范 setter 写 <code>sandbox/mode</code> 和 <code>approval/policy</code>，而且只写生效值真的变了的那个。重新选中当前预设？什么都不追加。回放时执行层只认旋钮事件，preset 事件的唯一作用是当两个预设共享同一组合时，记住你当初选的到底是哪一个名字。</p>
+  <p class="reveal prose paywall-locked xa-peek">还有 custom。它是保留字，表里不许有叫这个名字的条目（插件加载时就抛异常）。当你手动把旋钮拧到一个表里没有的组合，<code>current()</code> 才派生出 custom 给客户端显示。它只出不进：可以是当前状态，永远成不了切换目标，也绝不出现在事件 payload 里。所以演示里的下拉框把它做成了灰色不可选项，这正是源码的行为。</p>
+
+  <div class="facts paywall-locked">
+    <div class="fact reveal"><code>fail-closed 贯穿始终</code><p>没有应答者、应答者抛异常、返回了词汇表外的怪值、弹窗期间用户关掉了界面，统统归一化成 unavailable 或 cancelled，调用方一律当拒绝。任何一环拿不到明确的 allowed-once，就不放行。</p></div>
+    <div class="fact reveal"><code>审批不进模型上下文</code><p><code>approval/asked</code> 与 <code>approval/decided</code> 成对写入会话日志，只做审计。模型看到的是工具结果和运行时上下文快照。<code>ApprovalRequest</code> 还故意不带工具参数，用 <code>callId</code> 指向已经流式输出的那次调用，避免渲染一份会漂移的副本。</p></div>
+    <div class="fact reveal"><code>提权是一次性的</code><p>写操作被沙箱拦下后，模型可以带 <code>sandbox_permissions</code> 请求提权重试，审批通过给 allowed-once，这次重试以显式更宽的模式解析一次策略，用完即弃。会话的旋钮设置不会因此改变。</p></div>
+  </div>
+
+  <div class="sec-label paywall-locked">关键证据 · never 在瀑布之前就拦死</div>
+  <p class="reveal prose paywall-locked">有个边界问题值得抠：如果一个插件在审批服务挂载之后，用 prepend 往应答者链最前面塞一个全部放行的应答者，能不能绕过 never？答案是不能，因为 never 根本不在链里执行。看 <code>decide()</code> 的开头：</p>
+  <div class="source reveal paywall-locked">
+    <div class="source-head"><span>packages/interaction/user-approval/src/index.ts</span><span>第 304 至 312 行节选</span></div>
+    <pre><code>  <span class="kw">private async</span> <span class="fn">decide</span>(req: <span class="ty">ApprovalRequest</span>, session: <span class="ty">Session</span>): <span class="ty">Promise</span>&lt;<span class="ty">ApprovalOutcome</span>&gt; {
+    <span class="kw">const</span> signal = req.signal
+    <span class="kw">if</span> (signal?.aborted) <span class="kw">return</span> <span class="str">'cancelled'</span>
+    <span class="cm">// The 'never' policy is decided HERE, before any dispatch: a listener</span>
+    <span class="cm">// registered with `prepend: true` after this service mounts would sit</span>
+    <span class="cm">// ahead of any gate LISTENER, so a listener-shaped gate cannot keep the</span>
+    <span class="cm">// documented promise that 'never' rejects deterministically regardless</span>
+    <span class="cm">// of registration order — only the service's own request path can.</span>
+    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fn">effectivePolicy</span>(session) === <span class="str">'never'</span>) <span class="kw">return</span> <span class="str">'rejected'</span></code></pre>
+  </div>
+  <div class="snapshot paywall-locked"><b>源码快照说明：</b>依据本地仓库 deepseek-harness-master，核对文件 <code>packages/interaction/user-approval/src/index.ts</code>，核对日期 2026-08-13。代码块保留源码原文。</div>
+  <p class="reveal prose paywall-locked">注释把设计意图讲完了：never 的裁决点在服务自己的请求路径上，任何监听器形态的门都保不住与注册顺序无关这个承诺。往后看第 317 至 329 行，ask 路径的兜底同样密不透风：链的无应答默认值是 unavailable，抛异常的应答者被折叠成 unavailable，返回怪值的也归一化成 unavailable。</p>
+
+  <div class="sec-label paywall-locked">切预设的完整写入路径</div>
+  <p class="reveal prose paywall-locked">预设只是快捷方式，这句话的全部实现是一个十四行的私有方法 <code>apply()</code>。它做三件事，顺序固定。第一步 <code>resolve(name)</code> 查表，名字不在表里直接抛异常，异常消息还会把已知的表键列出来。第二步对照 <code>current()</code> 的派生结果：你选的名字和当前生效的预设不同，才追加一条 <code>permission/preset</code> 事件记下意图；重选当前预设，这一步什么都不写。第三步挨个检查两个旋钮，预设声明的沙箱模式与事件折叠出来的生效值（拿不到就用部署默认值兜底）不同，就调 <code>setSandboxMode()</code> 写一条旋钮事件；审批策略同理，走传入的 <code>setApproval</code> 写入。谁的生效值没变就跳过谁。</p>
+  <p class="reveal prose paywall-locked">所以切预设没有第三个执行路径，也没有隐藏状态：一条意图日志，加上至多两次走各自规范 setter 的旋钮写入，日志里追加了什么，执行层就折叠出什么。派生 custom 的逻辑在同文件 <code>derive()</code>：先看上次选的预设还配不配当前旋钮值，配就保住它；不配就按声明顺序找第一个匹配的表项；都不匹配才返回 custom。</p>
+  <p class="src-note paywall-locked">出处：<code>packages/interaction/permission-presets/src/index.ts</code> 第 379 至 392 行（<code>apply()</code>）、第 309 至 321 行（<code>derive()</code>），核对日期 2026-08-13。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 单一模式轴 vs 双旋钮</div>
+  <div class="compare-head paywall-locked"><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：一根模式轴 + 规则表</div>
+  <p class="reveal prose paywall-locked">Claude Code 把同一块地盘做成了单一的 permission mode 轴：default、plan、acceptEdits、bypassPermissions、dontAsk 五档（还原源码 <code>restored-src/src/utils/permissions/PermissionMode.ts</code> 第 44 至 91 行，见书稿第 7 章），外加一张 allow / deny / ask 三种行为的规则表，规则内容可以细到 <code>Bash(git commit:*)</code> 这种命令前缀。</p>
+  <p class="reveal prose paywall-locked">对照着看，折叠的代价就显出来了。dontAsk 大约等于 DSH 的 never，bypassPermissions 大约等于 danger-full-access 加 never，但这五档在一根轴上滑动，沙箱收多紧和问不问人被绑在一起卖。DSH 的双旋钮能表达 read-only 加 ask 这种组合：沙箱只读兜底，遇到确需写入的操作弹窗问一次，一次放行。在 CC 的模式轴上找不到直接对应的档位。反过来 CC 也有 DSH 双旋钮表达不了的东西：规则表是按工具和命令前缀的细粒度控制，DSH 的两个旋钮都是会话级别的全局值，工具粒度的门禁要靠 hook 层去做。两边各自把复杂度放在了不同的地方。Grok Build 的授权链走的又是另一条路（从工具请求到受限执行逐层放行），站内 <a href="/dashboard/learning?lesson=12-18" data-lesson-id="12-18">Grok 完整授权链</a> 一课有逐层拆解，可对照阅读。Codex 则在同一道题上叠了两层：命令级的 <a href="/dashboard/learning?lesson=codex-17" data-lesson-id="codex-17">execpolicy</a> 用精确前缀加反例把例外钉在加载期，<a href="/dashboard/learning?lesson=codex-19" data-lesson-id="codex-19">Guardian</a> 更进一步，用一次模型审查把弹窗从主路径上拿掉。</p>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div><h3>推演两个刁钻场景</h3><p>场景一：审批弹窗弹出后，用户直接关掉了浏览器，UI 应答者随 dispose 被移除。这次请求最终以什么结果结算，工具调用是放行还是拒绝？场景二：策略是 never，一个插件用 prepend 注册了一个永远返回 allowed-once 的应答者。写出请求从 <code>request()</code> 进入到返回值的路径，说明为什么这个应答者一次都不会被调用。（提示：两题的答案都在本页的源码面板和它后面那段话里。）</p></div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>权限在 DSH 底层只有两个正交变量，sandbox/mode 管文件效果，approval/policy 管问不问人，预设是给组合起名字的表键，custom 只出不进。审批全链路 fail-closed：唯一的放行值是 allowed-once，且只管那一个操作；never 在服务内部、瀑布分发之前就拦死，谁都插不了队。</span>
+  </div>
+</article>
+<script>
+(function () {
+  'use strict';
+  var sb = 'workspace-write';
+  var ap = 'ask';
+  var op = 'write-in';
+  var steps = [];
+  var idx = 0;
+  var timer = null;
+  var playing = false;
+  var waitingPop = false;
+  var runId = 0;
+
+  var SB_ANGLE = { 'read-only': -62, 'workspace-write': 0, 'danger-full-access': 62 };
+  var AP_ANGLE = { ask: -40, never: 40 };
+  var OP_LABEL = { read: 'read /var/log/app.log', 'write-in': 'write ./src/app.ts', 'write-out': 'write /etc/hosts' };
+
+  var sbNeedle = document.getElementById('dk-sb-needle');
+  var apNeedle = document.getElementById('dk-ap-needle');
+  var presetSel = document.getElementById('dk-preset');
+  var evList = document.getElementById('dk-evlist');
+  var pop = document.getElementById('dk-pop');
+  var popMode = document.getElementById('dk-pop-mode');
+  var verdictEl = document.getElementById('dk-verdict');
+  var captionEl = document.getElementById('dk-caption');
+  var nodes = [0, 1, 2, 3].map(function (i) { return document.getElementById('dk-n' + i); });
+  var n0sub = document.getElementById('dk-n0-sub');
+  var n3sub = document.getElementById('dk-n3-sub');
+
+  function after(ms, fn) {
+    var rid = runId;
+    timer = setTimeout(function () { if (rid === runId) fn(); }, ms);
+  }
+  function setNeedles() {
+    sbNeedle.style.transform = 'rotate(' + SB_ANGLE[sb] + 'deg)';
+    apNeedle.style.transform = 'rotate(' + AP_ANGLE[ap] + 'deg)';
+  }
+  function syncKnobButtons() {
+    ['dk-sb-opts', 'dk-ap-opts'].forEach(function (id, i) {
+      var val = i === 0 ? sb : ap;
+      Array.prototype.forEach.call(document.getElementById(id).querySelectorAll('button'), function (b) {
+        b.classList.toggle('active', b.getAttribute('data-v') === val);
+      });
+    });
+  }
+  function derivedPreset() {
+    if (sb === 'workspace-write' && ap === 'ask') return 'workspace-write';
+    if (sb === 'danger-full-access' && ap === 'never') return 'danger-full-access';
+    return 'custom';
+  }
+  function syncPreset() { presetSel.value = derivedPreset(); }
+  function logEvents(list) {
+    evList.innerHTML = '';
+    list.forEach(function (t, i) {
+      var d = document.createElement('div');
+      d.className = 'ev';
+      d.textContent = t;
+      evList.appendChild(d);
+      setTimeout(function () { d.classList.add('show'); }, 120 + i * 260);
+    });
+  }
+  function setNode(i, cls) {
+    nodes[i].classList.remove('on', 'deny', 'pass');
+    if (cls) nodes[i].classList.add(cls);
+  }
+  function clearNodes() { [0, 1, 2, 3].forEach(function (i) { setNode(i, null); }); }
+  function setVerdict(ok, text) {
+    verdictEl.className = 'verdict-row ' + (ok ? 'ok' : 'no');
+    verdictEl.innerHTML = (ok
+      ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>'
+      : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg>')
+      + '<span>' + text + '</span>';
+  }
+  function caption(t) { captionEl.textContent = t; }
+
+  function buildSteps() {
+    var list = [];
+    list.push({ cap: '模型发起工具调用：' + OP_LABEL[op] + '。', run: function () { clearNodes(); setNode(0, 'on'); n3sub.textContent = '…'; } });
+    if (op === 'read') {
+      list.push({ cap: '沙箱层放行：三档模式全都允许读取，read-only 限制的只是写入。', run: function () { setNode(0, null); setNode(1, 'pass'); } });
+      list.push({ cap: '审批层没有出场。不需要人拍板的事，谁都不会被打扰。', run: function () { setNode(2, null); } });
+      list.push({ cap: '结局：直接执行成功。读操作在任何组合下命运相同。', run: function () { setNode(3, 'pass'); n3sub.textContent = '执行成功'; setVerdict(true, '放行：读取不受沙箱模式影响'); } });
+      return list;
+    }
+    var inWorkspace = op === 'write-in';
+    if (sb === 'danger-full-access') {
+      list.push({ cap: '沙箱层：danger-full-access 绕过隔离，消费方直接 spawn 原始命令，连 ctx.sandbox 都不调用。', run: function () { setNode(0, null); setNode(1, 'pass'); } });
+      list.push({ cap: '审批层同样没出场。这一档的含义就是别拦我。', run: function () {} });
+      list.push({ cap: '结局：写入成功。这就是为什么这一档名字里带 danger。', run: function () { setNode(3, 'pass'); n3sub.textContent = '写入成功'; setVerdict(true, '放行：不设防模式'); } });
+      return list;
+    }
+    if (inWorkspace && sb === 'workspace-write') {
+      list.push({ cap: '沙箱层：目标在工作区根目录之下，workspace-write 承诺的范围内，放行。', run: function () { setNode(0, null); setNode(1, 'pass'); } });
+      list.push({ cap: '审批层没出场：界内写入不需要任何人批准。', run: function () {} });
+      list.push({ cap: '结局：写入成功。日常编码的绝大多数操作走的就是这条最短路径。', run: function () { setNode(3, 'pass'); n3sub.textContent = '写入成功'; setVerdict(true, '放行：工作区内写入'); } });
+      return list;
+    }
+    var denyText = sb === 'read-only'
+      ? '沙箱层拦截：read-only 模式拒绝一切写入，抛出结构化的 FS_SANDBOX_DENIED。'
+      : '沙箱层拦截：目标在工作区之外，workspace-write 的边界外一律拒绝。';
+    list.push({ cap: denyText + '注意：这是策略拒绝，命令本身没毛病。', run: function () { setNode(0, null); setNode(1, 'deny'); } });
+    list.push({ cap: '工具层带着提示回到模型：可以带 sandbox_permissions 请求一次性提权重试。现在轮到旋钮二说话。', run: function () { setNode(1, null); setNode(2, 'on'); } });
+    if (ap === 'never') {
+      list.push({ cap: '审批策略是 never：在瀑布分发之前就确定性返回 rejected，没有任何弹窗，没人被打扰。', run: function () { setNode(2, 'deny'); } });
+      list.push({ cap: '结局：提权失败，写入没有发生。CI 里想要的就是这种可预期。', run: function () { setNode(3, 'deny'); n3sub.textContent = '写入被拒'; setVerdict(false, '拒绝：never 策略自动回绝提权'); } });
+      return list;
+    }
+    list.push({ cap: '审批策略是 ask：弹窗来了。请你替用户做决定（自动播放时 3 秒后默认点「允许一次」）。', wait: true, run: function () {
+      popMode.textContent = sb === 'read-only' && inWorkspace ? 'workspace-write' : 'danger-full-access';
+      pop.classList.add('show');
+    } });
+    return list;
+  }
+
+  function afterApproval(allowed) {
+    pop.classList.remove('show');
+    waitingPop = false;
+    if (allowed) {
+      setNode(2, 'pass');
+      caption('用户点了「允许一次」：结果是 allowed-once，只授权这一个操作。这次重试以显式更宽的模式解析一次策略，旋钮本身没动。');
+      after(1600, function () {
+        setNode(3, 'pass');
+        n3sub.textContent = '重试成功';
+        setVerdict(true, '放行：allowed-once 一次性提权');
+        caption('结局：提权重试成功。会话日志里多了一对 approval/asked 与 approval/decided 审计事件，模型的 transcript 里没有它们。');
+        playing = false;
+      });
+    } else {
+      setNode(2, 'deny');
+      caption('用户点了「拒绝」：结果是 rejected。cancelled 和 unavailable 也会走到同一个下场，调用方一律执行拒绝。');
+      after(1500, function () {
+        setNode(3, 'deny');
+        n3sub.textContent = '写入被拒';
+        setVerdict(false, '拒绝：审批未通过');
+        caption('结局：写入没有发生。fail-closed 的意思就是拿不到明确许可时，默认答案永远是不。');
+        playing = false;
+      });
+    }
+  }
+
+  function doStep() {
+    if (waitingPop) return;
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    caption(s.cap);
+    if (s.run) s.run();
+    if (s.wait) {
+      waitingPop = true;
+      if (playing) after(3000, function () { if (waitingPop) afterApproval(true); });
+      return;
+    }
+    if (playing) after(1700, doStep);
+  }
+  function resetRun(silent) {
+    runId++;
+    clearTimeout(timer);
+    playing = false;
+    waitingPop = false;
+    idx = 0;
+    pop.classList.remove('show');
+    clearNodes();
+    verdictEl.className = 'verdict-row';
+    verdictEl.innerHTML = '';
+    n0sub.textContent = OP_LABEL[op];
+    n3sub.textContent = '等待运行';
+    steps = buildSteps();
+    if (!silent) caption('已重置。点「播放」运行当前组合：sandbox=' + sb + ' × approval=' + ap + '。');
+  }
+  function play() {
+    if (playing || waitingPop) return;
+    if (idx >= steps.length || idx > 0) resetRun(true);
+    playing = true;
+    doStep();
+  }
+  function stepOnce() {
+    if (waitingPop) return;
+    playing = false;
+    clearTimeout(timer);
+    if (idx >= steps.length) { resetRun(); return; }
+    doStep();
+  }
+
+  function knobChanged(source) {
+    syncKnobButtons();
+    setNeedles();
+    syncPreset();
+    resetRun(true);
+    if (source === 'knob') {
+      var d = derivedPreset();
+      caption(d === 'custom'
+        ? '你手动拧出了一个表里没有的组合，下拉框派生出 custom。它只出不进：能显示，选不了。日志里只写了旋钮事件。'
+        : '旋钮组合正好匹配预设 ' + d + '，下拉框自动跟随。点「播放」看这个组合下的命运。');
+      logEvents(source === 'knob' ? ['+ ' + (lastKnob === 'sb' ? 'sandbox/mode: ' + sb : 'approval/policy: ' + ap)] : []);
+    }
+  }
+  var lastKnob = 'sb';
+  Array.prototype.forEach.call(document.querySelectorAll('#dk-sb-opts button'), function (b) {
+    b.addEventListener('click', function () { sb = b.getAttribute('data-v'); lastKnob = 'sb'; knobChanged('knob'); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#dk-ap-opts button'), function (b) {
+    b.addEventListener('click', function () { ap = b.getAttribute('data-v'); lastKnob = 'ap'; knobChanged('knob'); });
+  });
+  presetSel.addEventListener('change', function () {
+    var name = presetSel.value;
+    if (name === 'custom') return;
+    var spec = name === 'workspace-write' ? { sb: 'workspace-write', ap: 'ask' } : { sb: 'danger-full-access', ap: 'never' };
+    var evs = ['+ permission/preset: ' + name];
+    if (spec.sb !== sb) evs.push('+ sandbox/mode: ' + spec.sb);
+    if (spec.ap !== ap) evs.push('+ approval/policy: ' + spec.ap);
+    if (evs.length === 1 && derivedPreset() === name) evs = ['（重选当前预设：什么都不追加）'];
+    sb = spec.sb; ap = spec.ap;
+    knobChanged('preset');
+    logEvents(evs);
+    caption('切预设 = 记一条 permission/preset 意图，再让变化的旋钮走各自的 setter。左边的事件日志就是这次切换实际追加的内容。');
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#dk-ops .op'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#dk-ops .op'), function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      op = b.getAttribute('data-op');
+      resetRun();
+    });
+  });
+  document.getElementById('dk-allow').addEventListener('click', function () { if (waitingPop) { runId++; clearTimeout(timer); afterApproval(true); } });
+  document.getElementById('dk-reject').addEventListener('click', function () { if (waitingPop) { runId++; clearTimeout(timer); afterApproval(false); } });
+  document.getElementById('dk-play').addEventListener('click', play);
+  document.getElementById('dk-step').addEventListener('click', stepOnce);
+  document.getElementById('dk-reset').addEventListener('click', function () { resetRun(); });
+
+  setNeedles();
+  syncKnobButtons();
+  syncPreset();
+  resetRun(true);
+  caption('点「播放」运行当前组合，或滚动到此处自动播放一遍。');
+  (function hookAutoplay(tries) {
+    if (typeof window.lessonOnView === 'function') {
+      window.lessonOnView(document.getElementById('demo-knobs'), play);
+    } else if (tries > 0) {
+      setTimeout(function () { hookAutoplay(tries - 1); }, 120);
+    }
+  })(50);
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

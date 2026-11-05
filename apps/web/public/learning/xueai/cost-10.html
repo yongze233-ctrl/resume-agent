@@ -1,0 +1,968 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"cost-10",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=cost-10',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>语义层：双重蒸馏 | Token 降本增效</title>
+<style>@keyframes _si{from{opacity:0}to{opacity:1}}body{opacity:0;animation:_si 0.15s ease 0.08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<!-- SEO Start -->
+<meta name="description" content="别把上下文窗口当垃圾桶：注意力 O(N²) 让长提示词又贵又慢，中段迷失效应让效果更差。双重蒸馏解法：动态 Few-Shot 从 4000 Token 砍到 500，LLMLingua-2 把文档压缩 5-20 倍。">
+<meta name="keywords" content="上下文优化,中段迷失,Lost in the Middle,动态 Few-Shot,LLMLingua,Prompt 压缩,RAG 优化">
+<meta name="author" content="洛小山">
+<meta name="robots" content="index, follow">
+
+
+
+
+
+
+
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:title" content="语义层：双重蒸馏">
+<meta property="og:description" content="高密度的 Prompt 才能换来高质量的 Attention。">
+<meta property="og:url" content="https://xueai.miyang.cn/slides/cost-10.html">
+<meta property="og:image" content="https://xueai.miyang.cn/slides/og/cost-10.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="语义层：双重蒸馏">
+<meta name="twitter:description" content="高密度的 Prompt 才能换来高质量的 Attention。">
+<meta name="twitter:image" content="https://xueai.miyang.cn/og-cover.jpg">
+<!-- SEO End -->
+<style>
+:root{--ct:#16a34a;--ct-deep:#14532d;--ct-soft:rgba(22,163,74,.08);--ct-line:rgba(22,163,74,.25);--warn:#dc2626;--warn-soft:rgba(220,38,38,.07)}
+.lesson-header .kicker{color:var(--ct)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--ct-soft);color:var(--ct-deep);font-size:13px;font-weight:700}
+.desc{font-size:15px;color:var(--sub);line-height:1.8}
+.desc b,.quote-card b{color:var(--ct-deep)}
+.quote-card{background:var(--ct-soft);border:1.5px solid var(--ct-line);border-radius:14px;padding:18px 22px;font-size:16px;line-height:1.8}
+.fig-wrap{margin-top:14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:10px;box-shadow:var(--shadow-card)}
+.fig-wrap img{width:100%;border-radius:8px;display:block}
+.fig-cap{font-size:12.5px;color:var(--sub);padding:8px 6px 4px;line-height:1.6}
+.tbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-card)}
+.tbl th{background:var(--ct-soft);color:var(--ct-deep);font-weight:800;text-align:left;padding:11px 14px;font-size:13px}
+.tbl td{padding:11px 14px;border-top:1px solid var(--border);color:var(--sub);line-height:1.65;vertical-align:top}
+.tbl td b{color:var(--ct-deep)}
+.tbl-wrap{overflow-x:auto}
+
+/* 注意力条演示 */
+.att{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:14px;box-shadow:var(--shadow-card)}
+.att-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.att-row label{font-size:14px;font-weight:700;color:var(--text)}
+.att-row input[type=range]{flex:1;min-width:170px;accent-color:var(--ct)}
+.att-row .val{font-size:14px;font-weight:800;min-width:96px;text-align:right;color:var(--ct-deep);font-variant-numeric:tabular-nums}
+.att-strip{display:flex;height:44px;border-radius:10px;overflow:hidden;border:1.5px solid var(--border)}
+.att-cell{flex:1;transition:background .3s}
+.att-legend{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:6px}
+.att-note{margin-top:12px;font-size:14px;line-height:1.78;color:var(--text);background:rgba(0,0,0,.03);border-radius:10px;padding:12px 16px}
+.att-note b{color:var(--ct-deep)}
+.att-note .w{color:var(--warn);font-weight:800}
+
+/* 策略步骤 */
+.steps{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.step{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 17px;box-shadow:var(--shadow-card)}
+.step-num{width:28px;height:28px;border-radius:9px;background:var(--ct-soft);color:var(--ct-deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;margin-top:2px}
+.step p{font-size:14px;color:var(--sub);line-height:1.75;margin:0}
+.step p b{color:var(--ct-deep)}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.stat{background:var(--card);border:1.5px solid var(--ct-line);border-radius:13px;padding:16px;text-align:center;box-shadow:var(--shadow-card)}
+.stat .v{font-size:22px;font-weight:800;color:var(--ct-deep)}
+.stat .k{font-size:12.5px;color:var(--sub);margin-top:4px;line-height:1.5}
+.takeaways{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.tk-item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-card)}
+.tk-ic{width:22px;height:22px;border-radius:7px;background:var(--ct-soft);color:var(--ct);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;margin-top:1px}
+.tk-item p{font-size:14px;line-height:1.75;color:var(--text);margin:0}
+.tk-item p b{color:var(--ct-deep)}
+.src-note{margin-top:28px;font-size:13px;color:var(--sub);line-height:1.85}
+.src-note b{color:var(--text)}
+@media (max-width:768px){.stat-grid{grid-template-columns:1fr}}
+</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+<!--seo:begin--><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<main class="lesson">
+
+  <header class="lesson-header">
+    <div class="kicker">Token 降本增效 · 10 / 13</div>
+    <h1>语义层：双重蒸馏</h1>
+    <p class="subtitle">格式的税砍完了，往深一层看内容本身。RAG 和长文档场景里最常见的工程错误：把上下文窗口当垃圾桶——Few-Shot 案例、检索文档全怼进去，让模型自己辨识。能用，但不该这样用。</p>
+    <div class="chips"><span class="chip">O(N²)</span><span class="chip">中段迷失</span><span class="chip">动态 Few-Shot</span><span class="chip">LLMLingua-2</span></div>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>中段迷失效应：塞得越多越抓不住重点。动态 Few-Shot 从 4000 砍到 500，LLMLingua-2 压缩 5-20 倍</p></aside><!--seo:end-->  <section class="reveal">
+    <div class="sec-label">垃圾桶式上下文的两宗罪</div>
+    <p class="desc"><b>第一，贵而且慢。</b>Transformer 自注意力的计算复杂度是 O(N²)：提示词长度翻倍，计算量翻四倍。提示词越长，Prefill 越久，首字延迟越高——用户还没看到第一个字，耐心已经消磨没了。</p>
+    <p class="desc" style="margin-top:10px"><b>第二，效果可能更差。</b>有效信息被废话淹没后，会产生「中段迷失」效应。就像人读长文章：开头认真看（要搞清楚讲什么），结尾也留意（快出结论了），中间那一大坨——眼睛扫过去，脑子没过去。你精心挑选的参考资料如果不幸落在中段，模型可能根本没认真看。</p>
+  </section>
+
+  <section class="reveal">
+    <div class="sec-label">交互演示 · 注意力是怎么被稀释的</div>
+    <p class="desc">色条模拟模型对 Prompt 各位置的注意力强度（绿=强，灰=弱）。拖动长度，看中段怎么塌下去。</p>
+    <div class="att" id="att">
+      <div class="att-row">
+        <label for="attLen">Prompt 长度</label>
+        <input type="range" id="attLen" min="1" max="32" value="6" step="1">
+        <span class="val" id="attLenVal">6k Tokens</span>
+      </div>
+      <div class="att-strip" id="attStrip"></div>
+      <div class="att-legend"><span>开头</span><span>中段</span><span>结尾</span></div>
+      <div class="att-note" id="attNote"></div>
+    </div>
+    <div class="quote-card" style="margin-top:14px">
+      上下文不是越多越好。<b>关键信息要么放开头，要么放结尾</b>；中间的位置，留给「丢了也不心疼」的内容。
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked xa-peek">
+    <div class="sec-label">策略一 · 动态 Few-Shot，别硬编码</div>
+    <p class="desc">拿 Text-to-SQL 举例：为了覆盖各种业务场景，有人在 Prompt 里写死 20 个 SQL 案例，加起来 4,000 多 Token。每次用户提问，模型都要先「复习」一遍这 4,000 字，既烧 Token 又慢。换个思路：</p>
+    <div class="steps">
+      <div class="step"><span class="step-num">1</span><p>把 20 个案例<b>存进向量数据库</b>。</p></div>
+      <div class="step"><span class="step-num">2</span><p>用户问「上个月销售额」时，先用语义检索<b>只捞 Top-3 个财务相关的案例</b>。</p></div>
+      <div class="step"><span class="step-num">3</span><p>最终 Prompt 从 4,000 Token <b>砍到 500</b>。</p></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v">-87.5%</div><div class="k">Token 成本</div></div>
+      <div class="stat"><div class="v">3x+</div><div class="k">响应速度</div></div>
+      <div class="stat"><div class="v">更高</div><div class="k">SQL 准确率<br>（去掉了无关案例的干扰）</div></div>
+    </div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">策略二 · 长文档先压缩再喂</div>
+    <p class="desc">金融研报、会议纪要这类文档充满「正确的废话」：免责声明、重复的背景介绍、口语化垫话。直接喂给 AI，等于花大成本请博士生帮你读垃圾邮件。</p>
+    <p class="desc" style="margin-top:10px">解法是在 RAG 检索后、送去推理之前，插一层 <a target="_blank" rel="noopener" data-reference="https://llmlingua.com/" href="#reference">LLMLingua-2</a> 中间件。它不是粗暴砍词：用 BERT 的双向注意力同时看到上下文前后，精准识别核心语义（实体、数据、关键动词），剔掉冗余噪音。<b>压缩 5–20 倍，原本 1 秒的预填充压完 50 毫秒搞定</b>——高并发场景吞吐量直接上一个量级。</p>
+    <div class="fig-wrap">
+      <img alt="双重蒸馏：高密度的 Prompt 才能带来高质量的 Attention" loading="lazy" src="data:image/webp;base64,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">
+      <div class="fig-cap">动态 Few-Shot + 文档压缩，两道漏斗滤掉噪音：高密度的 Prompt 才能换来高质量的 Attention。（图：作者分享原稿）</div>
+    </div>
+    <div class="tbl-wrap"><table class="tbl">
+      <tbody><tr><th>蒸馏</th><th>对象</th><th>手段</th><th>典型收益</th></tr>
+      <tr><td><b>第一重</b></td><td>Few-Shot 案例</td><td>向量检索动态选 Top-K</td><td>4,000 → 500 Token</td></tr>
+      <tr><td><b>第二重</b></td><td>检索回来的文档</td><td>LLMLingua-2 语义压缩</td><td>压缩 5–20 倍，预填充 1s → 50ms</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="reveal paywall-locked">
+    <div class="sec-label">本节要点</div>
+    <div class="takeaways">
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>提示词翻倍 = 计算量翻四倍：</b>O(N²) 是长上下文又贵又慢的物理根源。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>中段迷失：</b>关键信息放开头或结尾，中间留给丢了不心疼的内容。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>Few-Shot 别硬编码，</b>存向量库按问题动态检索：省 87.5% 还更准。</p></div>
+      <div class="tk-item"><span class="tk-ic">✓</span><p><b>长文档先过 LLMLingua-2 再推理：</b>高密度 Prompt 换高质量 Attention，别让用户在等待里流失。</p></div>
+    </div>
+    <p class="src-note">
+      <b>内容来源：</b>整理自作者团队内部分享《AI Token 降本增效策略分享》实战篇「02｜语义层」。中段迷失可延伸阅读 Chroma 的<a target="_blank" rel="noopener" data-reference="https://research.trychroma.com/context-rot" href="#reference">上下文腐烂（Context Rot）研究</a>；压缩基准见 <a target="_blank" rel="noopener" data-reference="https://llmlingua.com/" href="#reference">LLMLingua</a>。上下文窗口原理复习<a href="/dashboard/learning?lesson=5-1" data-lesson-id="5-1">Harness 核心 · 上下文窗口</a>。
+    </p>
+  </section>
+
+</main>
+
+
+
+<script>
+/* ── 注意力稀释演示：U 形注意力曲线，越长中段越塌 ── */
+var CELLS = 40;
+var strip = document.getElementById('attStrip');
+for (var i = 0; i < CELLS; i++) {
+  var c = document.createElement('div');
+  c.className = 'att-cell';
+  strip.appendChild(c);
+}
+function attCalc(){
+  var len = +document.getElementById('attLen').value;
+  document.getElementById('attLenVal').textContent = len + 'k Tokens';
+  /* 中段塌陷程度随长度增强 */
+  var sag = Math.min(0.88, 0.25 + len / 32 * 0.75);
+  var cells = strip.children;
+  for (var i = 0; i < CELLS; i++) {
+    var x = i / (CELLS - 1);              /* 0..1 */
+    var u = 4 * Math.pow(x - 0.5, 2);     /* U 形：两端 1，中间 0 */
+    var attn = 1 - sag * (1 - u);         /* 注意力强度 0..1 */
+    var g = Math.round(163 * attn + 200 * (1 - attn) * 0.35);
+    var alpha = 0.15 + attn * 0.85;
+    cells[i].style.background = 'rgba(22,' + (100 + Math.round(attn * 63)) + ',74,' + alpha.toFixed(2) + ')';
+  }
+  var note = document.getElementById('attNote');
+  if (len <= 8) {
+    note.innerHTML = '短 Prompt：中段还能保持 <b>' + Math.round((1 - sag) * 100) + '%</b> 左右的注意力，信息基本都能被看到。';
+  } else if (len <= 20) {
+    note.innerHTML = '开始稀释：中段注意力只剩 <span class="w">' + Math.round((1 - sag) * 100) + '%</span>。你精心挑的参考资料如果排在中间，模型可能「眼睛扫过去，脑子没过去」。';
+  } else {
+    note.innerHTML = '<span class="w">重度稀释：中段注意力只剩 ' + Math.round((1 - sag) * 100) + '%。</span>塞得越多越抓不住重点——这就是「花大成本请博士生读垃圾邮件」。该上双重蒸馏了。';
+  }
+}
+document.getElementById('attLen').addEventListener('input', attCalc);
+attCalc();
+lessonOnView(document.getElementById('att'), function(){});
+</script>
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

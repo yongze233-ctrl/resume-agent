@@ -1,0 +1,848 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"learn-4",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=learn-4',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>让 AI 用我熟悉的东西打比方 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#b45309;--accent-deep:#7c3d06;--accent-soft:rgba(180,83,9,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(180,83,9,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(180,83,9,.04),0 0 0 52px rgba(180,83,9,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson strong{font-weight:700;color:var(--accent-deep)}
+.lesson mark{background:rgba(180,83,9,.14);color:var(--accent-deep);font-weight:700;padding:2px 5px;border-radius:5px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lesson .clause{display:block;margin:6px 0;padding:14px 18px;background:var(--accent-soft);border-radius:10px;font-size:14.5px;line-height:1.95;color:var(--text)}
+ol.four{margin:0 0 20px;padding:0;list-style:none;counter-reset:f}
+ol.four li{counter-increment:f;position:relative;padding-left:32px;margin-bottom:12px;font-size:15px;line-height:2}
+ol.four li:last-child{margin-bottom:0}
+ol.four li:before{content:counter(f);position:absolute;left:0;top:5px;width:20px;height:20px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+ol.four li b{font-weight:700;color:var(--accent-deep)}
+.lesson .sec-label{margin:56px 0 20px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.tpl{background:var(--card);border:1px dashed rgba(180,83,9,.42);border-radius:12px;padding:24px 26px;margin:0 0 20px}
+.tpl>span{display:block;font-size:11.5px;font-weight:700;letter-spacing:.4px;color:var(--accent-deep);margin-bottom:16px}
+.tpl ol{margin:0;padding:0;list-style:none;counter-reset:tpl}
+.tpl li{counter-increment:tpl;position:relative;padding-left:34px;margin-bottom:18px}
+.tpl li:last-child{margin-bottom:0}
+.tpl li:before{content:counter(tpl);position:absolute;left:0;top:1px;width:21px;height:21px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(180,83,9,.3);color:var(--accent-deep);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tpl li b{display:block;font-size:12.5px;font-weight:700;color:var(--accent-deep);margin-bottom:5px}
+.tpl li q{display:block;quotes:"「" "」";font-size:13.5px;line-height:1.95;color:var(--text)}
+.tpl-note{font-size:13px;line-height:1.9;color:var(--muted);margin:22px 0 0;padding:13px 16px;background:var(--accent-soft);border-radius:8px}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(180,83,9,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);padding-top:10px}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 180px;padding-top:10px}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-meter{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:14px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-m-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-m-num{font-size:22px;font-weight:900;color:var(--accent-deep);min-width:24px;text-align:center;transition:color .35s cubic-bezier(.4,0,.2,1)}
+.dm-m-num.bad{color:var(--danger)}
+.dm-m-num.good{color:var(--success)}
+.dm-m-num.pop{animation:flashPop .8s ease}
+.dm-m-track{flex:1 1 150px;height:8px;border-radius:99px;background:var(--border);overflow:hidden}
+.dm-m-fill{height:100%;width:50%;background:var(--accent);border-radius:99px;transition:width .7s cubic-bezier(.25,1,.5,1),background-color .4s cubic-bezier(.4,0,.2,1)}
+.dm-m-fill.bad{background:var(--danger)}
+.dm-m-fill.good{background:var(--success)}
+.dm-m-note{font-size:12px;color:var(--sub);line-height:1.7;flex:1 1 140px}
+.dm-pips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.dm-pip{padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);min-width:0;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.demo.playing .dm-pip{opacity:.4;transform:scale(.98)}
+.demo.playing .dm-pip.on{opacity:1;transform:scale(1);border-color:rgba(180,83,9,.4);background:var(--accent-soft)}
+.dm-pip b{display:block;font-size:13px;color:var(--text);margin-bottom:4px}
+.dm-pip span{display:block;font-size:12px;line-height:1.6;color:var(--sub)}
+.dm-pip.on b{color:var(--accent-deep)}
+.dm-pip.done{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07)}
+.dm-pip.pop{animation:flashPop .8s ease}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+.dm-track{height:4px;border-radius:99px;background:var(--border);margin:0 0 20px;overflow:hidden}
+.dm-bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .6s cubic-bezier(.25,1,.5,1)}
+.dm-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-cmp-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;min-width:0}
+.dm-cmp-h{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;color:var(--text)}
+.dm-pane{padding:16px 18px;font-size:13.5px;line-height:1.9;color:var(--text);min-height:206px;overflow-wrap:anywhere;word-break:break-word}
+.dm-empty{color:var(--sub);font:13px/1.8 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.dm-fam{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--card);color:var(--sub);transition:background-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1)}
+.dm-fam.no{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.24);color:var(--danger)}
+.dm-fam.yes{background:rgba(22,163,74,.08);border-color:rgba(22,163,74,.3);color:var(--success)}
+.dm-fam.pop{animation:flashPop .8s ease}
+.dm-ask{margin:0 0 12px;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:13.5px;line-height:1.85;color:var(--text)}
+.dm-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dm-chip{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(180,83,9,.28);opacity:0;transform:translateY(8px)}
+.dm-chip.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-chip.pop{animation:flashPop .8s ease}
+.dm-chip.none{background:var(--bg);color:var(--faint);border-style:dashed;border-color:var(--border)}
+.dm-enter{opacity:0;transform:translateY(10px)}
+.dm-enter.show{opacity:1;transform:none;transition:opacity .4s cubic-bezier(.25,1,.5,1),transform .4s cubic-bezier(.25,1,.5,1)}
+.dm-body{max-height:0;overflow:hidden;padding:0;transition:max-height .5s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1)}
+.dm-body.open{max-height:340px;padding:2px 0 4px}
+.dm-ans b{display:block;font-size:12.5px;color:var(--accent-deep);margin:0 0 8px}
+.dm-ans p{margin:0 0 10px;font-size:13.5px;line-height:1.85;color:var(--text)}
+.dm-ans p:last-child{margin:0}
+.dm-crack{margin-top:12px;padding:12px 14px;border-radius:10px;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.2);font-size:13px;line-height:1.8;color:var(--text)}
+.dm-crack b{display:block;font-size:12.5px;color:var(--danger);margin-bottom:6px}
+.dm-crack.ok{background:rgba(22,163,74,.07);border-color:rgba(22,163,74,.28)}
+.dm-crack.ok b{color:var(--success)}
+.dm-crack.ok.glow{animation:fireGlow .9s ease}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(180,83,9,.3)}50%{box-shadow:0 0 20px 6px rgba(180,83,9,.2)}100%{box-shadow:none}}
+.dm-hit{color:var(--faint);padding:0 3px;border-radius:4px;transition:background .5s cubic-bezier(.25,1,.5,1),color .5s cubic-bezier(.25,1,.5,1)}
+.dm-hit.lit{background:var(--accent-soft);color:var(--accent-deep);font-weight:700}
+.dm-hit.cold.lit{background:rgba(220,38,38,.08);color:var(--danger)}
+.dm-hit.cold.lit{animation:wallPulse 1.4s ease infinite}
+@keyframes wallPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(180,83,9,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.25,1,.5,1),padding .4s cubic-bezier(.25,1,.5,1),margin-top .4s cubic-bezier(.25,1,.5,1)}
+.dm-summary.on{max-height:260px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(180,83,9,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@media(max-width:760px){.lesson{overflow-x:hidden}.dm-compare,.dm-pips{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.demo{max-width:100%;min-width:0}.lesson code{overflow-wrap:anywhere;word-break:break-word}.dm-budget .dm-b-label{padding-top:0}}
+@media(prefers-reduced-motion:reduce){.dm-pip,.dm-seg button,.dm-enter,.dm-enter.show,.dm-body,.dm-bar,.dm-summary,.dm-chip,.dm-chip.show,.dm-hit,.dm-fam,.dm-m-fill,.dm-m-num{transition-duration:0s;animation-duration:0s;animation-iteration-count:1}}
+</style>
+<meta name="description" content="它不知道你熟悉什么，只能从公共题库里抽一个源领域打比方。在提问里空出这一格，填你已经会的东西，映射才落在你能检查的经验上。">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="让 AI 用我熟悉的东西打比方"><meta property="og:description" content="它不知道你熟悉什么，只能从公共题库里抽一个源领域打比方。在提问里空出这一格，填你已经会的东西，映射才落在你能检查的经验上。"><meta property="og:url" content="https://xueai.miyang.cn/slides/learn-4.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/learn-4.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-2px;margin-right:6px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none"></path><path d="M8 7h8M8 11h5" fill="none"></path></svg>AI 教我学习 · 提问</div>
+    <h1>让 AI 用我熟悉的东西打比方</h1>
+    <p class="subtitle">它不知道你熟悉什么，只能从公共题库里抽一个源领域。在提问里空出这一格，填你已经会的东西，比方才接得住。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>它不知道你熟悉什么，只能从公共题库里抽一个源领域。在提问里空出这一格，填你已经会的东西。</p></aside><!--seo:end-->  <p class="reveal">「同一笔付款请求就算提交两次，系统也只该记一次。」这句话你<strong>盯了两分钟</strong>。字都认识，可系统靠什么认出这两次是同一笔，你想不出来。那是晚上八点半，你在看一份防止重复扣款的说明。</p>
+  <p class="reveal">你把问题贴给 AI，请它打个比方。它很快回了三句：</p>
+  <p class="reveal"><span class="clause">把它想成 HTTP 里的 PUT 和 POST。PUT 重复发送多次，结果通常一样；POST 每发一次，可能新建一条记录。</span></p>
+  <p class="reveal">这段话短，前后又对得整齐。PUT 和 POST 你都见过，于是把它们当成两个现成标签，顺手记成<strong>「一个重复没事，一个重复就会多一条」</strong>。你以为原来的问题已经解释完了。</p>
+  <p class="reveal">十分钟后，同事追问：「那用户连点两次付款，系统靠什么判断这是同一笔？」你答不出来，只好另开三个页面查 PUT 和 POST。<strong>原来只差一个问题，现在多了两个新词</strong>，最初那笔付款为什么不会记两遍仍然悬着。</p>
+  <p class="reveal">AI 的比方本身没有错。你当时会点头，是因为两个缩写摆在熟练的对照句里，看起来像答案；可对你来说，它们也是待解释的材料。AI 只看到了你的问题，<strong>没有看到你已经熟悉哪些经验</strong>。</p>
+
+  <div class="sec-label">让 AI 先借用你会的东西</div>
+  <p class="reveal">换个问法，先把你熟悉的参照物交给它。你做过配送，就让它用<strong>同一张配送单被派两次</strong>来讲；你处理过票据，就让它用同一张支票被交进柜台两次来讲。</p>
+  <ol class="four reveal">
+    <li><b>先说你已经熟悉什么</b>，让比方从你见过的动作出发。</li>
+    <li><b>再说要解释哪个概念</b>，让 AI 只映射与这个问题有关的部分。</li>
+    <li><b>最后要求逐项对应</b>，你可以检查每一步有没有对上。</li>
+  </ol>
+  <p class="reveal"><mark>类比能接住你，前提是借来的那个东西已经在你脑子里。</mark>下面把同一个概念换三种参照物，看看哪一种能让你自己验证。</p>
+
+  <div class="sec-label paywall-locked xa-peek">先玩一遍 · 换一个你熟悉的参照物</div>
+  <div class="demo reveal paywall-locked" id="demo-analogy">
+    <div class="demo-top">
+      <div class="demo-title">同一笔付款被系统记了两遍</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">你来指定熟悉的参照物</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-mode="auto" class="on">让 AI 自己挑</button>
+        <button type="button" data-mode="order">用同一张配送单</button>
+        <button type="button" data-mode="check">用同一张支票</button>
+      </div>
+      <span class="dm-b-hint">切换一次，就让同一个概念重新打一次比方。</span>
+    </div>
+    <div class="dm-meter">
+      <span class="dm-m-label">比方讲完后，你还要弄懂几样东西</span>
+      <span class="dm-m-num" id="dm-num">1</span>
+      <div class="dm-m-track"><div class="dm-m-fill" id="dm-fill"></div></div>
+      <span class="dm-m-note">数字越小，说明这个比方替你消掉的陌生内容越多。</span>
+    </div>
+    <div class="dm-pips" id="dm-pips">
+      <div class="dm-pip" data-step="0"><b>1 · 先看你在提问里写了什么</b><span>你有没有给出熟悉的参照物</span></div>
+      <div class="dm-pip" data-step="1"><b>2 · 再看 AI 拿什么来打比方</b><span>它借来的东西你是否已经懂</span></div>
+      <div class="dm-pip" data-step="2"><b>3 · 最后判断你能不能自己验证</b><span>能验证，原来的概念才真正落地</span></div>
+    </div>
+    <div class="dm-track"><div class="dm-bar" id="dm-bar"></div></div>
+    <div class="dm-compare">
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h">你发出去的提问</div>
+        <div class="dm-pane" id="dm-left"><div class="dm-empty">点播放后，这里会出现你发给 AI 的完整提问。</div></div>
+      </div>
+      <div class="dm-cmp-col">
+        <div class="dm-cmp-h" id="dm-right-h">AI 给出的比方，这里只展示简化内容</div>
+        <div class="dm-pane" id="dm-right"><div class="dm-empty">播放后，这里会出现 AI 根据参照物给出的比方。</div></div>
+      </div>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">先选一种参照物，再点播放，看这个比方能不能由你自己验证。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>为什么三个比方听起来都通顺</b>它们的对应关系都说得过去，差别在参照物是谁选的。AI 自己挑的那个只适合已经懂 HTTP 的人。</div>
+      <div class="dm-s"><b>怎样判断这个比方有没有接住你</b>配送单和支票的后果你手上有答案，PUT 和 POST 还得再查一次。能自己验证的那个才有用。</div>
+    </div>
+    <div class="demo-caption">教学示意：三段比方是为演示写的简化文本。</div>
+  </div>
+
+  <div class="sec-label paywall-locked">把熟悉的参照物直接写进提问</div>
+  <p class="reveal paywall-locked">演示里真正改变结果的，是提问中多出来的那一格。下面两句可以整段抄走，只需替换括号里的内容。</p>
+  <div class="tpl reveal paywall-locked">
+    <span>可以整段照抄</span>
+    <ol>
+      <li><b>先指定你熟悉的参照物</b><q>我正在理解【同一笔付款请求提交两次，系统也只记一次】。请用我熟悉的【同一张配送单被系统派了两次】来打比方。</q></li>
+      <li><b>再要求 AI 把对应关系逐项说清</b><q>请把两边逐项对应起来：付款请求对应什么，系统用来认出同一笔的编号对应什么，第二次重复提交被忽略又对应什么。每一项只解释一句。</q></li>
+    </ol>
+    <p class="tpl-note">第一句里的「我熟悉的【具体事物】」是关键。少了这半句，AI 会替你挑参照物；它挑中的东西可能准确，也可能需要你再学一遍。括号里要填你亲手做过、见过后果的事，只有听过名字还不够。</p>
+  </div>
+  <p class="reveal paywall-locked"><mark>一个比方有没有用，看你能不能检查它的每一步，不能只看它听起来顺不顺。</mark>配送单被派两次时，单号一样就该拦住第二次，骑手只跑一趟；这三个结果你都能凭经验判断，所以也能回头检查付款请求、请求编号和重复处理有没有一一对应。</p>
+
+  <div class="sec-label paywall-locked">参照物该具体到什么程度</div>
+  <p class="reveal paywall-locked">「请用生活中的事打比方」仍然把选择交给了 AI。它可能选图书馆借书、机场安检或银行转账，其中任何一个都可能碰巧是你的空白。写成「请用同一张配送单被派两次来打比方」，它才知道该借哪一段经验。</p>
+  <p class="reveal paywall-locked">还有，类比只负责搬运结构，不保证每个细节都一样。第二句要求逐项对应，可以看出哪些部分真的对上了。发现某一项只能靠想象补齐，就换一个更熟的参照物再问一次。</p>
+  <p class="reveal paywall-locked">这是使用经验。把参照物放进完整提问的哪个位置，见 <a href="/dashboard/learning?lesson=learn-3" data-lesson-id="learn-3">让 AI 按我的情况讲清楚</a>。</p>
+
+  <div class="key-line reveal paywall-locked">源领域是你的，映射才落在你能检查的经验上。</div>
+
+</article>
+
+
+<script>
+(function(){
+  var mode = 'auto';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, playing = false, played = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoEl = document.getElementById('demo-analogy');
+  var pips = Array.prototype.slice.call(document.querySelectorAll('#dm-pips .dm-pip'));
+  var leftEl = document.getElementById('dm-left');
+  var rightEl = document.getElementById('dm-right');
+  var rightH = document.getElementById('dm-right-h');
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var barEl = document.getElementById('dm-bar');
+  var numEl = document.getElementById('dm-num');
+  var fillEl = document.getElementById('dm-fill');
+  var timers = [];
+  var IDLE = '先选一种你熟悉的参照物，再点播放，看这个比方能不能由你自己验证。';
+  var ASK = '同一笔付款被系统记了两遍，这是怎么回事？打个比方。';
+  var TPL = '请用我熟悉的 ______ 打比方';
+
+  function famBox(known){
+    var cls = known ? 'yes' : 'no';
+    var txt = known ? 'AI 借来的参照物，你已经熟悉' : 'AI 借来的参照物，你还不熟悉';
+    return '<div class="dm-fam ' + cls + '">' + txt + '</div>';
+  }
+
+  function askBox(known, src){
+    var html = famBox(known) + '<div class="dm-ask">' + ASK + '</div><div class="dm-chips">';
+    if (src) {
+      html += '<span class="dm-chip">' + TPL + '</span><span class="dm-chip">' + src + '</span>';
+    } else {
+      html += '<span class="dm-chip none">你没有指定参照物，AI 会替你挑一个</span>';
+    }
+    return html + '</div>';
+  }
+
+  function ansBox(title, body, extra){
+    return '<div class="dm-ans dm-body"><b>' + title + '</b>' + body + (extra || '') + '</div>';
+  }
+
+  function hit(t, cold){ return '<span class="dm-hit' + (cold ? ' cold' : '') + '">' + t + '</span>'; }
+
+  var ORDER_BODY = '<p>同一张配送单被派了两次。看' + hit('单号') + '：单号一样就是同一单，第二次派单被丢掉，' + hit('骑手只跑一趟') + '。</p><p>单号不一样，才是两单，跑两趟。</p>';
+  var CHECK_BODY = '<p>同一张支票被交进柜台两次。柜员看' + hit('票号') + '：已经入过账的，第二张退回，' + hit('余额不动') + '。</p><p>票号是新的，才再扣一次。</p>';
+  var AUTO_BODY = '<p>把它想成 HTTP 里的 ' + hit('PUT', 1) + ' 和 ' + hit('POST', 1) + '。' + hit('PUT', 1) + ' 重复发几次，结果都一样；' + hit('POST', 1) + ' 每发一次就新建一条。</p>';
+
+  function buildSteps(){
+    if (mode === 'order') {
+      return [
+        {
+          pip: 0, count: 1,
+          cap: '同一句提问，这次把熟悉的参照物填上：同一张配送单被系统派了两次。',
+          left: askBox(true, '同一张配送单被派了两次'),
+          right: '<div class="dm-empty">你已经指定了配送单。下一步看 AI 怎样把两边逐项对应起来。</div>',
+          fin: false
+        },
+        {
+          pip: 1, count: 1,
+          cap: '它照着配送单讲。看单号、丢掉重复的那次、骑手只跑一趟，每一步你都见过。',
+          left: askBox(true, '同一张配送单被派了两次'),
+          right: ansBox('AI 根据配送单给出的比方', ORDER_BODY),
+          fin: false
+        },
+        {
+          pip: 2, count: 0,
+          cap: '骑手会不会跑两趟，你手上就有答案。比方落在你能检查的经验上，那笔付款跟着落地。',
+          left: askBox(true, '同一张配送单被派了两次'),
+          right: ansBox('AI 根据配送单给出的比方', ORDER_BODY, '<div class="dm-crack ok glow"><b>这个比方可以由你自己验证</b>骑手会不会跑两趟，你手上有答案。那笔付款也一样，看系统认哪个号。</div>'),
+          fin: true
+        }
+      ];
+    }
+    if (mode === 'check') {
+      return [
+        {
+          pip: 0, count: 1,
+          cap: '换一种熟悉的参照物：同一张支票被交进柜台两次。同一句提问，再问一次。',
+          left: askBox(true, '同一张支票被交进柜台两次'),
+          right: '<div class="dm-empty">你已经把参照物换成支票。下一步看 AI 怎样重新对应。</div>',
+          fin: false
+        },
+        {
+          pip: 1, count: 1,
+          cap: '它改用票号讲。入过账的那张退回，票号是新的才再扣一次。',
+          left: askBox(true, '同一张支票被交进柜台两次'),
+          right: ansBox('AI 根据支票给出的比方', CHECK_BODY),
+          fin: false
+        },
+        {
+          pip: 2, count: 0,
+          cap: '两种参照物不同，对应关系相同：先认号，再决定这次算不算数。你熟悉哪个就用哪个。',
+          left: askBox(true, '同一张支票被交进柜台两次'),
+          right: ansBox('AI 根据支票给出的比方', CHECK_BODY, '<div class="dm-crack ok glow"><b>参照物换了，对应关系仍然相同</b>先认号，再决定这次算不算数。你熟悉配送单就用配送单，熟悉支票就用支票。</div>'),
+          fin: true
+        }
+      ];
+    }
+    return [
+      {
+        pip: 0, count: 1,
+        cap: '提问里没有指定参照物。AI 不知道你熟悉什么，只能自己挑一个。',
+        left: askBox(false, ''),
+        right: '<div class="dm-empty">你没有指定熟悉的参照物。下一步看 AI 自己挑了什么。</div>',
+        fin: false
+      },
+      {
+        pip: 1, count: 1,
+        cap: '它挑了 PUT 和 POST。这两个词你同样不熟，比方的落点悬在半空。',
+        left: askBox(false, ''),
+        right: ansBox('AI 自己挑选参照物后给出的比方', AUTO_BODY),
+        fin: false
+      },
+      {
+        pip: 2, count: 2,
+        cap: '比方讲完，要弄懂的东西从一样变成两样。参照物也是新的，你得同时学两样。',
+        left: askBox(false, ''),
+        right: ansBox('AI 自己挑选参照物后给出的比方', AUTO_BODY, '<div class="dm-crack"><b>这个比方让陌生内容从一样变成两样</b>先得去查 PUT 和 POST 各是什么，才能判断这个比方打得准不准。那笔付款有没有被记两遍，还悬着。</div>'),
+        fin: true
+      }
+    ];
+  }
+
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); });
+    timers = [];
+  }
+
+  // 源领域 chip 进场：先记旧位，插入后反向位移回去再放开，留下的 chip 会自己滑到新位置（FLIP）
+  function enterLeft(html, flip){
+    var old = {};
+    if (flip) {
+      Array.prototype.forEach.call(leftEl.querySelectorAll('.dm-chip'), function(el){
+        old[el.textContent] = el.getBoundingClientRect().left;
+      });
+    }
+    leftEl.innerHTML = html;
+    var fam = leftEl.querySelector('.dm-fam');
+    if (fam && !reduce) {
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ fam.classList.add('pop'); });
+      });
+    }
+    var chips = Array.prototype.slice.call(leftEl.querySelectorAll('.dm-chip'));
+    chips.forEach(function(el){
+      var prev = old[el.textContent];
+      if (prev !== undefined) {
+        var dx = prev - el.getBoundingClientRect().left;
+        el.classList.add('show');
+        el.style.transition = 'none';
+        el.style.transform = 'translateX(' + dx + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      }
+    });
+    chips.forEach(function(el, i){
+      if (el.classList.contains('show')) return;
+      var t = setTimeout(function(){
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ el.classList.add('show', 'pop'); });
+        });
+      }, reduce ? 0 : i * 90);
+      timers.push(t);
+    });
+  }
+
+  function enterRight(html){
+    var wrap = document.createElement('div');
+    wrap.className = 'dm-enter';
+    wrap.innerHTML = html;
+    rightEl.innerHTML = '';
+    rightEl.appendChild(wrap);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        wrap.classList.add('show');
+        var body = wrap.querySelector('.dm-body');
+        if (body) body.classList.add('open');
+        var lit = wrap.querySelectorAll('.dm-hit');
+        Array.prototype.forEach.call(lit, function(el, i){
+          var t = setTimeout(function(){ el.classList.add('lit'); }, reduce ? 0 : 260 + i * 130);
+          timers.push(t);
+        });
+      });
+    });
+  }
+
+  function paintMeter(n, fin){
+    var was = numEl.textContent;
+    numEl.textContent = String(n);
+    numEl.className = 'dm-m-num' + (fin ? (n > 1 ? ' bad' : ' good') : '');
+    fillEl.className = 'dm-m-fill' + (fin ? (n > 1 ? ' bad' : ' good') : '');
+    fillEl.style.width = (n / 2 * 100) + '%';
+    if (was !== String(n) && !reduce) {
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ numEl.classList.add('pop'); });
+      });
+    }
+  }
+
+  function paintPips(active, doneUpTo){
+    pips.forEach(function(el){
+      var n = parseInt(el.getAttribute('data-step'), 10);
+      var wasOn = el.classList.contains('on');
+      el.className = 'dm-pip';
+      if (n === active) {
+        el.classList.add('on');
+        if (!wasOn) el.classList.add('pop');
+      } else if (n <= doneUpTo) el.classList.add('done');
+    });
+  }
+
+  function paint(st){
+    demoEl.classList.add('playing');
+    paintPips(st.pip, st.pip - 1);
+    barEl.style.width = ((st.pip + 1) / 3 * 100) + '%';
+    clearTimers();
+    enterLeft(st.left, st.pip > 0);
+    enterRight(st.right);
+    paintMeter(st.count, st.fin);
+    captionText.textContent = st.cap;
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function stop(){
+    playing = false;
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx]);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+
+  // 节拍不匀速：比方刚出来那一步停久一点，收尾那一步再停一次
+  function loop(ts){
+    if (!playing) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    if (idx >= steps.length) { stop(); return; }
+    var st = steps[idx];
+    paint(st);
+    idx++;
+    pauseUntil = ts + (st.fin ? 2800 : (st.pip === 1 ? 2300 : 1300));
+    autoId = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    stop(); idx = 0; pauseUntil = 0;
+    steps = buildSteps();
+    clearTimers();
+    demoEl.classList.remove('playing');
+    paintPips(-1, -2);
+    barEl.style.width = '0%';
+    numEl.textContent = '1';
+    numEl.className = 'dm-m-num';
+    fillEl.className = 'dm-m-fill';
+    fillEl.style.width = '50%';
+    rightH.textContent = 'AI 给出的比方，这里只展示简化内容';
+    leftEl.innerHTML = '<div class="dm-empty">点播放后，这里会出现你发给 AI 的完整提问。</div>';
+    rightEl.innerHTML = '<div class="dm-empty">播放后，这里会出现 AI 根据参照物给出的比方。</div>';
+    summary.classList.remove('on');
+    captionText.textContent = IDLE;
+  }
+
+  function play(){
+    if (idx >= steps.length) reset();
+    if (playing) return;
+    playing = true;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function(el){ el.classList.remove('on'); });
+    b.classList.add('on');
+    mode = b.getAttribute('data-mode');
+    reset();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(demoEl, function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

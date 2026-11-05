@@ -1,0 +1,1161 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-28",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-28',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SQ 进、EQ 出：同一件事两副面孔 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson code{overflow-wrap:anywhere;word-break:break-all}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.source{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:24px 0 0}
+.source-head{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;background:var(--accent-soft);color:var(--accent-deep);font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.source pre{margin:0;padding:20px;overflow:auto}.source code{color:var(--text);font:12.5px/1.85 ui-monospace,SFMono-Regular,Menlo,monospace;background:none;padding:0}
+.snapshot{margin:14px 0 0;padding:14px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px;line-height:1.8;color:var(--sub)}.snapshot code{color:var(--text);background:rgba(0,0,0,.05)}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25);overflow-wrap:anywhere;word-break:break-all}
+.path-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:8px 0 20px}
+.path-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+.path-card b{display:block;font-size:14px;color:var(--accent-deep);margin-bottom:8px}
+.path-card p{margin:0;font-size:14px;line-height:1.9;color:var(--sub)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text)}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-input{display:flex;align-items:center;gap:10px;flex:1;min-width:200px}
+.dm-input label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-input input{flex:1;min-width:0;min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,sans-serif}
+.dm-cols{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-cols.is-live .dm-col{opacity:.4;transform:scale(.98)}
+.dm-cols.is-live .dm-col.now{opacity:1;transform:scale(1)}
+.dm-col:first-child .dm-head{position:relative}
+.dm-col:first-child .dm-head:after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:99px;background:var(--accent);transform:scaleX(var(--bar,0));transform-origin:left center;transition:transform .5s cubic-bezier(.25,1,.5,1)}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-head .dm-meter{font-size:11px;font-weight:600;color:var(--sub)}
+.dm-head .dm-meter b{color:var(--accent-deep);font-variant-numeric:tabular-nums}
+.dm-head .dm-meter b.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-body{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+.dm-plaque{padding:14px 16px;border-radius:10px;background:var(--card);border:1px dashed var(--border);text-align:center;font-size:13px;font-weight:700;color:var(--faint);min-height:52px;display:flex;align-items:center;justify-content:center;transition:background .35s cubic-bezier(.4,0,.2,1),border-color .35s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1),opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-plaque.on{border-style:solid;border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep)}
+.dm-plaque.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-kv{padding:12px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:13px;line-height:1.8;color:var(--sub);overflow-wrap:anywhere}
+.dm-kv b{display:block;color:var(--accent-deep);font-size:13px;margin-bottom:2px;transition:opacity .3s cubic-bezier(.4,0,.2,1),color .35s cubic-bezier(.4,0,.2,1)}
+#dm-sub{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-box{padding:12px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:12.5px;line-height:1.7;color:var(--faint);overflow-wrap:anywhere;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-body.is-live .dm-box{opacity:.4;transform:scale(.98)}
+.dm-body.is-live .dm-box.now{opacity:1;transform:scale(1)}
+.dm-box.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-box.legacy{border-style:dashed;border-color:rgba(65,75,90,.4);background:var(--card);color:var(--sub);font-weight:600}
+.dm-box.broke{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger);font-weight:600}
+.dm-box .k{display:block;font-size:11px;font-weight:600;color:var(--faint);margin-bottom:2px}
+.dm-box.on .k,.dm-box.legacy .k{color:var(--sub)}
+.dm-box.broke .k{color:var(--danger)}
+.dm-box.is-enter{opacity:0;transform:translateY(8px)}
+.dm-box.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+.dm-box.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-box.pop{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly{opacity:0;transform:translateX(48px) scale(.9)}
+.dm-doors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px}
+.dm-doors.is-live .dm-door{opacity:.4;transform:scale(.98)}
+.dm-doors.is-live .dm-door.now{opacity:1;transform:scale(1)}
+.dm-door{padding:14px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);text-align:center;min-height:72px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-door .dn{display:block;font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px}
+.dm-door .ds{display:block;font-size:12px;line-height:1.7;color:var(--sub);transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-door.pass{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.07)}
+.dm-door.pass .ds{color:var(--success);font-weight:600}
+.dm-door.fail{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05)}
+.dm-door.fail .ds{color:var(--danger);font-weight:600}
+.dm-door.hold{border-color:rgba(65,75,90,.4);background:var(--accent-soft)}
+.dm-door.hold .ds{color:var(--accent-deep);font-weight:600}
+.dm-door.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+.dm-trace li.on,.dm-trace.is-live li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600;opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:320px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){
+  .compare{grid-template-columns:1fr}
+  .path-grid{grid-template-columns:1fr}
+  .objective{grid-template-columns:1fr}
+  .lesson-header:after{display:none}
+  .demo{padding:18px}
+  .demo-ctrl{width:100%}
+  .demo-ctrl button{flex:1}
+  .dm-cols{grid-template-columns:1fr}
+  .dm-doors{grid-template-columns:1fr}
+  .dm-body{min-height:0}
+  .visual{padding:14px}
+  .dm-trace li{flex-direction:column;gap:4px}
+  .dm-input{width:100%;min-width:0}
+  .dm-summary.on{max-height:520px}
+}
+</style>
+<meta name="description" content="命令走 Submission Queue，事件走 Event Queue。Rust 名叫 TurnStarted，写到 JSON 上却是 task_started。未知 type 在三条路径上各自落到哪">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="SQ 进、EQ 出：同一件事两副面孔"><meta property="og:description" content="命令走 Submission Queue，事件走 Event Queue。Rust 名叫 TurnStarted，写到 JSON 上却是 task_started。未知 type 在三条路径上各自落到哪"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-28.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.140-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 事件语言</div>
+    <h1>SQ 进、EQ 出：同一件事两副面孔</h1>
+    <p class="subtitle">命令走进程内的 Submission Queue。事件走能写成 JSON 的 Event Queue。Rust 名叫 TurnStarted，磁盘上仍写 task_started。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>命令走进程内的 Submission Queue。事件走能写成 JSON 的 Event Queue。Rust 名叫 TurnStarted，磁盘上仍写 task_started。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。命令从 Submission Queue 进内核，事件从 Event Queue 出来。同一条生命周期，代码里叫 <code>TurnStarted</code>，写到 JSON 上却是 <code>task_started</code>。旧客户端碰到不认识的 <code>type</code>，同进程编不过，跨版本 JSON 解不出，resume 旧文件则跳行继续开。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 同一件事，进和出各长什么样</div>
+  <div class="demo reveal" id="demo-sqeq">
+    <div class="demo-top">
+      <div class="demo-title">投入 TurnInput，看 SQ 信封和 EQ 盒子怎么对上</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">盖子上的 type</span>
+      <div class="dm-seg" id="dm-seg">
+        <button type="button" data-type="task_started" class="on">task_started</button>
+        <button type="button" data-type="turn_started">turn_started</button>
+        <button type="button" data-type="future_event">future_event</button>
+      </div>
+      <div class="dm-input">
+        <label for="dm-type">或自己写</label>
+        <input id="dm-type" type="text" value="task_started" autocomplete="off" spellcheck="false">
+      </div>
+      <span class="dm-b-hint">前两个都能解成 TurnStarted。第三个看 MCP 摔碎、resume 跳行。回车生效。</span>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">下行 · Submission Queue</span><span class="dm-meter">bounded <b id="dm-sq-n">0</b>/512</span></div>
+        <div class="dm-body">
+          <div class="dm-plaque" id="dm-op">还没投入命令</div>
+          <div class="dm-kv" id="dm-sub"><b>Submission 信封</b>等投稿。只有 id 和 op，没有 JSON。</div>
+        </div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">上行 · Event Queue</span><span class="dm-meter">unbounded · <b id="dm-eq-n">0</b> 条</span></div>
+        <div class="dm-body" id="dm-eq">
+          <div class="dm-box" id="dm-ev0"><span class="k">事件还没出来</span>先走左边的命令通道。</div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-doors">
+      <div class="dm-door" id="dm-mcp"><span class="dn">MCP 原样门</span><span class="ds" id="dm-mcp-s">等事件</span></div>
+      <div class="dm-door" id="dm-resume"><span class="dn">resume 跳行门</span><span class="ds" id="dm-resume-s">等落盘</span></div>
+      <div class="dm-door" id="dm-other"><span class="dn">对照出口</span><span class="ds" id="dm-other-s">DSH / Grok 还没上场</span></div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>生成 UUID7 作为提交 id</span><span class="ln">session/mod.rs L918</span></li>
+        <li><span>把 Op 包成 Submission</span><span class="ln">session/mod.rs L817</span></li>
+        <li><span>送进容量 512 的 SQ</span><span class="ln">session/mod.rs L833</span></li>
+        <li><span>submission_loop 按变体分发</span><span class="ln">handlers.rs L526</span></li>
+        <li><span>send_event 用 sub_id 做 Event.id</span><span class="ln">session/mod.rs L1952</span></li>
+        <li><span>需要时再发 legacy 副本</span><span class="ln">session/mod.rs L1965</span></li>
+        <li><span>按白名单决定是否写入 rollout</span><span class="ln">session/mod.rs L2169</span></li>
+        <li><span>送进 unbounded EQ</span><span class="ln">session/mod.rs L2185</span></li>
+        <li><span>MCP 把整个 Event 序列化成 codex/event</span><span class="ln">outgoing_message.rs L117</span></li>
+        <li><span>resume 时坏行计入 parse_errors</span><span class="ln">recorder.rs L1046</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看同一句话从 SQ 进、从 EQ 出，两边各长什么样。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>进的形状</b>左边是进程内命令。TurnInput 带着 oneshot 回调，所以整封 Submission 不做 serde。</div>
+      <div class="dm-s"><b>出的形状</b>右边是能写成 JSON 的 Event。id 对上左边那条提交，盖子上的 type 才是对外词。</div>
+      <div class="dm-s"><b>切到 future_event</b>MCP 解不出来。resume 把这一行丢进 parse_errors，会话照开。DSH 会拒绝整份日志，Grok 收成 Unknown。</div>
+    </div>
+    <div class="demo-caption">教学示意：提交 id 为课程化短号，真实实现是 UUID7。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 命令和事件拆成两种语言</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">你给侧栏等 <code>type</code> 等于 <code>turn_started</code>。联调那天字段对得上，<code>type</code> 却写成 <code>task_started</code>。你改成新名，旧夹具里的旧名还能解出来。</p>
+  <p class="reveal">然后你加了一个自己的事件。本地和内核一起编，过了。隔壁旧版 MCP 客户端解不出来。再过一周，新版写下的 rollout（会话落盘文件）拿到旧版里 resume。那一行被跳过，<code>parse_errors</code> 加一，会话还能开，少了一段生命周期。</p>
+  <p class="reveal">命令里带着 oneshot 回调、审批决定，甚至 realtime 音频帧。事件要进 rollout，要被 MCP 写成 JSON，要被旧客户端按 <code>type</code> 分发。方向、寿命、能不能过网，叠在同一种「消息」上会互相拖累。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">模块头只用四行，把说话方式写死：一次会话里，客户端和 agent 用 SQ / EQ 异步通信。</p>
+  <div class="source reveal">
+    <div class="source-head"><span>codex-rs/protocol/src/protocol.rs</span><span>第 1 至 4 行</span></div>
+    <pre><code>//! Defines the protocol for a Codex session between a client and an agent.
+//!
+//! Uses a SQ (Submission Queue) / EQ (Event Queue) pattern to asynchronously communicate
+//! between user and agent.</code></pre>
+  </div>
+  <div class="snapshot">源码快照说明：依据本地仓库 <code>openai/codex</code>，核对文件 <code>codex-rs/protocol/src/protocol.rs</code>，commit <code>4f39251a01</code>，核对日期 2026-08-22。代码块保留源码原文，这四行就是整课的模式声明。</div>
+  <p class="reveal" style="margin-top:20px">下行条目是 <code>Submission</code>。它有关联用的 <code>id</code>，有要执行的 <code>Op</code>（内核动词，当前 28 个），只派生 <code>Debug</code>，没有 serde。上行条目是 <code>Event</code>。它有 serde。<code>id</code> 对上当初那条提交，<code>msg</code> 才是事件本体。</p>
+  <p class="src-note reveal paywall-locked xa-peek">出处：<code>codex-rs/protocol/src/protocol.rs</code> 第 185 至 200 行；<code>codex-rs/protocol/src/protocol.rs</code> 第 1276 至 1283 行</p>
+  <p class="reveal paywall-locked">会话启动时同时建两条通道。下行 bounded，容量 512。上行 unbounded。客户端连打 512 条还没被 loop 收走，下一次 <code>send</code> 会等。事件可以堆积，占内存，不反压这一轮。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/mod.rs</code> 第 460 至 461 行；<code>codex-rs/core/src/session/mod.rs</code> 第 533 至 534 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 220" role="img" aria-label="命令从 SQ 进内核，事件从 EQ 回到客户端">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="24" y="70" width="150" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="99" y="101" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">客户端</text>
+      <text x="99" y="122" fill="#6b7280" text-anchor="middle" font-size="13">submit Op</text>
+      <path fill="none" d="M182 92H268" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <text x="225" y="80" fill="#6b7280" text-anchor="middle" font-size="13">SQ 512</text>
+      <rect x="276" y="70" width="170" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="361" y="101" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">submission_loop</text>
+      <text x="361" y="122" fill="#6b7280" text-anchor="middle" font-size="13">按 Op 变体分发</text>
+      <path fill="none" d="M454 92H540" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <text x="497" y="80" fill="#6b7280" text-anchor="middle" font-size="13">send_event</text>
+      <rect x="548" y="70" width="160" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="628" y="101" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">Event Queue</text>
+      <text x="628" y="122" fill="#6b7280" text-anchor="middle" font-size="13">unbounded</text>
+      <path fill="none" d="M716 106H790" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="798" y="70" width="118" height="72" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="857" y="101" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">客户端</text>
+      <text x="857" y="122" fill="#6b7280" text-anchor="middle" font-size="13">next_event</text>
+      <text x="470" y="196" fill="#6b7280" text-anchor="middle" font-size="13">同一条 UUID7：左边是 Submission.id，右边是 Event.id</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：命令从左边进，事件从右边出，用同一条 id 对上。</div>
+  </div>
+  <p class="reveal paywall-locked"><code>TurnInput</code> 的路由结果走 oneshot，不走 Event Queue。<code>EventMsg</code> 描述这一轮发生了什么。oneshot 只回答「这条提交有没有被接住」。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/handlers.rs</code> 第 515 至 526 行</p>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">命令是人发的，频率低，堵住可以反压。事件是模型和工具喷出来的，堵住会把这一轮卡住。换语言重写，只要命令带回调、事件要落盘，这两条队列还是得分开。</p>
+
+  <div class="sec-label paywall-locked">思路二 · wire 名保住磁盘，代码名可以改</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">Rust 变体已经改名叫 <code>TurnStarted</code>。若 JSON 上的字符串跟着改，旧 rollout 和旧客户端会在反序列化边界上断。按标识符名猜 wire 名，会猜错。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">serde 写出 <code>task_started</code>，读入时也认 <code>turn_started</code>。Display 和指标走 <code>turn_started</code>。同一变体两套字符串：磁盘保住旧名，代码用新名。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/protocol/src/protocol.rs</code> 第 1337 至 1340 行</p>
+  <p class="reveal paywall-locked">item 生命周期还会再喷一份旧名字。新前端看 <code>ItemStarted</code>，旧前端看 <code>ExecCommandBegin</code> 或 <code>AgentMessage</code>。队列上会出现重复语义。这是迁移动线，给还没迁到 <code>TurnItem</code> 的消费者留的。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/mod.rs</code> 第 1965 至 1973 行；<code>codex-rs/protocol/src/legacy_events.rs</code> 第 65 至 69 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 240" role="img" aria-label="同一变体的 Rust 名、wire 名和 Display 名">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="78" width="200" height="72" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="140" y="109" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">TurnStarted</text>
+      <text x="140" y="130" fill="#6b7280" text-anchor="middle" font-size="13">Rust 变体名</text>
+      <path fill="none" d="M248 100H340" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <path fill="none" d="M248 128H340" stroke="#414b5a" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrB)"></path>
+      <text x="294" y="86" fill="#6b7280" text-anchor="middle" font-size="13">serde 写出</text>
+      <text x="294" y="158" fill="#6b7280" text-anchor="middle" font-size="13">Display</text>
+      <rect x="348" y="46" width="220" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="458" y="74" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">task_started</text>
+      <text x="458" y="94" fill="#6b7280" text-anchor="middle" font-size="13">磁盘与 MCP 看到的</text>
+      <rect x="348" y="126" width="220" height="64" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="458" y="154" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">turn_started</text>
+      <text x="458" y="174" fill="#6b7280" text-anchor="middle" font-size="13">指标与 alias 读入</text>
+      <path fill="none" d="M576 78H668" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="676" y="62" width="224" height="104" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="788" y="104" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">旧 rollout 仍能解</text>
+      <text x="788" y="128" fill="#6b7280" text-anchor="middle" font-size="13">新名只是读入别名</text>
+    </svg>
+    <div class="visual-caption">教学化对照：改标识符不必改磁盘。代价是同一变体要同时记住两套字符串。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">改代码名，先用 rename 保住已经落盘的字符串。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">标识符可以改，已经落盘的字符串改不起。rename 加 alias 是给磁盘留后门的通用做法。指标用哪一套，要单独测，不要假设和 serde 相同。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 未知 type 的默认方向要先写下来</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked"><code>EventMsg</code> 是内部事件词表，81 个变体，没有 <code>#[serde(other)]</code>，也没标 <code>non_exhaustive</code>。加一个新 <code>type</code>，旧读取器怎么办，不能靠「看情况」。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">三条路径，答案都写在代码里。</p>
+  <div class="path-grid reveal paywall-locked">
+    <div class="path-card">
+      <b>同进程、同版本</b>
+      <p>TUI、exec、MCP 和内核链到同一份类型。穷尽 match 编不过。旧客户端若还没升级，根本不会和这份新内核链在一起。</p>
+    </div>
+    <div class="path-card">
+      <b>跨版本 JSON</b>
+      <p>MCP 把整个 <code>Event</code> 序列化成 <code>codex/event</code>。旧客户端用旧词表去解，未知 <code>type</code> 让 serde 失败。内核已经发出去了，失败发生在客户端。</p>
+    </div>
+  </div>
+  <div class="path-card reveal paywall-locked" style="margin-bottom:20px">
+    <b>resume 旧文件</b>
+    <p>坏行把 <code>parse_errors</code> 加一，然后 <code>continue</code>。未知 <code>type</code> 不会让整个会话打不开。它会少一行。函数仍返回已经解出来的 items。</p>
+  </div>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/mcp-server/src/outgoing_message.rs</code> 第 108 至 133 行；<code>codex-rs/rollout/src/recorder.rs</code> 第 1009 至 1071 行</p>
+  <p class="reveal paywall-locked"><code>Op</code> 反过来。它标了 <code>non_exhaustive</code>，<code>submission_loop</code> 末尾 <code>_ =&gt; false</code>，未知命令被丢掉，loop 不崩。事件是对外词表，漏一个变体要在编译期被看见。命令面向内部扩展，丢掉比崩掉更安全。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/core/src/session/handlers.rs</code> 第 684 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 250" role="img" aria-label="未知 type 在三条路径上分别落到哪">
+      <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="40" y="88" width="180" height="64" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="130" y="126" fill="#262d38" text-anchor="middle" font-size="14" font-weight="700">未知 type</text>
+      <path fill="none" d="M228 96H310" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <path fill="none" d="M228 120H310" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <path fill="none" d="M228 144H310" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="318" y="36" width="250" height="52" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="443" y="67" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">同进程：穷尽 match 编不过</text>
+      <rect x="318" y="98" width="250" height="52" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="443" y="129" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">跨版本 JSON：serde 失败</text>
+      <rect x="318" y="160" width="250" height="52" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="443" y="191" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">resume：跳行，parse_errors 加一</text>
+      <path fill="none" d="M576 186H658" stroke="#414b5a" stroke-width="2" marker-end="url(#arrC)"></path>
+      <rect x="666" y="160" width="234" height="52" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="783" y="191" fill="#262d38" text-anchor="middle" font-size="13" font-weight="700">会话仍开，少一行</text>
+    </svg>
+    <div class="visual-caption">教学化路径图：同一份未知事件，编译期、JSON 边界、落盘恢复各有一个落点。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">词表会变。先决定未知 <code>type</code> 的默认方向：拒绝打开、跳过坏行，或收成 Unknown。三条都能抄，不要让三条路径各做一套却不写下来。真源事件和通知流可以给不同默认值，但要写在信封上。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 不认识的 type 怎么办</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH：未知且未标 ignorable 就拒绝</h4>
+      <p>DSH 把事件日志当成真源。信封上有一个 <code>ignorable?: true</code>。缺这个标记时，读取器碰到不认识的 <code>type</code> 必须拒绝重建，不能悄悄丢掉。忘了打标记，结果是过分拒绝，比静默恢复一份被掏空的会话更安全。</p>
+      <p>代价很清楚：旧 harness 打不开新日志。换来的是「能打开就完整」。Codex 的 <code>EventMsg</code> 已经 81 个，还要给 exec 输出和审批发瞬时事件，这些东西若全部成为真源，JSONL 会按 token 涨。</p>
+      <span class="cmp-tag">已核对源码 · 2026-08-22 · <a href="/dashboard/learning?lesson=dsh-2" data-lesson-id="dsh-2">DSH · 日志重建不变量</a> · packages/core/session/src/types.ts 第 404 至 422 行</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok：未知收成 Unknown，必须静默忽略</h4>
+      <p>Grok 的会话事件协议只有 6 个变体。<code>Unknown</code> 带 <code>#[serde(other)]</code>。模块头写明：旧消费者碰到新的 <code>event_type</code>，解成 <code>Unknown</code>，不要失败。消费者必须静默忽略。原始类型名不会被保留。</p>
+      <p>适合通知流。通知丢了，会话还能靠别的状态活。Codex 的 <code>TurnStarted</code> 是 rollout 截断边界，真源事件不能静默丢。resume 路径选择跳过坏行，比 Grok 更接近「打开」，比 DSH 更接近「尽量打开」。</p>
+      <span class="cmp-tag">已核对源码 · 2026-08-22 · crates/common/xai-tool-protocol/src/session_event.rs 第 11 至 65 行</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>三行 JSON，四个出口</h3>
+      <p>准备三行，<code>type</code> 分别是 <code>task_started</code>、<code>turn_started</code>、<code>future_event</code>。推演 MCP 原样解、Codex resume、DSH、Grok 各自怎样。哪一行会让 MCP 失败，哪一行会让 DSH 拒绝整份日志，哪两行在 Codex 里其实是同一个变体。</p>
+      <p>进阶一问：若把 <code>TurnStarted</code> 的 serde 改成只保留 <code>rename = "turn_started"</code>，旧 rollout 会在哪一条边界上断。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>命令通道和事件通道分开，命令可以带回调，事件必须能写成 JSON。wire 名和代码名分开写，改标识符时用 rename 保住磁盘。未知 <code>type</code> 先选一条默认方向：拒绝、跳行，或收成 Unknown。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var eventType = 'task_started';
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var prevBoxes = [], prevOp = '', prevSub = '', prevTrace = null, prevDoors = {};
+  var KNOWN = { task_started: 'TurnStarted', turn_started: 'TurnStarted' };
+  var SID = '0193a7c2';
+  var opEl = document.getElementById('dm-op');
+  var subEl = document.getElementById('dm-sub');
+  var eqEl = document.getElementById('dm-eq');
+  var sqN = document.getElementById('dm-sq-n');
+  var eqN = document.getElementById('dm-eq-n');
+  var sqCol = document.querySelector('#demo-sqeq .dm-col');
+  var eqCol = document.querySelector('#demo-sqeq .dm-cols .dm-col:last-child');
+  var colsHost = document.querySelector('#demo-sqeq .dm-cols');
+  var doorsHost = document.querySelector('#demo-sqeq .dm-doors');
+  var traceBox = document.querySelector('#demo-sqeq .dm-trace');
+  var mcpDoor = document.getElementById('dm-mcp');
+  var resumeDoor = document.getElementById('dm-resume');
+  var otherDoor = document.getElementById('dm-other');
+  var mcpS = document.getElementById('dm-mcp-s');
+  var resumeS = document.getElementById('dm-resume-s');
+  var otherS = document.getElementById('dm-other-s');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var typeInput = document.getElementById('dm-type');
+  var IDLE = '点播放，看同一句话从 SQ 进、从 EQ 出，两边各长什么样。';
+
+  function rustName(t){ return KNOWN[t] || null; }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+    });
+  }
+
+  function buildSteps(type){
+    var rust = rustName(type);
+    var known = !!rust;
+    var out = [];
+    out.push({
+      cap: '投稿口投入 TurnInput。命令走 SQ，事件还没出现。',
+      trace: 0, sq: 0, eq: 0,
+      op: 'TurnInput', opOn: true,
+      sub: '正在生成 UUID7，用作这条提交的 id。',
+      boxes: [],
+      mcp: '等事件', resume: '等落盘', other: 'DSH / Grok 还没上场'
+    });
+    out.push({
+      cap: '包成 Submission：id 是 ' + SID + '，op 是 TurnInput。没有 JSON，oneshot 句柄过不了网。',
+      trace: 1, sq: 0, eq: 0,
+      op: 'TurnInput', opOn: true,
+      sub: 'id ' + SID + ' · op TurnInput · serde 无',
+      boxes: [],
+      mcp: '等事件', resume: '等落盘', other: 'DSH / Grok 还没上场'
+    });
+    out.push({
+      cap: '送进容量 512 的 bounded 队列。满了会等，不会丢命令。',
+      trace: 2, sq: 1, eq: 0,
+      op: 'TurnInput', opOn: true,
+      sub: 'id ' + SID + ' · 已入队 1/512',
+      boxes: [],
+      mcp: '等事件', resume: '等落盘', other: 'DSH / Grok 还没上场'
+    });
+    out.push({
+      cap: 'submission_loop 按变体分发到 TurnInput。loop 是 Op 的唯一分发口。',
+      trace: 3, sq: 0, eq: 0,
+      op: 'TurnInput · 正在分发', opOn: true,
+      sub: 'id ' + SID + ' · loop 已收走',
+      boxes: [],
+      mcp: '等事件', resume: '等落盘', other: 'DSH / Grok 还没上场'
+    });
+    if (known) {
+      out.push({
+        cap: '第一条事件出来。盖子写 ' + type + '，标签写 TurnStarted。id 仍是 ' + SID + '。',
+        trace: 4, sq: 0, eq: 1,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · 等下一轮',
+        boxes: [{ cls: 'on', k: 'type ' + esc(type), t: 'Rust 名 TurnStarted · 与提交 id 对上' }],
+        mcp: '等序列化', resume: '等落盘', other: 'DSH / Grok 还没上场'
+      });
+      out.push({
+        cap: '再出 ItemStarted。旧消费者要的 AgentMessage，由 legacy 再复制一份。',
+        trace: 5, sq: 0, eq: 3,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · 等下一轮',
+        boxes: [
+          { cls: 'on', k: 'type ' + esc(type), t: 'TurnStarted · 生命周期' },
+          { cls: 'on', k: 'type item_started', t: '新前端看这一份' },
+          { cls: 'legacy', k: 'type agent_message', t: 'legacy 副本，给旧前端' }
+        ],
+        mcp: '等序列化', resume: '等落盘', other: 'DSH / Grok 还没上场'
+      });
+      out.push({
+        cap: '按白名单写入 rollout，再送进 unbounded EQ。命令堵住可以反压，事件堵住会卡住这一轮。',
+        trace: 7, sq: 0, eq: 3,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · SQ 已空',
+        boxes: [
+          { cls: 'on', k: 'type ' + esc(type), t: '已入 EQ' },
+          { cls: 'on', k: 'type item_started', t: '已入 EQ' },
+          { cls: 'legacy', k: 'type agent_message', t: '已入 EQ' }
+        ],
+        mcp: '等序列化', resume: '白名单已收下生命周期', other: 'DSH / Grok 还没上场'
+      });
+      out.push({
+        cap: 'MCP 把整个 Event 序列化成 codex/event。' + (type === 'task_started' ? '写出的就是这个旧名。' : '读入时 alias 也认，解出来仍是 TurnStarted。'),
+        trace: 8, sq: 0, eq: 3,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · SQ 已空',
+        boxes: [
+          { cls: 'on', k: 'type ' + esc(type), t: 'MCP 原样通过' },
+          { cls: 'on', k: 'type item_started', t: 'MCP 原样通过' },
+          { cls: 'legacy', k: 'type agent_message', t: 'MCP 原样通过' }
+        ],
+        mcpKind: 'pass', mcp: '整包 JSON 通过',
+        resumeKind: 'pass', resume: '解出 TurnStarted，parse_errors 0',
+        other: 'DSH / Grok 还没上场',
+        fin: true
+      });
+    } else {
+      out.push({
+        cap: '内核发出一条盖子写 ' + type + ' 的盒子。词表里没有这个变体。',
+        trace: 4, sq: 0, eq: 1,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · 等下一轮',
+        boxes: [{ cls: 'broke', k: 'type ' + esc(type), t: '没有对应的 EventMsg 变体' }],
+        mcp: '正在解', resume: '读到这一行', other: '对照即将上场'
+      });
+      out.push({
+        cap: 'MCP 原样门把盒子摔碎：没有 serde other，未知 type 让反序列化失败。',
+        trace: 8, sq: 0, eq: 1,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · SQ 已空',
+        boxes: [{ cls: 'broke', k: 'type ' + esc(type), t: '客户端解不出来' }],
+        mcpKind: 'fail', mcp: 'serde 失败，通知解不出',
+        resume: '还没轮到落盘恢复', other: '对照即将上场'
+      });
+      out.push({
+        cap: 'resume 把这一行丢进 parse_errors，会话照开，少一行。DSH 会拒绝整份日志，Grok 收成 Unknown。',
+        trace: 9, sq: 0, eq: 1,
+        op: 'TurnInput · 已接住', opOn: true,
+        sub: 'id ' + SID + ' · SQ 已空',
+        boxes: [{ cls: 'broke', k: 'type ' + esc(type), t: '落盘行被跳过' }],
+        mcpKind: 'fail', mcp: 'serde 失败，通知解不出',
+        resumeKind: 'hold', resume: 'parse_errors +1，会话仍开',
+        otherKind: 'hold', other: 'DSH 拒绝整份 · Grok 收成 Unknown',
+        fin: true
+      });
+    }
+    return out;
+  }
+
+  function bump(el, cls){
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function spawnGhost(el){
+    if (!colsHost || !el) return;
+    var box = colsHost.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    colsHost.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function rollNum(el, to, animate){
+    var prev = parseInt(el.textContent, 10) || 0;
+    if (!animate || prev === to) { el.textContent = String(to); return; }
+    var start = null;
+    var dur = 480;
+    function frame(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / dur);
+      var eased = 1 - (1 - t) * (1 - t) * (1 - t);
+      el.textContent = String(Math.round(prev + (to - prev) * eased));
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function boxId(b, i){
+    return String(i) + ':' + b.k;
+  }
+
+  function paintBoxes(wanted, animate){
+    var oldRects = {};
+    var nodes = {};
+    Array.prototype.slice.call(eqEl.querySelectorAll('.dm-box')).forEach(function(el){
+      var id = el.getAttribute('data-id');
+      nodes[id] = el;
+      oldRects[id] = el.getBoundingClientRect();
+    });
+    if (!wanted.length) {
+      eqEl.classList.remove('is-live');
+      eqEl.innerHTML = '<div class="dm-box" data-id="idle"><span class="k">事件还没出来</span>先走左边的命令通道。</div>';
+      prevBoxes = [];
+      return;
+    }
+    eqEl.classList.add('is-live');
+    var keep = {};
+    var firstNew = null;
+    wanted.forEach(function(b, i){
+      var id = boxId(b, i);
+      keep[id] = true;
+      var d = nodes[id];
+      var isNew = !d;
+      if (!d) {
+        d = document.createElement('div');
+        d.setAttribute('data-id', id);
+        eqEl.appendChild(d);
+        if (!firstNew) firstNew = d;
+      }
+      var prev = prevBoxes[i] || {};
+      var changed = prev.k !== b.k || prev.t !== b.t || prev.cls !== b.cls;
+      d.className = 'dm-box ' + b.cls + (i === wanted.length - 1 ? ' now' : '');
+      d.innerHTML = '<span class="k">' + b.k + '</span>' + b.t;
+      if (animate && isNew) {
+        d.classList.add('is-enter');
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){ d.classList.add('in'); });
+        });
+      }
+      if (animate && !isNew && changed) {
+        bump(d, b.cls === 'broke' ? 'firing' : 'pop');
+      }
+    });
+    Object.keys(nodes).forEach(function(id){
+      if (!keep[id] && nodes[id].parentNode === eqEl) nodes[id].remove();
+    });
+    if (animate && firstNew && !prevBoxes.length) spawnGhost(opEl);
+    if (animate) {
+      Array.prototype.slice.call(eqEl.querySelectorAll('.dm-box')).forEach(function(el){
+        var id = el.getAttribute('data-id');
+        var old = oldRects[id];
+        if (!old) return;
+        var now = el.getBoundingClientRect();
+        var dx = old.left - now.left;
+        var dy = old.top - now.top;
+        if (!dx && !dy) return;
+        el.style.transition = 'none';
+        el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+        requestAnimationFrame(function(){
+          el.style.transition = '';
+          el.style.transform = '';
+        });
+      });
+    }
+    prevBoxes = wanted.map(function(b){ return {k:b.k, t:b.t, cls:b.cls}; });
+  }
+
+  function fadeText(el, html, isHtml, animate){
+    var next = html;
+    var cur = isHtml ? el.innerHTML : el.textContent;
+    if (!animate || cur === next) {
+      if (isHtml) el.innerHTML = next;
+      else el.textContent = next;
+      return;
+    }
+    el.style.opacity = '0';
+    requestAnimationFrame(function(){
+      if (isHtml) el.innerHTML = next;
+      else el.textContent = next;
+      requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    });
+  }
+
+  function paintDoor(el, textEl, kind, text, key, animate){
+    var prev = prevDoors[key] || '';
+    var live = !!(kind);
+    el.className = 'dm-door' + (kind ? ' ' + kind : '') + (live ? ' now' : '');
+    fadeText(textEl, text, false, animate);
+    if (animate && kind && kind !== prev) bump(el, 'firing');
+    prevDoors[key] = kind || '';
+  }
+
+  function paint(st, animate){
+    colsHost.classList.add('is-live');
+    sqCol.classList.toggle('now', st.eq === 0);
+    eqCol.classList.toggle('now', st.eq > 0);
+    if (sqCol) sqCol.style.setProperty('--bar', st.sq ? '1' : '0');
+    var opOn = !!st.opOn;
+    opEl.className = 'dm-plaque' + (opOn ? ' on' : '');
+    if (animate && st.op !== prevOp) bump(opEl, 'pop');
+    fadeText(opEl, st.op, false, animate);
+    fadeText(subEl, '<b>Submission 信封</b>' + st.sub, true, animate);
+    prevOp = st.op;
+    prevSub = st.sub;
+    if (animate && String(sqN.textContent) !== String(st.sq)) bump(sqN, 'pop');
+    if (animate && String(eqN.textContent) !== String(st.eq)) bump(eqN, 'pop');
+    rollNum(sqN, st.sq, animate);
+    rollNum(eqN, st.eq, animate);
+    paintBoxes(st.boxes || [], animate);
+    var doorLive = !!(st.mcpKind || st.resumeKind || st.otherKind);
+    if (doorLive) doorsHost.classList.add('is-live');
+    else doorsHost.classList.remove('is-live');
+    paintDoor(mcpDoor, mcpS, st.mcpKind, st.mcp, 'mcp', animate);
+    paintDoor(resumeDoor, resumeS, st.resumeKind, st.resume, 'resume', animate);
+    paintDoor(otherDoor, otherS, st.otherKind, st.other, 'other', animate);
+    if (st.trace !== null && st.trace !== undefined) {
+      traceBox.classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        el.classList.toggle('on', n === st.trace);
+        if (animate && n === st.trace && st.trace !== prevTrace) bump(el, 'firing');
+      });
+      prevTrace = st.trace;
+    }
+    fadeText(captionText, st.cap, false, animate);
+    if (st.fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 1100;
+    if (st.fin) return 2400;
+    if (st.mcpKind === 'fail' || st.resumeKind === 'hold') return 2200;
+    if (st.eq === 1 && st.boxes && st.boxes.length === 1) return 2000;
+    if (st.eq === 3 && st.trace === 5) return 2000;
+    if (st.sq === 1) return 1600;
+    if (st.trace === 0) return 1100;
+    return 1400;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    paint(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    paint(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    prevBoxes = []; prevOp = ''; prevSub = ''; prevTrace = null; prevDoors = {};
+    steps = buildSteps(eventType);
+    colsHost.classList.remove('is-live');
+    sqCol.classList.remove('now');
+    eqCol.classList.remove('now');
+    eqEl.classList.remove('is-live');
+    doorsHost.classList.remove('is-live');
+    traceBox.classList.remove('is-live');
+    if (sqCol) sqCol.style.setProperty('--bar', '0');
+    Array.prototype.slice.call(colsHost.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    opEl.className = 'dm-plaque';
+    opEl.style.opacity = '1';
+    opEl.textContent = '还没投入命令';
+    subEl.style.opacity = '1';
+    subEl.innerHTML = '<b>Submission 信封</b>等投稿。只有 id 和 op，没有 JSON。';
+    eqEl.innerHTML = '<div class="dm-box" data-id="idle"><span class="k">事件还没出来</span>先走左边的命令通道。</div>';
+    sqN.textContent = '0';
+    eqN.textContent = '0';
+    mcpDoor.className = 'dm-door';
+    resumeDoor.className = 'dm-door';
+    otherDoor.className = 'dm-door';
+    mcpS.style.opacity = '1';
+    resumeS.style.opacity = '1';
+    otherS.style.opacity = '1';
+    mcpS.textContent = '等事件';
+    resumeS.textContent = '等落盘';
+    otherS.textContent = 'DSH / Grok 还没上场';
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+    summary.classList.remove('on');
+    captionText.style.opacity = '1';
+    captionText.textContent = IDLE;
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+  function applyType(t){
+    t = (t || '').trim() || 'task_started';
+    eventType = t;
+    typeInput.value = t;
+    Array.prototype.forEach.call(document.getElementById('dm-seg').children, function(el){
+      el.classList.toggle('on', el.getAttribute('data-type') === t);
+    });
+    reset();
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-seg').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    applyType(b.getAttribute('data-type'));
+  });
+  typeInput.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' || e.isComposing) return;
+    applyType(this.value);
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-sqeq'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

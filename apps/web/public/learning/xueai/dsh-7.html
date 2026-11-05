@@ -1,0 +1,1257 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"dsh-7",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=dsh-7',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Esc 之后发生了什么：取消、崩溃恢复与重入 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+:root{--accent:#4d6bfe;--accent-deep:#3450d4;--accent-soft:rgba(77,107,254,.09)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(77,107,254,.25);border-radius:50%;box-shadow:0 0 0 26px rgba(77,107,254,.05),0 0 0 52px rgba(77,107,254,.03)}
+.sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(77,107,254,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.prose{font-size:15px;line-height:2;color:var(--text);margin:0 0 20px}
+.ask{font-size:15px;font-weight:800;color:var(--accent-deep);margin:32px 0 12px;display:flex;align-items:center;gap:8px}
+.ask svg{flex:none;color:var(--accent)}
+.src-note{font-size:12px;color:var(--sub);line-height:1.8;margin:0 0 20px}
+.src-note code{color:var(--sub)}
+.stress{margin:32px auto;padding:24px;max-width:640px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--accent-deep);font-size:18px;font-weight:800;text-align:center;line-height:1.8}
+.core-visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;box-shadow:var(--shadow-card);margin:24px 0}
+.core-visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12px;color:var(--sub);text-align:center;margin-top:12px}
+.docquote{background:var(--card);border:1px solid rgba(77,107,254,.24);border-radius:12px;padding:20px 24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.docquote p{margin:0;font-size:14px;line-height:1.9;color:var(--text)}
+.docquote .dq-src{display:block;margin-top:10px;font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow-card)}
+.compare-card h3{margin:0 0 10px;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.compare-card h3 svg{color:var(--accent)}
+.compare-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:0 0 10px}.compare-card p:last-child{margin-bottom:0}
+.compare-card .tag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;margin-bottom:10px;background:var(--accent-soft);color:var(--accent-deep)}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,var(--accent-soft),var(--card));border:1px solid rgba(77,107,254,.3);border-radius:14px;padding:24px;margin-top:16px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 10px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin-bottom:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.25);color:var(--text);display:flex;gap:14px;line-height:1.9;font-size:14px}.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+/* ── 交互演示：中断时间线（浅色） ── */
+.demo{background:var(--card);border:1px solid rgba(77,107,254,.25);border-radius:18px;padding:24px;box-shadow:var(--shadow-card)}
+.demo-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.demo-bar .grow{flex:1}
+.demo button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:9px 15px;border-radius:11px;border:1px solid rgba(77,107,254,.3);background:var(--bg);color:var(--accent-deep);font:600 13px/1.2 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .2s}
+.demo button:hover{border-color:var(--accent)}
+.demo button.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(77,107,254,.3)}
+.demo button svg{flex:none}
+.demo-stage{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start}
+.logpane{border:1.5px solid var(--border);border-radius:14px;background:var(--bg);overflow:hidden}
+.logpane-head{padding:9px 14px;background:var(--accent-soft);color:var(--accent-deep);font:700 11.5px ui-monospace,Menlo,monospace;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.logbody{padding:10px 12px;min-height:280px;max-height:340px;overflow-y:auto}
+.ev{display:flex;align-items:center;gap:9px;padding:5px 10px;border-radius:8px;margin-bottom:4px;font:11.5px/1.5 ui-monospace,Menlo,monospace;background:var(--card);border:1px solid var(--border);color:var(--text);opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s,background .3s,border-color .3s}
+.ev.in{opacity:1;transform:translateY(0)}
+.ev .seq{color:var(--sub);opacity:.6;min-width:24px;text-align:right;flex:none}
+.ev .note{margin-left:auto;font:600 10px sans-serif;color:var(--sub);white-space:nowrap}
+.ev.bd{background:var(--accent-soft);border-color:rgba(77,107,254,.35);font-weight:700}
+.ev.syn{background:rgba(217,119,6,.09);border-color:rgba(217,119,6,.45)}
+.ev.syn .note{color:var(--amber)}
+.ev.dead{background:rgba(220,38,38,.06);border-color:rgba(220,38,38,.35);text-decoration:line-through;opacity:.55!important}
+.ev.dead .note{color:var(--danger);text-decoration:none}
+.ev.mark{background:rgba(220,38,38,.08);border-color:var(--danger);border-style:dashed;font:700 11px sans-serif;color:var(--danger);justify-content:center;text-decoration:none}
+.statepane{border:1.5px solid var(--border);border-radius:14px;background:var(--bg);overflow:hidden}
+.statepane-head{padding:9px 14px;background:var(--accent-soft);color:var(--accent-deep);font:700 11.5px ui-monospace,Menlo,monospace}
+.statebody{padding:14px}
+.st-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.st-label{font:700 11px sans-serif;letter-spacing:.4px;color:var(--sub);min-width:110px}
+.st-value{font:700 12.5px ui-monospace,Menlo,monospace;color:var(--text)}
+.siglamp{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);font:700 11.5px ui-monospace,Menlo,monospace;color:var(--sub);transition:all .3s}
+.siglamp i{width:10px;height:10px;border-radius:50%;background:#c4c8cf;transition:background .3s;flex:none}
+.siglamp.live{border-color:rgba(22,163,74,.5);color:var(--success)}
+.siglamp.live i{background:var(--success)}
+.siglamp.aborted{border-color:rgba(220,38,38,.5);color:var(--danger)}
+.siglamp.aborted i{background:var(--danger)}
+.siglamp.off{opacity:.55}
+.proc{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;font:700 11.5px sans-serif;background:rgba(22,163,74,.1);color:var(--success);transition:all .3s}
+.proc.dead{background:rgba(220,38,38,.1);color:var(--danger)}
+.proc.idle{background:var(--accent-soft);color:var(--accent-deep)}
+.loss{margin-top:6px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:12px;line-height:1.7;color:var(--sub)}
+.loss b{color:var(--text)}
+.loss .bad{color:var(--danger);font-weight:800}
+.loss .good{color:var(--success);font-weight:800}
+.demo-caption{margin-top:20px;padding:14px 18px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(77,107,254,.2);font-size:14px;line-height:1.8;color:var(--text);display:flex;gap:10px;align-items:flex-start;min-height:56px}
+.demo-caption svg{flex:0 0 auto;color:var(--accent);margin-top:3px}
+.demo-note{font-size:12px;color:var(--sub);margin-top:16px;line-height:1.8}
+@media(max-width:760px){
+  .compare{grid-template-columns:1fr}
+  .demo-stage{grid-template-columns:1fr}
+  .demo-bar{flex-direction:column;align-items:stretch}
+  .demo-bar .grow{display:none}
+  .demo button{width:100%}
+  .logbody{max-height:260px}
+  .objective{grid-template-columns:1fr}
+  .exercise{grid-template-columns:1fr}
+  .core-visual{padding:16px}
+  .stress{font-size:16px;padding:20px}
+  .lesson-header:after{display:none}
+}
+</style>
+<meta name="description" content="DSH 的取消与崩溃恢复：每轮一个 AbortSignal、中断也要写回 turn/end 日志、冷加载合成 interrupted 配平，崩溃重启不丢已持久化的劳动成果。">
+<meta name="author" content="洛小山">
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson-dark-compat.css —— 历史课程页深色兼容层
+
+   加载顺序必须在每页自己的 <style> 之后。lesson.css 管新模板；
+   本文件只处理旧模板变量和跨页面重复出现的硬编码组件。
+   细碎的 white / #111 / 旧主题蓝由 theme-bridge.js 在 CSSOM 层归一。
+   ═══════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"]{
+  --accent:#146b54;
+  --accent-soft:#e9f2ee;
+}
+html[data-theme="light"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#fff !important;
+}
+html[data-theme="light"] :is(.sim-node-label,.sim-node-tag,.sim-btn-ok){
+  color:#15743a !important;
+}
+html[data-theme="light"] :is(.quad-badge,.card-badge){
+  color:var(--text) !important;
+}
+html[data-theme="light"] .x3-av{
+  color:#17385f !important;
+}
+html[data-theme="light"] :is(.fv.ph,.mock-p){
+  color:var(--sub) !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pno{
+  color:#18130a !important;
+}
+html[data-theme="light"] .paper[style*="#f59e0b"] .pgo{
+  color:#945600 !important;
+}
+html[data-theme="light"] .deliverable b{
+  color:#18794e !important;
+}
+
+:root[data-theme="dark"]{
+  --bg:#101512;
+  --bg-color:#101512;
+  --bg-dim:#1b221e;
+  --card:#171d19;
+  --card-bg:#171d19;
+  --card-2:#1b221e;
+  --surface:#171d19;
+  --surface2:#1b221e;
+  --panel:#171d19;
+  --text:#e9ece9;
+  --text-main:#e9ece9;
+  --sub:#a3ada8;
+  --text-sub:#a3ada8;
+  --muted:#a3ada8;
+  --faint:#6f7975;
+  --accent:#5cb595;
+  --accent-soft:rgba(92,181,149,.14);
+  --danger:#e98d7b;
+  --amber:#d9a45f;
+  --success:#5cb595;
+  --cyan:#5bb6c9;
+  --purple:#a892d6;
+  --border:rgba(255,255,255,.10);
+  --hover:rgba(255,255,255,.06);
+  --code-bg:rgba(255,255,255,.08);
+  color-scheme:dark;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+  background-color:var(--bg) !important;
+  color:var(--text);
+}
+
+html[data-theme="dark"] :is(.slide-container,.page-shell,.lesson-shell){
+  background-color:transparent !important;
+  color:var(--text);
+}
+
+/* 蓝色“结论/答案/摘要”面板统一收回主色。 */
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(h2,h3,h4,b,strong,.tag){
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box,
+  .answer-box,
+  .insight-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+/* 风险、成功和提示继续保留语义色，但不再使用发白的浅色底。 */
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] :is(.warn-card,.danger-box,.warning-box,.error-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box){
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--success) 34%,transparent) !important;
+}
+html[data-theme="dark"] :is(.success-box,.good-box,.ok-box) :is(h2,h3,h4,b,strong){
+  color:var(--success) !important;
+}
+
+html[data-theme="dark"] .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+html[data-theme="dark"] .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+html[data-theme="dark"] :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+html[data-theme="dark"] :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 交互设计 / Vibe Coding 课程里的仿真产品界面 ──
+   这些教具原本故意模拟白色网页，深色阅读时会形成大面积白屏。只换表面和文字，
+   红黄绿等反馈语义仍由各页原规则控制。 */
+html[data-theme="dark"] :is(
+  .mockwin,
+  .mock,
+  .mock-card,
+  .f1-app,
+  .f1-top,
+  .f1-void,
+  .f1-modal,
+  .duel-side,
+  .bd-chain-step,
+  .bd-callout,
+  .mz-cell,
+  .x2-abox,
+  .x2-mtop,
+  .x3-panel,
+  .x3-ph,
+  .x3-dlg,
+  .x5-hfview,
+  .x6-tile,
+  .x6-ftop,
+  .x6-ddbox,
+  .x7-dlg,
+  .x8-drop,
+  .x8-invoice,
+  .t1-card,
+  .t1-pc,
+  .t10-card,
+  .t2-nav,
+  .t3-nrow,
+  .t4-input,
+  .t6-input,
+  .t6-modal,
+  .search-bar,
+  .fv-mock,
+  .ld-stage,
+  .chat-area,
+  .tank-outer
+){
+  background-color:var(--card) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.mockwin-bar,.mock-bar,.mtb,.tr.th,.ctx-seg,.bar){
+  background-color:var(--card-2) !important;
+  color:var(--sub) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(
+  .mockwin-url,
+  .mock-chip,
+  .duel-tag,
+  .xref-ic,
+  .x3-rdel,
+  .x4-sn,
+  .x4-mtag,
+  .x5-ghostbtn,
+  .x5-mtag,
+  .x6-vdd,
+  .x7-db,
+  .x8-input,
+  .t4-tool,
+  .t6-ctlbtn,
+  .fv,
+  .fv.ph,
+  .pt,
+  .wtxt,
+  .qz-val
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 激活控件继续用主色表达状态，但不再切回白底。 */
+html[data-theme="dark"] :is(
+  button.on,
+  .bd-mode.on,
+  .tab-btn.active,
+  .right-tab-btn.active,
+  .toggle-btn.active,
+  .speed-btn.active,
+  .x4-cut,
+  .start-btn,
+  .x6-tile.on
+){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent) !important;
+}
+
+html[data-theme="dark"] th{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] :is(.tag,.ev){
+  background:color-mix(in srgb,var(--amber) 14%,var(--card)) !important;
+  color:var(--amber) !important;
+  border-color:color-mix(in srgb,var(--amber) 32%,transparent) !important;
+}
+html[data-theme="dark"] :is(.badge,.fmt-badge,.status.live){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+  border-color:color-mix(in srgb,var(--accent) 32%,transparent) !important;
+}
+
+/* 对话与 Token 演示块按角色保留语义色。 */
+html[data-theme="dark"] :is(.msg-sys,.tv-tk-sys){
+  background:color-mix(in srgb,var(--amber) 12%,var(--card)) !important;
+  color:var(--amber) !important;
+}
+html[data-theme="dark"] :is(.msg-user,.tv-tk-user){
+  background:var(--accent-soft) !important;
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.msg-ai-good,.tv-tk-ex,.task-pass){
+  background:color-mix(in srgb,var(--success) 12%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.bubble,.cmp-bubble){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 第二轮全量审计：算法、心理学与设计教具里的少量独有表面。 */
+html[data-theme="dark"] :is(
+  .speed-btn,
+  .curve-hint,
+  .ctx-verdict,
+  .attn-hint,
+  .attn-stat,
+  .race-note,
+  .cand-pop,
+  .fa-label,
+  .rq-tag,
+  .fractal-rule,
+  .report-box,
+  .task-verdict,
+  .task-time,
+  .st-lessons span,
+  .qz-cand,
+  .ld-ind,
+  .es-input,
+  .t6-avatar
+){
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+
+/* 交互脚本加载失败时仍给主按钮一个可读的初始状态；脚本写入的行内色可覆盖它。 */
+#pgBtn{background:var(--accent);}
+html[data-theme="dark"] :is(.xa-gate,.sw-login-gate) .sw-btn{
+  background:var(--accent) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+}
+html[data-theme="dark"] .grade.s{
+  background:color-mix(in srgb,var(--success) 14%,var(--card)) !important;
+  color:var(--success) !important;
+}
+html[data-theme="dark"] :is(.quad-title,.cand-title){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] .quad-hint{
+  color:var(--sub) !important;
+  opacity:1 !important;
+}
+html[data-theme="dark"] .score-card.mem .sc-val{
+  color:var(--accent) !important;
+}
+html[data-theme="dark"] :is(.t1-ccell.c1,.taste-grid .cell,.mock .cell){
+  background:color-mix(in srgb,var(--danger) 12%,var(--card)) !important;
+  color:color-mix(in srgb,var(--danger) 75%,#fff) !important;
+  border-color:color-mix(in srgb,var(--danger) 30%,transparent) !important;
+}
+
+/* 深色文本对比度：旧专题色里的 deep 色只适合白底。 */
+html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,b,strong,i){
+  color:inherit !important;
+}
+html[data-theme="dark"] :is(
+  .chip,
+  .toy-badge,
+  .pcount,
+  .num,
+  .mp-ai,
+  .mc-meta,
+  .xref-t,
+  .xf-gt,
+  .tf-gt,
+  .tx-t,
+  .x6-rt,
+  .ph,
+  .kicker,
+  .m6-tag,
+  .card-badge,
+  .card-title,
+  .card-hint
+){
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.oss-home,.law-src){
+  color:var(--sub) !important;
+}
+html[data-theme="dark"] .chip{
+  background-color:var(--card-2) !important;
+  color:var(--text) !important;
+  border-color:var(--border) !important;
+}
+html[data-theme="dark"] code{
+  background:var(--code-bg) !important;
+  color:var(--text) !important;
+}
+html[data-theme="dark"] :is(.dd-col.dd-do,.tip-strip){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .dd-col.dd-dont{
+  color:var(--danger) !important;
+}
+
+/* 黄、青实心块不能继续配白字，改用近黑文字达到可读对比度。 */
+html[data-theme="dark"] :is(
+  .step-tag,
+  .p5-num,
+  .af-node.amber,
+  .btn-p,
+  .btn-run,
+  .sk-num,
+  .layer-icon,
+  .p-num.c3,
+  .p-num.c4,
+  .loop-step .num,
+  .strat-btn.active .strat-num,
+  .exercise > strong,
+  .dim-badge,
+  .pno,
+  .x3-av,
+  .f3-copy,
+  .skc-btn,
+  .i4-run
+){
+  color:#101512 !important;
+}
+html[data-theme="dark"] :is(.f3-copy,.skc-btn,.i4-run){
+  background:var(--semantic-indigo) !important;
+}
+html[data-theme="dark"] :is(.p10-hero .hh,.gauge-num){
+  color:var(--success) !important;
+}
+html[data-theme="dark"] .lesson-card .lc-num{
+  background:var(--accent) !important;
+  color:#101512 !important;
+}
+
+/* Alice 自身使用局部变量，避免再覆盖算法课程同名的 --al-* 变量。 */
+html[data-theme="dark"] :is(#alice-panel,#alice-float,#alice-pop){
+  --al-bg:var(--card);
+  --al-soft:var(--card-2);
+  --al-accent:var(--accent);
+  --al-border:var(--border);
+  --al-line:var(--border);
+  --al-text:var(--text);
+  --al-sub:var(--sub);
+  --al-faint:var(--faint);
+  --al-user:var(--accent-soft);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{
+  background:rgba(255,255,255,.18);
+}
+</style>
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+
+
+
+
+
+
+
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="Esc 之后发生了什么：取消、崩溃恢复与重入"><meta property="og:description" content="DSH 的取消与崩溃恢复：每轮一个 AbortSignal、中断也要写回 turn/end 日志、冷加载合成 interrupted 配平，崩溃重启不丢已持久化的劳动成果。"><meta property="og:url" content="https://xueai.miyang.cn/slides/dsh-7.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DeepSeek Harness · 会话与循环</div>
+    <h1>Esc 之后发生了什么：取消、崩溃恢复与重入</h1>
+    <p class="subtitle">每轮一个取消信号，中断也要把账记平，kill -9 之后重启还能接着跑，已落盘的劳动成果一条不丢。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>每轮一个 AbortSignal，中断也要写回日志，崩溃重启还能接着跑</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5"></path></svg>
+    <span><b>课程目标</b>读完你能说清三件事：按下 Esc 之后取消信号怎么从一个 AbortController 传遍模型流和工具执行，为什么取消权只管当前这一轮；被中断的轮次为什么也要写一条 <code>turn/end</code> 回日志；以及进程被 kill -9 之后，重启的 DSH 靠什么把半截会话救回来、又保住了哪些东西。</span>
+  </div>
+
+  <div class="sec-label">交互演示 · 中断演练场</div>
+  <p class="reveal prose">下面是一条正在干活的轮次：模型流式输出中，还叫了一个长工具。左边是会话日志，右边是运行状态。三个情景按钮对应三种事故：按 Esc、kill -9 后重启、以及一个假想的截断式恢复做对照。点播放，字幕会告诉你每一步日志里多了什么、少了什么。</p>
+
+  <div id="demo-cancel" class="demo reveal">
+    <div class="demo-bar">
+      <button class="scn active" data-scn="A" type="button">情景 A · 按 Esc 取消</button>
+      <button class="scn" data-scn="B" type="button">情景 B · kill -9 崩溃重启</button>
+      <button class="scn" data-scn="C" type="button">情景 C · 对照：截断式恢复</button>
+      <span class="grow"></span>
+      <button id="dx-play" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>播放</button>
+      <button id="dx-step" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+      <button id="dx-reset" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>重置</button>
+    </div>
+    <div class="demo-stage">
+      <div class="logpane">
+        <div class="logpane-head"><span>会话事件日志（仅追加 · 落盘即持久）</span><span id="dx-count"></span></div>
+        <div class="logbody" id="dx-log"></div>
+      </div>
+      <div class="statepane">
+        <div class="statepane-head">运行状态</div>
+        <div class="statebody">
+          <div class="st-row"><span class="st-label">进程</span><span class="proc" id="dx-proc"><span>运行中</span></span></div>
+          <div class="st-row"><span class="st-label">本轮取消信号</span><span class="siglamp off" id="dx-sig"><i></i><span>未创建</span></span></div>
+          <div class="st-row"><span class="st-label">Inbox 排队消息</span><span class="st-value" id="dx-inbox">0 条</span></div>
+          <div class="loss" id="dx-loss">日志统计会显示在这里：哪些事件保住了，哪些丢了。</div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg><span id="dx-status">选一个情景点播放，或滚动到此处自动播放情景 A。</span></div>
+    <div class="demo-note">演示为教学化模拟：事件条目做了简化，机制对应 <code>packages/core/agent-loop/src/agent.ts</code>（取消与 turn/end 落日志）与 <code>packages/core/session/src/repair.ts</code>（崩溃恢复合成 closer）。情景 C 的截断式恢复是教学假设，DSH 未实现该行为，用来对照数据损失。</div>
+  </div>
+
+  <div class="sec-label">设计思路一 · 取消权跟着轮次走</div>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>它解决什么问题</h3>
+  <p class="prose reveal">想象取消做成一个全局开关：agent 身上挂一个布尔标志位，谁都能设，各处代码自己抽空看一眼。翻车迟早发生：上一轮注册的某个超时回调半夜苏醒，顺手把正在跑的新一轮取消了；或者取消用 Promise.race 实现，race 输掉的那个工具调用没人善后，还在后台偷偷改文件、写状态，成了僵尸工作。</p>
+  <p class="prose reveal">取消这件事，难点是停得干净、只停该停的。这两样，全局开关都给不了。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path><circle cx="12" cy="12" r="4"></circle></svg>思路是什么</h3>
+  <p class="prose reveal">DSH 的取消是一根显式传递的线，一头拴在轮次上，另一头拴在每个正在干活的边界上。驱动器每次醒来干活，新建一个 AbortController（取消控制器）；一轮跑完、队列里还有活，就再换一个新的。任何时刻最多只有一个控制器有效，取消权的生命周期和轮次一样长。</p>
+  <p class="prose reveal">Esc 只是拉了一下这根线。界面把按键翻译成 <code>agent.cancel({ kind: 'user' })</code>，子 agent 被父级打断则是 <code>{ kind: 'parent' }</code>，取消自带身份。cancel 的入口小到可以背下来，就两个动作：默认先把 inbox 清空，排队没跑的消息全部作废，想保住排队工作就传 keepInbox，只中断当前活动；然后对当前控制器 <code>abort(cause)</code>。空闲时调 cancel 是空操作，不会给未来的工作预埋取消状态。</p>
+  <p class="prose reveal">同一个 signal 显式地发给 pre-step、提示词组装、模型请求、流式读取、工具执行、审批这些环节，连 bash 工具都能顺着它杀掉整个进程组。传递是协作式的：循环在每个 await 边界前后检查中断，不用 Promise.race 半路丢弃一个还在跑的 Promise，所以不会有僵尸工作偷偷改状态。</p>
+  <div class="core-visual reveal">
+    <svg viewBox="0 0 940 320" role="img" aria-label="取消信号从 Esc 传到各个边界的示意图">
+      <defs><marker id="arc" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#4d6bfe"></path></marker></defs>
+      <text x="470" y="36" fill="var(--sub)" text-anchor="middle" font-size="13">一根显式的线：从 Esc 到每个正在干活的边界</text>
+      <rect x="40" y="125" width="190" height="70" rx="13" fill="var(--accent-soft)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="135" y="155" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">Esc 按下</text>
+      <text x="135" y="179" fill="var(--sub)" text-anchor="middle" font-size="13">翻译成带身份的 cancel</text>
+      <path d="M230 160 H262" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#arc)"></path>
+      <rect x="270" y="125" width="210" height="70" rx="13" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="375" y="155" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">cancel 只做两件事</text>
+      <text x="375" y="179" fill="var(--sub)" text-anchor="middle" font-size="13">清 inbox，再 abort(cause)</text>
+      <path d="M480 160 H512" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#arc)"></path>
+      <rect x="520" y="125" width="160" height="70" rx="13" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="600" y="155" fill="#3450d4" text-anchor="middle" font-size="14" font-weight="700">本轮唯一 signal</text>
+      <text x="600" y="179" fill="var(--sub)" text-anchor="middle" font-size="13">随轮次生灭</text>
+      <path d="M680 160 H705 V75 H722" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#arc)"></path>
+      <path d="M680 160 H722" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#arc)"></path>
+      <path d="M680 160 H705 V245 H722" stroke="#4d6bfe" stroke-width="2" fill="none" marker-end="url(#arc)"></path>
+      <rect x="730" y="48" width="180" height="54" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="820" y="80" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">模型流停止读取</text>
+      <rect x="730" y="133" width="180" height="54" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="820" y="165" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">工具与 bash 进程组</text>
+      <rect x="730" y="218" width="180" height="54" rx="12" fill="var(--card)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="820" y="250" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">组装与审批收手</text>
+      <text x="470" y="302" fill="var(--sub)" text-anchor="middle" font-size="13">turn/end 发布之前收回取消权，下一轮换全新的 signal</text>
+    </svg>
+    <div class="visual-caption">信号是显式参数，不靠全局状态；每个边界在 await 前后自己检查，协作式收手。</div>
+  </div>
+  <p class="prose reveal">最后是权力交接。循环在发布 turn/end 之前就清掉本轮的取消持有者，之后哪怕持久化刷新还没结算完，谁也取消不了已经完成的轮次工作；下一轮拿到的是全新的 signal，旧回调想越权，连把手都摸不到。</p>
+  <p class="src-note reveal">出处：每轮新建 AbortController 在 <code>packages/core/agent-loop/src/agent.ts</code> 第 187 行，跑完换新在第 325 行，cancel 入口（可选清 inbox，再 abort 带类型化 cause）在第 134 至 140 行；取消权不跨轮泄漏的设计记录见项目 Agent Note 2026-07-16。</p>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>为什么长期成立</h3>
+  <p class="prose reveal">显式令牌加作用域绑定，是结构化并发的通则：Go 的 context、.NET 的 CancellationToken 走的都是这条路。令牌由创建者负责收回，活不过自己的作用域，越权自然无从谈起。只要系统里同时有流式 IO 和外部进程要停，换个语言重写，这根显式的线还是得有。</p>
+
+  <div class="sec-label">设计思路二 · 中断也要把账记平</div>
+
+  <h3 class="ask reveal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>它解决什么问题</h3>
+  <p class="prose reveal">假设被取消的轮次不写终态：日志停在半截，回放的人不知道这轮怎么结束的；UI 没法如实告诉用户哪些排队的活被扔了；下游拿到日志，分不清这轮是被人有序停掉的，还是意外死掉的。中断是正常业务，不记账的中断才是事故。</p>
+
+  <h3 class="ask reveal paywall-locked xa-peek"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path><circle cx="12" cy="12" r="4"></circle></svg>思路是什么</h3>
+  <p class="prose reveal paywall-locked">轮次的主体逻辑包在 try 里。catch 分支发现 <code>signal.aborted</code>，就把结局定为 aborted；finally 里无论如何写一条 <code>turn/end</code> 回日志。已经落盘的流式 chunk、工具输出一个都不删。</p>
+  <p class="prose reveal paywall-locked">于是日志里的死法只有两种，各有专属签名。aborted 由循环亲手写下：有人调了 cancel，轮次有序收尾。interrupted 循环从来不发，它只在崩溃恢复时由持久化后端合成，是唯一一个非循环出品的结局。看一眼 reason，就知道这轮的结束方式。</p>
+  <p class="prose reveal paywall-locked">两个配套细节。日志只存粗粒度的 aborted，不存是谁按的，user 还是 parent 属于运行时信息，回放不需要也不该知道。被清掉的排队消息没有任何 turn/end 描述它，<code>foldConsumedWork</code> 单遍扫日志，靠 inbox 记录里的 outcome: 'canceled' 算出 droppedUnrun，UI 才能如实说有活被扔了、没跑。</p>
+  <div class="stress reveal paywall-locked">体面告别和意外身亡，日志里一眼可辨。</div>
+  <p class="src-note reveal paywall-locked">出处：catch 定结局在 <code>packages/core/agent-loop/src/agent.ts</code> 第 302 至 305 行，finally 写 turn/end 在第 316 至 323 行；droppedUnrun 的折叠在 <code>consumed-work.ts</code> 第 87 行。</p>
+
+  <h3 class="ask reveal paywall-locked"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>为什么长期成立</h3>
+  <p class="prose reveal paywall-locked">所有退出路径都写终态，是一切拿日志当权威状态的系统的底线，数据库事务日志的 commit 和 abort 记录同理。异常路径和正常路径出同样的账，重建现场的人才不用猜。模型换代、语言重写，这条纪律都不变。</p>
+
+  <div class="sec-label paywall-locked">设计思路三 · 崩溃恢复补齐，不截断</div>
+
+  <h3 class="ask reveal paywall-locked"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>它解决什么问题</h3>
+  <p class="prose reveal paywall-locked">取消好歹有 finally 善后，kill -9 连善后的机会都没有。进程死掉的瞬间，日志停在半截：turn/start 开着，某个工具调用记了 tool/call，却永远等不到 tool/result。重启后冷加载这份日志，摆在面前的是一道选择题：把没写完的轮次删掉，还是补齐？</p>
+  <p class="prose reveal paywall-locked">删掉看似干净，代价大得多。长周期任务的单个轮次可能非常庞大，几十个步骤、大量工具输出，这些在崩溃前都已经持久追加。截断等于把用户的劳动成果陪葬，演示的情景 C 算的就是这笔账。</p>
+
+  <h3 class="ask reveal paywall-locked"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path><circle cx="12" cy="12" r="4"></circle></svg>思路是什么</h3>
+  <p class="prose reveal paywall-locked">DSH 选补齐。恢复逻辑生成几条确定性的合成事件把尾巴关上：先给每个悬空的工具调用补一条错误占位的 tool/result，再关掉开着的 step，最后合成 turn/end，结局标 interrupted。顺序有讲究：step 还开着就写 turn/end 违反日志不变式，所以先补 step 的边界，再补 turn 的。</p>
+  <div class="core-visual reveal paywall-locked">
+    <svg viewBox="0 0 940 230" role="img" aria-label="崩溃恢复补齐半截日志的示意图">
+      <text x="470" y="36" fill="var(--sub)" text-anchor="middle" font-size="13">已落盘的真实事件一条不动，只在尾部补三条合成事件</text>
+      <text x="482" y="68" fill="#dc2626" text-anchor="middle" font-size="13" font-weight="700">kill -9</text>
+      <path d="M482 80 V180" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4" fill="none"></path>
+      <rect x="40" y="110" width="95" height="46" rx="10" fill="var(--accent-soft)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="87" y="138" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">轮次开始</text>
+      <rect x="145" y="110" width="95" height="46" rx="10" fill="var(--accent-soft)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="192" y="138" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">用户消息</text>
+      <rect x="250" y="110" width="95" height="46" rx="10" fill="var(--accent-soft)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="297" y="138" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">模型输出</text>
+      <rect x="355" y="110" width="95" height="46" rx="10" fill="var(--accent-soft)" stroke="rgba(77,107,254,.4)"></rect>
+      <text x="402" y="138" fill="#3450d4" text-anchor="middle" font-size="13" font-weight="700">工具启动</text>
+      <rect x="515" y="110" width="90" height="46" rx="10" fill="rgba(217,119,6,.09)" stroke="rgba(217,119,6,.5)"></rect>
+      <text x="560" y="138" fill="#b45309" text-anchor="middle" font-size="13" font-weight="700">补占位结果</text>
+      <rect x="613" y="110" width="90" height="46" rx="10" fill="rgba(217,119,6,.09)" stroke="rgba(217,119,6,.5)"></rect>
+      <text x="658" y="138" fill="#b45309" text-anchor="middle" font-size="13" font-weight="700">补步骤收尾</text>
+      <rect x="711" y="110" width="90" height="46" rx="10" fill="rgba(217,119,6,.09)" stroke="rgba(217,119,6,.5)"></rect>
+      <text x="756" y="138" fill="#b45309" text-anchor="middle" font-size="13" font-weight="700">补轮次终局</text>
+      <rect x="815" y="110" width="85" height="46" rx="10" fill="rgba(22,163,74,.08)" stroke="#16a34a"></rect>
+      <text x="857" y="138" fill="#16a34a" text-anchor="middle" font-size="13" font-weight="700">接着跑</text>
+      <text x="245" y="192" fill="var(--sub)" text-anchor="middle" font-size="13">崩溃前已持久化 · 全部保留</text>
+      <text x="658" y="192" fill="var(--sub)" text-anchor="middle" font-size="13">恢复时合成 · 终局标 interrupted</text>
+    </svg>
+    <div class="visual-caption">合成事件的时间戳复用最后一条真实事件的，绝不发明未来时间。</div>
+  </div>
+  <p class="prose reveal paywall-locked">给悬空工具调用补的那条占位结果，措辞分两种情况。工具记录了启动但结果没落盘的，占位文本告诉模型结果未知，只有只读或幂等操作才可以重试，有副作用的要先核实外部状态或问用户，原文强调 <span style="white-space:nowrap">「Do not retry blindly」</span>。工具压根没启动的，直接说需要就重试。</p>
+  <div class="docquote reveal paywall-locked">
+    <p>「它<b>不会</b>截断日志：在长周期任务中，单个轮次可能非常庞大（许多步骤、大量工具输出），而这些事件在崩溃前已被持久追加。后端改为用一个合成的 <code>turn/end { reason: { kind: 'interrupted' } }</code> 关闭这个遗留轮次，在不改变其前后任何独立事件的情况下配平被中断的执行。」</p>
+    <span class="dq-src">docs/subsystems/persistence.zh.md · 崩溃恢复保留被中断的轮次</span>
+  </div>
+  <p class="prose reveal paywall-locked">还有一条容易忽略的边界：这套修复只对冷会话生效。会话还活着的时候，load 会等权威内存快照落盘、只在日志配平时返回，活跃轮次没闭合就直接拒绝，绝不给一个正在跑的轮次插入合成边界。写盘那头也有讲究：持久化插件批量落盘，循环在领取下一轮之前用 session/flush 做检查点，把顺序和写盘错误都看在眼里。</p>
+  <p class="src-note reveal paywall-locked">出处：占位结果的两种措辞在 <code>packages/core/session/src/repair.ts</code> 第 91 至 124 行，closer 的合成顺序（先 step 后 turn）在第 126 至 132 行；只修冷会话在 <code>docs/subsystems/persistence.zh.md</code> 第 17 行，flush 检查点见同文档对应小节。</p>
+
+  <h3 class="ask reveal paywall-locked"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>为什么长期成立</h3>
+  <p class="prose reveal paywall-locked">追加式日志加读取时修复，就是数据库 WAL（预写日志）恢复的思路：崩溃后不改写历史，只补足让状态机能继续走的最小事件。只要权威状态放在事件日志里，恢复逻辑重写多少遍都长这样。反过来说，敢截断日志的系统，等于默认单轮工作便宜到可以随便扔，这个假设在长任务时代不成立。</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 两家怎么面对中断与崩溃</div>
+  <div class="compare paywall-locked">
+    <div class="compare-card reveal">
+      <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>Grok Build</h3>
+      <span class="tag">进程级 · 专门的崩溃 crate</span>
+      <p>Grok 有一个专职 crate <code>xai-crash-handler</code>：用 sigaction 接住 SIGSEGV 和 SIGBUS，崩溃现场只用信号安全操作把二进制快照写进 <code>last-crash.bin</code>，还顺手用预计算的转义序列把终端恢复原状；下次启动再解析符号、生成崩溃报告，保留最近 5 份（crate README 与 handler.rs）。</p>
+      <p>它回答的问题是进程怎么死的、终端别留烂摊子。DSH 的 repair.ts 回答的是会话日志怎么活下来。两家各占一层，正面对比下 DSH 的独特点在于把恢复语义做进了持久化契约：load 的接口注释直接承诺补齐中断尾部、不改写已提交事件。在已核对的 Grok Build 材料中未见等价的会话日志配平机制，这一条基于已公开源码。</p>
+    </div>
+    <div class="compare-card reveal">
+      <h3><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code</h3>
+      <span class="tag">任务级 · AbortController 挂在 task 上</span>
+      <p>后台 agent 的取消走 <code>killAsyncAgent</code>：从任务状态里取出 <code>abortController</code> 调 abort，把任务标成 killed（restored-src 的 LocalAgentTask.tsx 第 283 至 298 行，书稿第 6 章引用）。控制器的生命周期跟着任务走，一个任务一个。</p>
+      <p>DSH 把粒度再切细一档：控制器跟着轮次走，同一个 agent 的下一轮自动拿新信号，旧回调想越权都拿不到把手。另外 DSH 明确不持久化取消原因，durable 日志只留 aborted；Claude Code 的会话恢复与中断记录细节未在已核对的书稿章节展开，这里保留未知项。</p>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>推演两个时刻的日志差异</h3>
+      <p>同一个轮次，取消发生在两个不同时刻：a）模型流式输出到一半；b）bash 工具正在执行。</p>
+      <p>问题一：分别写出日志从 <code>step/start</code> 到 <code>turn/end</code> 之间会出现哪些事件，<code>turn/end</code> 的 reason 是什么。</p>
+      <p>问题二：把这两种情况的事故换成 kill -9，重启后 repair 分别要合成几条 closer？提示：流式中断时没有悬空的 tool/call；工具执行中断时有一条记录了启动的 tool/call，对应结果未知的占位文本。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+    <span><b>Takeaway：</b>取消是一根显式的线：每轮一个 AbortController，cancel 清 inbox 再 abort，中断的轮次照样写 turn/end { aborted }，取消权在 turn/end 发布前收回、绝不跨轮。崩溃恢复不截断：冷加载给悬空工具补错误占位、合成 turn/end { interrupted } 配平，崩溃前已落盘的每一条事件都保留。体面告别和意外身亡，日志里一眼可辨。</span>
+  </div>
+</article>
+<script>
+(function () {
+  'use strict';
+  var logEl = document.getElementById('dx-log');
+  var countEl = document.getElementById('dx-count');
+  var procEl = document.getElementById('dx-proc');
+  var sigEl = document.getElementById('dx-sig');
+  var inboxEl = document.getElementById('dx-inbox');
+  var lossEl = document.getElementById('dx-loss');
+  var statusEl = document.getElementById('dx-status');
+  var steps = [];
+  var idx = 0;
+  var timer = null;
+  var playing = false;
+  var cur = 'A';
+  var runId = 0;
+  var seq = 41;
+
+  function setStatus(t) { statusEl.textContent = t; }
+  function setProc(mode, label) { procEl.className = 'proc ' + mode; procEl.innerHTML = '<span>' + label + '</span>'; }
+  function setSig(mode, label) { sigEl.className = 'siglamp ' + mode; sigEl.innerHTML = '<i></i><span>' + label + '</span>'; }
+  function setInbox(n) { inboxEl.textContent = n + ' 条'; }
+  function setLoss(html) { lossEl.innerHTML = html; }
+  function updateCount() {
+    var kept = logEl.querySelectorAll('.ev.in:not(.mark):not(.dead)').length;
+    var dead = logEl.querySelectorAll('.ev.dead').length;
+    countEl.textContent = '有效 ' + kept + ' 条' + (dead ? ' · 丢弃 ' + dead + ' 条' : '');
+  }
+  function addEv(text, cls, note, noSeq) {
+    var el = document.createElement('div');
+    el.className = 'ev' + (cls ? ' ' + cls : '');
+    var html = '';
+    if (!noSeq) html += '<span class="seq">' + (seq++) + '</span>';
+    html += '<span>' + text + '</span>';
+    if (note) html += '<span class="note">' + note + '</span>';
+    el.innerHTML = html;
+    logEl.appendChild(el);
+    void el.offsetWidth;
+    el.classList.add('in');
+    logEl.scrollTop = logEl.scrollHeight;
+    updateCount();
+    return el;
+  }
+  function killRows(fromIdx) {
+    var rows = Array.prototype.filter.call(logEl.children, function (el) { return !el.classList.contains('mark'); });
+    var n = 0;
+    for (var i = fromIdx; i < rows.length; i++) { rows[i].classList.add('dead'); n++; }
+    updateCount();
+    return n;
+  }
+
+  function commonOpening(list) {
+    list.push({ status: '一条新轮次开跑。驱动器为它新建了一个 AbortController：本轮取消信号点亮。', run: function () {
+      setProc('', '运行中'); setSig('live', 'turn 7 · 有效'); setInbox(0);
+      addEv('turn/start · turn 7', 'bd');
+    } });
+    list.push({ status: '进入第一个 step，用户消息从 inbox 领出来落日志。', run: function () {
+      addEv('step/start · step 1', 'bd');
+      addEv('user/message「帮我重构这个模块」');
+    } });
+    list.push({ status: '模型开始流式输出。注意：每一片 chunk 先落日志再进内存，落盘即持久。', run: function () {
+      addEv('assistant/chunk「先看下现有结构…」');
+    } });
+    list.push({ status: '输出继续，模型决定调一个长工具：跑测试。tool/call 记录了工具已启动。', run: function () {
+      addEv('assistant/chunk「我需要跑一下测试」');
+      addEv('tool/call · bash: pnpm test', '', '执行中…');
+    } });
+  }
+
+  function buildA() {
+    var list = [];
+    commonOpening(list);
+    list.push({ status: '等工具的空当，用户又排了一条追问进 inbox。它还没被任何轮次领走，先在队列里等着。', run: function () {
+      setInbox(1);
+    } });
+    list.push({ status: '测试跑到一半，用户按下 Esc。界面把它翻译成 agent.cancel({ kind: "user" })。', run: function () {
+      addEv('用户按下 Esc', 'mark', '', true);
+    } });
+    list.push({ status: 'cancel 的第一件事：清空 inbox，刚才那条追问作废、没跑过就被扔掉（想保留可以传 keepInbox）。第二件事：对本轮控制器 abort(cause)。', run: function () {
+      setInbox(0); setSig('aborted', 'turn 7 · 已中止');
+    } });
+    list.push({ status: '同一个 signal 传遍所有干活的边界：模型流停止读取，bash 顺着信号杀掉整个进程组。已落盘的 chunk 一条不删。', run: function () {
+      addEv('tool/result · bash（已中止）', '', '进程组已终止');
+    } });
+    list.push({ status: '中断也要记账：finally 里写 turn/end，reason 是 aborted。日志配平，谁看都知道这轮是被人有序停掉的。', run: function () {
+      addEv('step/end · step 1', 'bd');
+      addEv('turn/end · reason: aborted', 'bd');
+      setLoss('<b>结算：</b><span class="good">取消前落盘的 6 条事件全部保留</span>，加 3 条收尾事件。被清掉的那条追问没有 turn/end 描述它，靠 foldConsumedWork 从 inbox 记录里算出有活被扔了、没跑。');
+    } });
+    list.push({ status: '收尾交接：发布 turn/end 之前取消持有者已被清除，本轮的取消权到此失效。新消息进来，下一轮拿到全新的信号。', run: function () {
+      setSig('live', 'turn 8 · 全新信号'); setProc('', '运行中');
+      addEv('turn/start · turn 8', 'bd', '新一轮 · 新 AbortController');
+    } });
+    return list;
+  }
+
+  function buildB() {
+    var list = [];
+    commonOpening(list, true);
+    list.push({ status: '这次没有 Esc：进程被 kill -9，一切戛然而止。没有 catch，没有 finally，日志停在半截。', run: function () {
+      addEv('kill -9 · 进程消失', 'mark', '', true);
+      setProc('dead', '已死亡'); setSig('off', '随进程消失'); 
+      setLoss('<b>此刻的日志：</b>turn 开着、step 开着、tool/call 悬着没有结果。但已落盘的 6 条事件安然无恙。');
+    } });
+    list.push({ status: '用户重启 DSH，重新打开这个会话。冷加载扫描日志，发现 turn/start 没有配对的 turn/end。', run: function () {
+      setProc('idle', '已重启 · 冷加载');
+    } });
+    list.push({ status: '第一条合成事件：给悬空的 tool/call 补一条错误占位结果。文本明说结果未知，只有幂等操作才能重试，不要盲目重试。', run: function () {
+      addEv('tool/result · 合成占位（结果未知）', 'syn', '恢复合成');
+    } });
+    list.push({ status: '再合成 step/end 与 turn/end { interrupted } 关掉尾巴。interrupted 是唯一一个循环从不亲手写的结局，看到它就知道发生过崩溃。', run: function () {
+      addEv('step/end · step 1（合成）', 'syn', '恢复合成');
+      addEv('turn/end · reason: interrupted', 'syn', '恢复合成');
+    } });
+    list.push({ status: '日志配平，会话可以接着跑。崩溃前已持久化的每一条劳动成果都在，模型下一轮能看到之前做到哪一步了。', run: function () {
+      setProc('', '恢复运行'); setSig('live', 'turn 8 · 全新信号');
+      addEv('turn/start · turn 8', 'bd', '接着跑');
+      setLoss('<b>结算：</b><span class="good">6 条真实事件全部保留</span> + 3 条合成 closer。数据损失：<span class="good">0 条</span>。');
+    } });
+    return list;
+  }
+
+  function buildC() {
+    var list = [];
+    commonOpening(list, true);
+    list.push({ status: '同样的 kill -9，同样的半截日志。这次换一个假想的恢复策略：截断式，把没写完的轮次整个丢掉。', run: function () {
+      addEv('kill -9 · 进程消失', 'mark', '', true);
+      setProc('dead', '已死亡'); setSig('off', '随进程消失');
+    } });
+    list.push({ status: '截断式恢复动手：从 turn/start 往后的事件全部删除，日志回退到上一轮的结尾。', run: function () {
+      var n = killRows(0);
+      setProc('idle', '已重启 · 截断恢复');
+      setLoss('<b>结算：</b><span class="bad">' + n + ' 条已持久化的事件被丢弃</span>：用户消息、模型已经想清楚的思路、测试已经跑出的结果，全部陪葬。');
+    } });
+    list.push({ status: '对照结论：同一个事故时刻，DSH 的配平语义保住 6 条、丢 0 条；截断语义丢 6 条。长任务单轮可能有几十个步骤，这笔账会大得多。', run: function () {} });
+    return list;
+  }
+
+  function build(k) { return k === 'A' ? buildA() : k === 'B' ? buildB() : buildC(); }
+
+  function reset() {
+    runId++;
+    playing = false;
+    clearTimeout(timer);
+    idx = 0;
+    seq = 41;
+    logEl.innerHTML = '';
+    setProc('idle', '空闲');
+    setSig('off', '未创建');
+    setInbox(0);
+    setLoss('日志统计会显示在这里：哪些事件保住了，哪些丢了。');
+    countEl.textContent = '';
+    setStatus('已重置。点播放运行情景 ' + cur + '，或点单步逐帧推进。');
+    steps = build(cur);
+  }
+
+  function doStep() {
+    if (idx >= steps.length) { playing = false; return; }
+    var s = steps[idx++];
+    if (s.status) setStatus(s.status);
+    if (s.run) s.run();
+    if (playing) timer = setTimeout(doStep, s.dur || 2300);
+  }
+  function play() {
+    if (playing) return;
+    if (idx >= steps.length) reset();
+    playing = true;
+    doStep();
+  }
+  function stepOnce() {
+    playing = false;
+    clearTimeout(timer);
+    if (idx >= steps.length) { reset(); return; }
+    doStep();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#demo-cancel .scn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#demo-cancel .scn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      cur = btn.getAttribute('data-scn');
+      reset();
+    });
+  });
+  document.getElementById('dx-play').addEventListener('click', play);
+  document.getElementById('dx-step').addEventListener('click', stepOnce);
+  document.getElementById('dx-reset').addEventListener('click', reset);
+
+  reset();
+  (function hookAutoplay(tries) {
+    if (typeof window.lessonOnView === 'function') {
+      window.lessonOnView(document.getElementById('demo-cancel'), play);
+    } else if (tries > 0) {
+      setTimeout(function () { hookAutoplay(tries - 1); }, 120);
+    }
+  })(50);
+})();
+</script>
+
+
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>

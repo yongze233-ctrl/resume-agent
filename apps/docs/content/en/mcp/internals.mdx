@@ -1,0 +1,88 @@
+---
+title: Internals
+description: "This page explains @magic-resume-kit/mcp’s layout, entry points, configuration, tool registration, and Core API contract for contributors changing the package."
+---
+
+Public package sources and releases live in [magic-resume-kit](https://github.com/Magic-Resume/magic-resume-kit). Source paths and package build commands for schema, templates, design-system, icons, utils and MCP on this page refer to that repository. Applications consume `@magic-resume-kit/*` from npm.
+
+This page is for contributors changing the MCP package itself or building a fork. The CLI and server share `config.ts`, and the server talks to the API through `client.ts`. The CLI handles one-shot config commands, while the MCP server is the process AI tools spawn.
+
+## How is the MCP package organized?
+
+```
+packages/mcp/
+├── src/
+│   ├── cli.ts           # `magic-resume` CLI entrypoint (config set/print/clear, mcp)
+│   ├── server.ts        # MCP server: tool registration, stdio transport
+│   ├── resume-tools.ts  # business logic for every tool above
+│   ├── config.ts        # ~/.magic-resume/mcp.json reader/writer
+│   ├── client.ts        # thin fetch client that sends the PAT
+│   └── index.ts         # library exports
+├── scripts/bundle.mjs   # esbuild: bundles the MCP CLI for npm
+├── test/                # node --test suites
+└── package.json         # type: "module", bin: magic-resume
+```
+
+The CLI and the server share `config.ts`; the server talks to the API through `client.ts`. The CLI is for one-shot config commands; the MCP server is what AI tools spawn.
+
+## What are the CLI and MCP server entry points?
+
+- **CLI:** `bin: { "magic-resume": "./dist/cli.js" }` in `package.json`. Subcommands: `config set`, `config print` (PAT masked), `config clear`, and `mcp` (which boots the server).
+- **MCP server:** `magic-resume mcp` boots `server.ts`, registers tools, attaches `StdioServerTransport`, and runs forever.
+
+## Where is the config file and what does it contain?
+
+`~/.magic-resume/mcp.json`:
+
+```json
+{
+  "apiUrl": "https://api.magic-resume.cn/api",
+  "token": "mr_pat_xxx",
+  "defaultResumeId": "optional"
+}
+```
+
+`config.ts` reads this lazily on first use. On Windows the path is `%USERPROFILE%\.magic-resume\mcp.json`.
+
+<Warning>
+This file holds a PAT in plaintext. The CLI sets file permissions to `0600` on POSIX. If you're contributing on Windows, don't relax this.
+</Warning>
+
+## How are MCP tools registered?
+
+`server.ts` uses `@modelcontextprotocol/sdk` to register each tool with:
+
+- A name and description
+- A Zod-derived input schema (so the model gets typed parameter hints)
+- A handler delegating to `resume-tools.ts`
+
+Tools always return structured JSON. Errors throw `McpError` with a stable error code so AI tools can react (e.g. retry on transient network failures, abort on validation errors).
+
+## What Core API endpoints does MCP use?
+
+The MCP server is a client of the same NestJS Core API the web app talks to. Relevant endpoints:
+
+| Endpoint | Method | Auth |
+|---|---|---|
+| `/api/resumes/mine` | GET | PAT |
+| `/api/resumes/:id` | GET | PAT |
+| `/api/resumes/:id` | PATCH | PAT |
+
+`client.ts` attaches `Authorization: Bearer <pat>` automatically. Unlike the web app, **there is no Clerk involvement** — PATs are a separate auth method the Core API understands.
+
+## How do I build and publish the MCP package?
+
+```bash
+pnpm --filter @magic-resume-kit/mcp build      # tsc → dist/
+pnpm --filter @magic-resume-kit/mcp test       # node --test test/*.test.mjs
+pnpm --filter @magic-resume-kit/mcp lint       # tsc --noEmit
+```
+
+Publishing is gated by `publishConfig.access = "public"` and uses pnpm's `workspace:*` rewriting so the published `package.json` has real semver versions for `@magic-resume-kit/resume-schema` and `@magic-resume-kit/resume-templates`.
+
+## How do I add a new MCP tool?
+
+1. Add the handler to `resume-tools.ts`. Keep it pure and patch-based.
+2. Register it in `server.ts` with a Zod input schema and a short description.
+3. Add a `node --test` case in `test/`.
+4. If the tool reads or mutates a new field, update [`get_resume_editing_guide`](/en/mcp/tools#get_resume_editing_guide) so models know how to use it.

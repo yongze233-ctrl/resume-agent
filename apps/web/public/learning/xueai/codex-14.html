@@ -1,0 +1,1124 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'"><script>(()=>{const send=(type,data={})=>parent.postMessage({scope:'resume-learning',type,lessonId:"codex-14",...data},'*');for(const key of ['localStorage','sessionStorage']){const values=new Map();Object.defineProperty(window,key,{value:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),clear:()=>values.clear()},configurable:true});}window.lessonOnView=(el,cb)=>{if(el&&typeof cb==='function'){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();cb();}});io.observe(el);}};document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;const raw=a.getAttribute('href')||'';if((raw.startsWith('#')&&!a.dataset.reference)||raw.startsWith('data:')||raw.startsWith('blob:'))return;e.preventDefault();let id=a.dataset.lessonId,view=a.dataset.learningView;if(!id&&!view&&!a.dataset.reference){try{const u=new URL(raw,location.href);if(u.origin===new URL(location.href).origin||['xueai.app','xueai.miyang.cn','alice.miyang.cn'].includes(u.hostname)){id=u.searchParams.get('lesson')||(u.hash.endsWith('.html')?decodeURIComponent(u.hash.slice(1)):u.pathname.split('/').pop().replace(/\.html$/,''));}else{send('reference',{url:u.href});return;}}catch{return;}}if(a.dataset.reference)send('reference',{url:a.dataset.reference});else send('navigate',{targetLesson:id,view:view||'courses'});},true);window.addEventListener('DOMContentLoaded',()=>{if(typeof SHARE_URL!=='undefined')SHARE_URL=new URL('/dashboard/learning?lesson=codex-14',location.href).href;document.querySelectorAll('.reveal,.fade-in').forEach(e=>e.classList.add('show'));document.documentElement.classList.remove('xa-locked');document.querySelectorAll('.qr-bar,.xa-watermark,.lesson-nav').forEach(e=>e.remove());document.addEventListener('keydown',e=>{if(e.key==='Escape')send('close');});});})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>macOS：把安全策略拼成一个字符串 | xueai.miyang.cn</title>
+<style>@keyframes _si{to{opacity:1}}body{opacity:0;animation:_si .15s ease .08s forwards}</style>
+<style>/* ═══════════════════════════════════════════════════════════
+   lesson.css —— 课程子页统一设计系统
+   所有课程页面（文章式布局）共享此文件。
+   页面特有样式写在各自页面的 <style> 中，但骨架统一用这里的类。
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 布局（与主题无关） ── */
+  --content-w: 880px;       /* 常规文章宽度 */
+  --content-w-wide: 1100px; /* 宽内容（大图表/分栏）宽度 */
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ── 浅色（默认） ──
+   主色由蓝改墨绿，与外壳 learn.html 的 --accent 同值。
+   语义色（danger/amber/success/cyan/purple）只用于正文里的图表和标记，
+   不进 UI 骨架，所以保持原样，只在深色下换一档亮度。 */
+:root, [data-theme="light"] {
+  --bg: #f7f5f0;            /* 页面米白底 */
+  --bg-dim: #f8f9fa;
+  --card: #ffffff;          /* 卡片白底 */
+  --card-2: #fbfaf7;        /* 次级面（表头、代码块底） */
+  --text: #1c1c1e;          /* 主文字 */
+  --sub: #6b7280;           /* 次要文字 */
+  --faint: #9aa19d;         /* 三级文字 */
+  --accent: #146b54;        /* 主题墨绿 */
+  --accent-soft: #e9f2ee;   /* 主色淡底 */
+  --danger: #dc2626;
+  --amber: #d97706;
+  --success: #16a34a;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --border: rgba(0,0,0,0.07);
+  --hover: rgba(0,0,0,0.045);
+  --code-bg: rgba(0,0,0,0.05);
+  --scroll-thumb: rgba(0,0,0,0.15);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.10);
+  color-scheme: light;
+}
+
+/* ── 深色 ──
+   同一套语义变量换值，组件规则一行都不用改。
+   底色带一点绿味（而不是纯中性灰），跟墨绿主色是同一支色的延伸。
+   语义色统一提亮并降饱和：深底上原来的 #dc2626 这类会显得脏且刺眼。 */
+[data-theme="dark"] {
+  --bg: #101512;
+  --bg-dim: #1b221e;
+  --card: #171d19;
+  --card-2: #1b221e;
+  --text: #e9ece9;
+  --sub: #a3ada8;
+  --faint: #6f7975;
+  --accent: #5cb595;
+  --accent-soft: rgba(92,181,149,0.14);
+  --danger: #e98d7b;
+  --amber: #d9a45f;
+  --success: #5cb595;
+  --cyan: #5bb6c9;
+  --purple: #a892d6;
+  --border: rgba(255,255,255,0.10);
+  --hover: rgba(255,255,255,0.06);
+  --code-bg: rgba(255,255,255,0.08);
+  --scroll-thumb: rgba(255,255,255,0.18);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.30);
+  --shadow-pop: 0 8px 30px rgba(0,0,0,0.50);
+  color-scheme: dark;
+}
+
+/* ── 顶部公众号关注条 ── */
+.qr-bar{
+  background:linear-gradient(135deg,#fff8f0 0%,#fff3e6 100%);
+  border-bottom:1px solid rgba(217,119,6,.12);
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:13px;color:#92400e;
+  position:relative;z-index:100;
+}
+.qr-bar img{
+  width:36px;height:36px;border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  flex-shrink:0;
+}
+.qr-bar .qr-text{font-weight:600;}
+.qr-bar .qr-text b{color:#d97706;}
+.qr-bar .qr-close{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:none;background:none;cursor:pointer;
+  color:#92400e;opacity:.5;font-size:16px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:opacity .2s,background .2s;
+}
+.qr-bar .qr-close:hover{opacity:1;background:rgba(0,0,0,.05);}
+
+[data-theme="dark"] .qr-bar{
+  background:linear-gradient(135deg,rgba(217,119,6,.14),rgba(217,119,6,.08));
+  border-bottom-color:rgba(217,164,95,.22);
+  color:#d9a45f;
+}
+[data-theme="dark"] .qr-bar .qr-text b,
+[data-theme="dark"] .qr-bar .qr-close{color:#e4b86f;}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+  padding-bottom: 110px; /* 给底部悬浮按钮留空间 */
+}
+
+/* ── 文章容器 ── */
+.lesson {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+}
+.lesson.wide { max-width: var(--content-w-wide); }
+
+/* ── 页头 ── */
+.lesson-header { margin-bottom: 36px; }
+.lesson-header .kicker {
+  font-size: 13px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.lesson-header h1 {
+  font-size: 32px; font-weight: 800; line-height: 1.35; color: var(--text);
+}
+.lesson-header .subtitle {
+  font-size: 15px; color: var(--sub); margin-top: 10px; line-height: 1.7;
+}
+
+/* ── 章节小标题（贯穿全文的分节） ── */
+.sec-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--sub);
+  margin: 36px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── 通用卡片 ── */
+.l-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── 强调框（引言/结论） ── */
+.l-callout {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+}
+.l-callout b { color: var(--accent); }
+
+/* ── 渐入动画（逐步展示的元素统一用 .reveal + .show） ── */
+.reveal {
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.reveal.show { opacity: 1; transform: translateY(0); }
+
+/* ── 底部悬浮"下一步"按钮 ── */
+.fab-wrap {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: center;
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+  pointer-events: none; z-index: 50;
+}
+.fab-wrap .btn-next {
+  pointer-events: auto;
+  background: var(--accent); color: #fff; border: none;
+  padding: 13px 34px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  font-family: inherit;
+}
+.fab-wrap .btn-next:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 42%, transparent); }
+.fab-wrap .btn-next:active { transform: translateY(0); }
+.fab-wrap .btn-next:disabled { background: #c4c8cf; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+.fab-wrap.hidden { display: none; }
+
+/* ── 双列网格（桌面双列 / 移动单列） ── */
+.l-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* ── 代码 / mono 文本 ── */
+.l-mono, code, pre {
+  font-family: "SF Mono", "Fira Code", Menlo, monospace;
+}
+code {
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--accent);
+}
+
+/* ── 正文链接：课程胶囊（与 Ask Alice 的 al-course-link 同风格） ──
+   只命中 main.lesson 内无 class 的正文链接；组件自带样式的链接不受影响。
+   站内互链前置书本图标，http 外链换成外跳图标（Lucide，内嵌 SVG mask）。 */
+.lesson a:not([class])[href] {
+  display: inline-flex; align-items: center; gap: 4px;
+  max-width: 100%; margin: 0 2px; padding: 1px 8px 1px 7px;
+  vertical-align: baseline; line-height: 1.55;
+  color: var(--accent);
+  /* 底色与描边从 currentColor 派生：页面主题若改了链接色，整颗胶囊自动跟随 */
+  background: #f3f7ff;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border: 1px solid #d9e4f8;
+  border-color: color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 8px;
+  font-weight: 650; text-decoration: none;
+  box-shadow: 0 1px 1px rgba(20,40,80,0.03);
+  transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s;
+}
+.lesson a:not([class])[href]:visited { color: var(--accent); }
+.lesson a:not([class])[href]:hover {
+  background: #e8f0fd;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  border-color: #bfd3f4;
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  box-shadow: 0 2px 6px rgba(20,40,80,0.08);
+}
+.lesson a:not([class])[href]:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
+.lesson a:not([class])[href]::before {
+  content: ""; flex: 0 0 auto; width: 12px; height: 12px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'/%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lesson a:not([class])[href^="http"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+}
+
+/* ── 历史课页的深色兼容层 ──
+   这些类在大量课程中反复出现，但各页曾把浅色面板写死在自己的 <style> 里。
+   这里只在 dark 下接管“容器底色和正文色”，保留红/绿等语义，不改变图表含义。 */
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+){
+  background:var(--accent-soft) !important;
+  border-color:color-mix(in srgb,var(--accent) 34%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(h2,h3,h4,b,strong){
+  color:var(--accent) !important;
+}
+[data-theme="dark"] .lesson :is(
+  .takeaway-box,
+  .qa-answer,
+  .xa-tldr,
+  .key-box,
+  .summary-box,
+  .conclusion-box
+) :is(p,li){
+  color:var(--text) !important;
+}
+
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box){
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  border-color:color-mix(in srgb,var(--danger) 38%,transparent) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(h2,h3,h4,b,strong){
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson :is(.warn-card,.danger-box,.warning-box) :is(p,li){
+  color:color-mix(in srgb,var(--danger) 58%,var(--text)) !important;
+}
+
+[data-theme="dark"] .lesson .col-bad{
+  background:color-mix(in srgb,var(--danger) 10%,var(--card)) !important;
+  color:var(--danger) !important;
+}
+[data-theme="dark"] .lesson .col-good{
+  background:color-mix(in srgb,var(--success) 10%,var(--card)) !important;
+  color:var(--success) !important;
+}
+[data-theme="dark"] .lesson .col-label{
+  background:var(--card-2) !important;
+  color:var(--sub) !important;
+}
+
+/* 原生表单控件和代码面板也跟随主题；页面自己声明的语义色仍可覆盖。 */
+[data-theme="dark"] .lesson :is(input,textarea,select){
+  color:var(--text);
+  background-color:var(--card);
+  border-color:var(--border);
+}
+[data-theme="dark"] .lesson :is(pre,.code-box,.code-block,.terminal){
+  border-color:var(--border);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb) 75%, var(--text)); }
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .lesson { padding: 36px 18px 30px; }
+  .lesson-header h1 { font-size: 24px; }
+  .lesson-header .subtitle { font-size: 14px; }
+  .l-cols { grid-template-columns: 1fr; }
+  .l-card { padding: 15px 16px; }
+  .fab-wrap .btn-next { width: 100%; max-width: 440px; padding: 14px 0; }
+}
+</style>
+<style>
+/* 变量挂在 .lesson 上：nav-inject.js 会在页面样式之后再注入一次 :root 主色，
+   靠就近继承才能保住专题色。 */
+:root,.lesson{--accent:#414b5a;--accent-deep:#262d38;--accent-soft:rgba(65,75,90,.085)}
+.lesson-header{position:relative;overflow:hidden}
+.lesson-header:after{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;border:1px solid rgba(65,75,90,.22);border-radius:50%;box-shadow:0 0 0 26px rgba(65,75,90,.04),0 0 0 52px rgba(65,75,90,.025)}
+.lesson>p{font-size:15px;line-height:2;margin:0 0 20px}
+.lesson .sec-label{margin:56px 0 20px}
+.objective{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),rgba(255,255,255,.75));border:1px solid rgba(65,75,90,.28);border-radius:var(--radius);padding:24px;margin:24px 0 32px}
+.objective svg{color:var(--accent)}.objective b{display:block;color:var(--accent);margin-bottom:6px}.objective span{font-size:14px;line-height:1.9;color:var(--text)}
+.q-tag{display:inline-block;padding:5px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font-size:13px;font-weight:800;margin:28px 0 14px}
+.key-line{margin:32px 0;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);text-align:center;font-size:18px;font-weight:800;line-height:1.8;color:var(--accent-deep)}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;margin:24px 0;box-shadow:var(--shadow-card)}
+.visual svg{width:100%;height:auto;display:block}.visual-caption{font-size:12.5px;color:var(--sub);text-align:center;margin-top:12px;line-height:1.7}
+.src-note{font-size:12.5px;color:var(--sub);line-height:1.8;margin:-8px 0 20px}.src-note code{font-size:11.5px}
+.exercise{display:grid;grid-template-columns:52px 1fr;gap:18px;background:linear-gradient(135deg,#eff1f5,var(--card));border:1px solid rgba(65,75,90,.3);border-radius:14px;padding:24px;margin-top:12px}
+.exercise-num{width:46px;height:46px;border-radius:12px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}
+.exercise h3{margin:0 0 10px;color:var(--text);font-size:16px}.exercise p{margin:0 0 12px;color:var(--sub);font-size:14px;line-height:1.9}.exercise p:last-child{margin:0}
+.takeaway{margin-top:32px;padding:24px;border-radius:14px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.25);color:var(--text);display:flex;gap:14px;font-size:14px;line-height:1.9}
+.takeaway svg{flex:0 0 auto;color:var(--accent)}.takeaway b{color:var(--accent-deep)}
+.compare{display:grid;grid-template-columns:1fr;gap:20px;margin-top:14px}
+.cmp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow-card)}
+.cmp-card h4{margin:0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px}.cmp-card h4 svg{color:var(--accent)}
+.cmp-card p{font-size:14px;line-height:1.9;color:var(--sub);margin:12px 0 0}
+.cmp-card .cmp-tag{display:inline-block;margin-top:14px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-deep);border:1px solid rgba(65,75,90,.25)}
+.demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-card)}
+.demo-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.demo-title{font-size:14px;font-weight:700;color:var(--text)}
+.demo-ctrl{display:flex;gap:12px;flex-wrap:wrap}
+.demo-ctrl button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;min-height:44px;min-width:44px;border:1px solid rgba(65,75,90,.35);border-radius:999px;background:var(--accent-soft);color:var(--accent-deep);font:600 14px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:filter .15s}
+.demo-ctrl button:active{filter:brightness(.92)}
+.dm-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px;border-radius:12px;background:var(--bg);border:1px solid var(--border)}
+.dm-budget .dm-b-label{font-size:13px;font-weight:700;color:var(--text);flex:0 0 auto}
+.dm-budget .dm-b-hint{font-size:12px;color:var(--sub);line-height:1.7}
+.dm-seg{display:flex;gap:8px;flex-wrap:wrap}
+.dm-seg button{min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--sub);font:600 13px/1 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;cursor:pointer;transition:all .15s cubic-bezier(.4,0,.2,1)}
+.dm-seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dm-seg.is-live button{opacity:.4;transform:scale(.98);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-seg.is-live button.on{opacity:1;transform:scale(1)}
+.dm-path{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+.dm-path input{flex:1 1 180px;min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;min-width:0;transition:border-color .35s cubic-bezier(.4,0,.2,1),box-shadow .35s cubic-bezier(.4,0,.2,1)}
+.dm-path input.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-cols{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+.dm-col{border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.dm-head{padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.dm-head .dm-name{font-size:13px;font-weight:800;color:var(--text)}
+.dm-body{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+#dm-policy,#dm-params{position:relative;display:flex;flex-direction:column;gap:10px}
+.dm-sec{padding:12px 14px;border-radius:9px;background:var(--card);border:1px solid var(--border);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);overflow-wrap:anywhere;max-height:280px;overflow:hidden;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+#dm-policy.is-live .dm-sec{opacity:.4;transform:scale(.98)}
+#dm-policy.is-live .dm-sec.on,#dm-policy.is-live .dm-sec.bad{opacity:1;transform:scale(1)}
+.dm-sec.on{border-color:rgba(65,75,90,.45);background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+.dm-sec.bad{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.05);color:var(--danger)}
+.dm-sec .k{display:block;font:700 11px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:var(--faint);margin-bottom:6px}
+.dm-sec.on .k{color:var(--accent-deep)}
+.dm-sec.bad .k{color:var(--danger)}
+.dm-sec .t{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-sec.firing,.dm-param.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-sec.is-enter,.dm-param.is-enter,.dm-probe.is-enter{opacity:0;transform:translateY(8px)}
+.dm-sec.is-enter.in,.dm-param.is-enter.in,.dm-probe.is-enter.in{opacity:1;transform:none;transition:opacity .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
+#dm-policy.is-live .dm-sec.is-enter,#dm-params.is-live .dm-param.is-enter,#dm-probes.is-live .dm-probe.is-enter{opacity:0;transform:translateY(8px)}
+#dm-policy.is-live .dm-sec.is-enter.in,#dm-params.is-live .dm-param.is-enter.in,#dm-probes.is-live .dm-probe.is-enter.in{opacity:1;transform:none}
+.dm-sec.gone,.dm-param.gone,#dm-policy.is-live .dm-sec.gone,#dm-params.is-live .dm-param.gone{opacity:0;transform:scale(.92) translateY(-10px);max-height:0;min-height:0;padding-top:0;padding-bottom:0;border-color:transparent;pointer-events:none}
+.dm-ghost{position:absolute;z-index:2;pointer-events:none;margin:0;transition:all .4s cubic-bezier(.25,1,.5,1)}
+.dm-ghost.fly,#dm-policy.is-live .dm-sec.dm-ghost.fly,#dm-params.is-live .dm-param.dm-ghost.fly{opacity:0;transform:translateY(-18px) scale(.9)}
+.dm-param{padding:10px 12px;border-radius:8px;background:var(--card);border:1px dashed var(--border);font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sub);overflow-wrap:anywhere;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-param.on{border-style:solid;border-color:rgba(65,75,90,.4);color:var(--accent-deep)}
+#dm-params.is-live .dm-param{opacity:.4;transform:scale(.98)}
+#dm-params.is-live .dm-param.on{opacity:1;transform:scale(1)}
+.dm-probes{display:flex;flex-direction:column;gap:8px}
+.dm-probe{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);min-height:44px;opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-probe span{font-size:13px;line-height:1.6;color:var(--text)}
+.dm-probe b{flex:0 0 auto;font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px;background:var(--bg);color:var(--sub);border:1px solid var(--border)}
+.dm-probe.ok b{background:rgba(22,163,74,.1);color:var(--success);border-color:rgba(22,163,74,.35)}
+.dm-probe.no b{background:rgba(220,38,38,.08);color:var(--danger);border-color:rgba(220,38,38,.3)}
+.dm-probe.firing b{animation:flashPop .8s cubic-bezier(.25,1,.5,1)}
+#dm-probes.is-live .dm-probe{opacity:.4;transform:scale(.98)}
+#dm-probes.is-live .dm-probe.hot{opacity:1;transform:scale(1)}
+.dm-trace{margin-top:24px;border:1px solid var(--border);border-radius:12px;background:var(--bg);overflow:hidden}
+.dm-trace-tag{padding:12px 18px;background:var(--card);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--sub)}
+.dm-trace ol{margin:0;padding:10px 0;list-style:none}
+.dm-trace li{display:flex;justify-content:space-between;gap:16px;padding:9px 18px;font-size:12.5px;line-height:1.7;color:var(--sub);opacity:1;transform:scale(1);transition:all .35s cubic-bezier(.4,0,.2,1)}
+.dm-trace li.on{background:var(--accent-soft);color:var(--accent-deep);font-weight:600}
+#dm-trace.is-live li{opacity:.4;transform:scale(.98)}
+#dm-trace.is-live li.on{opacity:1;transform:scale(1)}
+.dm-trace li.firing{animation:fireGlow .8s cubic-bezier(.25,1,.5,1)}
+.dm-trace li span.ln{flex:0 0 auto;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--faint)}
+.dm-trace li.on span.ln{color:var(--accent-deep)}
+.dm-caption{margin-top:20px;min-height:56px;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:10px;background:var(--accent-soft);border:1px solid rgba(65,75,90,.22);font-size:14px;line-height:1.8;color:var(--text)}
+.dm-caption svg{flex:0 0 auto;color:var(--accent)}
+#dm-caption-text{transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.dm-summary{display:flex;flex-direction:column;gap:14px;max-height:0;overflow:hidden;opacity:0;margin-top:0;padding:0 22px;border:1px solid transparent;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--card));transition:max-height .5s cubic-bezier(.25,1,.5,1),opacity .4s cubic-bezier(.4,0,.2,1)}
+.dm-summary.on{max-height:360px;opacity:1;margin-top:20px;padding:20px 22px;border-color:rgba(65,75,90,.3)}
+.dm-summary .dm-s{font-size:13px;line-height:1.8;color:var(--sub)}.dm-summary .dm-s b{display:block;font-size:13.5px;color:var(--accent-deep);margin-bottom:2px}
+.demo-caption{font-size:11.5px;color:var(--sub);margin-top:14px;line-height:1.7}
+@keyframes flashPop{0%{transform:scale(.8)}30%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes fireGlow{0%{box-shadow:0 0 0 0 rgba(65,75,90,.3)}50%{box-shadow:0 0 20px 6px rgba(65,75,90,.2)}100%{box-shadow:none}}
+@media(prefers-reduced-motion:reduce){.demo,.demo *{transition-duration:0s!important;animation-duration:0s!important}}
+@media(max-width:760px){.lesson{overflow-x:hidden}.compare{grid-template-columns:1fr}.dm-cols{grid-template-columns:1fr}.objective{grid-template-columns:1fr}.lesson-header:after{display:none}.demo{padding:18px}.demo-ctrl{width:100%}.demo-ctrl button{flex:1}.dm-body{min-height:0}.visual{padding:14px}.dm-trace li{flex-direction:column;gap:4px}.dm-path input{flex-basis:100%}.demo,.visual,.cmp-card{max-width:100%;min-width:0}}
+</style>
+<meta name="description" content="macOS 上 Seatbelt 的策略由几段文本拼出来。路径走参数表，挖空要同时挡住节点、子孙和搬家">
+<meta name="author" content="洛小山">
+
+
+
+
+
+
+
+
+<meta property="og:site_name" content="xueai.miyang.cn · AI 产品经理培训">
+<meta property="og:locale" content="zh_CN">
+<!--seo:begin--><meta property="og:type" content="article"><meta property="og:title" content="macOS：把安全策略拼成一个字符串"><meta property="og:description" content="macOS 上 Seatbelt 的策略由几段文本拼出来。路径走参数表，挖空要同时挡住节点、子孙和搬家"><meta property="og:url" content="https://xueai.miyang.cn/slides/codex-14.html"><meta property="og:image" content="https://xueai.miyang.cn/slides/og/og-default.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>.xa-tldr{margin:18px 0 4px;padding:14px 18px;background:rgba(0,102,255,0.04);border:1px solid rgba(0,102,255,0.16);border-radius:10px}.xa-tldr .xa-tldr-tag{display:block;font-size:11px;font-weight:800;letter-spacing:1px;color:var(--accent,#0066ff);margin-bottom:6px}.xa-tldr p{margin:0;font-size:15px;line-height:1.8;color:var(--text,#1f2937)}</style><style>html.xa-locked .paywall-locked:not(.xa-peek){display:none!important}html.xa-locked .xa-peek{max-height:132px;overflow:hidden;pointer-events:none;user-select:none;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%);mask-image:linear-gradient(180deg,#000 0,#000 14%,transparent 94%)}</style><!--seo:end-->
+<style>body{opacity:1!important;animation:none!important;padding:26px!important;background:#fff!important}.reveal,.fade-in{opacity:1!important;transform:none!important}.lesson-nav,.qr-bar,.xa-watermark,.paywall-mask{display:none!important}.paywall-locked{max-height:none!important;mask-image:none!important;pointer-events:auto!important}@media(max-width:600px){body{padding:18px!important}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style></head>
+<body>
+<article class="lesson wide">
+  <header class="lesson-header">
+    <div class="kicker"><svg fill="currentColor" fill-rule="evenodd" height="14" style="flex:none;line-height:1;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"></path></svg>OpenAI Codex · 执行边界</div>
+    <h1>macOS：把安全策略拼成一个字符串</h1>
+    <p class="subtitle">Seatbelt 吃的是一段文本。文本由静态基线加现拼的读写网段组成。路径不进这段文本，走旁边的参数表。</p>
+  </header><!--seo:begin--><aside class="xa-tldr"><span class="xa-tldr-tag">一句话速览</span><p>Seatbelt 吃的是一段文本。文本由静态基线加现拼的读写网段组成。路径不进这段文本，走旁边的参数表。</p></aside><!--seo:end-->  <div class="objective reveal">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><path d="M12 3v5M21 12h-5" fill="none"></path></svg>
+    <span><b>课程目标</b>读完能说清三件事。macOS 上平台沙箱默认就在，没有 Windows 那种总开关。交给 <code>sandbox-exec</code> 的策略正文只留占位符，真实路径走 <code>-D</code>。挖空一条路径时，要同时挡住这个节点、它的子孙，以及把这个节点搬走。</span>
+  </div>
+
+  <div class="sec-label">先玩一遍 · 开关片段，看菜单怎么长</div>
+  <div class="demo reveal" id="demo-seatbelt">
+    <div class="demo-top">
+      <div class="demo-title">策略拼装台：左边加片段，右边看正文、配料表和放行范围</div>
+      <div class="demo-ctrl">
+        <button id="dm-play" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3" fill="none"></polygon></svg>播放</button>
+        <button id="dm-step" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8V4z" fill="none"></path><line x1="19" y1="5" x2="19" y2="19"></line></svg>单步</button>
+        <button id="dm-reset" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none"></path><path d="M3 3v5h5" fill="none"></path></svg>重置</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">片段</span>
+      <div class="dm-seg" id="dm-frags">
+        <button type="button" data-frag="base" class="on">基线 deny</button>
+        <button type="button" data-frag="write">写根</button>
+        <button type="button" data-frag="carve">挖空 .codex</button>
+        <button type="button" data-frag="unlink">钉住 unlink</button>
+      </div>
+      <span class="dm-b-hint">点片段开关，看策略正文和右侧探针怎么变。</span>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">网络</span>
+      <div class="dm-seg" id="dm-net">
+        <button type="button" data-net="off" class="on">无网</button>
+        <button type="button" data-net="full">全网</button>
+        <button type="button" data-net="managed">managed 无端口</button>
+        <button type="button" data-net="proxy">managed 有端口</button>
+      </div>
+    </div>
+    <div class="dm-budget">
+      <span class="dm-b-label">实验</span>
+      <div class="dm-seg" id="dm-exp">
+        <button type="button" data-exp="quote">路径带引号</button>
+        <button type="button" data-exp="onlySub">只留 subpath</button>
+      </div>
+      <div class="dm-path">
+        <input id="dm-path" type="text" value="/tmp/demo/src" autocomplete="off" spellcheck="false" aria-label="可写根路径">
+      </div>
+    </div>
+    <div class="dm-cols">
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">策略正文 · 只留代号</span></div>
+        <div class="dm-body" id="dm-policy"></div>
+      </div>
+      <div class="dm-col">
+        <div class="dm-head"><span class="dm-name">配料表与探针</span></div>
+        <div class="dm-body">
+          <div id="dm-params"></div>
+          <div class="dm-probes" id="dm-probes"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dm-trace">
+      <div class="dm-trace-tag">逻辑轨迹 · 动画每一步对应源码里的哪一段</div>
+      <ol id="dm-trace">
+        <li><span>权限档案拆成读写网络</span><span class="ln">manager.rs L375</span></li>
+        <li><span>固定使用 /usr/bin/sandbox-exec</span><span class="ln">seatbelt.rs L56</span></li>
+        <li><span>装入四份静态 sbpl</span><span class="ln">seatbelt.rs L21</span></li>
+        <li><span>按根生成 allow 与 require-not</span><span class="ln">seatbelt.rs L476</span></li>
+        <li><span>可写根钉上 file-write-unlink</span><span class="ln">seatbelt.rs L508</span></li>
+        <li><span>排除子路径同时写 literal 与 subpath</span><span class="ln">seatbelt.rs L551</span></li>
+        <li><span>拼网络段，managed 无端口走受限</span><span class="ln">seatbelt.rs L309</span></li>
+        <li><span>sections join 成 -p 文本</span><span class="ln">seatbelt.rs L1012</span></li>
+        <li><span>路径写成 -DKEY=value</span><span class="ln">seatbelt.rs L1024</span></li>
+        <li><span>双短横线后接用户命令</span><span class="ln">seatbelt.rs L1029</span></li>
+      </ol>
+    </div>
+    <div class="dm-caption" id="dm-caption"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none"></path></svg><span id="dm-caption-text">点播放，看一份策略怎样由片段拼出来。也可自己开关片段。</span></div>
+    <div class="dm-summary" id="dm-summary">
+      <div class="dm-s"><b>正文和路径分开</b>菜单上只写 <code>param</code> 代号。真实目录名落在 <code>-D</code>。带引号的路径污染不了 SBPL 语法。</div>
+      <div class="dm-s"><b>挖空少一条就漏</b>只留 <code>subpath</code>，<code>mkdir .codex</code> 会成功。两条 <code>require-not</code> 加上最后的 unlink，才把节点、子孙和搬家一起钉住。</div>
+      <div class="dm-s"><b>网络先收窄</b>要走代理却没有端口，就不要放行整网。网络基线还在，只是没有 blanket outbound。</div>
+    </div>
+    <div class="demo-caption">教学示意：路径与探针为课程化设定，用来展示片段如何改变策略文本和放行范围。逻辑轨迹右侧行号对应 openai/codex 仓库 commit 4f39251a01。</div>
+  </div>
+
+  <div class="sec-label">思路一 · 先关大门，再按片段开门</div>
+
+  <div class="q-tag reveal">它解决什么问题</div>
+  <p class="reveal">同事把仓库设成可写根，让模型在里面改代码。模型执行 <code>mkdir .codex</code>，想在仓库里落一份自己的配置。命令立刻失败，stderr 写着 Operation not permitted。可写根听起来像整棵树，实际不是。</p>
+  <p class="reveal">再试一条更绕的路。模型先在仓库里写一个普通文件，再 <code>mv</code> 整个工作区，想把里面的 <code>.codex</code> 一起挪到沙箱外面。这条也失败。错误还是 Operation not permitted。</p>
+
+  <div class="q-tag reveal">思路是什么</div>
+  <p class="reveal">macOS 上 <code>get_platform_sandbox</code> 直接返回 <code>MacosSeatbelt</code>。那个布尔开关只对 Windows 有意义。包装器不是 Codex 自己的 exe，是系统里固定路径的 <code>/usr/bin/sandbox-exec</code>。PATH 上放一个同名二进制没用。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/sandboxing/src/manager.rs</code> 第 62 至 76 行 · <code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 52 至 56 行</p>
+  <p class="reveal">策略文本分两层。四份 <code>.sbpl</code> 用 <code>include_str!</code> 编进二进制，当静态基线。动态段按这一次的可读可写根现拼。拼接顺序固定：基线、读、写、网络在前。全盘可读才加 preferences。受限读才加平台默认路径。祖先的 <code>file-write-unlink</code> 放最后，避免前面更宽的 allow 把 rename 用的 unlink 重新打开。</p>
+  <p class="src-note reveal">出处：<code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 21 至 27 行 · <code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 985 至 1012 行</p>
+  <p class="reveal">基线第一句业务规则是 <code>(deny default)</code>。没写明的事一律拒绝。子进程继承这份底稿，<code>sandbox-exec</code> 拉起的 bash 再 fork 出来的子孙，仍在同一套规则里。</p>
+  <div class="visual reveal paywall-locked xa-peek">
+    <svg viewBox="0 0 940 300" role="img" aria-label="权限档案拆成片段再拼成 sandbox-exec 参数">
+      <defs><marker id="arrA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker></defs>
+      <rect x="28" y="108" width="170" height="84" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="113" y="146" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">权限档案</text>
+      <text x="113" y="172" text-anchor="middle" fill="#6b7280" font-size="13">读根 · 写根 · 网络</text>
+      <path fill="none" d="M198 150H250" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="258" y="28" width="200" height="64" rx="10" fill="#ffffff" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="358" y="66" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">四份静态 sbpl</text>
+      <rect x="258" y="108" width="200" height="64" rx="10" fill="#ffffff" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="358" y="146" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">动态读写规则</text>
+      <rect x="258" y="188" width="200" height="64" rx="10" fill="#ffffff" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="358" y="226" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">动态网络段</text>
+      <path fill="none" d="M458 60H520" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M458 140H520" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <path fill="none" d="M458 220H520" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="528" y="88" width="160" height="124" rx="12" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="608" y="136" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">join</text>
+      <text x="608" y="164" text-anchor="middle" fill="#6b7280" font-size="13">-p 文本</text>
+      <text x="608" y="188" text-anchor="middle" fill="#6b7280" font-size="13">-D 参数表</text>
+      <path fill="none" d="M688 150H744" stroke="#414b5a" stroke-width="2" marker-end="url(#arrA)"></path>
+      <rect x="752" y="108" width="160" height="84" rx="12" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="832" y="146" text-anchor="middle" fill="#262d38" font-size="13" font-weight="800">sandbox-exec</text>
+      <text x="832" y="172" text-anchor="middle" fill="#6b7280" font-size="13">再 exec 用户命令</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：一份权限档案拆成片段，拼成 argv 再交给系统里那个固定路径的包装器。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">Seatbelt 的内核接口就是吃一份 SBPL 文本。能控的是文本怎么生成。默认拒绝，再按这一次的根往上开门，换语言重写也用得上。片段的顺序是合同：更窄的 deny 必须能压住前面更宽的 allow。</p>
+
+  <div class="sec-label paywall-locked">思路二 · 路径走配料表，不进菜单</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">有人把工程放在 <code>~/work/app (copy)</code> 这种带括号和空格的目录里，或者路径里出现引号。SBPL 里括号、引号、分号都是语法。路径一旦插进策略正文，用户目录名就能变成语法。<code>sandbox-exec</code> 解析失败，模型看到的是包装器错误，不是沙箱拒绝。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">动态读写规则只往正文里写 <code>(param "WRITABLE_ROOT_0")</code> 这类键名。真实路径写成 <code>-DKEY=value</code>，成为独立 argv。排除子路径同样走参数表。策略正文和 <code>-D</code> 必须同时出现，测试把这件事锁成合同。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 1022 至 1028 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 280" role="img" aria-label="路径进正文与路径走参数表的对照">
+      <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#414b5a"></path></marker><marker id="arrR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#dc2626"></path></marker></defs>
+      <text x="40" y="42" fill="#262d38" font-size="14" font-weight="800">路径写进正文</text>
+      <rect x="40" y="58" width="360" height="52" rx="10" fill="#ffffff" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="220" y="90" text-anchor="middle" fill="#262d38" font-size="13">subpath "/tmp/app(copy)"</text>
+      <path fill="none" d="M400 84H470" stroke="#dc2626" stroke-width="2" marker-end="url(#arrR)"></path>
+      <rect x="478" y="58" width="220" height="52" rx="10" fill="#fdeaea" stroke="rgba(220,38,38,.4)"></rect>
+      <text x="588" y="90" text-anchor="middle" fill="#dc2626" font-size="13" font-weight="700">括号变成语法</text>
+      <text x="720" y="90" fill="#6b7280" font-size="13">包装器解析失败</text>
+      <text x="40" y="168" fill="#262d38" font-size="14" font-weight="800">路径走参数表</text>
+      <rect x="40" y="184" width="280" height="64" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="180" y="212" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">正文只写 param</text>
+      <text x="180" y="234" text-anchor="middle" fill="#6b7280" font-size="12">WRITABLE_ROOT_0</text>
+      <path fill="none" d="M320 216H390" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="398" y="184" width="280" height="64" rx="10" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="538" y="212" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">-D 单独一条 argv</text>
+      <text x="538" y="234" text-anchor="middle" fill="#6b7280" font-size="12">value 里可以有引号</text>
+      <path fill="none" d="M678 216H748" stroke="#414b5a" stroke-width="2" marker-end="url(#arrB)"></path>
+      <rect x="756" y="184" width="144" height="64" rx="10" fill="#eef0f4" stroke="rgba(65,75,90,.4)"></rect>
+      <text x="828" y="222" text-anchor="middle" fill="#262d38" font-size="13" font-weight="700">语法不被污染</text>
+    </svg>
+    <div class="visual-caption">教学化对照：左边把目录名交给解析器，右边只把代号交给解析器。</div>
+  </div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">安全策略如果最终是一段文本，用户可控的字符串不要进这段文本。模板只含占位符，真实路径、域名、端口走另一份参数表。和 Seatbelt 语法无关。Python 里同样是模板加 argv。</p>
+
+  <div class="sec-label paywall-locked">思路三 · 挖空要挡住节点、子孙和搬家</div>
+
+  <div class="q-tag reveal paywall-locked">它解决什么问题</div>
+  <p class="reveal paywall-locked">只写 <code>subpath</code>，第一次创建这个目录会漏，<code>mkdir .codex</code> 会成功。元数据保护变成空壳。不加 <code>file-write-unlink</code>，rename 能把只读子树挪出挖空区。下一次若仍按原路径授权，实际写的是链接对面。</p>
+
+  <div class="q-tag reveal paywall-locked">思路是什么</div>
+  <p class="reveal paywall-locked">排除子路径时，<code>require-not</code> 要写两条。<code>literal</code> 管目录自己，<code>subpath</code> 管下面的内容。两条一起放进 <code>require-all</code>，是并且关系。顺序不敏感，少写 <code>literal</code> 才是。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 548 至 555 行</p>
+  <p class="reveal paywall-locked">可写根默认保护三个顶层名字：<code>.git</code>、<code>.agents</code>、<code>.codex</code>。可写根目录本身再钉一条 <code>deny file-write-unlink</code>。可写根中间若有用户可控的符号链接，拼装直接报错，不会跟着链接走。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/protocol/src/permissions.rs</code> 第 24 至 33 行 · <code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 504 至 509 行 · <code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 441 至 450 行</p>
+  <p class="reveal paywall-locked">网络是另一段动态文本。要走代理却没有可用端口，返回受限网络段加网络基线，不给 <code>(allow network-outbound)</code> 这种整网放行。网络基线还在，只是没有 blanket outbound。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/seatbelt.rs</code> 第 309 至 335 行</p>
+  <div class="visual reveal paywall-locked">
+    <svg viewBox="0 0 940 260" role="img" aria-label="挖空一条路径需要三条规则">
+      <rect x="28" y="36" width="280" height="188" rx="14" fill="#ffffff" stroke="rgba(65,75,90,.35)"></rect>
+      <text x="168" y="72" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">literal</text>
+      <text x="168" y="108" text-anchor="middle" fill="#262d38" font-size="13">挡住这个节点</text>
+      <text x="168" y="140" text-anchor="middle" fill="#6b7280" font-size="13">mkdir .codex</text>
+      <text x="168" y="172" text-anchor="middle" fill="#9aa19d" font-size="13">目录自己还不存在时</text>
+      <text x="168" y="196" text-anchor="middle" fill="#9aa19d" font-size="13">subpath 不一定吃到</text>
+      <rect x="332" y="36" width="280" height="188" rx="14" fill="#eef0f4" stroke="rgba(65,75,90,.35)"></rect>
+      <text x="472" y="72" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">subpath</text>
+      <text x="472" y="108" text-anchor="middle" fill="#262d38" font-size="13">挡住它的子孙</text>
+      <text x="472" y="140" text-anchor="middle" fill="#6b7280" font-size="13">建出来之后的文件</text>
+      <text x="472" y="172" text-anchor="middle" fill="#9aa19d" font-size="13">只留 literal</text>
+      <text x="472" y="196" text-anchor="middle" fill="#9aa19d" font-size="13">下面的写会漏</text>
+      <rect x="636" y="36" width="276" height="188" rx="14" fill="#ffffff" stroke="#414b5a" stroke-width="2"></rect>
+      <text x="774" y="72" text-anchor="middle" fill="#262d38" font-size="14" font-weight="800">unlink</text>
+      <text x="774" y="108" text-anchor="middle" fill="#262d38" font-size="13">挡住把边界搬走</text>
+      <text x="774" y="140" text-anchor="middle" fill="#6b7280" font-size="13">rm 再 ln -s</text>
+      <text x="774" y="172" text-anchor="middle" fill="#9aa19d" font-size="13">放在 sections 最后</text>
+      <text x="774" y="196" text-anchor="middle" fill="#9aa19d" font-size="13">避免被更宽的 allow 打开</text>
+    </svg>
+    <div class="visual-caption">教学化结构图：三条规则一起生成，少一条就会漏一种绕法。</div>
+  </div>
+
+  <div class="key-line reveal paywall-locked">路径走参数表。挖空要三条一起。</div>
+
+  <div class="q-tag reveal paywall-locked">为什么长期成立</div>
+  <p class="reveal paywall-locked">挖空一条路径，同时挡住节点本身和它的子孙。再挡住对这个节点的 rename。三条一起生成，用测试锁住形状。跨平台错误文案不同：macOS 常见 Operation not permitted，能被现有关键词表接住。不要假设另外两个平台也是这句话。</p>
+  <p class="src-note reveal paywall-locked">出处：<code>codex-rs/sandboxing/src/denial.rs</code> 第 50 至 58 行</p>
+
+  <div class="sec-label paywall-locked">横向对比 · 路径进不进这段文本</div>
+  <div class="compare paywall-locked">
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"></path></svg>Claude Code：先放开读，路径 stringify 后进文本</h4>
+      <p>Claude 从 <code>(allow file-read*)</code> 往下加 deny，再在 deny 里 re-allow。后写规则优先。路径用 <code>JSON.stringify</code> 包一层，嵌进策略文本。包装命令从 PATH 里找 <code>sandbox-exec</code>，不写死 <code>/usr/bin</code>。两边都要防 rename，Claude 同样生成 <code>deny file-write-unlink</code>。</p>
+      <p>Codex 从 <code>(deny default)</code> 往上加 allow，路径留在 <code>-D</code>。付的是生成器复杂度，换来用户路径不进入 SBPL 语法。Claude 付的是后写顺序必须按对，换来配置面更接近 allowAllExcept。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+    <div class="cmp-card reveal">
+      <h4><svg fill="currentColor" fill-rule="evenodd" height="16" style="flex:none;line-height:1" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>DSH 与 Grok：路径进文本，靠转义或直接失败</h4>
+      <p>DSH 默认 <code>(allow default)</code>，再 <code>(deny file-write*)</code>，只把写权收回来。路径经 <code>sbplString</code> 转义反斜杠和双引号后，直接嵌进 <code>-p</code>。没有 <code>-D</code> 参数表。<code>sandbox-exec</code> 从 PATH 取。本机 macOS 上做不到「可写根里挖掉 <code>.codex</code>」这一粒度。</p>
+      <p>Grok 不包一层 <code>sandbox-exec</code>。它把 SBPL 片段交给当前进程。路径照样进文本，控制字符直接失败，避免沙箱报 active、那条路径却没被挡住。内核 apply 失败时继续跑。Codex 在 Seatbelt 准备失败时返回错误，命令不会裸跑。</p>
+      <span class="cmp-tag">两侧均已核对源码 · 2026-08-22</span>
+    </div>
+  </div>
+
+  <div class="sec-label paywall-locked">课堂练习</div>
+  <div class="exercise reveal paywall-locked">
+    <div class="exercise-num">01</div>
+    <div>
+      <h3>少一条 require-not，漏在哪里</h3>
+      <p>演示里先打开写根和挖空 <code>.codex</code>，看 <code>mkdir .codex</code> 探针是红的。再打开「只留 subpath」，探针变绿。用自己的话解释：<code>subpath</code> 管的是目录下面，为什么挡不住第一次创建这个节点。对照 <code>seatbelt.rs</code> 第 548 至 555 行的注释即可，不要在真实仓库里执行破坏性命令。</p>
+    </div>
+  </div>
+
+  <div class="takeaway reveal paywall-locked">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18" fill="none"></path><circle cx="12" cy="12" r="9" fill="none"></circle></svg>
+    <span><b>Takeaway：</b>macOS 上的沙箱是一段拼出来的 SBPL。路径走 <code>-D</code>，正文只留占位。挖空要同时挡住节点、子孙和搬家。Seatbelt 挡得住策略里拒绝的操作，挡不住被写宽的 allow，也挡不住模型在可写根里改业务代码。</span>
+  </div>
+</article>
+
+
+<script>
+(function(){
+  var DEFAULT_PATH = '/tmp/demo/src';
+  var QUOTE_PATH = '/tmp/demo/app"copy';
+  var state = {
+    base: true, write: false, carve: false, unlink: false,
+    net: 'off', quote: false, onlySub: false,
+    path: DEFAULT_PATH
+  };
+  var steps = [], idx = 0, autoId = null, pauseUntil = 0, played = false;
+  var policyEl = document.getElementById('dm-policy');
+  var paramsEl = document.getElementById('dm-params');
+  var probesEl = document.getElementById('dm-probes');
+  var pathInput = document.getElementById('dm-path');
+  var traceRows = Array.prototype.slice.call(document.querySelectorAll('#dm-trace li'));
+  var captionText = document.getElementById('dm-caption-text');
+  var summary = document.getElementById('dm-summary');
+  var IDLE = '点播放，看一份策略怎样由片段拼出来。也可自己开关片段。';
+
+  function canAnimate(){
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function applyChrome(){
+    Array.prototype.forEach.call(document.querySelectorAll('#dm-frags button'), function(b){
+      b.classList.toggle('on', !!state[b.getAttribute('data-frag')]);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dm-net button'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-net') === state.net);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#dm-exp button'), function(b){
+      var k = b.getAttribute('data-exp');
+      b.classList.toggle('on', !!state[k]);
+    });
+    if (document.activeElement !== pathInput) pathInput.value = state.path;
+  }
+
+  function policyRows(){
+    var rows = [];
+    if (state.base) {
+      rows.push({id:'base', on: true, k: '静态基线', t: '(deny default)'});
+    } else {
+      rows.push({id:'base', on: false, k: '静态基线', t: '未装入。大门没关。'});
+    }
+    if (state.write) {
+      var inner = '(subpath (param "WRITABLE_ROOT_0"))';
+      if (state.carve) {
+        var parts = [inner];
+        if (!state.onlySub) parts.push('(require-not (literal (param "WRITABLE_ROOT_0_EXCLUDED_0")))');
+        parts.push('(require-not (subpath (param "WRITABLE_ROOT_0_EXCLUDED_0")))');
+        inner = '(require-all ' + parts.join(' ') + ')';
+      }
+      rows.push({id:'write', on: true, k: '动态写根', t: '(allow file-write* ' + inner + ')'});
+    } else {
+      rows.push({id:'write', on: false, k: '动态写根', t: '未拼。仓库里的写一律拒绝。'});
+    }
+    if (state.unlink && state.write) {
+      rows.push({id:'unlink', on: true, k: '最后钉住', t: '(deny file-write-unlink (literal (param "WRITABLE_ROOT_0")))'});
+    } else {
+      rows.push({id:'unlink', on: false, k: '最后钉住', t: '未拼。工作区目录还能被换掉。'});
+    }
+    if (state.net === 'full') {
+      rows.push({id:'net', on: true, k: '网络段', t: '(allow network-outbound) (allow network-inbound)'});
+    } else if (state.net === 'managed') {
+      rows.push({id:'net', on: true, k: '网络段', t: '受限基线 · AF_SYSTEM · mach-lookup · 没有 blanket outbound'});
+    } else if (state.net === 'proxy') {
+      rows.push({id:'net', on: true, k: '网络段', t: '(allow network-outbound (remote ip "localhost:1234")) 加受限基线'});
+    } else {
+      rows.push({id:'net', on: false, k: '网络段', t: '空字符串。这一档的意思是不要网。'});
+    }
+    if (state.quote) {
+      rows.push({id:'quote', bad: true, k: '假如把路径写进正文', t: '(subpath "/tmp/demo/app"copy") 引号提前结束字符串'});
+    }
+    return rows;
+  }
+
+  function paramRows(){
+    if (state.write) {
+      var rows = [{id:'root', on:true, t:'-DWRITABLE_ROOT_0=' + state.path}];
+      if (state.carve) {
+        rows.push({id:'excl', on:true, t:'-DWRITABLE_ROOT_0_EXCLUDED_0=' + state.path + '/.codex'});
+      }
+      return rows;
+    }
+    return [{id:'empty', on:false, t:'配料表是空的。正文里还没有 param。'}];
+  }
+
+  function probeRows(){
+    var writeOk = state.write;
+    var mkdirOk = state.write && (!state.carve || state.onlySub);
+    var mvOk = state.write && !state.unlink;
+    var netOk = state.net === 'full';
+    var netLabel = state.net === 'full' ? '放行整网' : state.net === 'proxy' ? '只放行代理端口' : '拒绝出网';
+    var netOk2 = state.net === 'full';
+    return [
+      {id:'write', ok:writeOk, name:'写 src/app.rs', yes:'放行', no:'拒绝'},
+      {id:'mkdir', ok:mkdirOk, name:'mkdir .codex', yes:'放行', no:'Operation not permitted'},
+      {id:'mv', ok:mvOk, name:'mv 工作区目录', yes:'放行', no:'Operation not permitted'},
+      {id:'net', ok:netOk2, name:'连外网', yes: netOk ? '放行整网' : netLabel, no: netLabel}
+    ];
+  }
+
+  function spawnGhost(el, host){
+    var box = host.getBoundingClientRect();
+    var rc = el.getBoundingClientRect();
+    var ghost = el.cloneNode(true);
+    ghost.className = el.className + ' dm-ghost';
+    ghost.style.left = (rc.left - box.left) + 'px';
+    ghost.style.top = (rc.top - box.top) + 'px';
+    ghost.style.width = rc.width + 'px';
+    host.appendChild(ghost);
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ ghost.classList.add('fly'); });
+    });
+    setTimeout(function(){ if (ghost.parentNode) ghost.remove(); }, 480);
+  }
+
+  function flipRemain(box, oldRects, attr){
+    Array.prototype.forEach.call(box.children, function(el){
+      if (el.classList.contains('dm-ghost') || el.classList.contains('is-enter') || el.classList.contains('gone')) return;
+      var id = el.getAttribute(attr);
+      var old = oldRects[id];
+      if (!old) return;
+      var now = el.getBoundingClientRect();
+      var dx = old.left - now.left;
+      var dy = old.top - now.top;
+      if (!dx && !dy) return;
+      el.style.transition = 'none';
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      requestAnimationFrame(function(){
+        el.style.transition = '';
+        el.style.transform = '';
+      });
+    });
+  }
+
+  function enterEl(el){
+    el.classList.add('is-enter');
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ el.classList.add('in'); });
+    });
+  }
+
+  function bumpFire(el){
+    el.classList.remove('firing');
+    void el.offsetWidth;
+    el.classList.add('firing');
+  }
+
+  function syncKeyed(box, rows, animate, makeEl, applyEl, attr){
+    var oldRects = {};
+    var kids = Array.prototype.slice.call(box.children);
+    kids.forEach(function(el){
+      if (el.classList.contains('dm-ghost')) return;
+      var id = el.getAttribute(attr);
+      if (id) oldRects[id] = el.getBoundingClientRect();
+    });
+    var seen = {};
+    rows.forEach(function(r){
+      seen[r.id] = true;
+      var el = box.querySelector('[' + attr + '="' + r.id + '"]:not(.gone)');
+      var isNew = !el;
+      if (!el) {
+        el = makeEl(r);
+        el.setAttribute(attr, r.id);
+      }
+      var changed = applyEl(el, r, animate, isNew);
+      if (isNew) {
+        if (animate) enterEl(el);
+        box.appendChild(el);
+      } else if (animate && changed) {
+        bumpFire(el);
+      }
+    });
+    kids.forEach(function(el){
+      if (el.classList.contains('dm-ghost')) return;
+      var id = el.getAttribute(attr);
+      if (id && !seen[id]) {
+        if (animate) {
+          spawnGhost(el, box);
+          el.classList.add('gone');
+          setTimeout(function(){ if (el.parentNode) el.remove(); }, 420);
+        } else {
+          el.remove();
+        }
+      }
+    });
+    rows.forEach(function(r){
+      var el = box.querySelector('[' + attr + '="' + r.id + '"]:not(.gone)');
+      if (el) box.appendChild(el);
+    });
+    if (animate) flipRemain(box, oldRects, attr);
+  }
+
+  function paintPolicy(animate){
+    if (animate) policyEl.classList.add('is-live');
+    else policyEl.classList.remove('is-live');
+    syncKeyed(policyEl, policyRows(), animate, function(){
+      var el = document.createElement('div');
+      el.innerHTML = '<span class="k"></span><span class="t"></span>';
+      return el;
+    }, function(el, r, anim, isNew){
+      var tEl = el.querySelector('.t');
+      var prevOn = el.classList.contains('on');
+      var prevBad = el.classList.contains('bad');
+      var prevT = tEl.textContent;
+      el.querySelector('.k').textContent = r.k;
+      if (anim && prevT && prevT !== r.t) {
+        tEl.style.opacity = '0';
+        requestAnimationFrame(function(){
+          tEl.textContent = r.t;
+          requestAnimationFrame(function(){ tEl.style.opacity = '1'; });
+        });
+      } else {
+        tEl.textContent = r.t;
+      }
+      el.className = 'dm-sec' + (r.bad ? ' bad' : r.on ? ' on' : '') + (el.classList.contains('is-enter') ? ' is-enter' + (el.classList.contains('in') ? ' in' : '') : '');
+      return !isNew && ((r.on && !prevOn) || (r.bad && !prevBad) || r.t !== prevT);
+    }, 'data-sec');
+  }
+
+  function paintParams(animate){
+    if (animate) paramsEl.classList.add('is-live');
+    else paramsEl.classList.remove('is-live');
+    syncKeyed(paramsEl, paramRows(), animate, function(){
+      return document.createElement('div');
+    }, function(el, r, anim, isNew){
+      var prevOn = el.classList.contains('on');
+      var prevT = el.textContent;
+      el.className = 'dm-param' + (r.on ? ' on' : '') + (el.classList.contains('is-enter') ? ' is-enter' + (el.classList.contains('in') ? ' in' : '') : '');
+      el.textContent = r.t;
+      return !isNew && ((r.on && !prevOn) || r.t !== prevT);
+    }, 'data-param');
+  }
+
+  function paintProbes(animate){
+    if (animate) probesEl.classList.add('is-live');
+    else probesEl.classList.remove('is-live');
+    syncKeyed(probesEl, probeRows(), animate, function(){
+      var el = document.createElement('div');
+      el.innerHTML = '<span></span><b></b>';
+      return el;
+    }, function(el, r, anim, isNew){
+      var badge = el.querySelector('b');
+      var prevOk = el.classList.contains('ok');
+      var next = r.ok ? r.yes : r.no;
+      var changed = !isNew && (prevOk !== r.ok || badge.textContent !== next);
+      el.querySelector('span').textContent = r.name;
+      badge.textContent = next;
+      el.className = 'dm-probe ' + (r.ok ? 'ok' : 'no') + (changed ? ' hot' : '') + (el.classList.contains('is-enter') ? ' is-enter' + (el.classList.contains('in') ? ' in' : '') : '');
+      if (!changed && !isNew) el.classList.remove('hot');
+      if (changed) el.classList.add('hot');
+      return changed;
+    }, 'data-probe');
+    if (animate && !probesEl.querySelector('.dm-probe.hot')) probesEl.classList.remove('is-live');
+  }
+
+  function paint(trace, cap, fin, animate){
+    if (!canAnimate()) animate = false;
+    applyChrome();
+    ['dm-frags','dm-net','dm-exp'].forEach(function(id){
+      document.getElementById(id).classList.toggle('is-live', !!animate);
+    });
+    paintPolicy(animate);
+    paintParams(animate);
+    paintProbes(animate);
+    if (trace !== null && trace !== undefined) {
+      document.getElementById('dm-trace').classList.add('is-live');
+      traceRows.forEach(function(el, n){
+        var was = el.classList.contains('on');
+        el.classList.toggle('on', n === trace);
+        if (animate && n === trace && !was) bumpFire(el);
+      });
+    } else {
+      document.getElementById('dm-trace').classList.remove('is-live');
+    }
+    if (cap) {
+      if (animate) {
+        captionText.style.opacity = '0';
+        requestAnimationFrame(function(){
+          captionText.textContent = cap;
+          requestAnimationFrame(function(){ captionText.style.opacity = '1'; });
+        });
+      } else {
+        captionText.style.opacity = '1';
+        captionText.textContent = cap;
+      }
+    }
+    if (fin) summary.classList.add('on');
+    else summary.classList.remove('on');
+    if (animate && state.quote && pathInput.value === QUOTE_PATH) bumpFire(pathInput);
+  }
+
+  function liveCap(){
+    if (!state.base) return '基线关掉了。真实拼装里这一段编进二进制，不会被关掉。';
+    if (state.quote) return '路径里的引号只出现在配料表。正文仍是 param 代号。下面那张红卡是假如写进正文会怎样。';
+    if (state.onlySub && state.carve) return '只留了 subpath。mkdir .codex 创建的是这个节点，探针变绿，缺口露出来了。';
+    if (state.write && state.carve && state.unlink && state.net === 'managed') return '片段齐了。仓库可写，.codex 和搬家被钉住，网络走受限基线。';
+    if (state.write && !state.carve) return '写根开了，还没挖空。mkdir .codex 现在会成功。';
+    if (!state.write) return '只有基线。没写明的事一律拒绝，包括仓库里的写。';
+    return '当前片段已反映到正文和探针。点播放可以按装配顺序再走一遍。';
+  }
+
+  function buildSteps(){
+    return [
+      {base:true,write:false,carve:false,unlink:false,net:'off',quote:false,onlySub:false,path:DEFAULT_PATH,trace:2,
+        cap:'先关大门。基线第一句是默认拒绝，没写明的事一律不放行。'},
+      {base:true,write:true,carve:false,unlink:false,net:'off',quote:false,onlySub:false,path:DEFAULT_PATH,trace:3,
+        cap:'按可写根开门。正文只写代号 WRITABLE_ROOT_0，真实路径落在配料表。'},
+      {base:true,write:true,carve:true,unlink:false,net:'off',quote:false,onlySub:false,path:DEFAULT_PATH,trace:5,
+        cap:'挖空要挖目录自己，也要挖它下面。少一条 literal，mkdir .codex 会漏。'},
+      {base:true,write:true,carve:true,unlink:false,net:'off',quote:true,onlySub:false,path:QUOTE_PATH,trace:8,
+        cap:'路径里出现引号。菜单语法不变，配料表的 value 带着引号走。'},
+      {base:true,write:true,carve:true,unlink:true,net:'off',quote:false,onlySub:false,path:DEFAULT_PATH,trace:4,
+        cap:'边界目录不能被换掉。deny file-write-unlink 放在最后，避免被更宽的 allow 打开。'},
+      {base:true,write:true,carve:true,unlink:true,net:'managed',quote:false,onlySub:false,path:DEFAULT_PATH,trace:6,fin:true,
+        cap:'要走代理却没有端口，就不要放行整网。网络基线还在，只是没有 blanket outbound。'}
+    ];
+  }
+
+  function applyStep(st, animate){
+    state.base = st.base; state.write = st.write; state.carve = st.carve;
+    state.unlink = st.unlink; state.net = st.net; state.quote = st.quote;
+    state.onlySub = st.onlySub; state.path = st.path;
+    paint(st.trace, st.cap, st.fin, animate);
+  }
+
+  function holdFor(i){
+    var st = steps[i];
+    if (!st) return 400;
+    var reduce = !canAnimate();
+    if (st.fin) return reduce ? 600 : 2400;
+    if (st.quote) return reduce ? 500 : 2000;
+    if (st.carve && !st.unlink) return reduce ? 500 : 2200;
+    if (st.unlink) return reduce ? 500 : 1800;
+    if (st.write) return reduce ? 400 : 1600;
+    return reduce ? 400 : 1100;
+  }
+
+  function tick(){
+    if (idx >= steps.length) { stop(); return; }
+    applyStep(steps[idx], true);
+    idx++;
+    if (idx >= steps.length) stop();
+  }
+  function stop(){
+    if (autoId) { cancelAnimationFrame(autoId); autoId = null; }
+    pauseUntil = 0;
+  }
+  function loop(ts){
+    if (idx >= steps.length) { autoId = null; return; }
+    if (ts < pauseUntil) { autoId = requestAnimationFrame(loop); return; }
+    applyStep(steps[idx], true);
+    var wait = holdFor(idx);
+    idx++;
+    pauseUntil = ts + wait;
+    if (idx >= steps.length) { autoId = null; return; }
+    autoId = requestAnimationFrame(loop);
+  }
+  function reset(){
+    stop(); idx = 0;
+    steps = buildSteps();
+    state = {base:true,write:false,carve:false,unlink:false,net:'off',quote:false,onlySub:false,path:DEFAULT_PATH};
+    ['dm-frags','dm-net','dm-exp','dm-trace'].forEach(function(id){
+      document.getElementById(id).classList.remove('is-live');
+    });
+    policyEl.classList.remove('is-live');
+    paramsEl.classList.remove('is-live');
+    probesEl.classList.remove('is-live');
+    Array.prototype.slice.call(document.querySelectorAll('.dm-ghost')).forEach(function(g){ g.remove(); });
+    paint(null, IDLE, false, false);
+    traceRows.forEach(function(el){ el.classList.remove('on'); el.classList.remove('firing'); });
+  }
+  function play(){
+    if (idx >= steps.length) reset();
+    if (autoId) return;
+    pauseUntil = 0;
+    autoId = requestAnimationFrame(loop);
+  }
+  function userChange(){
+    stop();
+    summary.classList.remove('on');
+    paint(7, liveCap(), false, true);
+  }
+
+  document.getElementById('dm-play').addEventListener('click', play);
+  document.getElementById('dm-step').addEventListener('click', function(){ stop(); tick(); });
+  document.getElementById('dm-reset').addEventListener('click', reset);
+  document.getElementById('dm-frags').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    var k = b.getAttribute('data-frag');
+    state[k] = !state[k];
+    userChange();
+  });
+  document.getElementById('dm-net').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    state.net = b.getAttribute('data-net');
+    userChange();
+  });
+  document.getElementById('dm-exp').addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    var k = b.getAttribute('data-exp');
+    state[k] = !state[k];
+    if (k === 'quote') state.path = state.quote ? QUOTE_PATH : DEFAULT_PATH;
+    userChange();
+  });
+  pathInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && !e.isComposing) {
+      state.path = pathInput.value || DEFAULT_PATH;
+      userChange();
+    }
+  });
+  pathInput.addEventListener('change', function(){
+    state.path = pathInput.value || DEFAULT_PATH;
+    userChange();
+  });
+
+  reset();
+  if (window.lessonOnView) {
+    window.lessonOnView(document.getElementById('demo-seatbelt'), function(){
+      if (played) return; played = true; play();
+    });
+  }
+})();
+</script>
+
+<!--seo:begin--><!--seo:end-->
+
+
+</body></html>
