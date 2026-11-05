@@ -1,1 +1,3 @@
 - Embedded resume agents can read native canvas comments, replies and pin locations alongside the current design.
+- Return an immediate recoverable error when a design tool returns non-transferable data, instead of leaving the agent waiting until the canvas request times out.
+- Reject an explicitly missing export frame instead of silently selecting a different resume.

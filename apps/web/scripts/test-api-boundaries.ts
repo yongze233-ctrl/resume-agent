@@ -36,7 +36,7 @@ async function main() {
   );
   const proxied = proxySseResponse(upstream, '[TEST]');
   assert.ok(proxied);
-  assert.equal(proxied.headers.get('content-type'), 'text/event-stream');
+  assert.equal(proxied.headers.get('content-type'), 'text/event-stream; charset=utf-8');
   assert.equal(
     await readText(proxied),
     'event: delta\ndata: one\n\ndata: two\n\n',

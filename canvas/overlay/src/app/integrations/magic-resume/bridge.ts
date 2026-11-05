@@ -16,6 +16,7 @@ import { createTab, getTabById, switchTab } from '@/app/tabs'
 
 import { canvasComments } from './comments'
 import { resumeHostChannel } from './context'
+import { replyWithCanvasResult } from './reply'
 import { syncResumeReview } from './review'
 
 const origins = new Set([location.origin, 'http://127.0.0.1:3000', 'http://localhost:3000'])
@@ -145,7 +146,7 @@ export async function installMagicResumeBridge(): Promise<void> {
 
   function resumeFrame(frameId?: string) {
     const requested = frameId ? store.graph.getNode(frameId) : undefined
-    if (requested?.type === 'FRAME') return requested
+    if (frameId) return requested?.type === 'FRAME' ? requested : undefined
     const frames = store.graph
       .getChildren(store.state.currentPageId)
       .filter((node) => node.type === 'FRAME')
@@ -398,10 +399,7 @@ export async function installMagicResumeBridge(): Promise<void> {
       }
       void running.then(
         (result) =>
-          parent.postMessage(
-            { type: 'magic-resume:result', channel, id: request.id, ok: true, result },
-            event.origin
-          ),
+          replyWithCanvasResult((message) => parent.postMessage(message, event.origin), request, result),
         (error: unknown) =>
           parent.postMessage(
             {

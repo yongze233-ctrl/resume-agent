@@ -515,6 +515,30 @@ test('image rejection has an explicit error code and never discards the attachme
   assert.equal(f.fake.requests.length, 1);
 });
 
+test('image references stay on their original user turn through tool calls and follow-up edits', async (t) => {
+  const f = await fixture(t, 'sqlite', []);
+  const a = await attachment(f, 'resume.png', 'image/png');
+  f.fake.scripts.push(
+    { calls: [{ name: 'read_attachment', args: { key: a.key } }] },
+    { text: 'Initial design source inspected.' },
+    { calls: [{ name: 'read_attachment', args: { key: a.key } }] },
+    { text: 'Only the requested color was updated.' },
+  );
+  await f.chat(f.body({ sessionId: 'image-follow-up', attachments: [a],
+    messages: [{ role: 'user', content: 'Read the attached resume.' }],
+  }));
+  await f.chat(f.body({ sessionId: 'image-follow-up',
+    messages: [{ role: 'user', content: 'Change only the title color. Keep all positions.' }],
+  }));
+  const sent = f.fake.requests.at(-1)!;
+  const users = sent.messages.filter((message) => message.role === 'user');
+  assert.equal(users.length, 2, 'image hydration must not invent another user message');
+  assert.match(JSON.stringify(users[0].content), /image_url/);
+  assert.match(JSON.stringify(users[0].content), /Read the attached resume/);
+  assert.equal(users[1].content, 'Change only the title color. Keep all positions.');
+  assert.equal(sent.messages.at(-1)?.role, 'tool', 'tool results remain last, not a repeated upload');
+});
+
 test('three attachments are accepted, a fourth is rejected before model work, and expired read URLs fail during chat', async (t) => {
   const f = await fixture(
     t,
